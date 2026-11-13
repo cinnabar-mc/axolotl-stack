@@ -245,7 +245,9 @@ impl Actors {
 
 /// Parses one script line: `!` lines are actions, anything else a command.
 pub fn parse_line(line: &str) -> Result<Action> {
-    let rest = line.strip_prefix('!').context("an action line starts with `!`")?;
+    let rest = line
+        .strip_prefix('!')
+        .context("an action line starts with `!`")?;
     let words: Vec<&str> = rest.split_whitespace().collect();
     let (&verb, args) = words.split_first().context("empty action")?;
     let kind = parse_action(verb, args).with_context(|| format!("action `{line}`"))?;

@@ -1554,8 +1554,16 @@ mod tests {
     #[test]
     fn an_action_step_starts_at_its_first_packet() {
         let records = vec![
-            record(0, "c2s", jolyne::valentine::PlayerAuthInputPacket::default()),
-            record(1, "c2s", jolyne::valentine::ResourcePacksReadyForValidationPacket {}),
+            record(
+                0,
+                "c2s",
+                jolyne::valentine::PlayerAuthInputPacket::default(),
+            ),
+            record(
+                1,
+                "c2s",
+                jolyne::valentine::ResourcePacksReadyForValidationPacket {},
+            ),
             record(2, "s2c", CommandOutputPacket::default()),
         ];
         let steps = [StepStart {

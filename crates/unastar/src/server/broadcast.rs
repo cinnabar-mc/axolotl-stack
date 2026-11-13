@@ -77,6 +77,7 @@ pub(crate) fn add_player_game_type(game_mode: GameMode, explicit: bool) -> Enums
 /// every other player packet carries), its whole actor data as its viewers
 /// last received it (`player_life::actor_data::full_actor_data`) and its
 /// game type (`server::player_view`).
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn build_add_player_packet(
     runtime_id: i64,
     uuid: Uuid,
