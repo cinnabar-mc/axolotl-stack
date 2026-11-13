@@ -55,94 +55,57 @@ impl UnastarServer {
             );
         }
 
-        // Initialize LevelDB player provider (if enabled)
+        // A configured player database that won't open (e.g. locked by
+        // another instance) stops startup, like the world database: running
+        // without it would let everyone join with first-join state while their
+        // saved data sits on disk.
         if config.players.leveldb_enabled {
             let player_db_path = config.players.data_dir.join("db");
-            match LevelDBPlayerProvider::open(&player_db_path) {
-                Ok(provider) => {
-                    info!(path = %player_db_path.display(), "Opened player LevelDB");
-                    server.ecs.world_mut().insert_resource(
-                        crate::server::game::types::PlayerProviderResource(Arc::new(provider)),
-                    );
-                }
-                Err(e) => {
-                    warn!(error = %e, "Failed to open player LevelDB, persistence disabled");
-                }
-            }
+            let provider = LevelDBPlayerProvider::open(&player_db_path).map_err(|e| {
+                format!(
+                    "Failed to open player storage at {}: {e}",
+                    player_db_path.display()
+                )
+            })?;
+            info!(path = %player_db_path.display(), "Opened player LevelDB");
+            server.ecs.world_mut().insert_resource(
+                crate::server::game::types::PlayerProviderResource(Arc::new(provider)),
+            );
         }
 
-        // Initialize world provider based on config
+        // Without its world database the server can't load or save terrain,
+        // so a database that won't open (e.g. locked by another instance)
+        // stops startup instead of running with persistence off.
         let world_db_path = std::path::PathBuf::from("worlds")
             .join("default")
             .join("db");
-        let dimension = config.server_config().world.dimension;
-        let storage_provider = config.server_config().world.storage_provider;
-
-        // The world database serves chunks and the level records.
-        type Providers = (
-            Arc<dyn crate::storage::WorldProvider>,
-            Arc<dyn crate::storage::level::LevelRecordStore>,
-        );
-        let providers: Option<Providers> = match storage_provider {
-            crate::world::StorageProvider::LevelDb => {
-                match crate::storage::LevelDBWorldProvider::open(&world_db_path, dimension) {
-                    Ok(provider) => {
-                        info!(path = %world_db_path.display(), "Opened world LevelDB");
-                        let provider = Arc::new(provider);
-                        Some((provider.clone(), provider))
-                    }
-                    Err(e) => {
-                        warn!(error = %e, "Failed to open world LevelDB, chunk persistence disabled");
-                        None
-                    }
-                }
-            }
-            crate::world::StorageProvider::BlazeDb => {
-                let cache_capacity = config.server_config().world.blazedb_cache_chunks;
-                let blaze_config = crate::storage::blazedb::BlazeConfig {
-                    cache_capacity,
-                    ..Default::default()
-                };
-                match crate::storage::BlazeDBProvider::open(&world_db_path, Some(blaze_config)) {
-                    Ok(provider) => {
-                        info!(path = %world_db_path.display(), cache_capacity, "Opened world BlazeDB");
-                        Some((provider.clone(), provider))
-                    }
-                    Err(e) => {
-                        warn!(error = %e, "Failed to open world BlazeDB, chunk persistence disabled");
-                        None
-                    }
-                }
-            }
-        };
-
-        if let Some((provider, level_records)) = providers {
-            // The world's level.dat and level records (clock, game rules,
-            // spawn, scoreboard, ...). Data that cannot be read stops the
-            // start rather than being replaced.
-            let new_world = crate::world::level_data::new_world(&config.server_config());
-            let level = crate::world::level_data::open(
-                crate::storage::level::LevelFiles::new(
-                    std::path::PathBuf::from("worlds").join("default"),
-                ),
-                level_records,
-                &new_world,
-            )
-            .await
+        let (provider, level_records) =
+            open_world_provider(&world_db_path, &config.server_config().world).map_err(|e| {
+                format!(
+                    "Failed to open world storage at {}: {e}",
+                    world_db_path.display()
+                )
+            })?;
+        // The world's level.dat and level records (clock, game rules, spawn,
+        // scoreboard, ...). Data that cannot be read stops the start rather
+        // than being replaced.
+        let new_world = crate::world::level_data::new_world(&config.server_config());
+        let level = crate::world::level_data::open(
+            crate::storage::level::LevelFiles::new(std::path::PathBuf::from("worlds").join("default")),
+            level_records,
+            &new_world,
+        )
+        .await
+        .map_err(|e| format!("cannot load the world's level data: {e}"))?;
+        level
+            .apply(server.ecs.world_mut())
             .map_err(|e| format!("cannot load the world's level data: {e}"))?;
-            level
-                .apply(server.ecs.world_mut())
-                .map_err(|e| format!("cannot load the world's level data: {e}"))?;
-            info!("Loaded level data");
-
-            // Set provider on ChunkManager resource for load-before-generate
-            let world = server.ecs.world_mut();
-            if let Some(mut chunk_manager) =
-                world.get_resource_mut::<crate::world::ecs::ChunkManager>()
-            {
-                chunk_manager.set_provider(provider);
-            }
-        }
+        info!("Loaded level data");
+        server
+            .ecs
+            .world_mut()
+            .resource_mut::<crate::world::ecs::ChunkManager>()
+            .set_provider(provider);
 
         // BDS keeps its server files (allowlist, permissions, identity key)
         // next to the executable; unastar keeps them in its working directory.
@@ -151,10 +114,10 @@ impl UnastarServer {
             let world = server.ecs.world_mut();
             world
                 .resource_mut::<crate::command::exec::OperatorList>()
-                .load_permissions(&files);
+                .load_permissions(&files)?;
             world.insert_resource(crate::command::exec::Allowlist {
                 enabled: config.server.allow_list,
-                entries: crate::command::exec::Allowlist::load(&files),
+                entries: crate::command::exec::Allowlist::load(&files)?,
             });
             world.insert_resource(crate::command::exec::WorldFiles {
                 root: std::path::PathBuf::from("worlds"),
@@ -441,22 +404,71 @@ impl UnastarServer {
         }
     }
 
-    /// Saves players and chunks before the process exits.
+    /// Unloads plugins, then saves players and chunks and flushes and closes
+    /// storage, before the process exits.
     async fn shutdown(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        let players_saved = self.server.save_all_players().await;
-        info!(players = players_saved, "Player data saved");
-        let chunks_saved = self.server.save_all_chunks().await;
-        info!(chunks = chunks_saved, "Chunk data saved");
-        // After the chunks, so every saved mob has its unique id for the
-        // scoreboard.
-        if let Some(save) = crate::world::level_data::capture(self.server.ecs.world_mut()) {
-            match save.write().await {
-                Ok(()) => info!("Level data saved"),
-                Err(e) => error!(error = %e, "Failed to save the level data"),
-            }
+        // Plugins see every online player quit, then unload, before saving, so
+        // `on-player-quit` and `on-unload` still see the live world, and storage is
+        // still open while they run.
+        let online = self.server.queue_quit_for_online_players();
+        self.plugin_manager.shutdown(self.server.ecs.world_mut());
+        info!(players = online, "Plugins unloaded");
+        let result = self.server.save_and_close_storage().await;
+        info!(
+            players = result.players_saved,
+            chunks = result.chunks_saved,
+            "Player and chunk data saved"
+        );
+        if !result.is_clean() {
+            return Err(format!(
+                "shutdown lost data: {} player saves and {} chunk saves failed{}{}",
+                result.players_failed,
+                result.chunks_failed,
+                if result.level_saved {
+                    ""
+                } else {
+                    ", the level data was not saved"
+                },
+                if result.closed {
+                    ""
+                } else {
+                    ", and storage did not close cleanly"
+                }
+            )
+            .into());
         }
         info!("Server shutdown complete");
         Ok(())
+    }
+}
+
+/// Open the world provider `world.storage_provider` selects at `path`.
+/// The world database: it serves the chunks and the level records.
+type WorldStores = (
+    Arc<dyn crate::storage::WorldProvider>,
+    Arc<dyn crate::storage::level::LevelRecordStore>,
+);
+
+fn open_world_provider(
+    path: &std::path::Path,
+    world: &crate::world::WorldConfig,
+) -> crate::storage::StorageResult<WorldStores> {
+    match world.storage_provider {
+        crate::world::StorageProvider::LevelDb => {
+            let provider = Arc::new(crate::storage::LevelDBWorldProvider::open(path)?);
+            info!(path = %path.display(), "Opened world LevelDB");
+            Ok((provider.clone(), provider))
+        }
+        crate::world::StorageProvider::BlazeDb => {
+            let cache_capacity = world.blazedb_cache_chunks;
+            let blaze_config = crate::storage::blazedb::BlazeConfig {
+                cache_capacity,
+                ..Default::default()
+            };
+            let provider = crate::storage::BlazeDBProvider::open(path, Some(blaze_config))?;
+            info!(path = %path.display(), cache_capacity, "Opened world BlazeDB");
+            Ok((provider.clone(), provider))
+        }
     }
 }
 
@@ -486,6 +498,7 @@ async fn network_tick(
                 runtime_id,
                 initial_position,
                 saved_data,
+                client_data,
                 chunk_radius,
                 outbound_tx,
                 inbound_rx,
@@ -495,6 +508,7 @@ async fn network_tick(
                 inbound.register(session_id, inbound_rx);
                 spawn_or_reject(
                     server,
+                    client_data,
                     PlayerSpawnData {
                         session_id,
                         display_name,
@@ -538,7 +552,11 @@ const UNRESTORABLE_PLAYER_MESSAGE: &str = "Unable to restore player inventory.";
 /// Spawn a joined player, or refuse the join with a `Disconnect` when its saved data
 /// cannot be restored (for example an item the registry does not know). A refused
 /// player never enters the world, so its stored record is left untouched.
-fn spawn_or_reject(server: &mut GameServer, data: PlayerSpawnData) -> bool {
+fn spawn_or_reject(
+    server: &mut GameServer,
+    client_data: Option<Box<jolyne::auth::ClientData>>,
+    data: PlayerSpawnData,
+) -> bool {
     use jolyne::valentine::{
         DisconnectPacket, DisconnectPacketMessages, DisconnectPacketMessagesUnion,
         EnumsConnectionDisconnectFailReason, McpePacket,
@@ -564,7 +582,7 @@ fn spawn_or_reject(server: &mut GameServer, data: PlayerSpawnData) -> bool {
         }));
         return false;
     }
-    let Err(error) = server.spawn_player(data) else {
+    let Err(error) = server.spawn_player_with_login(data, client_data.as_deref()) else {
         return true;
     };
     warn!(session_id, %error, "Rejecting player with invalid saved data");
@@ -653,7 +671,13 @@ fn spawn_accept_loop(mut listener: BedrockListener<RaknetListener>, state: Accep
                         )
                         .await
                         {
-                            Ok((mut play_stream, identity, initial_position, saved_data)) => {
+                            Ok((
+                                mut play_stream,
+                                identity,
+                                initial_position,
+                                saved_data,
+                                client_data,
+                            )) => {
                                 let display_name = identity.display_name().to_string();
 
                                 info!(%addr, name = %display_name, "Player joined");
@@ -689,6 +713,7 @@ fn spawn_accept_loop(mut listener: BedrockListener<RaknetListener>, state: Accep
                                         runtime_id: session_id as i64,
                                         initial_position: spawn_to_dvec3(&initial_position),
                                         saved_data: saved_data.map(Box::new),
+                                        client_data: Some(Box::new(client_data)),
                                         chunk_radius,
                                         outbound_tx: outbound_tx.clone(),
                                         inbound_rx,
@@ -726,6 +751,40 @@ fn spawn_accept_loop(mut listener: BedrockListener<RaknetListener>, state: Accep
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::world::{StorageProvider, WorldConfig};
+
+    fn temp_path(name: &str) -> std::path::PathBuf {
+        std::env::temp_dir().join(format!("unastar-{name}-{}", uuid::Uuid::new_v4()))
+    }
+
+    /// A held world database is an error, not a server running with
+    /// persistence off. This holds it from the same process at the same path,
+    /// which LevelDB's in-process lock table refuses on every platform (a
+    /// different spelling of the path would get past it on Linux).
+    /// `tests/startup_storage.rs` covers the failure through `UnastarServer::new`.
+    #[test]
+    fn a_locked_world_leveldb_fails_to_open() {
+        let path = temp_path("locked-world");
+        let world = WorldConfig::default();
+        let first = open_world_provider(&path, &world).expect("first open");
+        assert!(open_world_provider(&path, &world).is_err());
+        drop(first);
+        let _ = std::fs::remove_dir_all(&path);
+    }
+
+    #[test]
+    fn an_unopenable_world_blazedb_fails_to_open() {
+        // A regular file where the database directory should be.
+        let path = temp_path("file-not-dir");
+        std::fs::write(&path, b"not a database").unwrap();
+        let world = WorldConfig {
+            storage_provider: StorageProvider::BlazeDb,
+            ..WorldConfig::default()
+        };
+        assert!(open_world_provider(&path, &world).is_err());
+        let _ = std::fs::remove_file(&path);
+    }
+
     use crate::storage::{PlayerData, StoredItemStack};
     use jolyne::valentine::{DisconnectPacketMessagesUnion, McpePacketData};
 
@@ -772,7 +831,7 @@ mod tests {
                 };
 
                 let (data, mut rx) = join(1, "minecraft:not_a_real_item");
-                assert!(!spawn_or_reject(&mut server, data));
+                assert!(!spawn_or_reject(&mut server, None, data));
                 assert!(
                     server
                         .ecs
@@ -796,7 +855,7 @@ mod tests {
                 assert_eq!(messages.message, UNRESTORABLE_PLAYER_MESSAGE);
 
                 let (data, _rx) = join(2, "minecraft:stone");
-                assert!(spawn_or_reject(&mut server, data));
+                assert!(spawn_or_reject(&mut server, None, data));
             })
             .unwrap()
             .join()
@@ -832,10 +891,6 @@ mod network_tick_tests {
         }
         async fn save(&self, uuid: uuid::Uuid, data: &PlayerData) -> StorageResult<()> {
             self.0.lock().insert(uuid, data.clone());
-            Ok(())
-        }
-        async fn delete(&self, uuid: uuid::Uuid) -> StorageResult<()> {
-            self.0.lock().remove(&uuid);
             Ok(())
         }
         async fn close(&self) -> StorageResult<()> {
@@ -904,6 +959,7 @@ mod network_tick_tests {
                 runtime_id: SESSION as i64,
                 initial_position: glam::DVec3::new(START_X, 17.0, 0.5),
                 saved_data: None,
+                client_data: None,
                 chunk_radius: 0,
                 outbound_tx,
                 inbound_rx,

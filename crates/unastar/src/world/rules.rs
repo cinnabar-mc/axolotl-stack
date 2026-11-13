@@ -84,11 +84,12 @@ pub enum GameRule {
     NaturalRegeneration,
     DoImmediateRespawn,
     ShowDeathMessages,
+    FreezeDamage,
 }
 
 impl GameRule {
     /// Every rule, in the order BDS lists them in `GameRulesChanged`.
-    pub const ALL: [Self; 11] = [
+    pub const ALL: [Self; 12] = [
         Self::DoDaylightCycle,
         Self::DoMobLoot,
         Self::DoMobSpawning,
@@ -100,6 +101,7 @@ impl GameRule {
         Self::NaturalRegeneration,
         Self::DoImmediateRespawn,
         Self::ShowDeathMessages,
+        Self::FreezeDamage,
     ];
 
     /// The rule's name as BDS sends it (`GameRulesChanged` at join).
@@ -116,6 +118,7 @@ impl GameRule {
             Self::NaturalRegeneration => "naturalRegeneration",
             Self::DoImmediateRespawn => "doImmediateRespawn",
             Self::ShowDeathMessages => "showDeathMessages",
+            Self::FreezeDamage => "freezeDamage",
         }
     }
 
@@ -144,6 +147,7 @@ pub struct GameRules {
     pub fall_damage: bool,
     pub fire_damage: bool,
     pub drowning_damage: bool,
+    pub freeze_damage: bool,
     /// Captured rules without a typed field that were changed from BDS's default.
     other: Vec<(&'static str, GameRuleValue)>,
 }
@@ -162,6 +166,7 @@ impl Default for GameRules {
             fall_damage: true,
             fire_damage: true,
             drowning_damage: true,
+            freeze_damage: true,
             other: Vec::new(),
         };
         // The captured defaults are the source of truth for typed rules too.
@@ -190,6 +195,7 @@ impl GameRules {
             GameRule::NaturalRegeneration => &mut self.natural_regeneration,
             GameRule::DoImmediateRespawn => &mut self.do_immediate_respawn,
             GameRule::ShowDeathMessages => &mut self.show_death_messages,
+            GameRule::FreezeDamage => &mut self.freeze_damage,
         }
     }
 
@@ -206,6 +212,7 @@ impl GameRules {
             GameRule::NaturalRegeneration => self.natural_regeneration,
             GameRule::DoImmediateRespawn => self.do_immediate_respawn,
             GameRule::ShowDeathMessages => self.show_death_messages,
+            GameRule::FreezeDamage => self.freeze_damage,
         }
     }
 
