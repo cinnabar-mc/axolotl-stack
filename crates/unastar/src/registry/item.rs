@@ -166,27 +166,6 @@ pub struct ItemRegistry {
     network_id_map: HashMap<i32, u32>,
 }
 
-/// The canonical state of a measured block state, `None` when the block or
-/// one of its values is unknown.
-pub(crate) fn measured_block(
-    block: &unastar_data::give::GivenBlock,
-    blocks: &super::BlockRegistry,
-) -> Option<u32> {
-    let entry = blocks.get_by_name(&block.name)?;
-    let mut state = blocks.default_state_id_by_name(&block.name)?;
-    for (property, wanted) in &block.states {
-        let values = entry
-            .data
-            .properties
-            .iter()
-            .find(|p| p.name == property)?
-            .values;
-        let value = values.iter().copied().find(|v| wanted.matches(*v))?;
-        state = entry.with_state_value(state, property, value)?;
-    }
-    Some(state)
-}
-
 impl ItemRegistry {
     /// Create an empty item registry.
     pub fn new() -> Self {

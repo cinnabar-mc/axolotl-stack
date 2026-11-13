@@ -482,8 +482,6 @@ mod sweep {
     use sha2::Digest;
 
     use crate::command::exec::test_support::Harness;
-    use crate::registry::BlockRegistry;
-    use crate::registry::block::BlockNetworkIds;
     use crate::server::game::types::ItemRegistryResource;
 
     /// One given stack: hotbar slot 0 after `/give @s <item>`.
@@ -503,32 +501,6 @@ mod sweep {
 
     fn sweep() -> Sweep {
         serde_json::from_str(SWEEP).expect("the give sweep")
-    }
-
-    /// The block state BDS's stack carried, by name and property values.
-    fn block_json(blocks: &BlockRegistry, wire: u32) -> serde_json::Value {
-        if wire == 0 {
-            return serde_json::Value::Null;
-        }
-        let runtime = BlockNetworkIds::Hashed
-            .item_block_from_wire(wire)
-            .expect("a block BDS sent");
-        let entry = blocks.get_by_runtime_id(runtime).expect("a known block");
-        let states: serde_json::Map<String, serde_json::Value> = entry
-            .data
-            .properties
-            .iter()
-            .map(|property| {
-                let value = match entry.state_value(runtime, property.name) {
-                    Some(unastar_data::blocks::StateValue::Byte(b)) => serde_json::json!(b),
-                    Some(unastar_data::blocks::StateValue::Int(i)) => serde_json::json!(i),
-                    Some(unastar_data::blocks::StateValue::Str(s)) => serde_json::json!(s),
-                    None => serde_json::Value::Null,
-                };
-                (property.name.to_owned(), value)
-            })
-            .collect();
-        serde_json::json!({ "name": entry.data.identifier, "states": states })
     }
 
     /// Every item BDS gives lands as the item and block state BDS's did.
@@ -606,7 +578,6 @@ mod sweep {
         let mut h = Harness::new();
         let world = h.world();
         let items = world.resource::<ItemRegistryResource>().0.clone();
-        let blocks = BlockRegistry::vanilla();
         let schema = crate::command::schema::CommandSchema::vanilla();
         let sweep = sweep();
         let given: serde_json::Map<String, serde_json::Value> = sweep
@@ -616,7 +587,6 @@ mod sweep {
                 let item = items.get_by_network_id(given.id).expect("an item BDS gave");
                 let value = serde_json::json!({
                     "item": item.identifier(),
-                    "block": block_json(blocks, given.block),
                 });
                 (name.clone(), value)
             })
@@ -634,10 +604,11 @@ mod sweep {
             .collect();
         let table = serde_json::json!({
             "source_sha256": source_sha256,
-            "//": "BDS 1.26.51 /give @s <item> for every item of the native registry: the item and block \
-                   state of hotbar slot 0 (from crates/unastar/src/command/exec/testdata/bds-give.json by \
-                   the ignored test writes_the_give_table in crates/unastar/src/command/exec/give.rs); \
-                   not_found: in the command's item list, answered commands.give.item.notFound.",
+            "//": "BDS 1.26.51 /give @s <item> for every item of the native registry: the item in \
+                   hotbar slot 0 (from crates/unastar/src/command/exec/testdata/bds-give.json by the \
+                   ignored test writes_the_give_table in crates/unastar/src/command/exec/give.rs); \
+                   not_found: in the command's item list, answered commands.give.item.notFound. The \
+                   block state a stack carries is unastar_data::item_blocks.",
             "given": given,
             "not_found": not_found,
         });

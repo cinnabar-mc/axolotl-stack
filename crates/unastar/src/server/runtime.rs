@@ -91,7 +91,9 @@ impl UnastarServer {
         // than being replaced.
         let new_world = crate::world::level_data::new_world(&config.server_config());
         let level = crate::world::level_data::open(
-            crate::storage::level::LevelFiles::new(std::path::PathBuf::from("worlds").join("default")),
+            crate::storage::level::LevelFiles::new(
+                std::path::PathBuf::from("worlds").join("default"),
+            ),
             level_records,
             &new_world,
         )
