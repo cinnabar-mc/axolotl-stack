@@ -117,6 +117,10 @@ fn check(session: &str, packets: &[McpePacket], refused: bool) {
         [packet] => {
             let violation = answer(packet).unwrap_or_else(|| panic!("{session}: last packet read"));
             assert_eq!(violations.len(), 1, "{session}");
+            // The captures are stored without BDS's reader-failure line.
+            assert!(!crate::network::violation::has_reader_failure(
+                &violation.violation_context
+            ));
             assert_eq!(encode(&violation), payload(&violations[0]), "{session}");
         }
         _ => assert!(violations.is_empty(), "{session}: BDS refused a packet"),

@@ -22,7 +22,9 @@ counted and which other packets have limits were measured with `protocol_probe.p
 - There are two kinds of limit. A size limit (`CommandRequest` only, 550 bytes counting the
   packet header and payload, the value of the batch length prefix) is checked before the packet
   is read and its message has no reader suffix. Field limits are checked while reading and end in
-  `readNoHeader failed! packetId: N`. The second kind fires whatever the game state is: a
+  BDS's reader-failure line (`<reader> failed! packetId: N`), which unastar leaves out and the
+  committed captures store redacted (`network::violation`, the "Network / packet violations"
+  quirk). The second kind fires whatever the game state is: a
   `BookEdit` with no book open is refused the same way.
 - Field limits count characters (code points), not bytes: two- and four-byte characters were
   tried for books, chat and request ids. The size limit counts bytes.

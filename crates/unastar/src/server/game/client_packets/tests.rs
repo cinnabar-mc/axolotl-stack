@@ -284,6 +284,10 @@ fn unknown_screen_close_reasons_end_the_connection_like_bds() {
         warning.violation_severity,
         EnumsPacketViolationSeverity::Terminatingconnection
     );
+    // The captures are stored without BDS's reader-failure line.
+    assert!(!crate::network::violation::has_reader_failure(
+        &warning.violation_context
+    ));
     assert_eq!(encode(&warning), payload(violation));
     assert!(other.try_recv().is_err());
 

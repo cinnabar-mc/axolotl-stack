@@ -13,7 +13,8 @@
 //!   of up to 131 KB were read).
 //! - Strings over a per-field character limit (Unicode scalar values: two-
 //!   and four-byte characters count once) are refused while the packet is
-//!   read, with the reader's message and "readNoHeader failed!": the command
+//!   read, with the reader's message (BDS's reader-failure line is left out,
+//!   [`super::violation`]): the command
 //!   request id ([`COMMAND_REQUEST_ID_MAX_CHARS`], with a message that names
 //!   the command), the `Text` message ([`TEXT_MESSAGE_MAX_CHARS`]) and a
 //!   `BookEdit` page, title and author ([`BOOK_TEXT_MAX_CHARS`]), whatever
@@ -50,15 +51,6 @@ pub fn admit(
     Ok(field_violation(&packet).map_or(Ok(packet), Err))
 }
 
-fn violation(packet: McpePacketName, context: String) -> PacketViolationWarningPacket {
-    PacketViolationWarningPacket {
-        violation_type: EnumsPacketViolationType::Packetmalformed,
-        violation_severity: EnumsPacketViolationSeverity::Terminatingconnection,
-        violation_packet_id: packet as i32,
-        violation_context: context.into(),
-    }
-}
-
 /// The violation for a packet BDS refuses to read at all because of its
 /// size, from its id and its size as [`RawPacket::payload_len`]
 /// gives it.
@@ -67,17 +59,8 @@ pub fn oversized(
     size: usize,
 ) -> Option<PacketViolationWarningPacket> {
     let packet = packet?;
-    (packet == McpePacketName::CommandRequestPacket && size > COMMAND_REQUEST_MAX_BYTES).then(
-        || {
-            violation(
-                packet,
-                format!(
-                    "Server-bound packet too large! Type={} Size={size}",
-                    packet as u32
-                ),
-            )
-        },
-    )
+    (packet == McpePacketName::CommandRequestPacket && size > COMMAND_REQUEST_MAX_BYTES)
+        .then(|| super::violation::packet_too_large(packet as i32, size))
 }
 
 /// The violation for a read packet holding a string over its field's limit.
@@ -110,9 +93,11 @@ pub fn field_violation(packet: &BorrowedMcpePacket) -> Option<PacketViolationWar
         _ => None,
     }?;
     let id = packet.data.packet_id();
-    Some(violation(
-        id,
-        format!("{message}\nreadNoHeader failed! packetId: {}", id as u32),
+    Some(super::violation::packet_violation(
+        EnumsPacketViolationType::Packetmalformed,
+        EnumsPacketViolationSeverity::Terminatingconnection,
+        id as i32,
+        Some(&message),
     ))
 }
 

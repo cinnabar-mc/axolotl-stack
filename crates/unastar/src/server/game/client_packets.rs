@@ -91,24 +91,23 @@ pub fn answer_blob_status(world: &World, player: Entity, _status: &ClientCacheBl
     }
 }
 
-/// The violation BDS sends for an unknown close reason.
+/// The violation BDS sends for an unknown close reason (without BDS's
+/// reader-failure suffix, [`crate::network::violation`]).
 pub fn ddui_close_violation(reason: &str) -> PacketViolationWarningPacket {
-    PacketViolationWarningPacket {
-        violation_type: EnumsPacketViolationType::Packetmalformed,
-        violation_severity: EnumsPacketViolationSeverity::Terminatingconnection,
-        violation_packet_id: McpePacketName::ServerboundDataDrivenScreenClosedPacket as i32,
-        violation_context: format!(
-            "This value is bound to 'DataDrivenScreenClosedReason' and expects one of the \
-             following strings: '{}', '{}', '{}', ... ({} others). Found: '{reason}'\n\
-             readNoHeader failed! packetId: {}",
-            DDUI_CLOSE_REASONS[0],
-            DDUI_CLOSE_REASONS[1],
-            DDUI_CLOSE_REASONS[2],
-            DDUI_CLOSE_REASONS.len() - 3,
-            McpePacketName::ServerboundDataDrivenScreenClosedPacket as u32,
-        )
-        .into(),
-    }
+    let detail = format!(
+        "This value is bound to 'DataDrivenScreenClosedReason' and expects one of the following \
+         strings: '{}', '{}', '{}', ... ({} others). Found: '{reason}'",
+        DDUI_CLOSE_REASONS[0],
+        DDUI_CLOSE_REASONS[1],
+        DDUI_CLOSE_REASONS[2],
+        DDUI_CLOSE_REASONS.len() - 3,
+    );
+    crate::network::violation::packet_violation(
+        EnumsPacketViolationType::Packetmalformed,
+        EnumsPacketViolationSeverity::Terminatingconnection,
+        McpePacketName::ServerboundDataDrivenScreenClosedPacket as i32,
+        Some(&detail),
+    )
 }
 
 /// A closed data-driven screen: nothing to do for a known reason (unastar
