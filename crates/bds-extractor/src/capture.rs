@@ -10,9 +10,14 @@
 //! 2. **summon** (`--summon`, needs operator permission): `/summon` of every
 //!    summonable identifier from `AvailableActorIdentifiers`, one at a time,
 //!    keeping the first matching `AddActor` (or `AddPainting`);
-//! 3. **commands** (`--commands FILE`): each scripted command or client
-//!    action ([`crate::actions`]), one at a time, with a fixed wait after it
-//!    so every server packet is attributable to the step that preceded it.
+//! 3. **commands** (`--commands FILE`): each scripted [`Step`], one at a
+//!    time, with a fixed wait after it so every server packet is attributable
+//!    to the step that preceded it. Besides the player's commands a script
+//!    can send client actions ([`crate::actions`]), type server-console
+//!    commands (`!console …`, forwarded by the harness that owns BDS's stdin,
+//!    `tools/bds-sweep/capture.py`) and bring a second player in and out
+//!    (`!join NAME`, `!leave NAME`, recorded to `clients/NAME.jsonl` on the
+//!    session's clock).
 //!
 //! Permission levels are compared across sessions (one member join, one
 //! operator join): BDS 1.26.51 does not resend `AvailableCommands` when a
@@ -23,11 +28,12 @@
 //! phase, in order), `join/<seq>-<Packet>.{bin,json}` for every non-chunk
 //! server packet of the join phase, `commands/<permission>.{bin,json}` for
 //! each `AvailableCommands`, `summons/<identifier>.{bin,json}`,
-//! `command-outputs.json` (see [`command_outputs`]) and `manifest.json`
+//! `command-outputs.json` (see [`command_outputs`] and [`step_outputs`]),
+//! `steps.json` (where each scripted step starts) and `manifest.json`
 //! (sizes and SHA-256 of every file). `.bin` files hold the packet header
 //! and payload; `.json` is [`crate::debug_json`].
 
-use crate::actions::{self, Actors, Step};
+use crate::actions::{self, Actors};
 use crate::debug_json;
 use crate::input::InputStream;
 use anyhow::{Context, Result, bail, ensure};
@@ -91,7 +97,7 @@ pub struct Options {
     pub summon: bool,
     /// How long to wait for each summoned actor to appear.
     pub summon_wait: Duration,
-    /// Commands and client actions to run after the summon phase.
+    /// Script steps to run after the summon phase.
     pub commands: Vec<Step>,
     /// ClientData JSON fields that replace jolyne's defaults in the login
     /// (a custom skin, for example).
@@ -134,16 +140,6 @@ pub struct Summon {
     pub feedback: Vec<String>,
 }
 
-/// A client action sent during the commands phase: the recorder's
-/// `next_seq` before it was sent and its first packet, resolved to a
-/// recorded `seq` by [`write_outputs`].
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ActionMarker {
-    pub line: String,
-    pub after_seq: u64,
-    pub packet: String,
-}
-
 /// The ClientData of a login: jolyne's defaults with `overrides` replacing
 /// whole fields.
 pub fn client_data(
@@ -160,6 +156,95 @@ pub fn client_data(
         fields.insert(key.clone(), value.clone());
     }
     Ok(serde_json::from_value(data)?)
+}
+
+/// One line of a `--commands` script.
+#[derive(Debug, Clone, PartialEq)]
+pub enum Step {
+    /// A command the capturing player sends, without its leading `/`.
+    Player(String),
+    /// `!console <command>`: typed on the server console by the harness.
+    Console(String),
+    /// `!join <name>`: a second client joins under `name` and stays online.
+    Join(String),
+    /// `!leave <name>`: that client disconnects.
+    Leave(String),
+    /// Any other `!` line: a client action ([`actions::parse_line`]).
+    Action(actions::Action),
+}
+
+/// Printed to stdout before every step: `@@step@@ <index>`.
+pub const STEP_MARKER: &str = "@@step@@";
+/// Printed to stdout for a console step: `@@console@@ <command>`.
+pub const CONSOLE_MARKER: &str = "@@console@@";
+
+impl Step {
+    /// Parses one non-comment script line.
+    pub fn parse(line: &str) -> Result<Self> {
+        let line = line.trim();
+        let Some(directive) = line.strip_prefix('!') else {
+            return Ok(Self::Player(
+                line.strip_prefix('/').unwrap_or(line).to_owned(),
+            ));
+        };
+        let (name, rest) = directive.split_once(' ').unwrap_or((directive, ""));
+        let rest = rest.trim();
+        ensure!(
+            !matches!(name, "console" | "join" | "leave") || !rest.is_empty(),
+            "script directive `{line}` needs an argument"
+        );
+        Ok(match name {
+            "console" => Self::Console(rest.to_owned()),
+            "join" => Self::Join(rest.to_owned()),
+            "leave" => Self::Leave(rest.to_owned()),
+            _ => Self::Action(actions::parse_line(line)?),
+        })
+    }
+
+    /// The step as its script line (`/time set 1000`, `!console list`).
+    pub fn line(&self) -> String {
+        match self {
+            Self::Player(command) => format!("/{command}"),
+            Self::Console(command) => format!("!console {command}"),
+            Self::Join(name) => format!("!join {name}"),
+            Self::Leave(name) => format!("!leave {name}"),
+            Self::Action(action) => action.line.clone(),
+        }
+    }
+
+    fn kind(&self) -> &'static str {
+        match self {
+            Self::Player(_) => "player",
+            Self::Console(_) => "console",
+            Self::Join(_) => "join",
+            Self::Leave(_) => "leave",
+            Self::Action(_) => "action",
+        }
+    }
+}
+
+/// Where one scripted step starts in the main recording.
+#[derive(Debug, Clone, Serialize, serde::Deserialize, PartialEq)]
+pub struct StepStart {
+    pub index: usize,
+    pub kind: String,
+    /// The script line ([`Step::line`]).
+    pub line: String,
+    /// `next_seq` of the main recorder when the step began.
+    pub seq: u64,
+    /// Session time when the step began (the clock of every recording).
+    pub t_ms: f64,
+    /// For a client action, the first packet it sent: its step starts at
+    /// that packet's record (an input stream may send packets in between).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub packet: Option<String>,
+}
+
+/// A second client: online until its stop signal, answering latency probes.
+struct OtherClient {
+    stop: tokio::sync::oneshot::Sender<()>,
+    task: tokio::task::JoinHandle<Result<()>>,
+    recorder: Arc<Mutex<Recorder>>,
 }
 
 /// Runs a capture session and writes all outputs into `options.out_dir`.
@@ -210,7 +295,8 @@ pub async fn run(options: &Options) -> Result<()> {
     // commands phase still writes what was recorded up to then.
     let mut phases = Phases::default();
     let mut summons = Vec::new();
-    let mut markers = Vec::new();
+    let mut steps: Vec<StepStart> = Vec::new();
+    let mut others = BTreeMap::<String, OtherClient>::new();
     let session = async {
         let mut session = Session {
             play: &mut play,
@@ -298,31 +384,81 @@ pub async fn run(options: &Options) -> Result<()> {
 
         if !options.commands.is_empty() {
             info!("Running {} scripted steps", options.commands.len());
-            for step in &options.commands {
-                info!("{}", step.label());
+            let started = recorder
+                .lock()
+                .map_err(|_| anyhow::anyhow!("capture lock poisoned"))?
+                .started();
+            for (index, step) in options.commands.iter().enumerate() {
+                steps.push(StepStart {
+                    index,
+                    kind: step.kind().to_owned(),
+                    line: step.line(),
+                    seq: session.next_seq()?,
+                    t_ms: started.elapsed().as_millis() as f64,
+                    packet: None,
+                });
+                // The harness splits BDS's console output by these markers.
+                println!("{STEP_MARKER} {index}");
+                info!("{}", step.line());
+                let mut wait = options.command_wait;
                 match step {
-                    Step::Command(command) => {
-                        session.command(command).await?;
-                        session.pump_for(options.command_wait).await?;
-                    }
+                    Step::Player(command) => session.command(command).await?,
                     Step::Action(action) => {
                         if let actions::ActionKind::Wait(ms) = action.kind {
-                            session.pump_for(Duration::from_millis(ms)).await?;
-                            continue;
+                            wait = Duration::from_millis(ms);
+                        } else {
+                            let packets = action.kind.packets(&session.actors)?;
+                            let names = actions::sent_names(&packets);
+                            if let Some(step) = steps.last_mut() {
+                                step.packet = names.first().map(|name| format!("{name:?}"));
+                            }
+                            for packet in packets {
+                                session.play.send_packet(packet).await?;
+                            }
                         }
-                        let packets = action.kind.packets(&session.actors)?;
-                        let after_seq = session.next_seq()?;
-                        let names = actions::sent_names(&packets);
-                        for packet in packets {
-                            session.play.send_packet(packet).await?;
-                        }
-                        markers.push(ActionMarker {
-                            line: action.line.clone(),
-                            after_seq,
-                            packet: format!("{:?}", names[0]),
-                        });
-                        session.pump_for(options.command_wait).await?;
                     }
+                    Step::Console(command) => println!("{CONSOLE_MARKER} {command}"),
+                    Step::Join(name) => {
+                        ensure!(
+                            !others.contains_key(name) && name != &options.name,
+                            "{name} is already online"
+                        );
+                        let mut joining = tokio::spawn(join_other(
+                            options.addr,
+                            name.clone(),
+                            options.timeout,
+                            options
+                                .out_dir
+                                .join("clients")
+                                .join(format!("{name}.jsonl")),
+                            started,
+                        ));
+                        // Keep the main session read while the other one logs in.
+                        let client = loop {
+                            tokio::select! {
+                                joined = &mut joining => break joined??,
+                                packet = session.recv() => { packet?; }
+                            }
+                        };
+                        others.insert(name.clone(), client);
+                        wait += JOIN_SETTLE;
+                    }
+                    Step::Leave(name) => {
+                        let client = others
+                            .remove(name)
+                            .with_context(|| format!("!leave {name}: not online"))?;
+                        leave_other(name, client).await?;
+                    }
+                }
+                match session.pump_for(wait).await {
+                    Ok(()) => {}
+                    // A script may end by kicking its own player: the
+                    // recording up to the disconnect is complete.
+                    Err(error) if error.downcast_ref::<ServerDisconnected>().is_some() => {
+                        warn!("{error}; script stops after {}", step.line());
+                        break;
+                    }
+                    Err(error) => return Err(error),
                 }
             }
             phases.commands_end = Some(session.next_seq()?);
@@ -357,6 +493,9 @@ pub async fn run(options: &Options) -> Result<()> {
                 .next_seq(),
         );
     }
+    for (name, client) in std::mem::take(&mut others) {
+        leave_other(&name, client).await?;
+    }
     if let Err(error) = disconnect
         .context("disconnect timed out")
         .and_then(|r| r.context("disconnect"))
@@ -364,8 +503,17 @@ pub async fn run(options: &Options) -> Result<()> {
         warn!("{error:#}");
     }
 
+    if !steps.is_empty() {
+        let mut text = serde_json::to_vec_pretty(&steps)?;
+        text.push(b'\n');
+        std::fs::write(options.out_dir.join("steps.json"), text)?;
+    }
     let records = read_records(&packets_path)?;
-    let manifest = write_outputs(&options.out_dir, &records, phases, &summons, &markers)?;
+    let manifest = write_outputs(&options.out_dir, &records, phases, &summons, &steps)?;
+    for step in steps.iter().filter(|s| s.kind == "join") {
+        let name = step.line.trim_start_matches("!join ").trim();
+        write_client_outputs(&options.out_dir.join("clients"), name, &steps)?;
+    }
     info!(
         "Wrote {} files to {} ({} summons captured)",
         manifest["files"].as_array().map_or(0, Vec::len),
@@ -383,6 +531,147 @@ fn failed<T: jolyne::stream::transport::Transport>(
     failed: jolyne::stream::Failed<T>,
 ) -> anyhow::Error {
     failed.into_parts().0.into()
+}
+
+/// The server closed the session (a `/kick` of the capturing player ends a
+/// command script this way).
+#[derive(Debug)]
+struct ServerDisconnected(String);
+
+impl std::fmt::Display for ServerDisconnected {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "server disconnected: {}", self.0)
+    }
+}
+
+impl std::error::Error for ServerDisconnected {}
+
+/// Derives every output of a capture directory again from its
+/// `packets.jsonl`, for a session that stopped before writing them. The
+/// phases come from the recording: the join ends at the first
+/// `CommandRequest` and the commands at the last record.
+pub fn rewrite(dir: &Path) -> Result<()> {
+    let records = read_records(&dir.join("packets.jsonl"))?;
+    let first_command = records
+        .iter()
+        .find(|r| r.dir == "c2s" && r.name == "CommandRequestPacket")
+        .map(|r| r.seq);
+    let end = records.last().map_or(0, |r| r.seq + 1);
+    let phases = Phases {
+        join_end: first_command.unwrap_or(end),
+        summon_end: None,
+        commands_end: first_command.map(|_| end),
+    };
+    let steps_path = dir.join("steps.json");
+    let steps: Vec<StepStart> = if steps_path.exists() {
+        serde_json::from_slice(&std::fs::read(&steps_path)?)
+            .with_context(|| format!("reading {}", steps_path.display()))?
+    } else {
+        Vec::new()
+    };
+    let phases = match steps.first() {
+        Some(first) => Phases {
+            join_end: first.seq,
+            summon_end: None,
+            commands_end: Some(end),
+        },
+        None => phases,
+    };
+    let manifest = write_outputs(dir, &records, phases, &[], &steps)?;
+    info!(
+        "Rewrote {} files in {}",
+        manifest["files"].as_array().map_or(0, Vec::len),
+        dir.display()
+    );
+    Ok(())
+}
+
+/// Extra time after `!join` for the new player to finish spawning.
+const JOIN_SETTLE: Duration = Duration::from_secs(2);
+
+/// Logs a second client in under `name`, recording its packets to `path` on
+/// the session clock, and keeps it online (answering latency probes) until
+/// [`leave_other`].
+async fn join_other(
+    addr: SocketAddr,
+    name: String,
+    timeout: Duration,
+    path: PathBuf,
+    started: std::time::Instant,
+) -> Result<OtherClient> {
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let config = ClientHandshakeConfig::random(addr, &name);
+    let recorder = Arc::new(Mutex::new(
+        Recorder::create(&path, config.identity_key.clone())?.with_start(started),
+    ));
+    let transport = recording::connect(addr, recorder.clone()).await?;
+    let (mut play, _game) = tokio::time::timeout(timeout, async {
+        let stream = BedrockStream::<Handshake, Client, _>::from_transport(
+            transport,
+            ClientConfig::default(),
+        )
+        .await?;
+        stream.join(config).await
+    })
+    .await
+    .with_context(|| format!("{name}: login timed out"))?
+    .with_context(|| format!("{name}: login"))?;
+    info!("{name} joined");
+    let (stop, mut stopped) = tokio::sync::oneshot::channel::<()>();
+    let task = tokio::spawn(async move {
+        loop {
+            tokio::select! {
+                _ = &mut stopped => break,
+                packet = play.recv_packet_raw() => {
+                    let packet = match packet {
+                        Ok(packet) => packet,
+                        // Kicked or transferred: the recording is complete.
+                        Err(JolyneError::Disconnected(_)) => return Ok(()),
+                        Err(error) => return Err(error.into()),
+                    };
+                    if packet.is(McpePacketName::NetworkStackLatencyPacket)
+                        && let McpePacketData::NetworkStackLatencyPacket(mut latency) =
+                            packet.decode()?.data
+                        && latency.is_from_server
+                    {
+                        latency.is_from_server = false;
+                        play.send_packet(McpePacket::from(latency)).await?;
+                    }
+                }
+            }
+        }
+        tokio::time::timeout(
+            Duration::from_secs(2),
+            play.disconnect(EnumsConnectionDisconnectFailReason::Disconnected, ""),
+        )
+        .await
+        .context("disconnect timed out")??;
+        Ok(())
+    });
+    Ok(OtherClient {
+        stop,
+        task,
+        recorder,
+    })
+}
+
+/// Disconnects a second client (if the server has not already) and flushes
+/// its recording.
+async fn leave_other(name: &str, client: OtherClient) -> Result<()> {
+    let _ = client.stop.send(());
+    match tokio::time::timeout(Duration::from_secs(5), client.task).await {
+        Ok(joined) => joined?.with_context(|| format!("{name}: session"))?,
+        Err(_) => warn!("{name}: did not disconnect in time"),
+    }
+    client
+        .recorder
+        .lock()
+        .map_err(|_| anyhow::anyhow!("capture lock poisoned"))?
+        .flush()?;
+    info!("{name} left");
+    Ok(())
 }
 
 struct Session<'a, T: jolyne::stream::transport::Transport> {
@@ -422,7 +711,7 @@ impl<T: jolyne::stream::transport::Transport> Session<'_, T> {
         let packet = match received {
             Ok(packet) => packet,
             Err(JolyneError::Disconnected(disconnect)) => {
-                bail!("server disconnected: {:?}", disconnect.packet.body())
+                return Err(ServerDisconnected(format!("{:?}", disconnect.packet.body())).into());
             }
             Err(error) => return Err(error.into()),
         };
@@ -708,7 +997,7 @@ pub fn write_outputs(
     records: &[Record],
     phases: Phases,
     summons: &[Summon],
-    markers: &[ActionMarker],
+    steps: &[StepStart],
 ) -> Result<Value> {
     let mut outputs = Outputs {
         dir,
@@ -802,15 +1091,11 @@ pub fn write_outputs(
     let mut commands = Vec::new();
     if let Some(end) = phases.commands_end {
         let start = phases.summon_end.unwrap_or(phases.join_end);
-        let mut actions = BTreeMap::new();
-        for marker in markers {
-            let record = records
-                .iter()
-                .find(|r| r.dir != "s2c" && r.seq >= marker.after_seq && r.name == marker.packet)
-                .with_context(|| format!("action `{}` is not in the recording", marker.line))?;
-            actions.insert(record.seq, marker.line.clone());
-        }
-        commands = command_outputs(records, start..end, player, &actions)?;
+        commands = if steps.is_empty() {
+            command_outputs(records, start..end, player)?
+        } else {
+            step_outputs(records, steps, end, player)?
+        };
         let mut text = serde_json::to_vec_pretty(&commands)?;
         text.push(b'\n');
         outputs.write("command-outputs.json", &text, json!({}))?;
@@ -820,6 +1105,7 @@ pub fn write_outputs(
         .map(|c| {
             json!({
                 "command": c.command,
+                "kind": c.kind,
                 "request_seq": c.request_seq,
                 "packets": c.packets.iter().map(|p| p["packet"].clone()).collect::<Vec<_>>(),
             })
@@ -851,6 +1137,10 @@ pub fn write_outputs(
 #[derive(Debug, Serialize)]
 pub struct CommandOutputs {
     pub command: String,
+    /// The step kind: `player` (a `CommandRequest`), `console`, `join` or
+    /// `leave` ([`Step`]).
+    pub kind: String,
+    /// The `CommandRequest`'s seq; for other steps, where the step began.
     pub request_seq: u64,
     pub t_ms: f64,
     /// `{seq, t_ms, packet, data}`, `data` being [`packet_json`].
@@ -867,20 +1157,11 @@ pub fn command_outputs(
     records: &[Record],
     range: Range<u64>,
     player: Option<u64>,
-    actions: &BTreeMap<u64, String>,
 ) -> Result<Vec<CommandOutputs>> {
     let mut commands: Vec<CommandOutputs> = Vec::new();
     for record in records.iter().filter(|r| range.contains(&r.seq)) {
         if record.dir != "s2c" {
-            if let Some(line) = actions.get(&record.seq) {
-                commands.push(CommandOutputs {
-                    command: line.clone(),
-                    request_seq: record.seq,
-                    t_ms: record.t_ms,
-                    packets: Vec::new(),
-                    excluded: BTreeMap::new(),
-                });
-            } else if record.name == "CommandRequestPacket" {
+            if record.name == "CommandRequestPacket" {
                 let McpePacketData::CommandRequestPacket(request) =
                     decode_record(&hex::decode(&record.hex)?)?
                 else {
@@ -888,6 +1169,7 @@ pub fn command_outputs(
                 };
                 commands.push(CommandOutputs {
                     command: request.command.to_string(),
+                    kind: "player".into(),
                     request_seq: record.seq,
                     t_ms: record.t_ms,
                     packets: Vec::new(),
@@ -899,24 +1181,131 @@ pub fn command_outputs(
         let Some(current) = commands.last_mut() else {
             continue;
         };
-        let data = if COMMAND_NOISE.contains(&record.name.as_str()) {
-            None
-        } else {
-            let data = decode_record(&hex::decode(&record.hex)?)
-                .with_context(|| format!("packet seq {} ({})", record.seq, record.name))?;
-            (!moves_other_actor(&data, player)).then_some(data)
-        };
-        match data {
-            Some(data) => current.packets.push(json!({
-                "seq": record.seq,
-                "t_ms": record.t_ms,
-                "packet": record.name,
-                "data": packet_json(&data)?,
-            })),
-            None => *current.excluded.entry(record.name.clone()).or_default() += 1,
-        }
+        attribute(current, record, player)?;
     }
     Ok(commands)
+}
+
+/// Groups the server packets of the commands phase by script step: each
+/// step owns the packets from its start to the next step's (the last one to
+/// `end`). Player steps are named by their `CommandRequest`, other steps by
+/// their script line.
+pub fn step_outputs(
+    records: &[Record],
+    steps: &[StepStart],
+    end: u64,
+    player: Option<u64>,
+) -> Result<Vec<CommandOutputs>> {
+    let mut outputs = Vec::with_capacity(steps.len());
+    for (index, step) in steps.iter().enumerate() {
+        let until = steps.get(index + 1).map_or(end, |next| next.seq);
+        let mut output = CommandOutputs {
+            command: step.line.clone(),
+            kind: step.kind.clone(),
+            request_seq: step.seq,
+            t_ms: step.t_ms,
+            packets: Vec::new(),
+            excluded: BTreeMap::new(),
+        };
+        let mut action_sent = false;
+        for record in records
+            .iter()
+            .filter(|r| (step.seq..until).contains(&r.seq))
+        {
+            if record.dir != "s2c" {
+                if step.kind == "player" && record.name == "CommandRequestPacket" {
+                    let McpePacketData::CommandRequestPacket(request) =
+                        decode_record(&hex::decode(&record.hex)?)?
+                    else {
+                        bail!("packet seq {} is not a CommandRequest", record.seq);
+                    };
+                    output.command = request.command.to_string();
+                    output.request_seq = record.seq;
+                    output.t_ms = record.t_ms;
+                }
+                // A client action starts at the first packet it sent.
+                if !action_sent && step.packet.as_deref() == Some(record.name.as_str()) {
+                    action_sent = true;
+                    output.request_seq = record.seq;
+                    output.t_ms = record.t_ms;
+                }
+                continue;
+            }
+            attribute(&mut output, record, player)?;
+        }
+        outputs.push(output);
+    }
+    Ok(outputs)
+}
+
+/// Writes `clients/NAME-outputs.json` for a second client's recording
+/// (`clients/NAME.jsonl`): its server packets grouped by the script step
+/// running when they arrived (the recordings share the session clock), as
+/// `[{step, packets}]` for the steps it received anything in.
+pub fn write_client_outputs(dir: &Path, name: &str, steps: &[StepStart]) -> Result<()> {
+    let records = read_records(&dir.join(format!("{name}.jsonl")))?;
+    let ids = records
+        .iter()
+        .filter(|r| r.dir == "s2c" && r.name == "StartGamePacket")
+        .find_map(|r| match decode_record(&hex::decode(&r.hex).ok()?).ok()? {
+            McpePacketData::StartGamePacket(start) => Some((
+                start.runtime_id.actor_runtime_id,
+                start.entity_id.actor_unique_id,
+            )),
+            _ => None,
+        });
+    let runtime_id = ids.map(|(runtime, _)| runtime);
+    let mut outputs = Vec::new();
+    for (index, step) in steps.iter().enumerate() {
+        let until = steps.get(index + 1).map_or(f64::INFINITY, |next| next.t_ms);
+        let mut output = CommandOutputs {
+            command: step.line.clone(),
+            kind: step.kind.clone(),
+            request_seq: step.seq,
+            t_ms: step.t_ms,
+            packets: Vec::new(),
+            excluded: BTreeMap::new(),
+        };
+        for record in records
+            .iter()
+            .filter(|r| r.dir == "s2c" && r.t_ms >= step.t_ms && r.t_ms < until)
+        {
+            attribute(&mut output, record, runtime_id)?;
+        }
+        if !output.packets.is_empty() {
+            outputs.push(json!({"step": index, "packets": output.packets}));
+        }
+    }
+    let mut text = serde_json::to_vec_pretty(&json!({
+        "name": name,
+        "runtime_id": runtime_id,
+        "unique_id": ids.map(|(_, unique)| unique),
+        "steps": outputs,
+    }))?;
+    text.push(b'\n');
+    std::fs::write(dir.join(format!("{name}-outputs.json")), text)?;
+    Ok(())
+}
+
+/// Adds one server record to a step's packets, or counts it as excluded.
+fn attribute(output: &mut CommandOutputs, record: &Record, player: Option<u64>) -> Result<()> {
+    let data = if COMMAND_NOISE.contains(&record.name.as_str()) {
+        None
+    } else {
+        let data = decode_record(&hex::decode(&record.hex)?)
+            .with_context(|| format!("packet seq {} ({})", record.seq, record.name))?;
+        (!moves_other_actor(&data, player)).then_some(data)
+    };
+    match data {
+        Some(data) => output.packets.push(json!({
+            "seq": record.seq,
+            "t_ms": record.t_ms,
+            "packet": record.name,
+            "data": packet_json(&data)?,
+        })),
+        None => *output.excluded.entry(record.name.clone()).or_default() += 1,
+    }
+    Ok(())
 }
 
 /// Movement of an actor other than the player (mob wandering, not command
@@ -1058,22 +1447,9 @@ mod tests {
             record(7, "s2c", CommandOutputPacket::default()),
             record(8, "c2s", request("/after")),
         ];
-        let outputs = command_outputs(&records, 1..8, Some(1), &BTreeMap::new()).unwrap();
+        let outputs = command_outputs(&records, 1..8, Some(1)).unwrap();
         let commands: Vec<&str> = outputs.iter().map(|c| c.command.as_str()).collect();
         assert_eq!(commands, ["/list", "/time query daytime"]);
-        // An action splits the packets of the command before it.
-        let mut with_action = records.clone();
-        with_action[2] = record(
-            2,
-            "c2s",
-            jolyne::valentine::ResourcePacksReadyForValidationPacket {},
-        );
-        let actions = BTreeMap::from([(2, "!packs-ready".to_owned())]);
-        let split = command_outputs(&with_action, 1..8, Some(1), &actions).unwrap();
-        let commands: Vec<&str> = split.iter().map(|c| c.command.as_str()).collect();
-        assert_eq!(commands, ["/list", "!packs-ready", "/time query daytime"]);
-        assert_eq!(split[1].request_seq, 2);
-        assert_eq!(split[1].packets.len(), 1, "the player's movement");
         let packets: Vec<&Value> = outputs[0].packets.iter().map(|p| &p["packet"]).collect();
         assert_eq!(packets, ["CommandOutputPacket", "MoveActorDeltaPacket"]);
         assert_eq!(
@@ -1088,6 +1464,111 @@ mod tests {
             ])
         );
         assert_eq!(outputs[1].packets.len(), 1);
+    }
+
+    #[test]
+    fn script_lines_parse_into_steps() {
+        assert_eq!(
+            Step::parse("/time set 1000").unwrap(),
+            Step::Player("time set 1000".into())
+        );
+        assert_eq!(Step::parse("list").unwrap(), Step::Player("list".into()));
+        assert_eq!(
+            Step::parse("!console allowlist list").unwrap(),
+            Step::Console("allowlist list".into())
+        );
+        assert_eq!(
+            Step::parse("!join Alice").unwrap(),
+            Step::Join("Alice".into())
+        );
+        assert_eq!(
+            Step::parse("!leave Alice").unwrap(),
+            Step::Leave("Alice".into())
+        );
+        assert!(Step::parse("!join").is_err());
+        assert!(Step::parse("!nosuch x").is_err());
+        assert_eq!(Step::Console("list".into()).line(), "!console list");
+        assert_eq!(Step::Player("list".into()).line(), "/list");
+    }
+
+    #[test]
+    fn step_outputs_attribute_packets_to_every_kind_of_step() {
+        let request = |command: &str| CommandRequestPacket {
+            command: command.into(),
+            ..Default::default()
+        };
+        let records = vec![
+            record(0, "c2s", request("/list")),
+            record(1, "s2c", CommandOutputPacket::default()),
+            // A console step sends nothing; the server's answer is its own.
+            record(2, "s2c", GameRulesChangedPacket::default()),
+            record(3, "c2s", request("/time query daytime")),
+            record(4, "s2c", CommandOutputPacket::default()),
+        ];
+        let step = |index: usize, kind: &str, line: &str, seq: u64| StepStart {
+            index,
+            kind: kind.into(),
+            line: line.into(),
+            seq,
+            t_ms: seq as f64,
+            packet: None,
+        };
+        let steps = [
+            step(0, "player", "/list", 0),
+            step(1, "console", "!console difficulty hard", 2),
+            step(2, "player", "/time query daytime", 3),
+        ];
+        let outputs = step_outputs(&records, &steps, 5, Some(1)).unwrap();
+        let commands: Vec<(&str, &str, u64)> = outputs
+            .iter()
+            .map(|o| (o.command.as_str(), o.kind.as_str(), o.request_seq))
+            .collect();
+        assert_eq!(
+            commands,
+            [
+                ("/list", "player", 0),
+                ("!console difficulty hard", "console", 2),
+                ("/time query daytime", "player", 3),
+            ]
+        );
+        let names: Vec<usize> = outputs.iter().map(|o| o.packets.len()).collect();
+        assert_eq!(names, [1, 1, 1]);
+        assert_eq!(outputs[1].packets[0]["packet"], "GameRulesChangedPacket");
+    }
+
+    #[test]
+    fn script_lines_parse_into_every_kind_of_step() {
+        assert_eq!(Step::parse("/list").unwrap(), Step::Player("list".into()));
+        assert_eq!(
+            Step::parse("!console list").unwrap(),
+            Step::Console("list".into())
+        );
+        assert!(Step::parse("!join").is_err());
+        let Step::Action(action) = Step::parse("!packs-ready").unwrap() else {
+            panic!("not an action");
+        };
+        assert_eq!(action.line, "!packs-ready");
+        assert!(Step::parse("!nope").is_err());
+    }
+
+    #[test]
+    fn an_action_step_starts_at_its_first_packet() {
+        let records = vec![
+            record(0, "c2s", jolyne::valentine::PlayerAuthInputPacket::default()),
+            record(1, "c2s", jolyne::valentine::ResourcePacksReadyForValidationPacket {}),
+            record(2, "s2c", CommandOutputPacket::default()),
+        ];
+        let steps = [StepStart {
+            index: 0,
+            kind: "action".into(),
+            line: "!packs-ready".into(),
+            seq: 0,
+            t_ms: 0.0,
+            packet: Some("ResourcePacksReadyForValidationPacket".into()),
+        }];
+        let outputs = step_outputs(&records, &steps, 3, Some(1)).unwrap();
+        assert_eq!(outputs[0].request_seq, 1);
+        assert_eq!(outputs[0].packets.len(), 1);
     }
 
     #[test]

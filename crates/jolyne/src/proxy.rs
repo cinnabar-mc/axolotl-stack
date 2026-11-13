@@ -155,6 +155,7 @@ where
                 available_entities: None,
                 creative_content: None,
                 chunk_radius: upstream.chunk_radius(),
+                max_chunk_radius: None,
             }),
         )
         .await

@@ -3,6 +3,7 @@
 pub mod events;
 pub mod inbound;
 pub mod packet_limits;
+pub mod violation;
 
 use jolyne::stream::{Play, Server as ServerRole};
 use jolyne::valentine::{EnumsPacketViolationSeverity, McpePacket, McpePacketArgs, McpePacketData};

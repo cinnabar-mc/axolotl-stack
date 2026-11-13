@@ -15,18 +15,12 @@ pub mod on_block;
 pub mod ranged;
 
 use bevy_ecs::prelude::*;
-use jolyne::valentine::types::{
-    ActorRuntimeId, DataItemEntry, DataItemEntryPayload, DataItemInt64Payload, EnumsDataItemType,
-    PropertySyncData, SynchedActorDataCopyableDataList,
-};
-use jolyne::valentine::{
-    CompletedUsingItemPacket, McpePacket, SetActorDataPacket, actor_data_i_ds, actor_flags,
-};
+use jolyne::valentine::types::ActorRuntimeId;
+use jolyne::valentine::{CompletedUsingItemPacket, McpePacket};
 
 use crate::ecs::events::{EventBuffer, ServerEvent};
 use crate::entity::components::{
-    GameMode, Health, HeldSlot, MainInventory, PlayerSession, PlayerState, Position,
-    RuntimeEntityId,
+    GameMode, Health, HeldSlot, MainInventory, PlayerSession, Position, RuntimeEntityId,
 };
 use crate::item::ItemStack;
 use crate::server::broadcast::EntityGrid;
@@ -40,6 +34,11 @@ pub enum UseRequest {
     Release,
     /// `ItemRelease` action `Use` (consume).
     Consume,
+    /// `ItemUse` action `UseAsAttack`: the held item attacks by itself and
+    /// hits nothing (a spear's jab).
+    AttackAir,
+    /// The `MissedSwing` input flag: an arm swing that hit nothing.
+    MissedSwing,
 }
 
 /// Air-use packets waiting for [`apply_item_use`].
@@ -66,6 +65,13 @@ pub enum UseKind {
     Throw,
     /// Open a book and quill for `BookEdit` ([`super::books::open`]).
     OpenBook,
+    /// Held while the button is down (`minecraft:use_modifiers` on an item
+    /// that is not eaten: the spears; the spyglass). BDS 1.26.51 sets the
+    /// using flag at the use and clears it at the release (spear and
+    /// item-use captures).
+    Hold,
+    /// The goat horn: [`play_horn`].
+    Instrument,
 }
 
 /// How an item is used in the air, from its data.
@@ -80,7 +86,21 @@ pub fn use_kind(stack: &ItemStack, books: &super::books::BookItems) -> Option<Us
     if let Some(drawn) = ranged::drawn(entry.identifier()) {
         return Some(UseKind::Draw(drawn));
     }
-    ranged::thrown(entry.identifier()).map(|_| UseKind::Throw)
+    if ranged::thrown(entry.identifier()).is_some() {
+        return Some(UseKind::Throw);
+    }
+    // The native use animation: 10 looks through a spyglass, 11 plays an
+    // instrument.
+    match entry.data().use_animation {
+        10 => return Some(UseKind::Hold),
+        11 => return Some(UseKind::Instrument),
+        _ => {}
+    }
+    entry
+        .components()
+        .use_modifiers
+        .is_some()
+        .then_some(UseKind::Hold)
 }
 
 /// The selected hotbar slot and its stack.
@@ -175,55 +195,15 @@ fn can_use(world: &World, player: Entity) -> bool {
         && world.get::<Health>(player).is_some_and(|h| !h.is_dead())
 }
 
-/// The flag word BDS sends for a player using an item: CANCLIMB,
-/// BREATHING, HAS_COLLISION and HAS_GRAVITY plus the movement state and
-/// USINGITEM (capture `item-use-20261029`).
-fn player_flags(world: &World, player: Entity, using: bool) -> i64 {
-    let mut flags = (1u64 << actor_flags::CANCLIMB)
-        | (1u64 << actor_flags::BREATHING)
-        | (1u64 << actor_flags::HAS_COLLISION)
-        | (1u64 << actor_flags::HAS_GRAVITY);
-    if let Some(state) = world.get::<PlayerState>(player) {
-        for (on, flag) in [
-            (state.sneaking, actor_flags::SNEAKING),
-            (state.sprinting, actor_flags::SPRINTING),
-            (state.swimming, actor_flags::SWIMMING),
-            (state.gliding, actor_flags::GLIDING),
-        ] {
-            if on {
-                flags |= 1u64 << flag;
-            }
-        }
-    }
-    if using {
-        flags |= 1u64 << actor_flags::USINGITEM;
-    }
-    flags as i64
-}
-
 /// Tell the player and the players near it that it started or stopped
-/// using an item (BDS sends the flag word to the user too).
-fn broadcast_using(world: &World, player: Entity, using: bool) {
-    let Some(runtime_id) = world.get::<RuntimeEntityId>(player).map(|r| r.0) else {
-        return;
-    };
-    let packet = McpePacket::from(SetActorDataPacket {
-        target_runtime_id: ActorRuntimeId {
-            actor_runtime_id: runtime_id as u64,
-        },
-        actor_data: SynchedActorDataCopyableDataList {
-            data: vec![DataItemEntry {
-                id: actor_data_i_ds::RESERVED_0,
-                payload: DataItemEntryPayload::DataItemInt64Payload(DataItemInt64Payload {
-                    type_: EnumsDataItemType::Int64,
-                    value: player_flags(world, player, using),
-                }),
-            }],
-        },
-        synched_properties: PropertySyncData::default(),
-        tick: crate::entity::components::input_tick_of(world, player),
-    });
-    send_to(world, &nearby_players(world, player), &packet);
+/// using an item: the flag word with `USINGITEM` (BDS sends it to the user
+/// too; capture `item-use-20261029`), through the player's actor data.
+fn broadcast_using(world: &mut World, player: Entity) {
+    crate::entity::player_life::actor_data::send_changes(
+        world,
+        player,
+        crate::entity::player_life::actor_data::Keys::All,
+    );
 }
 
 /// Start using the held item.
@@ -232,13 +212,13 @@ pub fn start_using(world: &mut World, player: Entity, slot: u8, item: u32) {
     world
         .entity_mut(player)
         .insert(ItemUsing { slot, item, since });
-    broadcast_using(world, player, true);
+    broadcast_using(world, player);
 }
 
 /// Stop using whatever the player uses.
 pub fn stop_using(world: &mut World, player: Entity) {
     if world.entity_mut(player).take::<ItemUsing>().is_some() {
-        broadcast_using(world, player, false);
+        broadcast_using(world, player);
     }
 }
 
@@ -248,12 +228,14 @@ pub fn used_ticks(world: &World, using: &ItemUsing) -> u64 {
 }
 
 /// `CompletedUsingItem` methods BDS sends (capture `item-use-20261029`):
-/// 1 for food and -1 for the milk bucket and crossbow charging.
+/// 1 for food, 3 for potions and ominous bottles, and -1 for the milk
+/// bucket and crossbow charging.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(i32)]
 pub enum UseMethod {
     None = -1,
     Eat = 1,
+    Drink = 3,
 }
 
 /// Tell the player's client the item use finished.
@@ -287,7 +269,15 @@ pub fn apply_item_use(world: &mut World) {
 }
 
 fn handle(world: &mut World, player: Entity, request: UseRequest) {
-    let Some((slot, stack)) = held(world, player) else {
+    let held = held(world, player);
+    match request {
+        UseRequest::AttackAir => return attack_air(world, player, held.map(|(_, stack)| stack)),
+        UseRequest::MissedSwing => {
+            return missed_swing(world, player, held.map(|(_, stack)| stack));
+        }
+        _ => {}
+    }
+    let Some((slot, stack)) = held else {
         stop_using(world, player);
         return;
     };
@@ -323,8 +313,105 @@ fn handle(world: &mut World, player: Entity, request: UseRequest) {
         (Some(UseKind::OpenBook), UseRequest::UseAir, _) => {
             super::books::open(world, player, slot, &stack)
         }
+        (Some(UseKind::Hold), UseRequest::UseAir, None) => {
+            if let Some(entry) = stack.item() {
+                start_using(world, player, slot, entry.id);
+            }
+        }
+        (Some(UseKind::Hold), UseRequest::UseAir, Some(_)) => {}
+        (Some(UseKind::Instrument), UseRequest::UseAir, None) => {
+            play_horn(world, player, slot, &stack)
+        }
+        (Some(UseKind::Instrument), UseRequest::UseAir, Some(_)) => {}
         (_, UseRequest::Release | UseRequest::Consume, _) => stop_using(world, player),
         (None, UseRequest::UseAir, _) => {}
+        (_, UseRequest::AttackAir | UseRequest::MissedSwing, _) => {}
+    }
+}
+
+/// The goat horn's cooldown: category `minecraft:goat_horn`, 140 ticks (BDS
+/// 1.26.51 item-use capture).
+fn horn_cooldown() -> crate::item::cooldown::Cooldown {
+    crate::item::cooldown::Cooldown {
+        category: "minecraft:goat_horn".into(),
+        ticks: 140,
+        attack: false,
+    }
+}
+
+/// Play the held goat horn. Measured on BDS 1.26.51 (item-use capture, horns
+/// 0-7): outside its cooldown it starts the cooldown, sets the using flag
+/// (cleared at the release) and plays `horn_call<data>` 0.1 below the eyes;
+/// inside the cooldown nothing happens.
+fn play_horn(world: &mut World, player: Entity, slot: u8, stack: &ItemStack) {
+    let cooldown = horn_cooldown();
+    if crate::item::cooldown::cooling(world, player, &cooldown.category) {
+        return;
+    }
+    let Some(entry) = stack.item() else {
+        return;
+    };
+    crate::item::cooldown::start(world, player, &cooldown);
+    start_using(world, player, slot, entry.id);
+    if let Some(eye) = world.get::<Position>(player).map(|p| p.0) {
+        crate::entity::mob::net::sound::play_level_sound(
+            world,
+            Some(player),
+            eye - glam::DVec3::new(0.0, 0.1, 0.0),
+            &format!("horn_call{}", stack.damage.max(0)),
+            -1,
+        );
+    }
+}
+
+/// Feet + 0.9: where BDS plays a player's swing and shooting sounds.
+pub fn swing_sound_at(world: &World, player: Entity) -> Option<glam::DVec3> {
+    world.get::<Position>(player).map(|p| {
+        p.0 - glam::DVec3::new(0.0, crate::entity::item_drop::PLAYER_EYE_HEIGHT - 0.9, 0.0)
+    })
+}
+
+/// The `swing_sounds` miss sound of an item, if its document has one.
+fn miss_sound(stack: Option<&ItemStack>) -> Option<String> {
+    stack?
+        .item()?
+        .components()
+        .swing_sounds
+        .as_ref()?
+        .attack_miss
+        .clone()
+}
+
+/// A jab that hit nothing (`UseAsAttack`). Measured on BDS 1.26.51 (spear
+/// capture): an item with an attack cooldown starts it and plays its miss
+/// sound, unless the cooldown runs, when nothing happens; any other item
+/// (a sword, the empty hand) does nothing.
+fn attack_air(world: &mut World, player: Entity, stack: Option<ItemStack>) {
+    let Some(cooldown) = stack
+        .as_ref()
+        .and_then(ItemStack::item)
+        .and_then(crate::item::cooldown::cooldown)
+        .filter(|cooldown| cooldown.attack)
+    else {
+        return;
+    };
+    if crate::item::cooldown::cooling(world, player, &cooldown.category) {
+        return;
+    }
+    crate::item::cooldown::start(world, player, &cooldown);
+    if let (Some(sound), Some(at)) = (miss_sound(stack.as_ref()), swing_sound_at(world, player)) {
+        crate::entity::mob::net::sound::play_level_sound(world, Some(player), at, &sound, -1);
+    }
+}
+
+/// A missed swing. Measured on BDS 1.26.51 (spear capture): the `MissedSwing`
+/// input flag, not the `Animate` swing, plays the held item's `swing_sounds`
+/// miss sound, or `attack.nodamage` for an item without one and for the empty
+/// hand, at the player's feet + 0.9; it starts no cooldown.
+fn missed_swing(world: &mut World, player: Entity, stack: Option<ItemStack>) {
+    let sound = miss_sound(stack.as_ref()).unwrap_or_else(|| "attack.nodamage".to_owned());
+    if let Some(at) = swing_sound_at(world, player) {
+        crate::entity::mob::net::sound::play_level_sound(world, Some(player), at, &sound, -1);
     }
 }
 
@@ -441,5 +528,11 @@ fn feed(world: &World, player: Entity, stack: &ItemStack) {
     send_to(world, &viewers, &packet);
 }
 
+#[cfg(test)]
+mod drink_tests;
+#[cfg(test)]
+mod flint_tests;
+#[cfg(test)]
+mod food_tests;
 #[cfg(test)]
 mod tests;

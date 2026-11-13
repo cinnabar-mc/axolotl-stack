@@ -54,7 +54,12 @@ pub fn run(ctx: &mut CommandContext<'_>, args: GameModeArgs) -> CommandResult {
             .get_resource::<ServerConfigResource>()
             .map_or(GameMode::Survival, |config| config.0.default_gamemode),
     };
-    let mode_name = format!("%createWorldScreen.gameMode.{}", mode_key(mode));
+    // Measured: `default` is named as the server default, not the mode it is.
+    let mode_name = if name == GameModeName::Default {
+        "%createWorldScreen.gameMode.serverDefault".to_owned()
+    } else {
+        format!("%createWorldScreen.gameMode.{}", mode_key(mode))
+    };
 
     let players = ctx.players(player.as_ref())?;
     let mut output = CommandOutput::default();
@@ -83,16 +88,21 @@ fn mode_key(mode: GameMode) -> &'static str {
 }
 
 /// Changes a player's game mode: `UpdatePlayerGameType` to every player and
-/// nothing else, as BDS does. BDS's abilities depend on the game mode too
-/// (creative adds flight, spectator a layer), but a mode change does not
+/// no abilities update, as BDS does. BDS's abilities depend on the game mode
+/// too (creative adds flight, spectator a layer), but a mode change does not
 /// resend them: the client follows the game type, and the next abilities
 /// update (`/op`, `/deop`, a join) carries the new mode (2026-11-11
-/// `protocol_probe.py abilities`; docs/quirks/bds.md).
+/// `protocol_probe.py abilities`; docs/quirks/bds.md). A flag word the mode
+/// changes (a spectator has no `HAS_COLLISION`) goes to the player and its
+/// viewers right after, as BDS sends it (`player_life::actor_data`).
 pub fn set_game_mode(world: &mut World, player: Entity, mode: GameMode) {
     if world.get::<Player>(player).is_none() {
         return;
     }
-    world.entity_mut(player).insert(mode);
+    world.entity_mut(player).insert((
+        mode,
+        crate::entity::player_life::actor_data::ExplicitGameMode,
+    ));
     let runtime_id = world.get::<RuntimeEntityId>(player).map_or(0, |id| id.0);
     let game_type = UpdatePlayerGameTypePacket {
         player_game_type: game_type(mode),
@@ -106,6 +116,11 @@ pub fn set_game_mode(world: &mut World, player: Entity, mode: GameMode) {
     for session in sessions.iter(world) {
         let _ = session.send(game_type.clone().into());
     }
+    crate::entity::player_life::actor_data::send_changes(
+        world,
+        player,
+        crate::entity::player_life::actor_data::Keys::All,
+    );
 }
 
 #[cfg(test)]
@@ -164,5 +179,18 @@ mod tests {
         );
         let output = h.run(alice, "/gamemode creative @a[m=spectator]");
         assert_eq!(output, CommandOutput::no_targets());
+    }
+}
+
+/// Replays of the committed BDS 1.26.51 command capture
+/// (`crates/bds-extractor/captures/1.26.51/operator-commands`).
+#[cfg(test)]
+mod bds_capture {
+    use crate::command::exec::evidence::{Replay, assert_same_packets};
+
+    #[test]
+    fn gamemode_matches_the_bds_capture() {
+        let steps = Replay::new().assert_segment("gamemode", &[]);
+        assert_same_packets(&steps, &["TextPacket"], &[]);
     }
 }

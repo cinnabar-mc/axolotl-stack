@@ -56,25 +56,6 @@ use jolyne::valentine::{
     ServerboundDataStorePacket, TextPacket,
 };
 
-/// One line of a command script.
-#[derive(Debug, Clone, PartialEq)]
-pub enum Step {
-    /// A slash command, without its leading `/`.
-    Command(String),
-    /// A `!` line.
-    Action(Action),
-}
-
-impl Step {
-    /// The script line as written (`/command` or `!action ...`).
-    pub fn label(&self) -> String {
-        match self {
-            Step::Command(command) => format!("/{command}"),
-            Step::Action(action) => action.line.clone(),
-        }
-    }
-}
-
 /// A parsed `!` line.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Action {
@@ -263,19 +244,15 @@ impl Actors {
 }
 
 /// Parses one script line: `!` lines are actions, anything else a command.
-pub fn parse_line(line: &str) -> Result<Step> {
-    let Some(rest) = line.strip_prefix('!') else {
-        return Ok(Step::Command(
-            line.strip_prefix('/').unwrap_or(line).to_owned(),
-        ));
-    };
+pub fn parse_line(line: &str) -> Result<Action> {
+    let rest = line.strip_prefix('!').context("an action line starts with `!`")?;
     let words: Vec<&str> = rest.split_whitespace().collect();
     let (&verb, args) = words.split_first().context("empty action")?;
     let kind = parse_action(verb, args).with_context(|| format!("action `{line}`"))?;
-    Ok(Step::Action(Action {
+    Ok(Action {
         line: line.to_owned(),
         kind,
-    }))
+    })
 }
 
 fn arg<'a>(args: &[&'a str], index: usize, what: &str) -> Result<&'a str> {
@@ -696,12 +673,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn lines_parse_into_commands_and_actions() {
-        assert_eq!(parse_line("/list").unwrap(), Step::Command("list".into()));
-        assert_eq!(parse_line("list").unwrap(), Step::Command("list".into()));
-        let Step::Action(action) = parse_line("!interact mouseover peer 1 2.5 3").unwrap() else {
-            panic!("not an action");
-        };
+    fn action_lines_parse_into_packets() {
+        assert!(parse_line("/list").is_err());
+        let action = parse_line("!interact mouseover peer 1 2.5 3").unwrap();
         let actors = Actors {
             me: (1, 1),
             peer: Some((7, 7)),
@@ -741,14 +715,10 @@ mod tests {
             "!chat hello there",
             "!command-request probe-id say hi",
         ] {
-            let Step::Action(action) = parse_line(line).unwrap() else {
-                panic!("{line} is not an action");
-            };
+            let action = parse_line(line).unwrap_or_else(|e| panic!("{line}: {e:#}"));
             action.kind.packets(&actors).unwrap();
         }
-        let Step::Action(action) = parse_line("!pick-block ~2 ~ -7").unwrap() else {
-            unreachable!()
-        };
+        let action = parse_line("!pick-block ~2 ~ -7").unwrap();
         let standing = Actors {
             position: Vec3 {
                 x: -0.5,
@@ -765,9 +735,7 @@ mod tests {
         assert_eq!(pick.position, BlockPos { x: 1, y: 53, z: -7 });
         assert!(parse_line("!nope").is_err());
         assert!(parse_line("!interact mouseover").is_err());
-        let Step::Action(action) = parse_line("!pick-actor peer").unwrap() else {
-            unreachable!()
-        };
+        let action = parse_line("!pick-actor peer").unwrap();
         assert!(action.kind.packets(&Actors::default()).is_err());
     }
 }
