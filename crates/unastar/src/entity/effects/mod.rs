@@ -53,6 +53,9 @@
 //! effect colour or ambience actor data. (A player's visible effects come
 //! from `server::game::effects`.)
 //!
+//! **Attacking** ([`strengthened`]): strength and weakness change a melee
+//! hit's damage, a mob's and a player's alike.
+//!
 //! **Damage** ([`resisted`], [`absorbed`]): resistance takes `0.2 × (level +
 //! 1)` of a hit (a level 5 resistance all of it, though the hit still
 //! hurts), and absorption takes what is left before health does.
@@ -75,6 +78,9 @@ use crate::entity::definition::metadata::EntityMetadata;
 use crate::entity::mob::MobKind;
 use crate::entity::mob::combat::Hit;
 use crate::entity::mob::components::KnockbackPower;
+use crate::entity::mob::constants::{
+    STRENGTH_DAMAGE_ADD, STRENGTH_DAMAGE_SCALE, WEAKNESS_DAMAGE_ADD, WEAKNESS_DAMAGE_SCALE,
+};
 use crate::entity::mob::state::Dead;
 use crate::server::game::attributes::{Absorption, MAX_ABSORPTION};
 
@@ -715,6 +721,30 @@ pub fn resisted(world: &World, entity: Entity, damage: f32) -> f32 {
         return damage;
     };
     (damage * (1.0 - RESISTANCE_PER_LEVEL * level)).max(0.0)
+}
+
+/// An attacker's melee `damage` after its effects: raised once per Strength
+/// level by `d × 1.3 + 1`, then lowered once per Weakness level by
+/// `d × 0.8 − 0.5`, a negative result dealing nothing. Mobs and players
+/// attack through it alike.
+pub fn strengthened(world: &World, attacker: Entity, mut damage: f32) -> f32 {
+    let Some(effects) = world.get::<Effects>(attacker) else {
+        return damage;
+    };
+    if let Some(strength) = effects.get(EffectType::STRENGTH) {
+        for _ in 0..=strength.level {
+            damage = damage * STRENGTH_DAMAGE_SCALE + STRENGTH_DAMAGE_ADD;
+        }
+    }
+    if let Some(weakness) = effects.get(EffectType::WEAKNESS) {
+        for _ in 0..=weakness.level {
+            damage = damage * WEAKNESS_DAMAGE_SCALE + WEAKNESS_DAMAGE_ADD;
+            if damage < 0.0 {
+                return 0.0;
+            }
+        }
+    }
+    damage
 }
 
 /// Take `damage` from the target's absorption first; returns what is left
