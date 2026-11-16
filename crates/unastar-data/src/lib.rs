@@ -30,6 +30,7 @@ pub mod loot;
 pub mod melee;
 pub mod motion;
 pub mod pack_manifest;
+pub mod pistons;
 pub mod pmmp;
 pub mod recipes;
 pub mod redstone;
