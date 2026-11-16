@@ -352,6 +352,11 @@ pub(super) fn move_entity_as(
     if let Some(mut current) = world.get_mut::<Position>(entity) {
         current.0 = eye;
     }
+    if let Some(mut motion) =
+        world.get_mut::<crate::entity::player_life::authority::PlayerMotion>(entity)
+    {
+        motion.teleported(eye);
+    }
     let runtime_id = world.get::<RuntimeEntityId>(entity).map_or(0, |r| r.0);
     let packet = MovePlayerPacket {
         player_runtime_id: ActorRuntimeId {

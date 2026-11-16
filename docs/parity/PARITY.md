@@ -18,9 +18,9 @@ Each domain's first line is its headline: the rows its family table, gap list an
 | [Items](#items): behaviour sub-rows (food, durability, placement, ...) | 2347 | 99 | 832 | 619 | 620 | 177 | 57.1% |
 | Items: registered (exists in the registry, no behaviour) | 2076 | 0 | 0 | 2076 | 0 | 0 | 100.0% |
 | [Commands](#commands) | 82 | 8 | 35 | 2 | 36 | 1 | 46.9% |
-| [Protocol](#protocol) | 231 | 125 | 28 | 42 | 21 | 15 | 29.2% |
+| [Protocol](#protocol) | 231 | 124 | 28 | 42 | 22 | 15 | 29.6% |
 | [World generation](#world-generation) | 1275 | 87 | 430 | 642 | 9 | 107 | 55.7% |
-| [Gameplay systems](#gameplay-systems) | 72 | 31 | 37 | 4 | 0 | 0 | 5.6% |
+| [Gameplay systems](#gameplay-systems) | 72 | 30 | 38 | 4 | 0 | 0 | 5.6% |
 
 ## Where to help
 
@@ -45,12 +45,12 @@ Add a `[[claim]]` to [claims.toml](claims.toml) in your first pull request for t
 |---|---|---|---:|
 | Mobs: hostile, tameable and aquatic (with dolphins, turtles, axolotls and bats) | lane ENT | 2026-10-29 | 52 |
 
-**Blocks**: 238 open rows free, 170 claimed.
+**Blocks**: 240 open rows free, 168 claimed.
 
 | Free family | Open | Missing | Partial |
 |---|---:|---:|---:|
 | functional (part claimed) | 57 | 0 | 57 |
-| surface_dynamic (part claimed) | 45 | 0 | 45 |
+| surface_dynamic (part claimed) | 47 | 0 | 47 |
 | candles | 34 | 0 | 34 |
 | building_blocks | 27 | 0 | 27 |
 | coral | 20 | 0 | 20 |
@@ -62,7 +62,7 @@ Add a `[[claim]]` to [claims.toml](claims.toml) in your first pull request for t
 | Claimed area | Claimed by | Since | Open |
 |---|---|---|---:|
 | Block behaviour families, gravity, fire, redstone and random ticks | lane BLOCKS | 2026-10-29 | 153 |
-| Liquids: water and lava flow, waterlogging, sponges | a contributor | 2026-10-29 | 7 |
+| Liquids: water and lava flow, mixing, the liquid layer | lane LIQUIDS | 2026-11-11 | 5 |
 | Workstation blocks | lane ITEMS | 2026-10-29 | 10 |
 
 **Items**: 0 open rows free, 931 claimed.
@@ -77,11 +77,11 @@ Add a `[[claim]]` to [claims.toml](claims.toml) in your first pull request for t
 |---|---|---|---:|
 | Commands | lane COMMANDS | 2026-10-29 | 43 |
 
-**Protocol**: 153 open rows free, 0 claimed.
+**Protocol**: 152 open rows free, 0 claimed.
 
 | Free family | Open | Missing | Partial |
 |---|---:|---:|---:|
-| clientbound | 91 | 76 | 15 |
+| clientbound | 90 | 75 | 15 |
 | bidirectional | 57 | 44 | 13 |
 | serverbound | 5 | 5 | 0 |
 
@@ -108,7 +108,7 @@ Nothing in this domain is claimed.
 | Claimed area | Claimed by | Since | Open |
 |---|---|---|---:|
 | Gravity, fire, redstone, block updates and random ticks | lane BLOCKS | 2026-10-29 | 6 |
-| Liquids: water and lava flow, waterlogging, sponges | a contributor | 2026-10-29 | 1 |
+| Liquids: water and lava flow, mixing, the liquid layer | lane LIQUIDS | 2026-11-11 | 1 |
 | Workstations: crafting, smelting, anvil, grindstone, smithing, brewing, enchanting | lane ITEMS | 2026-10-29 | 8 |
 | Survival block breaking | lane ITEMS | 2026-11-10 | 1 |
 | Generation speed | lane PERF | 2026-10-29 | 1 |
@@ -327,8 +327,11 @@ One row per vanilla block: it can exist in the world, be placed and broken with 
 
 **liquids**
 
-- `minecraft:flowing_lava`, `minecraft:flowing_water`, `minecraft:lava`, `minecraft:water`: no flow or source spreading
 - `minecraft:bubble_column`: not formed above soul sand or magma; does not push entities
+- `minecraft:flowing_lava`: BDS never places it (flowing lava is lava with liquid_depth); the engine ticks it like lava when a world holds it, untested
+- `minecraft:flowing_water`: BDS never places it in the block layer (flowing water is water with liquid_depth) but shows it in the liquid layer of seagrass, kelp and coral fans; unastar stores water there
+- `minecraft:lava`: lava does not set fire to blocks beside it; ticks due in the same game tick run in the order scheduled, not in BDS's (see world.liquids)
+- `minecraft:water`: ticks due in the same game tick run in the order scheduled, not in BDS's (see world.liquids); water placed in the nether does not evaporate
 
 **ores**
 
@@ -475,7 +478,7 @@ Sub-rows by facet, most incomplete first (25 of 25):
 **buckets**
 
 - `minecraft:bucket/bucket`: cannot catch fish, axolotls or tadpoles; lava and powder snow pickup are not covered by a test
-- `minecraft:water_bucket/bucket`: does not waterlog blocks (BDS 1.26.51 waterlogs a slab clicked with it, on block layer 1); water placed in the Nether does not evaporate
+- `minecraft:water_bucket/bucket`: water placed in the Nether does not evaporate
 - missing: `minecraft:axolotl_bucket/bucket`, `minecraft:sulfur_cube_bucket/bucket`, `minecraft:tadpole_bucket/bucket`
 
 **entity_placers**
@@ -572,7 +575,7 @@ One row per 1.26.51 packet: inbound packets are handled, outbound packets are se
 | Family | Rows | Missing | Partial | Done | Verified | N/A | Done+verified |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | bidirectional | 80 | 44 | 13 | 15 | 2 | 6 | 23.0% |
-| clientbound | 146 | 76 | 15 | 27 | 19 | 9 | 33.6% |
+| clientbound | 146 | 75 | 15 | 27 | 20 | 9 | 34.3% |
 | serverbound | 5 | 5 | 0 | 0 | 0 | 0 | 0.0% |
 
 ### Protocol gaps
@@ -595,7 +598,7 @@ One row per 1.26.51 packet: inbound packets are handled, outbound packets are se
 - `CompletedUsingItemPacket`: sent when food is eaten, milk, potions and ominous bottles are drunk and a crossbow finishes loading; the honey bottle and the other consumables are not compared with BDS
 - `ContainerSetDataPacket`: furnace-family progress only; brewing stands and other data-bearing containers missing
 - 9 more partial rows with other gaps (see [protocol.toml](protocol.toml))
-- missing: `AddBehaviorTreePacket`, `AddPaintingPacket`, `AddVolumeEntityPacket`, `AnimateEntityPacket`, `AwardAchievementPacket`, `CameraAimAssistActorPriorityPacket`, `CameraAimAssistPacket`, `CameraInstructionPacket`, `CameraPacket`, `CameraShakePacket`, `ChangeDimensionPacket`, `ChangeMobPropertyPacket` and 64 more
+- missing: `AddBehaviorTreePacket`, `AddPaintingPacket`, `AddVolumeEntityPacket`, `AnimateEntityPacket`, `AwardAchievementPacket`, `CameraAimAssistActorPriorityPacket`, `CameraAimAssistPacket`, `CameraInstructionPacket`, `CameraPacket`, `CameraShakePacket`, `ChangeDimensionPacket`, `ChangeMobPropertyPacket` and 63 more
 
 **serverbound**
 
@@ -730,7 +733,7 @@ Cross-cutting gameplay systems with no data source to enumerate them from; this 
 | performance | 2 | 0 | 2 | 0 | 0 | 0 | 0.0% |
 | platform | 6 | 0 | 3 | 3 | 0 | 0 | 50.0% |
 | player | 17 | 5 | 11 | 1 | 0 | 0 | 5.9% |
-| world | 19 | 6 | 13 | 0 | 0 | 0 | 0.0% |
+| world | 19 | 5 | 14 | 0 | 0 | 0 | 0.0% |
 
 ### Gameplay systems gaps
 
@@ -771,7 +774,7 @@ Cross-cutting gameplay systems with no data source to enumerate them from; this 
 - `player.block_breaking`: breaking runs no neighbour updates (attached blocks and door halves stay); in creative, a PredictDestroyBlock without a StartDestroyBlock in its input is refused like one on air, which BDS was not seen doing; of the block action types BDS cannot read in an input only CreativeDestroyBlock was measured; this server sends the block changes of a tick after the next inputs' corrections, BDS before them
 - `player.block_placing`: logs, stairs, slabs, facing blocks, doors, hoppers and torches place with orientation, and hoes, shovels, axes, shears, flint and steel, fire charges, bone meal and buckets act on blocks; no crops/seeds, beds, signs, buttons, fence/wall/pane connections or support checks
 - `player.combat`: melee against mobs and mob attacks on players with hurt timer, armour and knockback; bows, crossbows and snowballs; hits wear the weapon. Player-versus-player melee matches the BDS PvP sweep (710 trials, three lockstep clients) when the hits are applied in BDS's order: reach 6.7 / 12 between positions, the claimed position within 6, the held item, the pvp rule, immune modes and dead attackers, weapon damage with Sharpness, Strength and Weakness, critical hits (no Blindness or Slow Falling), armour, Protection and Resistance before the hurt window, the excess hit's push and hurt event, the window counted from packet arrival, the sprint and Knockback second push, knockback resistance, the hit particles, last-hurt-by and sound. unastar applies every input of a tick before every attack, with the attacker's state from before its first input, and attacks in arrival order: an attack sent after its own input, different players' attacks in one tick, and the victim moving between two hits of a tick follow BDS only once packets are applied in BDS's order (decision 0045; ignored tests). The victim's velocity is the one its client reported. No shields, thrown tridents, mace smash, strict entity-interaction facing check, totems or crits on climbables, in water or riding (unmeasured)
-- `player.damage_sources`: falls (3 to 12.5 blocks, into water, onto hay, slime, a bed, into powder snow, a glide that slowed down and Feather Falling boots), a fire block and the burning after it (a 1-point burn 20, 40, ... ticks before the fire runs out) match the BDS movement capture; lava, void, mob attacks and drowning (air supply, BREATHING flag, a 2-damage hit every 20 ticks without air, the refill, Respiration, bubble columns and the air saved across a rejoin) match the BDS breath and player-data captures; a killing hit sends only the death event and other hits knock back before the hurt event; a hit inside the hurt window that exceeds it knocks back, shows the hurt and restarts the window (BDS PvP sweep); the damage game rules gate their causes from every source; no suffocation, freezing, cactus, starvation, magic, lightning or explosion damage, and no protection enchantment but Feather Falling; in a fire block BDS's hurts alternate between fire (6) and fire_tick (7) with its input timing where unastar's are fire; how long lava sets a player alight (15 s) and the descent under which a glide restarts the fall (0.5 a tick) are unmeasured; block identities resolved by name string for fall damage
+- `player.damage_sources`: falls are measured on the server's own copy of the player, so a client claiming the ground through a fall or descending slowly takes BDS's damage (BDS authority capture); falls (3 to 12.5 blocks, into water, onto hay, slime, a bed, into powder snow, a glide that slowed down and Feather Falling boots), a fire block and the burning after it (a 1-point burn 20, 40, ... ticks before the fire runs out) match the BDS movement capture; lava, void, mob attacks and drowning (air supply, BREATHING flag, a 2-damage hit every 20 ticks without air, the refill, Respiration, bubble columns and the air saved across a rejoin) match the BDS breath and player-data captures; a killing hit sends only the death event and other hits knock back before the hurt event; a hit inside the hurt window that exceeds it knocks back, shows the hurt and restarts the window (BDS PvP sweep); the damage game rules gate their causes from every source; no suffocation, freezing, cactus, starvation, magic, lightning or explosion damage, and no protection enchantment but Feather Falling; in a fire block BDS's hurts alternate between fire (6) and fire_tick (7) with its input timing where unastar's are fire; how long lava sets a player alight (15 s) and the descent under which a glide restarts the fall (0.5 a tick) are unmeasured; block identities resolved by name string for fall damage
 - 6 more partial rows with other gaps (see [systems.toml](systems.toml))
 - missing: `player.achievements`, `player.books`, `player.fishing`, `player.maps`, `player.sleeping`
 
@@ -782,6 +785,6 @@ Cross-cutting gameplay systems with no data source to enumerate them from; this 
 - `world.day_cycle`: clock, daylight cycle and moon phase work; no sleeping skip and time is not persisted
 - `world.difficulty`: mob damage scaling, peaceful monsters, regional difficulty and hard-only door breaking; no hunger effects (starvation floors, peaceful regeneration) and effects of unimplemented mobs
 - `world.explosions`: the blast pattern, block resistance, drops (every block by hand), damage with exposure and the TNT fuse follow BDS; knockback is not measured (applied along the line from the centre with the impact); fire from explosions, underwater explosions, the max_resistance of other sources, creepers and other exploding mobs (their components are not implemented) and beds and respawn anchors are missing; block changes are sent at once, not with the next tick
-- 8 more partial rows with other gaps (see [systems.toml](systems.toml))
-- missing: `world.dimensions`, `world.fire`, `world.liquids`, `world.structure_blocks`, `world.structures_hardcoded`, `world.world_border`
+- 9 more partial rows with other gaps (see [systems.toml](systems.toml))
+- missing: `world.dimensions`, `world.fire`, `world.structure_blocks`, `world.structures_hardcoded`, `world.world_border`
 
