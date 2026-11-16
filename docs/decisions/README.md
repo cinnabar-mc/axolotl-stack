@@ -48,11 +48,13 @@ documents and still appear in code comments and research docs; the table maps th
 | [0035](0035-disable-a-plugin-after-it-traps.md) | Disable a plugin after it traps | 2026-11-05 | accepted | |
 | [0036](0036-run-a-command-before-its-players-later-inputs.md) | Run a command before the inputs its player sent after it | 2026-11-10 | accepted | |
 | [0039](0039-fail-the-column-on-damaged-sub-chunks.md) | Fail the column load on damaged sub-chunk data | 2026-11-10 | proposed | |
+| [0041](0041-run-redstone-as-a-two-tick-circuit-update.md) | Run redstone as one circuit update every other tick, in BDS's phases | 2026-11-10 | accepted | |
 | [0044](0044-send-pre-start-game-roster-packets-before-start-game.md) | Send the roster packets BDS sends before StartGame before it | 2026-11-11 | accepted | |
 | [0046](0046-resolve-a-pvp-hit-with-the-attacker-state-passed-in.md) | Resolve a PvP hit with the attacker's state passed in, from before its first input of the tick | 2026-11-11 | proposed | |
 | [0048](0048-write-item-nbt-in-bds-key-order.md) | Write item NBT in BDS's key order | 2026-11-12 | proposed | |
 | [0052](0052-generate-one-enchantment-type.md) | Generate one canonical Enchantment type from source-attributed data | 2026-11-12 | accepted | |
 | [0053](0053-bedrock-terrain-uses-java-exact-noise.md) | Bedrock-style terrain uses the Java-exact noise backend | 2026-11-12 | proposed | |
+| [0056](0056-guarded-block-breaking.md) | Guard survival block breaking by default, keep BDS's breaking as an option | 2026-11-12 | accepted | |
 | [0064](0064-refuse-oversized-serverbound-packets-in-the-network-task.md) | Refuse the serverbound packets BDS refuses in the network task | 2026-11-12 | proposed | |
 
 Proposed records await the owner's approval; their work is an open OpenSpec change anyone can pick up.
