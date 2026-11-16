@@ -116,7 +116,7 @@ impl BlockSource for Live<'_> {
 
 impl UpdateTarget for Live<'_> {
     fn write(&mut self, pos: IVec3, state: u32) {
-        let Some(stored) = blocks::store_block(self.0, pos, state) else {
+        let Some(stored) = blocks::store_block(self.0, pos, state, true) else {
             return;
         };
         let mut batch = self.0.get_resource_or_insert_with(Batch::default);

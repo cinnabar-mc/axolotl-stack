@@ -13,6 +13,8 @@
 //! [`ACCEPTED_WITHOUT_BEHAVIOUR`] for the list and the reason for each.
 
 pub mod ambient;
+pub mod angry;
+pub mod bandwidth;
 pub mod body;
 pub mod breeding;
 pub mod color;
@@ -21,6 +23,7 @@ pub mod damage_sensor;
 pub mod despawn;
 pub mod doors;
 pub mod equipment;
+pub mod explode;
 pub mod goals;
 pub mod hostile;
 pub mod hurt_on_condition;
@@ -31,12 +34,17 @@ pub mod movement;
 pub mod sensors;
 pub mod shearing;
 pub mod spawn_entity;
+pub mod stats;
+pub mod target_triggers;
+pub mod transformation;
+pub mod variant;
 
 use std::sync::Arc;
 
 use unastar_data::actor_components::{ActorComponent, body as bodies};
 
 pub use ambient::AmbientSoundConfig;
+pub use bandwidth::{BandwidthOptimization, BandwidthValues};
 pub use body::{BreathableConfig, NameableConfig, Pushable};
 pub use breeding::{AgeableConfig, BreedableConfig, FeedEntry, OffspringConfig};
 pub use color::{ActorColor, DyeableConfig};
@@ -47,20 +55,24 @@ pub use equipment::{
     EquipItemConfig, EquipItemGoal, EquipmentConfig, PickupItemsGoal, ShareablesConfig,
 };
 pub use goals::{
-    BreedGoal, EatBlockGoal, EatBlockPair, FloatGoal, FollowParentGoal, GoalBase, LookAtPlayerGoal,
-    PanicGoal, RandomLookAroundGoal, RandomStrollGoal, TemptGoal,
+    BreedGoal, EatBlockGoal, EatBlockPair, FleeSunGoal, FloatGoal, FollowParentGoal, GoalBase,
+    LookAtPlayerGoal, PanicGoal, RandomLookAroundGoal, RandomStrollGoal, TemptGoal,
 };
 pub use hostile::{
     AttackConfig, BurnsInDaylightConfig, HurtByTargetGoal, MeleeBoxAttackGoal,
     NearestAttackableTargetGoal,
 };
 pub use hurt_on_condition::{HurtCondition, HurtOnConditionConfig};
-pub use interact::{InteractConfig, Interaction, SpawnEggInteraction, SpawnItems};
+pub use interact::{
+    InteractConfig, InteractParticle, Interaction, SpawnEggInteraction, SpawnItems,
+};
 pub use knockback::{KnockbackPower, KnockbackRules};
 pub use loot::{ExperienceRewardConfig, LootConfig};
 pub use movement::{BasicMovementConfig, JumpConfig, WalkNavigationConfig};
 pub use sensors::{EnvironmentSensorConfig, Timer};
 pub use spawn_entity::{SpawnEntityConfig, SpawnEntityTimers, SpawnRule, SpawnTimer};
+pub use target_triggers::{OnFriendlyAnger, OnTargetAcquired, OnTargetEscape, TargetTrigger};
+pub use transformation::TransformationConfig;
 
 use crate::entity::definition::{ComponentKindsBuilder, DefinitionError};
 use crate::registry::ItemRegistry;
@@ -70,10 +82,6 @@ use common::inert;
 /// server-side behaviour implemented yet, and why that is acceptable now.
 /// `docs/research/mob-runtime-constants.md` mirrors this list.
 pub const ACCEPTED_WITHOUT_BEHAVIOUR: &[(ActorComponent, &str)] = &[
-    (
-        ActorComponent::ConditionalBandwidthOptimization,
-        "network send-rate tuning only; unastar replicates every significant change",
-    ),
     (
         ActorComponent::Leashable,
         "leads are not implemented; using a lead on the mob does nothing",
@@ -108,11 +116,14 @@ pub const ACCEPTED_WITHOUT_BEHAVIOUR: &[(ActorComponent, &str)] = &[
     ),
     (
         ActorComponent::Transformation,
-        "the pig gains it only when struck by lightning (not implemented); \
-         the zombie gains it after 30 s underwater, but its target, the \
-         drowned, is not spawnable yet (it needs swim navigation, the \
-         trident ranged attack and target_nearby_sensor), so an underwater \
-         zombie shakes (is_shaking) without converting",
+        "only a transformation naming nothing but its target runs (the \
+         mooshroom's into a cow); one with a delay, sounds, added groups, a \
+         spawn event or carry-over flags has no behaviour: the pig gains it \
+         only when struck by lightning (not implemented); the zombie gains it \
+         after 30 s underwater, but its target, the drowned, is not spawnable \
+         yet (it needs swim navigation, the trident ranged attack and \
+         target_nearby_sensor), so an underwater zombie (and husk) shakes \
+         (is_shaking) without converting",
     ),
     (
         ActorComponent::BehaviorStompTurtleEgg,
@@ -135,6 +146,16 @@ pub const ACCEPTED_WITHOUT_BEHAVIOUR: &[(ActorComponent, &str)] = &[
          is not implemented",
     ),
     (
+        ActorComponent::BlockClimber,
+        "lets the mob climb scaffolding, and scaffolding climbing is not \
+         implemented for any actor",
+    ),
+    (
+        ActorComponent::CanStandOnPowderSnow,
+        "keeps the mob from sinking into powder snow, and powder snow has no \
+         sinking or freezing behaviour on the server",
+    ),
+    (
         ActorComponent::GameEventMovementTracking,
         "emits flap/move/swim game events, which only vibration listeners \
          (sculk sensors, wardens, allays) consume; vibrations are not implemented",
@@ -153,11 +174,12 @@ pub fn register_component_kinds(
     body::register_component_kinds(builder)?;
     hurt_on_condition::register_component_kinds(builder)?;
     despawn::register_component_kinds(builder)?;
+    explode::register_component_kinds(builder)?;
     doors::register_component_kinds(builder)?;
     breeding::register_component_kinds(builder)?;
     loot::register_component_kinds(builder)?;
     interact::register_component_kinds(builder)?;
-    inert::<bodies::ConditionalBandwidthOptimization>(builder)?;
+    bandwidth::register_component_kinds(builder)?;
     inert::<bodies::Leashable>(builder)?;
     inert::<bodies::LeashableTo>(builder)?;
     inert::<bodies::Balloonable>(builder)?;
@@ -166,12 +188,14 @@ pub fn register_component_kinds(
     inert::<bodies::Boostable>(builder)?;
     inert::<bodies::ItemControllable>(builder)?;
     inert::<bodies::BehaviorControlledByPlayer>(builder)?;
-    inert::<bodies::Transformation>(builder)?;
+    transformation::register_component_kinds(builder)?;
     inert::<bodies::GameEventMovementTracking>(builder)?;
     inert::<bodies::BehaviorStompTurtleEgg>(builder)?;
     inert::<bodies::BehaviorFindMount>(builder)?;
     inert::<bodies::BehaviorUseKineticWeapon>(builder)?;
     inert::<bodies::DimensionBound>(builder)?;
+    inert::<bodies::BlockClimber>(builder)?;
+    inert::<bodies::CanStandOnPowderSnow>(builder)?;
     hostile::register_component_kinds(builder)?;
     sensors::register_component_kinds(builder)?;
     color::register_component_kinds(builder)?;
@@ -180,5 +204,9 @@ pub fn register_component_kinds(
     ambient::register_component_kinds(builder)?;
     spawn_entity::register_component_kinds(builder, items)?;
     equipment::register_component_kinds(builder)?;
-    knockback::register_component_kinds(builder)
+    knockback::register_component_kinds(builder)?;
+    variant::register_component_kinds(builder)?;
+    target_triggers::register_component_kinds(builder)?;
+    stats::register_component_kinds(builder)?;
+    angry::register_component_kinds(builder)
 }

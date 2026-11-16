@@ -23,6 +23,7 @@
 
 pub mod ai;
 pub mod archetype;
+pub mod attributes;
 pub mod combat;
 pub mod components;
 pub mod constants;
@@ -52,8 +53,8 @@ pub use derive::derive_mob_state;
 pub use events::EventError;
 
 use crate::entity::components::{
-    ActorViewers, Age, FallDistance, Living, Mob, OnGround, PhysicsBody, Position, Rotation,
-    RuntimeId, Velocity,
+    ActorViewers, Age, FallDistance, Living, Mob, OnGround, PhysicsBody, PhysicsModel, Position,
+    Rotation, RuntimeId, Velocity,
 };
 use crate::entity::definition::attributes::ActorAttributes;
 use crate::entity::definition::flags::ActorFlags;
@@ -96,6 +97,9 @@ pub enum SpawnCause {
     Born,
     /// Restored from storage: no event; the saved groups are re-applied.
     Loaded,
+    /// Another mob's `minecraft:transformation`:
+    /// `minecraft:entity_transformed`.
+    Transformed,
 }
 
 /// Create a mob of `identifier` with its feet at `position`, fire its
@@ -125,7 +129,13 @@ pub fn spawn_mob(
     };
     let entity = spawn_unattached(world, &archetype, position, yaw)?;
     if cause == SpawnCause::Loaded {
-        world.entity_mut(entity).insert(persistence::Restoring);
+        // The spawn bonuses were rolled once and saved; restoring puts them
+        // back (BDS 1.26.51 keeps them across a save and load).
+        world
+            .entity_mut(entity)
+            .insert(persistence::Restoring)
+            .remove::<attributes::KnockbackResistance>()
+            .remove::<attributes::FollowRange>();
     }
     attach_definition(world, entity, Arc::clone(&archetype.definition))
         .expect("a freshly spawned mob exists and has no definition stack");
@@ -133,6 +143,7 @@ pub fn spawn_mob(
     let event = match cause {
         SpawnCause::Spawned => archetype.lifecycle.spawned.as_ref(),
         SpawnCause::Born => archetype.lifecycle.born.as_ref(),
+        SpawnCause::Transformed => archetype.lifecycle.transformed.as_ref(),
         SpawnCause::Loaded => None,
     };
     if let Some(event) = event
@@ -143,6 +154,31 @@ pub fn spawn_mob(
     }
     apply_pending_definitions(world);
     derive_entity(world, entity);
+    // What the mob spawned with is what `UpdateAttributes` reports as the
+    // defaults; its viewers get every attribute once more after the
+    // `AddActor`, as BDS 1.26.51 sends them.
+    if let Some(mut attributes) = world.get_mut::<ActorAttributes>(entity) {
+        attributes.reset_defaults();
+        attributes.mark_all_changed();
+    }
+    let falls = world
+        .get::<PhysicsBody>(entity)
+        .is_some_and(|body| body.model == PhysicsModel::Living && body.gravity > 0.0);
+    if cause != SpawnCause::Loaded
+        && falls
+        && let Some(mut velocity) = world.get_mut::<Velocity>(entity)
+    {
+        velocity.0.y = constants::MOB_SPAWN_VELOCITY_Y;
+    }
+    // BDS reports a new living mob on the ground until its first move, also
+    // in mid-air, so the first update of one spawned in the air is a change
+    // of ground contact (BDS 1.26.51 replication captures).
+    let reported_on_ground = if cause == SpawnCause::Loaded {
+        None
+    } else {
+        Some(falls)
+    };
+    net::network::record_spawn_state(world, entity, reported_on_ground);
     Ok(entity)
 }
 
@@ -163,6 +199,27 @@ fn spawn_unattached(
     };
     let mut molang = PropertyDefaults(rand::SeedableRng::seed_from_u64(seed));
     let properties = ActorProperties::new(Arc::clone(&archetype.properties), &mut molang)?;
+    // The native class's spawn bonuses, from the mob's own seed so the
+    // shared random sequence is unchanged; the definition's components set
+    // the bases when it applies.
+    let knockback_resistance =
+        archetype
+            .native
+            .knockback_resistance_bonus
+            .map(|max| attributes::KnockbackResistance {
+                spawn_bonus: Some(attributes::KnockbackResistance::roll_bonus(
+                    &mut molang.0,
+                    max,
+                )),
+                ..attributes::KnockbackResistance::NONE
+            });
+    let follow_range = archetype
+        .native
+        .follow_range_bonus
+        .then(|| attributes::FollowRange {
+            spawn_bonus: attributes::FollowRange::roll_bonus(&mut molang.0),
+            ..attributes::FollowRange::DEFAULT
+        });
     let attributes = ActorAttributes::new(
         Arc::clone(&archetype.attributes),
         archetype.attribute_seed.clone(),
@@ -175,10 +232,8 @@ fn spawn_unattached(
             .expect("catalogue flag index");
     }
     let metadata = if archetype.projectile {
-        // Projectiles are spawned invisible (shown from their second tick).
-        flags
-            .update(actor_flags::INVISIBLE, true)
-            .expect("catalogue flag index");
+        // Turned invisible once its definition applies
+        // (`projectile::derive_projectile`).
         EntityMetadata::actor_base()
     } else {
         let mut metadata = EntityMetadata::living_base();
@@ -189,6 +244,9 @@ fn spawn_unattached(
         if let Some(kind) = archetype.native.aux_value {
             metadata.set_short(jolyne::valentine::actor_data_i_ds::AUX_VALUE_DATA, kind);
         }
+        if let Some(kind) = archetype.native.variant {
+            metadata.set_int(jolyne::valentine::actor_data_i_ds::VARIANT, kind);
+        }
         metadata
     };
     let launched_tick = world
@@ -198,7 +256,12 @@ fn spawn_unattached(
         (
             MobKind(Arc::clone(archetype)),
             Position(position),
-            Rotation::new(yaw, 0.0),
+            // A projectile's head yaw is 0 (its BDS 1.26.51 `AddActor`).
+            if archetype.projectile {
+                Rotation::with_head_yaw(yaw, 0.0, 0.0)
+            } else {
+                Rotation::new(yaw, 0.0)
+            },
             Velocity::default(),
             OnGround(false),
             Age::default(),
@@ -228,6 +291,12 @@ fn spawn_unattached(
             FallDistance::default(),
             ai::MobBrain::default(),
         ));
+        if let Some(resistance) = knockback_resistance {
+            entity.insert(resistance);
+        }
+        if let Some(range) = follow_range {
+            entity.insert(range);
+        }
     }
     Ok(entity.id())
 }

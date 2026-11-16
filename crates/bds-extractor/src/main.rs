@@ -42,6 +42,12 @@ struct Args {
     #[arg(long)]
     fixture: Option<PathBuf>,
 
+    /// Derive the outputs of an existing capture directory again from its
+    /// packets.jsonl (a session that stopped before writing them), without
+    /// connecting
+    #[arg(long, conflicts_with_all = ["fixture", "capture_dir"])]
+    rewrite: Option<PathBuf>,
+
     /// Record the whole session into this directory (packets.jsonl, per-packet
     /// .bin/.json fixtures, manifest.json) instead of writing extractor JSON
     #[arg(long, conflicts_with = "fixture")]
@@ -62,13 +68,28 @@ struct Args {
 
     /// Capture mode: run the commands of this file (one per line, leading `/`
     /// optional; blank lines and `#` comments skipped) after the join and any
-    /// summons, one at a time (needs operator permission for most commands)
+    /// summons, one at a time (needs operator permission for most commands).
+    /// `!console <command>` lines are server-console commands (printed as
+    /// `@@console@@ <command>` for the harness that owns BDS's stdin);
+    /// `!join <name>` and `!leave <name>` connect and disconnect a second
+    /// client
     #[arg(long, requires = "capture_dir")]
     commands: Option<PathBuf>,
 
     /// Capture mode: milliseconds to wait after each scripted command
     #[arg(long, default_value = "1500", requires = "capture_dir")]
     command_wait: u64,
+
+    /// Decode a recorded `packets.jsonl` (from `--capture-dir` or
+    /// `bds-sweep-client --capture-dir`) instead of connecting: one JSON line
+    /// per record `{seq, t_ms, dir, name, packet}` to `--output`
+    #[arg(long, conflicts_with_all = ["fixture", "capture_dir"])]
+    decode: Option<PathBuf>,
+
+    /// Decode mode: only records whose packet name is in this comma-separated
+    /// list (`MobEffectPacket,SetActorDataPacket`); all records without it
+    #[arg(long, requires = "decode", value_delimiter = ',')]
+    only: Vec<String>,
 
     /// Log level filter
     #[arg(long, default_value = "info")]
@@ -107,10 +128,28 @@ async fn run(args: Args) -> Result<()> {
         )
         .init();
 
+    if let Some(dir) = args.rewrite.as_ref() {
+        return capture::rewrite(dir);
+    }
+
     if let Some(fixture) = args.fixture.as_ref() {
         info!("Loading extraction fixture from {}...", fixture.display());
         let data = load_fixture(fixture)?;
         write_extracted_data(&args.output, &data)?;
+        return Ok(());
+    }
+
+    if let Some(capture) = args.decode.as_ref() {
+        let lines = capture::decode_capture(capture, &args.only)?;
+        let mut text = lines.join("\n");
+        text.push('\n');
+        std::fs::write(&args.output, text)
+            .with_context(|| format!("writing {}", args.output.display()))?;
+        info!(
+            records = lines.len(),
+            "decoded to {}",
+            args.output.display()
+        );
         return Ok(());
     }
 
@@ -156,16 +195,15 @@ async fn run(args: Args) -> Result<()> {
     Ok(())
 }
 
-/// The commands of a `--commands` script, without their leading `/`.
-fn read_commands(path: &Path) -> Result<Vec<String>> {
+/// The steps of a `--commands` script.
+fn read_commands(path: &Path) -> Result<Vec<capture::Step>> {
     let text = std::fs::read_to_string(path)
         .with_context(|| format!("reading commands from {}", path.display()))?;
-    Ok(text
-        .lines()
+    text.lines()
         .map(str::trim)
         .filter(|line| !line.is_empty() && !line.starts_with('#'))
-        .map(|line| line.strip_prefix('/').unwrap_or(line).to_owned())
-        .collect())
+        .map(capture::Step::parse)
+        .collect()
 }
 
 fn load_fixture(path: &Path) -> Result<output::ExtractedData> {

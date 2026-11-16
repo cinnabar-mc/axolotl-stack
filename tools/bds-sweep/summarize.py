@@ -2,12 +2,16 @@
 
     python tools/bds-sweep/summarize.py drops SWEEP_DIR [SWEEP_DIR ...] [repeat=SWEEP_DIR ...]
     python tools/bds-sweep/summarize.py armor-slots SWEEP_DIR
+    python tools/bds-sweep/summarize.py armor-wear SWEEP_DIR
     python tools/bds-sweep/summarize.py fuel SWEEP_DIR
+    python tools/bds-sweep/summarize.py mining SWEEP_DIR [SWEEP_DIR ...]   # first sweep wins per cell
+    python tools/bds-sweep/summarize.py attack SWEEP_DIR [SWEEP_DIR ...]
     python tools/bds-sweep/summarize.py compare-drops SWEEP_DIR_A SWEEP_DIR_B
     python tools/bds-sweep/summarize.py scenarios SWEEP_DIR [SWEEP_DIR ...]
     python tools/bds-sweep/summarize.py placements SWEEP_DIR
     python tools/bds-sweep/summarize.py circuits SWEEP_DIR [SWEEP_DIR ...]
     python tools/bds-sweep/summarize.py random-ticks SWEEP_DIR [SWEEP_DIR ...]
+    python tools/bds-sweep/summarize.py round4 SWEEP_DIR [SWEEP_DIR ...]
     python tools/bds-sweep/summarize.py liquids SWEEP_DIR [SWEEP_DIR ...]
 
 Writes into `crates/unastar-data/data/measured/` and records every artefact
@@ -339,6 +343,23 @@ def summarize_armor_values(sweep: Path) -> None:
 
 
 
+def summarize_armor_wear(sweep: Path) -> None:
+    """`armor_wear.json`: per armour item its slot and the durability damage
+    one `/damage <player> D entity_attack` hit added to the worn piece, per D."""
+    table = {}
+    for row in results(sweep):
+        table[row['item']] = {'slot': row['slot'],
+                              'wear': {str(hit['damage']): hit['wear'] for hit in row['hits']}}
+    files = [write('armor_wear.json', dict(sorted(table.items())))]
+    update_manifest('armor_wear', {
+        **provenance('armor-wear', [sweep]),
+        'method': 'sweep player (survival, max health 2000, natural regeneration off) wearing one breakable piece '
+                  '(the slot armor_slots.json assigns) takes one `/damage <player> D entity_attack` per D, spaced past '
+                  'the hurt cooldown; the piece is read back through Endstone before and after every hit',
+        'files': files,
+    })
+
+
 def summarize_armor(sweep: Path) -> None:
     table = {}
     for row in results(sweep):
@@ -369,36 +390,77 @@ def summarize_fuel(sweep: Path) -> None:
     })
 
 
-def summarize_attack(sweep: Path) -> None:
+def wear_per_trial(before: dict | None, trials: list[dict]) -> list[int | None]:
+    """Durability damage each trial added to the held stack (`held_before`,
+    then each trial's `held_after`; `None` for a trial after which the stack
+    was gone, i.e. it broke)."""
+    out = []
+    previous = (before or {}).get('damage', 0)
+    for trial in trials:
+        after = trial.get('held_after')
+        if after is None:
+            out.append(None)
+            continue
+        out.append(after['damage'] - previous)
+        previous = after['damage']
+    return out
+
+
+def merged_results(sweeps: list[Path]) -> list[dict]:
+    """Rows of several sweeps by key; the first sweep that has a key wins."""
+    chosen: dict[str, dict] = {}
+    for sweep in sweeps:
+        for row in results(sweep):
+            chosen.setdefault(row['key'], row)
+    return list(chosen.values())
+
+
+def summarize_attack(sweeps: list[Path]) -> None:
     """`attack_damage.json`: per held item the damage event value of each
     measured trial's first hit on the target and whether all trials agree
-    (the warm-up trial after each held-item change is skipped)."""
+    (the warm-up trial after each held-item change is skipped). Rows of a
+    survival sweep also record `wear`, the durability damage each trial
+    (warm-up included, first) added to the held stack."""
     table = {}
-    for row in results(sweep):
+    for row in merged_results(sweeps):
         measured = [trial for trial in row['trials'] if not trial.get('warmup')]
         firsts = [trial['damage'][0] if trial['damage'] else None for trial in measured]
-        table[row['key']] = {
+        entry = {
             'tool_item': row['tool'],
             'damage': firsts,
             'consistent': len(set(firsts)) == 1 and firsts[0] is not None,
         }
+        if 'held_before' in row:
+            entry['gamemode'] = row.get('gamemode', 'creative')
+            if row['tool']:
+                entry['wear'] = wear_per_trial(row['held_before'], row['trials'])
+        table[row['key']] = entry
     files = [write('attack_damage.json', dict(sorted(table.items())))]
     update_manifest('attack_damage', {
-        **provenance('attack', [sweep]),
-        'method': 'sweep player (creative, on the ground, not sprinting) holding the item attacks a freshly '
-                  'spawned minecraft:pig through an InventoryTransaction use-item-on-actor Attack; value of the '
-                  'Endstone ActorDamageEvent for the pig, three trials after one warm-up attack',
+        **provenance('attack', sweeps),
+        'method': 'sweep player (creative, or survival where `gamemode` says so; on the ground, not sprinting) '
+                  'holding the item attacks a freshly spawned minecraft:pig through an InventoryTransaction '
+                  'use-item-on-actor Attack; value of the Endstone ActorDamageEvent for the pig, three trials '
+                  'after one warm-up attack; `wear`: change of the durability damage of the held stack per trial '
+                  '(warm-up first), read back through Endstone',
         'files': files,
     })
 
 
-def summarize_mining(sweep: Path) -> None:
+def summarize_mining(sweeps: list[Path]) -> None:
+    """`mining_ticks.json` from one or more mining sweeps (tool slice, held
+    items, effect levels); the first sweep that has a cell wins. Variants of
+    sweeps that read the held stack back also record `wear`, the durability
+    damage each trial added."""
     table: dict[str, dict] = defaultdict(dict)
-    for row in results(sweep):
+    for row in merged_results(sweeps):
         state, variant = row['key'].split('|', 1)
+        if 'stack_error' in row:
+            table[state][variant] = {'tool_item': row['tool'], 'stack_error': row['stack_error']}
+            continue
         ticks = sorted(t for t in row['ticks'] if t is not None)
         trial = row['trials'][0]
-        table[state][variant] = {
+        entry = {
             'ticks': row['ticks'],
             'median': ticks[len(ticks) // 2] if ticks else None,
             'tool_item': row['tool'],
@@ -406,12 +468,17 @@ def summarize_mining(sweep: Path) -> None:
             'on_ground': trial['on_ground'],
             'in_water': trial['in_water'],
         }
+        if 'held_before' in row and row['tool']:
+            entry['wear'] = wear_per_trial(row['held_before'], row['trials'])
+        table[state][variant] = entry
     files = [write('mining_ticks.json', dict(sorted(table.items())))]
     update_manifest('mining_ticks', {
-        **provenance('mining', [sweep]),
+        **provenance('mining', sweeps),
         'method': 'sweep player in survival facing the block keeps sending StartDestroyBlock then '
                   'ContinueDestroyBlock (no prediction); BDS breaks the block itself; server ticks from the '
-                  'LEFT_CLICK_BLOCK interaction to the BlockBreakEvent, three trials (resolution +/-1 tick)',
+                  'LEFT_CLICK_BLOCK interaction to the BlockBreakEvent (resolution +/-1 tick); three trials per '
+                  'tool-slice, effect and empty-hand cell, one per held-item cell; `wear`: change of the durability '
+                  'damage of the held stack per trial, read back through Endstone',
         'files': files,
     })
 
@@ -1111,12 +1178,18 @@ PLACEMENT_NOISE = {'PlayerAuthInputPacket', 'LevelChunkPacket', 'NetworkStackLat
 PLACEMENT_DECODED = {'InventoryTransactionPacket', 'UpdateBlockPacket', 'UpdateSubChunkBlocksPacket',
                      'LevelSoundEventPacket', 'BlockActorDataPacket', 'OpenSignPacket', 'PlayerHotbarPacket',
                      'LevelEventPacket', 'BlockEventPacket', 'AnimatePacket'}
-# Groups whose cases also keep the player's attributes (hunger after eating).
-PLACEMENT_ATTRIBUTE_GROUPS = {'leftovers'}
+# Groups whose cases also keep the bytes of further packets: the player's
+# attributes (hunger after eating), the primed TNT actor and what an
+# explosion sends. Their packets also keep the capture time (`t_ms`).
+PLACEMENT_GROUP_DECODED = {
+    'leftovers': frozenset({'UpdateAttributesPacket'}),
+    'tnt': frozenset({'AddActorPacket', 'SetActorDataPacket', 'SetActorMotionPacket', 'RemoveActorPacket',
+                      'AddItemActorPacket', 'LevelEventGenericPacket', 'MoveActorDeltaPacket'}),
+}
 
 
-def placement_decoded(record: dict, attributes: bool = False) -> bool:
-    if attributes and record['name'] == 'UpdateAttributesPacket':
+def placement_decoded(record: dict, extra: frozenset = frozenset()) -> bool:
+    if record['name'] in extra:
         return True
     if record['name'] == 'InventoryContentPacket':
         # Packet id 0x31, then the container id: 0 is the main inventory.
@@ -1124,11 +1197,12 @@ def placement_decoded(record: dict, attributes: bool = False) -> bool:
     return record['name'] in PLACEMENT_DECODED
 
 
-def capture_by_marker(path: Path, attributes: frozenset = frozenset()) -> dict[str, list]:
+def capture_by_marker(path: Path, extra: dict | None = None) -> dict[str, list]:
     """A client capture cut at the `bds-sweep:mark <key>` / `bds-sweep:mark
     end` chat markers: key -> the packets in between (noise left out, hex
-    kept for the packets the test decodes, and for `UpdateAttributes` in the
-    cases whose key is in `attributes`)."""
+    kept for the packets the test decodes and, for the cases in `extra`
+    (key -> packet names), for those packets too, with their capture time)."""
+    extra = extra or {}
     packets: dict[str, list] = {}
     current = None
     if not path.exists():
@@ -1144,10 +1218,13 @@ def capture_by_marker(path: Path, attributes: frozenset = frozenset()) -> dict[s
                 if current:
                     packets[current] = []
                 continue
-        if current and record['name'] not in PLACEMENT_NOISE:
+        names = extra.get(current, frozenset())
+        if current and (record['name'] not in PLACEMENT_NOISE or record['name'] in names):
             packet = {'dir': record['dir'], 'name': record['name']}
-            if placement_decoded(record, current in attributes):
+            if placement_decoded(record, names):
                 packet['hex'] = record['hex']
+            if names:
+                packet['t_ms'] = record['t_ms']
             packets[current].append(packet)
     return packets
 
@@ -1168,10 +1245,11 @@ def summarize_placements(sweep: Path) -> None:
     when the sweep had one, the watching player."""
     rows = {row['key']: row for row in results(sweep)}
     job = json.loads((sweep / 'job.json').read_text(encoding='utf-8'))
-    attributes = frozenset(item['key'] for item in job['items']
-                           if item.get('group') in PLACEMENT_ATTRIBUTE_GROUPS)
-    clicker = capture_by_marker(sweep / 'client-capture' / 'packets.jsonl', attributes)
-    watcher = capture_by_marker(sweep / 'watcher-capture' / 'packets.jsonl')
+    extra = {item['key']: PLACEMENT_GROUP_DECODED[item['group']] for item in job['items']
+             if item.get('group') in PLACEMENT_GROUP_DECODED}
+    clicker = capture_by_marker(sweep / 'client-capture' / 'packets.jsonl', extra)
+    watcher = capture_by_marker(sweep / 'watcher-capture' / 'packets.jsonl',
+                                {key: names for key, names in extra.items() if 'UpdateAttributesPacket' not in names})
     arena = job['arena']['placements']
     groups: dict[str, list] = defaultdict(list)
     for item in job['items']:
@@ -1317,6 +1395,166 @@ def summarize_circuits(sweeps: list[Path]) -> None:
     entry = {**provenance('scenarios', sweeps), 'files': files,
              'method': 'redstone circuits replayed tick by tick: ' + CIRCUIT_METHOD}
     update_manifest('redstone', merge_manifest_files('redstone', entry))
+    for f in files:
+        print(f['path'], f.get('rows', ''), f['sha256'][:12])
+
+
+# ---------------------------------------------------------------- round 4 circuits
+
+ROUND4_METHOD = CIRCUIT_METHOD + (
+    ' Round 4 rows also keep `items` (the item actors that ended in the cell, [item, data, count]) and '
+    '`actors` (for timelines with an actor box: [tick, [[id, type, dx, dy, dz, vx, vy, vz, health], ...]] '
+    'whenever the actors in the cell changed; positions relative to the cell origin).'
+)
+ROUND4_ROW = '[name, witness, steps, trace, items, actors]'
+# Families of `pistons.py` and the directory their rows go to.
+ROUND4_PREFIXES = {'pistons_': 'pistons', 'tnt_': 'explosions', 'plates_': 'redstone', 'infested_': 'infested'}
+# Actor types left out of the TNT families' actor traces (items thrown by explosions).
+ROUND4_NOISE = {'minecraft:item'}
+BLAST_ROW = '[material, sample, witness, destroyed offsets, dropped items {item: count}]'
+
+
+def piston_classes(rows: list) -> dict:
+    """How a sticky piston treats each block (`pistons_blocks`): `push_pull`
+    (moved out and pulled back), `push_only` (moved, left when the piston
+    retracts), `breaks` (removed as the head comes out, dropping its items)
+    or `immovable` (the head never comes out). Blocks that were not
+    standing at x=2 when the timeline began are left out."""
+    out: dict[str, list] = defaultdict(list)
+    for name, witness, steps, trace, items, actors in rows:
+        block = name[1]
+        first = {k: b for t, k, b, st in trace if t == 0}
+        if first.get(2) != block:
+            continue
+        arm = [t for t, k, b, st in trace if k == 2 and t > 0 and b.endswith('piston_arm_collision')]
+        landed = [t for t, k, b, st in trace if k == 3 and t > 0 and b == block]
+        back = [t for t, k, b, st in trace if k == 2 and arm and t > arm[0] and b == block]
+        if not arm:
+            kind = 'immovable'
+        elif landed and back:
+            kind = 'push_pull'
+        elif landed:
+            kind = 'push_only'
+        else:
+            kind = 'breaks'
+        out[kind].append(block)
+    return {kind: sorted(blocks) for kind, blocks in out.items()}
+
+
+def move_class(classes: dict, block: str, kind: str) -> None:
+    for blocks in classes.values():
+        if block in blocks:
+            blocks.remove(block)
+    classes.setdefault(kind, []).append(block)
+    classes[kind].sort()
+
+
+def glue_moves(classes: dict, rows: list) -> None:
+    """Slime and honey stick to the floor under them in `pistons_blocks`,
+    so the floor holds them there; `pistons_slime` (raised off the floor)
+    shows them pushed and pulled."""
+    for name, witness, steps, trace, items, actors in rows:
+        if name[1:] != ['stuck', 'sticky_piston']:
+            continue
+        glue = name[0]
+        if any(k == 3 and b == glue and t > 0 for t, k, b, st in trace) and                 any(k == 2 and b == glue and t > 20 for t, k, b, st in trace):
+            move_class(classes, glue, 'push_pull')
+
+
+def held_by_heads(classes: dict, rows: list) -> None:
+    """A piston head holds a push (`pistons_chains` "push_head": the piston
+    pushing into another piston's head never extends)."""
+    for name, witness, steps, trace, items, actors in rows:
+        if name[0] != 'push_head':
+            continue
+        if not any(t > 0 and b.endswith('piston_arm_collision') and k == 2 for t, k, b, st in trace):
+            for head in ('piston_arm_collision', 'sticky_piston_arm_collision'):
+                move_class(classes, head, 'immovable')
+
+
+BLAST_METHOD = (
+    'sweep.py scenarios --family tnt_blast_<material> (tools/bds-sweep/tnt.py): a 9 x 9 x 9 cube of the '
+    'material filled from (-4,-3,-4) to (4,5,4) around a TNT block at (0,1,0) (the superflat floor is y=-1, '
+    'bedrock y=-4), primed by a redstone block set at (1,1,0); 110 ticks later every cube position is read '
+    'and the item actors in the cell counted. `destroyed` lists the cube offsets that were air afterwards '
+    '(the TNT and redstone block positions included); `dropped` sums the items by identifier.'
+)
+
+
+def blast_row(family: str, rest: str, row: dict, item: dict) -> list:
+    material = family.removeprefix('tnt_blast_')
+    watch = next(step for step in item['steps'] if step[0] == 'read')[2]
+    destroyed = [offset for offset, (block, states) in zip(watch, row['reads']['after']) if block == 'minecraft:air']
+    dropped = Counter()
+    for item_id, data, count in row.get('items', []):
+        dropped[short(item_id)] += count
+    return [material, json.loads(rest), row['timing']['witness_tick'], destroyed, dict(sorted(dropped.items()))]
+
+
+def actor_trace(row: dict, noise: set) -> list:
+    """The actor trace without the actor types in `noise` (the items an
+    explosion throws), recorded when what is left changes."""
+    out, last = [], None
+    for t, seen in row.get('actor_traces', []):
+        kept = [[a[0], short(a[1]), *a[2:]] for a in seen if a[1] not in noise]
+        if kept != last:
+            out.append([t, kept])
+            last = kept
+    return out
+
+
+def summarize_round4(sweeps: list[Path]) -> None:
+    """Round 4 families (`pistons.py`, `tnt.py`) to `<dir>/<family>.json`,
+    the blast samples to `explosions/tnt_blast.json` and the derived
+    `pistons/blocks.json`."""
+    by_family: dict[str, list] = defaultdict(list)
+    for sweep in sweeps:
+        job = json.loads((sweep / 'job.json').read_text(encoding='utf-8'))
+        items = {item['key']: item for item in job['items']}
+        for row in results(sweep):
+            family, rest = row['key'].split('|', 1)
+            if not any(family.startswith(prefix) for prefix in ROUND4_PREFIXES) or family.endswith('_pilot'):
+                continue
+            witness = row['timing']['witness_tick']
+            if witness not in (2, 3):
+                raise SystemExit(f'{sweep}: {row["key"]}: no witness tick ({witness})')
+            if family.startswith('tnt_blast_'):
+                by_family['tnt_blast'].append(blast_row(family, rest, row, items[row['key']]))
+                continue
+            trace = [[t, k, short(b), st] for t, k, b, st in row['traces']['trace']]
+            name = [short(p) if isinstance(p, str) else p for p in json.loads(rest)]
+            stacks = [[short(i), d, n] for i, d, n in row.get('items', [])]
+            actors = actor_trace(row, ROUND4_NOISE if family.startswith('tnt_') else set())
+            by_family[family].append([name, witness, short_steps(items[row['key']]['steps']), trace, stacks,
+                                      actors])
+    files = []
+    for family, rows in sorted(by_family.items()):
+        rows.sort(key=lambda r: json.dumps(r[0], sort_keys=True) if family != 'tnt_blast' else json.dumps(r[:2]))
+        directory = next(d for prefix, d in ROUND4_PREFIXES.items() if family.startswith(prefix))
+        header = ({'family': family, 'method': BLAST_METHOD, 'row': BLAST_ROW} if family == 'tnt_blast'
+                  else {'family': family, 'method': ROUND4_METHOD, 'row': ROUND4_ROW})
+        files.append(write_rows(f'{directory}/{family}.json', header, rows))
+    if 'pistons_blocks' in by_family:
+        classes = piston_classes(by_family['pistons_blocks'])
+        glue_moves(classes, by_family.get('pistons_slime', []))
+        held_by_heads(classes, by_family.get('pistons_chains', []))
+        rows = [[block, kind] for kind, blocks in sorted(classes.items()) for block in blocks]
+        rows.sort()
+        files.append(write_rows('pistons/blocks.json', {
+            'method': 'derived from pistons_blocks.json by summarize.py round4: the default state of each block in '
+                      'front of a sticky piston powered for 20 ticks; push_pull = moved and pulled back, '
+                      'push_only = moved and left, breaks = removed as the head came out, immovable = the head '
+                      'never came out. Slime and honey blocks stick to the floor under them there, so their class '
+                      'comes from pistons_slime.json (raised off the floor); the class of the heads from '
+                      'pistons_chains.json (a piston pushing into a head never extends)',
+            'row': '[block, push_pull | push_only | breaks | immovable]'}, rows))
+    for directory in sorted(set(ROUND4_PREFIXES.values())):
+        mine = [f for f in files if f['path'].startswith(directory + '/')]
+        if not mine:
+            continue
+        entry = {**provenance('scenarios', sweeps), 'files': mine,
+                 'method': 'circuits replayed tick by tick: ' + ROUND4_METHOD}
+        update_manifest(directory, merge_manifest_files(directory, entry))
     for f in files:
         print(f['path'], f.get('rows', ''), f['sha256'][:12])
 
@@ -1603,16 +1841,20 @@ def main() -> int:
         summarize_armor(dirs[0])
     elif kind == 'armor-values':
         summarize_armor_values(dirs[0])
+    elif kind == 'armor-wear':
+        summarize_armor_wear(dirs[0])
     elif kind == 'fuel':
         summarize_fuel(dirs[0])
     elif kind == 'mining':
-        summarize_mining(dirs[0])
+        summarize_mining(dirs)
     elif kind == 'attack':
-        summarize_attack(dirs[0])
+        summarize_attack(dirs)
     elif kind == 'scenarios':
         summarize_scenarios(dirs)
     elif kind == 'circuits':
         summarize_circuits(dirs)
+    elif kind == 'round4':
+        summarize_round4(dirs)
     elif kind == 'random-ticks':
         summarize_random_ticks(dirs)
     elif kind == 'liquids':

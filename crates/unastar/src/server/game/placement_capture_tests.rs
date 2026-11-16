@@ -37,6 +37,9 @@ const WATCHER: u64 = 8;
 
 /// Every case of every fixture file (`testdata/bds-placements*.json`, one
 /// file per case group of `tools/bds-sweep/placements.py`), with the group.
+/// The `pistons` and `tnt` groups are not placements: their lever clicks
+/// drive pistons and TNT that `redstone/piston_packets.rs` and
+/// `explosion/tests.rs` replay in a live world.
 fn cases() -> Vec<Value> {
     let dir = format!("{}/src/server/game/testdata", env!("CARGO_MANIFEST_DIR"));
     let mut files: Vec<_> = std::fs::read_dir(&dir)
@@ -45,7 +48,14 @@ fn cases() -> Vec<Value> {
         .filter(|path| {
             path.file_name()
                 .and_then(|name| name.to_str())
-                .is_some_and(|name| name.starts_with("bds-placements") && name.ends_with(".json"))
+                .is_some_and(|name| {
+                    name.starts_with("bds-placements")
+                        && name.ends_with(".json")
+                        && !matches!(
+                            name,
+                            "bds-placements-pistons.json" | "bds-placements-tnt.json"
+                        )
+                })
         })
         .collect();
     files.sort();
@@ -259,6 +269,13 @@ fn spawn(
     (entity, rx)
 }
 
+/// The seed of every arena's entity random. Seeded from entropy, the
+/// candle a candle cake drops (`candle_onto_candle_cake`,
+/// `candle_cake_empty_hand`, `lit_candle_cake_with_candle`) landed within
+/// the clicking player's reach as its pickup delay ran out for 5 of 59
+/// seeds tried, so a different case failed now and then.
+const ARENA_SEED: u64 = 1;
+
 impl Arena {
     fn world(&mut self) -> &mut World {
         self.server.ecs.world_mut()
@@ -293,6 +310,12 @@ impl Arena {
             difficulty,
             ..ServerConfig::default()
         });
+        // Item drops pop with a random offset and velocity: a fixed seed
+        // keeps a case from depending on where a drop lands.
+        server
+            .ecs
+            .world_mut()
+            .insert_resource(crate::entity::EntityRandom::seeded(ARENA_SEED));
         let (entity, rx) = spawn(&mut server, SESSION, "BDSSweep", feet);
         let watcher = case.get("watcher_packets").map(|_| {
             let spot = origin.as_dvec3() + dvec(&case["watcher"]);
@@ -697,7 +720,7 @@ fn compare_case(case: &Value) -> Option<String> {
         }
     }
     ours.differences(&bds_clicker, "player", &mut problems);
-    if bds_clicker.hand.is_some() && ours.hand != bds_clicker.hand {
+    if ours.hand != bds_clicker.hand {
         problems.push(format!(
             "hand resync {:?} want {:?}",
             ours.hand, bds_clicker.hand
