@@ -552,11 +552,6 @@ mod tests {
         let block_ids = crate::server::game::types::block_network_ids(world);
         let hex = |bytes: &[u8]| bytes.iter().map(|b| format!("{b:02x}")).collect::<String>();
         let mut wrong = Vec::new();
-        // Item and block differences found by the sweep, not fixed yet: BDS
-        // gives the legacy item a legacy name names (`wool`, `boat`, ...),
-        // sends block 0 for items that place a block of another name
-        // (doors, beds, cake, ...) and another state for some blocks.
-        let mut other = 0;
         for (name, bds) in &table.given {
             // A new map id each time; maps are not implemented.
             if name == "minecraft:filled_map" {
@@ -589,10 +584,16 @@ mod tests {
                     hex(&ours.user_data_buffer)
                 ));
             }
+            // Legacy names give their flattened item and stacks carry BDS's
+            // block state (`every_item_is_given_as_bds_gives_it`).
             if (i32::from(ours.id), ours.auxvalue, ours.block_runtime_id)
                 != (bds.id, bds.aux, bds.block)
             {
-                other += 1;
+                wrong.push(format!(
+                    "{name}: item, aux, block BDS {:?}, ours {:?}",
+                    (bds.id, bds.aux, bds.block),
+                    (ours.id, ours.auxvalue, ours.block_runtime_id)
+                ));
             }
         }
         assert!(
@@ -603,7 +604,6 @@ mod tests {
 "
             )
         );
-        assert_eq!(other, 0, "item, aux or block differences");
     }
 }
 
