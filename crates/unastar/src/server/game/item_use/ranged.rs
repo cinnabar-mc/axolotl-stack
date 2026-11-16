@@ -15,15 +15,16 @@
 //! is missing from the retained summon capture.
 
 use bevy_ecs::prelude::*;
-use glam::DVec3;
 use unastar_data::actor_identifiers::ActorType;
 use zuri_nbt::{NBTTag, tag};
 
 use super::{ItemUsing, held, set_slot, start_using, stop_using, used_ticks};
-use crate::entity::components::{GameMode, MainInventory, OffhandSlot, Position};
+use unastar_rules::ids::Enchantment;
+
+use crate::entity::components::{GameMode, MainInventory, OffhandSlot};
 use crate::entity::projectile::{LaunchSpec, launch_with};
 use crate::item::ItemStack;
-use crate::item::enchant::{Enchantment, enchantment_level, item_tag, with_item_tag};
+use crate::item::enchant::{item_tag, with_item_tag};
 use crate::server::game::durability::wear_held;
 
 const ARROW: &str = "minecraft:arrow";
@@ -115,15 +116,8 @@ fn take_arrow(world: &mut World, player: Entity, ammo: Ammo) {
     }
 }
 
-/// Feet + 0.9: where BDS plays shooting sounds.
-fn shoot_sound_at(world: &World, player: Entity) -> Option<DVec3> {
-    world
-        .get::<Position>(player)
-        .map(|p| p.0 - DVec3::new(0.0, crate::entity::item_drop::PLAYER_EYE_HEIGHT - 0.9, 0.0))
-}
-
 fn sound(world: &World, player: Entity, name: &str) {
-    if let Some(at) = shoot_sound_at(world, player) {
+    if let Some(at) = super::swing_sound_at(world, player) {
         crate::entity::mob::net::sound::play_level_sound(world, Some(player), at, name, -1);
     }
 }
@@ -212,7 +206,7 @@ fn shoot_bow(world: &mut World, player: Entity, slot: u8, stack: &ItemStack, tic
         return;
     };
     let creative = creative(world, player);
-    let infinity = enchantment_level(stack, Enchantment::Infinity) > 0;
+    let infinity = stack.enchantment_level(Enchantment::Infinity) > 0;
     let ammo = find_arrow(world, player);
     if ammo.is_none() && !creative {
         return;
@@ -317,7 +311,7 @@ mod tests {
 
     use super::*;
     use crate::entity::components::{
-        Health, HeldSlot, Player, PlayerInput, PlayerSession, PlayerState, Rotation,
+        Health, HeldSlot, Player, PlayerInput, PlayerSession, PlayerState, Position, Rotation,
         RuntimeEntityId,
     };
     use crate::entity::mob::{SpawnCause, spawn_mob};
@@ -464,8 +458,8 @@ mod tests {
     fn arrows_stick_in_the_ground_and_come_back() {
         let mut r = range(&[("minecraft:bow", 1), ("minecraft:arrow", 2)]);
         let player = r.player;
-        // Look down at the floor in front.
-        r.world().get_mut::<Rotation>(player).unwrap().pitch = 60.0;
+        // Look down at the floor a few blocks in front.
+        r.world().get_mut::<Rotation>(player).unwrap().pitch = 30.0;
         r.send(UseRequest::UseAir);
         r.ticks(24);
         r.send(UseRequest::Release);
@@ -478,6 +472,8 @@ mod tests {
             .collect();
         assert_eq!(stuck.len(), 1, "one stuck arrow");
         assert_eq!(r.slot(1).count, 1);
+        // It stays where it met the floor top.
+        assert!((stuck[0].y - 64.0).abs() < 1e-9, "{}", stuck[0]);
         // Walk onto it.
         let at = stuck[0];
         r.world().get_mut::<Position>(player).unwrap().0 =

@@ -82,6 +82,7 @@ impl EffectType {
     pub const ABSORPTION: Self = Self(22);
     pub const SATURATION: Self = Self(23);
     pub const LEVITATION: Self = Self(24);
+    pub const CONDUIT_POWER: Self = Self(26);
     pub const SLOW_FALLING: Self = Self(27);
     pub const WEAVING: Self = Self(33);
 
@@ -142,6 +143,10 @@ impl ActiveEffect {
 #[derive(Component, Debug, Default)]
 pub struct Effects {
     pub active: HashMap<EffectType, ActiveEffect>,
+    /// When each active effect was applied while not active (a running
+    /// count): BDS announces effects added together in that order.
+    applied_at: HashMap<EffectType, u64>,
+    applied: u64,
 }
 
 impl Effects {
@@ -169,8 +174,17 @@ impl Effects {
                 return false;
             }
         }
-        self.active.insert(effect_type, effect);
+        if self.active.insert(effect_type, effect).is_none() {
+            self.applied += 1;
+            self.applied_at.insert(effect_type, self.applied);
+        }
         true
+    }
+
+    /// The order active effects were added in (see [`Effects::apply`]);
+    /// effects put into `active` directly sort first.
+    pub fn applied_order(&self, effect_type: EffectType) -> u64 {
+        self.applied_at.get(&effect_type).copied().unwrap_or(0)
     }
 
     pub fn remove(&mut self, effect_type: EffectType) {
