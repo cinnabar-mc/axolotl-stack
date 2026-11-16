@@ -12,15 +12,15 @@ Each domain's first line is its headline: the rows its family table, gap list an
 
 | Domain | Rows | Missing | Partial | Done | Verified | N/A | Done+verified |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| [Entities](#entities): actor rows (summon and replication) | 137 | 111 | 1 | 2 | 19 | 4 | 15.8% |
-| Entities: behaviour sub-rows (components, spawn rules) | 4082 | 999 | 2647 | 329 | 61 | 46 | 9.7% |
-| [Blocks](#blocks) | 1477 | 0 | 410 | 511 | 389 | 167 | 68.7% |
+| [Entities](#entities): actor rows (summon and replication) | 137 | 110 | 2 | 2 | 19 | 4 | 15.8% |
+| Entities: behaviour sub-rows (components, spawn rules) | 4082 | 998 | 2648 | 329 | 61 | 46 | 9.7% |
+| [Blocks](#blocks) | 1477 | 0 | 408 | 511 | 391 | 167 | 68.9% |
 | [Items](#items): behaviour sub-rows (food, durability, placement, ...) | 2347 | 99 | 832 | 619 | 620 | 177 | 57.1% |
 | Items: registered (exists in the registry, no behaviour) | 2076 | 0 | 0 | 2076 | 0 | 0 | 100.0% |
 | [Commands](#commands) | 82 | 8 | 35 | 2 | 36 | 1 | 46.9% |
 | [Protocol](#protocol) | 231 | 124 | 28 | 42 | 22 | 15 | 29.6% |
 | [World generation](#world-generation) | 1275 | 87 | 430 | 642 | 9 | 107 | 55.7% |
-| [Gameplay systems](#gameplay-systems) | 72 | 33 | 35 | 4 | 0 | 0 | 5.6% |
+| [Gameplay systems](#gameplay-systems) | 72 | 31 | 37 | 4 | 0 | 0 | 5.6% |
 
 ## Where to help
 
@@ -35,7 +35,7 @@ Add a `[[claim]]` to [claims.toml](claims.toml) in your first pull request for t
 | Free family | Open | Missing | Partial |
 |---|---:|---:|---:|
 | passive (part claimed) | 20 | 20 | 0 |
-| object | 16 | 16 | 0 |
+| object | 16 | 15 | 1 |
 | projectile | 14 | 13 | 1 |
 | built_in | 4 | 4 | 0 |
 | village | 4 | 4 | 0 |
@@ -45,7 +45,7 @@ Add a `[[claim]]` to [claims.toml](claims.toml) in your first pull request for t
 |---|---|---|---:|
 | Mobs: hostile, tameable and aquatic (with dolphins, turtles, axolotls and bats) | lane ENT | 2026-10-29 | 52 |
 
-**Blocks**: 238 open rows free, 172 claimed.
+**Blocks**: 238 open rows free, 170 claimed.
 
 | Free family | Open | Missing | Partial |
 |---|---:|---:|---:|
@@ -61,7 +61,7 @@ Add a `[[claim]]` to [claims.toml](claims.toml) in your first pull request for t
 
 | Claimed area | Claimed by | Since | Open |
 |---|---|---|---:|
-| Block behaviour families, gravity, fire, redstone and random ticks | lane BLOCKS | 2026-10-29 | 155 |
+| Block behaviour families, gravity, fire, redstone and random ticks | lane BLOCKS | 2026-10-29 | 153 |
 | Liquids: water and lava flow, waterlogging, sponges | a contributor | 2026-10-29 | 7 |
 | Workstation blocks | lane ITEMS | 2026-10-29 | 10 |
 
@@ -99,7 +99,7 @@ Nothing in this domain is claimed.
 | Free family | Open | Missing | Partial |
 |---|---:|---:|---:|
 | player (part claimed) | 15 | 5 | 10 |
-| world (part claimed) | 12 | 5 | 7 |
+| world (part claimed) | 12 | 4 | 8 |
 | mobs | 10 | 8 | 2 |
 | interface | 6 | 4 | 2 |
 | crafting (part claimed) | 4 | 2 | 2 |
@@ -124,7 +124,7 @@ One row per vanilla actor (`minecraft:cow`): it can be spawned/summoned and is r
 | boss | 2 | 2 | 0 | 0 | 0 | 0 | 0.0% |
 | built_in | 9 | 4 | 0 | 0 | 2 | 3 | 33.3% |
 | hostile | 38 | 30 | 0 | 0 | 8 | 0 | 21.1% |
-| object | 18 | 16 | 0 | 0 | 1 | 1 | 5.9% |
+| object | 18 | 15 | 1 | 0 | 1 | 1 | 5.9% |
 | passive | 39 | 34 | 0 | 0 | 5 | 0 | 12.8% |
 | player | 1 | 0 | 0 | 1 | 0 | 0 | 100.0% |
 | projectile | 18 | 13 | 1 | 1 | 3 | 0 | 22.2% |
@@ -187,7 +187,8 @@ Top-level rows only; sub-row gaps are in the status file and rolled up by facet 
 
 **object**
 
-- missing: `minecraft:area_effect_cloud`, `minecraft:armor_stand`, `minecraft:boat`, `minecraft:chest_boat`, `minecraft:chest_minecart`, `minecraft:command_block_minecart`, `minecraft:cushion`, `minecraft:eye_of_ender_signal`, `minecraft:fireworks_rocket`, `minecraft:hopper_minecart`, `minecraft:lightning_bolt`, `minecraft:minecart` and 4 more
+- `minecraft:tnt`: spawned by power and explosions; its block motion is the shared physics, not compared with BDS; pistons do not push it
+- missing: `minecraft:area_effect_cloud`, `minecraft:armor_stand`, `minecraft:boat`, `minecraft:chest_boat`, `minecraft:chest_minecart`, `minecraft:command_block_minecart`, `minecraft:cushion`, `minecraft:eye_of_ender_signal`, `minecraft:fireworks_rocket`, `minecraft:hopper_minecart`, `minecraft:lightning_bolt`, `minecraft:minecart` and 3 more
 
 **passive**
 
@@ -233,7 +234,7 @@ One row per vanilla block: it can exist in the world, be placed and broken with 
 | plants | 54 | 0 | 17 | 19 | 18 | 0 | 68.5% |
 | pressure_plates | 17 | 0 | 17 | 0 | 0 | 0 | 0.0% |
 | rails | 4 | 0 | 3 | 0 | 1 | 0 | 25.0% |
-| redstone | 39 | 0 | 23 | 0 | 16 | 0 | 41.0% |
+| redstone | 39 | 0 | 21 | 0 | 18 | 0 | 46.2% |
 | saplings | 10 | 0 | 10 | 0 | 0 | 0 | 0.0% |
 | signs | 39 | 0 | 0 | 23 | 16 | 0 | 100.0% |
 | slabs | 202 | 0 | 8 | 128 | 66 | 0 | 96.0% |
@@ -261,7 +262,7 @@ One row per vanilla block: it can exist in the world, be placed and broken with 
 
 **building_blocks**
 
-- `minecraft:infested_chiseled_stone_bricks`, `minecraft:infested_cobblestone`, `minecraft:infested_cracked_stone_bricks`, `minecraft:infested_deepslate`, `minecraft:infested_mossy_stone_bricks`, `minecraft:infested_stone`, `minecraft:infested_stone_bricks`: breaking does not release a silverfish
+- `minecraft:infested_chiseled_stone_bricks`, `minecraft:infested_cobblestone`, `minecraft:infested_cracked_stone_bricks`, `minecraft:infested_deepslate`, `minecraft:infested_mossy_stone_bricks`, `minecraft:infested_stone`, `minecraft:infested_stone_bricks`: breaking does not release a silverfish: measured in crates/unastar-data/data/measured/infested/infested_break.json (a survival player breaking it without silk touch, with doTileDrops on and off peaceful lets out one silverfish at the block's corner 0.2 along -x in the tick it breaks); waits for the silverfish release of the entities lane (PR #109)
 - `minecraft:waxed_exposed_lightning_rod`, `minecraft:waxed_lightning_rod`, `minecraft:waxed_oxidized_lightning_rod`, `minecraft:waxed_weathered_lightning_rod`: no lightning attraction or redstone output; no axe wax removal
 - `minecraft:exposed_lightning_rod`, `minecraft:oxidized_lightning_rod`, `minecraft:weathered_lightning_rod`: no lightning attraction or redstone output; no axe scraping or honeycomb waxing
 - `minecraft:carved_pumpkin`, `minecraft:lit_pumpkin`: placing it does not build snow or iron golems
@@ -350,7 +351,7 @@ One row per vanilla block: it can exist in the world, be placed and broken with 
 
 **pressure_plates**
 
-- `minecraft:acacia_pressure_plate`, `minecraft:bamboo_pressure_plate`, `minecraft:birch_pressure_plate`, `minecraft:cherry_pressure_plate`, `minecraft:crimson_pressure_plate`, `minecraft:dark_oak_pressure_plate`, `minecraft:heavy_weighted_pressure_plate`, `minecraft:jungle_pressure_plate`, `minecraft:light_weighted_pressure_plate`, `minecraft:mangrove_pressure_plate`, `minecraft:pale_oak_pressure_plate`, `minecraft:polished_blackstone_pressure_plate` and 5 more: not pressed by entities: a plate powers circuits only while its state says so
+- `minecraft:acacia_pressure_plate`, `minecraft:bamboo_pressure_plate`, `minecraft:birch_pressure_plate`, `minecraft:cherry_pressure_plate`, `minecraft:crimson_pressure_plate`, `minecraft:dark_oak_pressure_plate`, `minecraft:heavy_weighted_pressure_plate`, `minecraft:jungle_pressure_plate`, `minecraft:light_weighted_pressure_plate`, `minecraft:mangrove_pressure_plate`, `minecraft:pale_oak_pressure_plate`, `minecraft:polished_blackstone_pressure_plate` and 5 more: players press it by their box only; arrows, minecarts and other non-mob actors are not measured
 
 **rails**
 
@@ -363,9 +364,9 @@ One row per vanilla block: it can exist in the world, be placed and broken with 
 - `minecraft:copper_bulb`, `minecraft:exposed_copper_bulb`, `minecraft:oxidized_copper_bulb`, `minecraft:weathered_copper_bulb`: no honeycomb waxing
 - `minecraft:calibrated_sculk_sensor`, `minecraft:sculk_sensor`: does not detect vibrations or emit power
 - `minecraft:dispenser`, `minecraft:dropper`: not a container; does not dispense or drop (power sets triggered_bit only)
-- `minecraft:piston_arm_collision`, `minecraft:sticky_piston_arm_collision`: piston heads are never produced (pistons do not extend)
+- `minecraft:piston`, `minecraft:sticky_piston`: players are not pushed (their client moves them); changes are sent as one UpdateBlock each where BDS batches them (UpdateSubChunkBlocks, flags 19 on landing)
 - `minecraft:crafter`: not a container; no crafting; its partial block actor is not sent (power sets triggered_bit only)
-- 12 more partial rows with other gaps (see [blocks.toml](blocks.toml))
+- 10 more partial rows with other gaps (see [blocks.toml](blocks.toml))
 
 **saplings**
 
@@ -729,7 +730,7 @@ Cross-cutting gameplay systems with no data source to enumerate them from; this 
 | performance | 2 | 0 | 2 | 0 | 0 | 0 | 0.0% |
 | platform | 6 | 0 | 3 | 3 | 0 | 0 | 50.0% |
 | player | 17 | 5 | 11 | 1 | 0 | 0 | 5.9% |
-| world | 19 | 8 | 11 | 0 | 0 | 0 | 0.0% |
+| world | 19 | 6 | 13 | 0 | 0 | 0 | 0.0% |
 
 ### Gameplay systems gaps
 
@@ -780,7 +781,7 @@ Cross-cutting gameplay systems with no data source to enumerate them from; this 
 - `world.chunk_ticking`: chunks load around players and entities tick in loaded chunks; no ticking areas and no random block ticks
 - `world.day_cycle`: clock, daylight cycle and moon phase work; no sleeping skip and time is not persisted
 - `world.difficulty`: mob damage scaling, peaceful monsters, regional difficulty and hard-only door breaking; no hunger effects (starvation floors, peaceful regeneration) and effects of unimplemented mobs
-- `world.falling_blocks`: gravity blocks fall, land and drop on non-full blocks; no falling anvil/dripstone damage, anvil wear or concrete powder hardening
-- 6 more partial rows with other gaps (see [systems.toml](systems.toml))
-- missing: `world.dimensions`, `world.explosions`, `world.fire`, `world.liquids`, `world.pistons`, `world.structure_blocks`, `world.structures_hardcoded`, `world.world_border`
+- `world.explosions`: the blast pattern, block resistance, drops (every block by hand), damage with exposure and the TNT fuse follow BDS; knockback is not measured (applied along the line from the centre with the impact); fire from explosions, underwater explosions, the max_resistance of other sources, creepers and other exploding mobs (their components are not implemented) and beds and respawn anchors are missing; block changes are sent at once, not with the next tick
+- 8 more partial rows with other gaps (see [systems.toml](systems.toml))
+- missing: `world.dimensions`, `world.fire`, `world.liquids`, `world.structure_blocks`, `world.structures_hardcoded`, `world.world_border`
 
