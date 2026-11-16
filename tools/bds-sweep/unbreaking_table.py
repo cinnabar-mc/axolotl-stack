@@ -85,7 +85,7 @@ def broken(body):
 def script_counts(script):
     """From the script: hits per armour level, uses per use marker and
     glides per elytra level."""
-    hits, uses, attacks = {}, {}, {}
+    hits, uses, glides = {}, {}, {}
     kind = level = None
     for line in Path(script).read_text(encoding='utf-8').splitlines():
         parts = line.split(maxsplit=1)
@@ -101,9 +101,9 @@ def script_counts(script):
         elif kind == 'use' and parts[1].startswith('use-on'):
             uses[level][-1] += 1
         elif kind == 'elytra' and parts[1].startswith('/tp @s 0.5 300'):
-            counts = attacks.setdefault(kind, {})
+            counts = glides.setdefault(kind, {})
             counts[level] = counts.get(level, 0) + 1
-    return hits, uses, attacks
+    return hits, uses, glides
 
 
 class Events:
@@ -195,7 +195,9 @@ def main():
             if None not in seen:
                 seen.append(None if broken(body) else damage(body))
         elif isinstance(kind, tuple) and kind[1] == 'armour' and name == 'PlayerArmorDamage':
-            threshold['armour'][level] += [int(total) for _, total in ARMOUR_PAIR.findall(body)]
+            seen = threshold['armour'][level]
+            if None not in seen:
+                seen += [int(total) for _, total in ARMOUR_PAIR.findall(body)]
     for table in armour.values():
         for counts in table['pieces'].values():
             counts[0] = table['hits'] - counts[1] - counts[2]

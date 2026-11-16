@@ -491,11 +491,11 @@ mod tests {
         ] {
             for (&level, row) in table {
                 let ours = points_worn(name, level, points);
-                for worn in 0..3 {
+                for (worn, (&ours, &theirs)) in ours.iter().zip(&row.worn).enumerate() {
                     compare(
                         format!("{what} {level}: {worn} points"),
-                        ours[worn],
-                        row.worn[worn],
+                        ours,
+                        theirs,
                         row.events,
                     );
                 }

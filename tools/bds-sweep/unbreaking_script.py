@@ -185,7 +185,7 @@ if 'sword' in kinds:
         at('/setblock 1 -59 0 air', 3)
 
 if 'elytra' in kinds:
-    # Glides from y=300 (30 wear events each at level 0); BDS reports each
+    # Glides from y=300 (about 30 wear events each at level 0); BDS reports each
     # wear with `PlayerArmorDamage`.
     at('/gamerule falldamage false')
     for level, glides in [(0, 2), (3, args.glides)]:
