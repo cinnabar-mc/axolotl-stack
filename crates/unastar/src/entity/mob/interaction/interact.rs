@@ -358,7 +358,7 @@ fn authored_interaction(world: &mut World, player: Entity, target: Entity) -> bo
         use_held_item_with(world, player, row.use_item, result);
     }
     if row.hurt_item > 0 {
-        hurt_held_item(world, player, row.hurt_item);
+        crate::server::game::durability::wear_held(world, player, row.hurt_item);
     }
     if let Some(spawn) = &row.spawn_items {
         spawn_interaction_loot(world, target, spawn);
@@ -387,49 +387,6 @@ fn authored_interaction(world: &mut World, player: Entity, target: Entity) -> bo
         }
     }
     true
-}
-
-/// Wear the held item by `amount` durability: creative players and
-/// unbreakable items take none, unbreaking level `n` spares it with
-/// probability `n / (n + 1)`, and an item worn to its maximum breaks.
-fn hurt_held_item(world: &mut World, player: Entity, amount: i32) {
-    use crate::item::enchant::{durability_damage, with_durability_damage};
-    use unastar_rules::ids::Enchantment;
-    if world.get::<GameMode>(player) == Some(&GameMode::Creative) {
-        return;
-    }
-    let Some(held) = held_item(world, player).cloned() else {
-        return;
-    };
-    let Some(max_damage) = held
-        .item()
-        .map(|item| item.tool_info().max_damage)
-        .filter(|max| *max > 0)
-    else {
-        return;
-    };
-    let unbreaking = held.enchantment_level(Enchantment::Unbreaking);
-    let roll = world
-        .resource_mut::<EntityRandom>()
-        .0
-        .gen_range(0..=unbreaking);
-    // Level `n` applies wear with probability `1 / (n + 1)`.
-    if unbreaking > 0 && roll > 0 {
-        return;
-    }
-    let damage = durability_damage(&held) + amount;
-    let worn = if damage >= max_damage {
-        ItemStack::empty()
-    } else {
-        with_durability_damage(&held, damage)
-    };
-    let slot = world.get::<HeldSlot>(player).map_or(0, |slot| slot.0);
-    if let Some(mut inventory) = world.get_mut::<MainInventory>(player)
-        && let Some(stack) = inventory.hotbar_mut(slot)
-    {
-        *stack = worn.clone();
-    }
-    send_slot(world, player, usize::from(slot), &worn);
 }
 
 /// Roll an interaction's `spawn_items` table for `mob` (its colour and fire
