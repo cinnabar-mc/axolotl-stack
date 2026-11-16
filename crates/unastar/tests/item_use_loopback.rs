@@ -86,14 +86,18 @@ fn release(slot: i32) -> InventoryTransactionPacket {
     }
 }
 
-/// A `PlayerAuthInput` at the spawn eye position, looking south tilted
-/// down by `pitch`, carrying `actions`.
+/// A `PlayerAuthInput` standing on the platform (feet at y 16), looking
+/// south tilted down by `pitch`, carrying `actions`. The position is the
+/// eye as a client reports it, the feet plus the wire offset 1.62001: at
+/// 17.62 the feet would be 1e-5 inside the stone, which does not hold a
+/// body it overlaps, and the server's copy of the player would fall
+/// through it and correct the client a block down.
 fn auth_input(tick: u64, pitch: f32, actions: Vec<PlayerBlockActionData>) -> PlayerAuthInputPacket {
     PlayerAuthInputPacket {
         player_rotation: Vec2 { x: pitch, y: 0.0 },
         position: Vec3 {
             x: 0.5,
-            y: 17.62,
+            y: 16.0 + unastar_rules::movement::NETWORK_OFFSET,
             z: 0.5,
         },
         client_tick: PlayerInputTick { inputtick: tick },
