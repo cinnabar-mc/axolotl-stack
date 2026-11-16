@@ -27,6 +27,7 @@ pub mod item_components;
 pub mod item_identity;
 pub mod items;
 pub mod lang;
+pub mod liquids;
 pub mod loot;
 pub mod melee;
 pub mod pack_manifest;
