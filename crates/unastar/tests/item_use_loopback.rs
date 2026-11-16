@@ -97,7 +97,7 @@ fn auth_input(tick: u64, pitch: f32, actions: Vec<PlayerBlockActionData>) -> Pla
         player_rotation: Vec2 { x: pitch, y: 0.0 },
         position: Vec3 {
             x: 0.5,
-            y: 16.0 + unastar_rules::movement::NETWORK_OFFSET,
+            y: 16.0 + unastar::entity::item_drop::PLAYER_REPORTED_EYE_HEIGHT as f32,
             z: 0.5,
         },
         client_tick: PlayerInputTick { inputtick: tick },
