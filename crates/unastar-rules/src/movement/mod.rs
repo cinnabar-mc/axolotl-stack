@@ -1381,6 +1381,12 @@ fn water_tick(body: &mut Body, controls: &Controls, terrain: &impl Terrain, swim
     move_relative(body, controls, WATER_SPEED);
     let y = body.feet[1];
     move_and_collide(body, terrain);
+    // A floor or ceiling the move hit stops it (BDS 1.26.51,
+    // `water_climb_out` tick 20: a jumper landing on the bottom rises
+    // 0.035 on its next jump, as from rest).
+    if body.vertical_collision {
+        body.velocity[1] = 0.0;
+    }
     let drag = if swim.sprint_drag {
         WATER_DRAG_SPRINTING
     } else {

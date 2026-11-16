@@ -64,11 +64,6 @@ const KNOWN_GAPS: &[(&str, u32, &str)] = &[
         "a slime bounce an ULP off after the tick's gravity; no f32 order found",
     ),
     (
-        "water_climb_out",
-        21,
-        "jumping out of water onto a ledge: the lift is not fitted",
-    ),
-    (
         "water_sprint_swim",
         39,
         "a swimmer surfacing: BDS holds its height at the surface for four ticks",
