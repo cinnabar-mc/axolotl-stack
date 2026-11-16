@@ -634,15 +634,10 @@ fn fill_bucket(world: &mut World, ctx: &Use) -> bool {
 /// next to the clicked face, and becomes an empty bucket. Liquids go
 /// through [`crate::server::game::liquids::place_source`], so they flow.
 fn empty_bucket(world: &mut World, ctx: &Use) -> bool {
-    let (block, sound_name) = match ctx.stack.item_id() {
-        "minecraft:water_bucket" => ("minecraft:water", "bucket.empty.water"),
-        "minecraft:lava_bucket" => ("minecraft:lava", "bucket.empty.lava"),
-        _ => ("minecraft:powder_snow", "bucket.empty.powder_snow"),
-    };
-    let kind = match block {
-        "minecraft:water" => Some(LiquidKind::Water),
-        "minecraft:lava" => Some(LiquidKind::Lava),
-        _ => None,
+    let (kind, sound_name) = match ctx.stack.item_id() {
+        "minecraft:water_bucket" => (Some(LiquidKind::Water), "bucket.empty.water"),
+        "minecraft:lava_bucket" => (Some(LiquidKind::Lava), "bucket.empty.lava"),
+        _ => (None, "bucket.empty.powder_snow"),
     };
     if let Some(kind) = kind {
         let Some(empty) = crate::server::game::world_stack(world, "minecraft:bucket", 1) else {
@@ -676,7 +671,7 @@ fn empty_bucket(world: &mut World, ctx: &Use) -> bool {
     } else {
         return false;
     };
-    let Some(state) = ctx.default_state(block) else {
+    let Some(state) = ctx.default_state("minecraft:powder_snow") else {
         return false;
     };
     let Some(empty) = crate::server::game::world_stack(world, "minecraft:bucket", 1) else {

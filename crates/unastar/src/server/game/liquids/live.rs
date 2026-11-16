@@ -218,15 +218,9 @@ pub(crate) fn place_source(world: &mut World, pos: IVec3, kind: LiquidKind) -> b
     };
     let registry = world.registry().clone();
     let air = *crate::world::chunk::blocks::AIR;
-    let source = |kind| {
-        let name = match kind {
-            LiquidKind::Water => "minecraft:water",
-            LiquidKind::Lava => "minecraft:lava",
-        };
-        registry.default_state_id_by_name(name)
-    };
-    let Some(source_state) = source(kind) else {
-        return false;
+    let source_state = match kind {
+        LiquidKind::Water => *crate::world::chunk::blocks::WATER,
+        LiquidKind::Lava => *crate::world::chunk::blocks::LAVA,
     };
     let in_layer = kind == LiquidKind::Water
         && registry.liquid_state(state).is_none()
