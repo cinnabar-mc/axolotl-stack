@@ -10,9 +10,7 @@ use rand::SeedableRng;
 use rand::rngs::StdRng;
 use serde_json::Value;
 
-use super::{
-    ExplosionBlocks, blast_centre, blasted_blocks, damage, distance, exposure, impact,
-};
+use super::{ExplosionBlocks, blast_centre, blasted_blocks, damage, distance, exposure, impact};
 use crate::entity::systems::BlockSource;
 use crate::registry::BlockRegistry;
 use crate::registry::collision::Aabb;
@@ -411,11 +409,11 @@ fn powered_tnt_primes_and_explodes_81_ticks_later_like_bds() {
                     .insert(ChunkPosition::new(cx, cz), chunk);
             }
         }
-        assert!(
+        assert_eq!(
             world
                 .resource::<crate::entity::mob::MobRegistry>()
-                .unsupported(super::PRIMED_TNT.name())
-                .is_none(),
+                .unsupported_reason(super::PRIMED_TNT.name()),
+            None,
             "primed TNT is spawnable"
         );
     }
