@@ -50,7 +50,9 @@ documents and still appear in code comments and research docs; the table maps th
 | [0037](0037-keep-level-data-in-bds-layout.md) | Keep level data in BDS's layout and never replace unreadable level data | 2026-11-10 | accepted | |
 | [0038](0038-store-players-as-bds-player-records.md) | Store players as BDS's player records, starting with reading them | 2026-11-10 | accepted | |
 | [0039](0039-fail-the-column-on-damaged-sub-chunks.md) | Fail the column load on damaged sub-chunk data | 2026-11-10 | proposed | |
+| [0041](0041-run-redstone-as-a-two-tick-circuit-update.md) | Run redstone as one circuit update every other tick, in BDS's phases | 2026-11-10 | accepted | |
 | [0044](0044-send-pre-start-game-roster-packets-after-start-game.md) | Send the roster packets BDS sends before StartGame right after it | 2026-11-11 | proposed | |
+| [0046](0046-resolve-a-pvp-hit-with-the-attacker-state-passed-in.md) | Resolve a PvP hit with the attacker's state passed in, from before its first input of the tick | 2026-11-11 | proposed | |
 | [0052](0052-generate-one-enchantment-type.md) | Generate one canonical Enchantment type from source-attributed data | 2026-11-12 | accepted | |
 | [0053](0053-bedrock-terrain-uses-java-exact-noise.md) | Bedrock-style terrain uses the Java-exact noise backend | 2026-11-12 | proposed | |
 | [0058](0058-refuse-execute-chains-deeper-than-bds-survives.md) | Refuse `/execute` chains deeper than BDS survives | 2026-11-12 | accepted | |

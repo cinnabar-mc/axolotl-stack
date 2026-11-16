@@ -27,7 +27,10 @@ import native  # noqa: E402
 import player_fixture  # noqa: E402
 import player_relay_fixture  # noqa: E402
 import player_script  # noqa: E402
+import pvp_fixture  # noqa: E402
+import pvp_items  # noqa: E402
 import range_fixture  # noqa: E402
+import scenarios  # noqa: E402
 import spawn_bonus_fixture  # noqa: E402
 import subchunk_fixture  # noqa: E402
 import subchunk_roundtrip  # noqa: E402
@@ -791,6 +794,67 @@ class PlayerRelayFixture(unittest.TestCase):
         self.assertEqual(player_relay_fixture.inputs(path), {800: {'pitch': -2.0, 'yaw': 5.0, 'head': 5.0}})
 
 
+class PvpItems(unittest.TestCase):
+    def test_sets_repeat_every_item_under_its_own_key(self):
+        items = pvp_items.pvp_items('hurt', 2, False)
+        keys = [item['key'] for item in items]
+        self.assertEqual(len(keys), len(set(keys)))
+        self.assertIn('burst|up|batch#1', keys)
+        burst = next(item for item in items if item['key'] == 'burst|up|batch#0')
+        self.assertEqual(burst['script']['5'], '[o0=select:1,a0>1,o0=select:2,a0>1,o0=select:3,a0>1,'
+                                               'o0=select:4,a0>1,o0=select:5,a0>1,i0] i1 i2')
+
+    def test_strict_reach_items_are_named_apart_and_unknown_keys_refused(self):
+        keys = {item['key'] for item in pvp_items.pvp_items('reach', 1, True)}
+        self.assertIn('strict|reach|survival|6.7#0', keys)
+        with self.assertRaises(SystemExit):
+            pvp_items.pvp_items('nonsense', 1, False)
+        self.assertEqual([i['key'] for i in pvp_items.pvp_items('weapon|hand', 1, False)], ['weapon|hand#0'])
+
+
+class PvpFixture(unittest.TestCase):
+    def test_server_packets_decode_to_values(self):
+        motion = varint(2) + struct.pack('<3f', 0.4, 0.4, 0.0) + varint(273)
+        self.assertEqual(pvp_fixture.decode_out(40, motion),
+                         {'packet': 'SetActorMotion', 'about': 2, 'motion': [0.400000006, 0.400000006, 0.0],
+                          'tick': 273})
+        self.assertEqual(pvp_fixture.decode_out(27, bytes([2, 2, 4, 0])),
+                         {'packet': 'ActorEvent', 'about': 2, 'event': 2, 'data': 2})
+        animate = varint(4) + varint(2) + struct.pack('<f', 55.0)
+        self.assertEqual(pvp_fixture.decode_out(44, animate),
+                         {'packet': 'Animate', 'about': 2, 'action': 4, 'data': 55.0})
+        sound = varint(13) + b'attack.strong' + struct.pack('<3f', 0.5, -59.1, 0.5)
+        self.assertEqual(pvp_fixture.decode_out(123, sound)['sound'], 'attack.strong')
+
+    def test_an_attack_joins_its_lines_input_or_the_next(self):
+        result = {'spec': {'script': {'5': 'a0>1 i0 i1 i2', '6': 'i0 a0>1 i1 i2', '8': 'o0=select:3 a0>1 i0'}},
+                  'names': ['A', 'B', 'C'], 'first_tick': 0, 'events': [], 'fired': []}
+        consumption = {'A': {5: 6, 7: 8, 8: 10}, 'B': {}, 'C': {}}
+        attempts = pvp_fixture.attempts_of(result, consumption, [])
+        self.assertEqual([(a['joins'], a['consumed'], a['slot']) for a in attempts],
+                         [(5, 6, 0), (7, 8, 0), (8, 10, 3)])
+        self.assertEqual([a['t'] for a in attempts], [5, 7, 9])
+
+    def test_landed_hits_keep_bds_order_within_a_tick(self):
+        result = {'spec': {'script': {'5': 'a0>1 i0 a2>1 i2 i1'}}, 'names': ['A', 'B', 'C'], 'first_tick': 0,
+                  'events': [], 'fired': []}
+        consumption = {'A': {5: 6}, 'B': {}, 'C': {5: 6}}
+        hits = [{'t': 6, 'attacker': 'A', 'victim': 'B'}, {'t': 6, 'attacker': 'C', 'victim': 'B'}]
+        attempts = pvp_fixture.attempts_of(result, consumption, hits)
+        self.assertEqual([(a['attacker'], a['landed']) for a in attempts], [('A', 0), ('C', 1)])
+        attempts = pvp_fixture.attempts_of(result, consumption, hits[1:])
+        self.assertEqual([(a['attacker'], a['landed'], a['t']) for a in attempts], [('C', 0, 6), ('A', None, 6)])
+
+    def test_trials_take_their_own_run_of_marked_inputs(self):
+        rows = [(-89.99, [], 1, [0.0, 0.0, 0.0]), (-89.98, ['Sprinting'], 2, [0.0, 0.0, 0.0]),
+                (-90.0, [], 3, [0.0, 0.0, 0.0]), (-89.99, [], 4, [0.0, 0.0, 0.0]),
+                (-89.98, [], 5, [0.0, -0.0784, 0.0])]
+        inputs = pvp_fixture.Inputs(rows)
+        self.assertEqual({line: row[2] for line, row in inputs.take(-90.0, 40).items()}, {0: 1, 1: 2})
+        self.assertEqual({line: row[2] for line, row in inputs.take(-90.0, 40).items()}, {0: 4, 1: 5})
+        self.assertEqual(inputs.by_tick[2][1], ['Sprinting'])
+
+
 if __name__ == '__main__':
     unittest.main()
 
@@ -843,3 +907,75 @@ class RoundTwoScenarios(unittest.TestCase):
         rails = scenarios.FAMILIES['rails']()
         self.assertEqual(len(rails), 4 * 81 * 2)
         self.assertEqual(len({item['key'] for item in rails}), len(rails))
+
+
+class RoundThree(unittest.TestCase):
+    """Circuit and random tick families and the wave signature."""
+
+    def test_measured_families_have_unique_keys_and_one_layout(self):
+        import circuits
+        import random_ticks
+        for family in list(circuits.MEASURED) + list(random_ticks.FAMILIES):
+            items = scenarios.FAMILIES[family]()
+            keys = [item['key'] for item in items]
+            self.assertEqual(len(keys), len(set(keys)), family)
+            self.assertTrue(all(key.startswith(family + '|') for key in keys), family)
+        self.assertEqual(scenarios.layout(','.join(circuits.MEASURED)), 'circuits')
+        self.assertEqual(scenarios.layout(','.join(random_ticks.FAMILIES)), 'fields')
+        with self.assertRaises(SystemExit):
+            scenarios.layout('redstone_dust,random_crops')
+
+    def test_coral_families_share_the_spaced_layout(self):
+        import coral
+        for family in list(coral.FAMILIES) + ['coral_death']:
+            keys = [item['key'] for item in scenarios.FAMILIES[family]()]
+            self.assertEqual(len(keys), len(set(keys)), family)
+        self.assertEqual(scenarios.layout('coral_death,coral_water,coral_timing'), 'coral')
+        spacing = coral.LAYOUT['spacing']
+        (low_x, _, low_z), (high_x, _, high_z) = coral.LAYOUT['clear_box']
+        # Water flows 7 blocks: two cells' boxes never overlap.
+        self.assertGreater(min(spacing), max(high_x - low_x, high_z - low_z))
+
+    def test_leftover_clicks_end_with_the_normal_difficulty_cases(self):
+        import placements
+        items = placements.items('leftovers')
+        keys = [item['key'] for item in items]
+        self.assertEqual(len(keys), len(set(keys)))
+        changes = [i for i, item in enumerate(items) if item.get('before')]
+        self.assertEqual(changes, [len(items) - 2, len(items) - 1])
+
+    def test_signature_splits_clicks_and_commands_into_their_own_waves(self):
+        sys.path.insert(0, str(Path(__file__).resolve().parent / 'endstone-sweep' / 'src'))
+        from endstone_bds_sweep import jobs
+        click = {'key': 'f|a', 'steps': [['build', []], ['timeline', 10, 't', [[1, ['use', [0, 0, 0], 1,
+                                                                                     [0, 0, 0]]]], []]]}
+        plain = {'key': 'f|b', 'steps': [['build', []], ['timeline', 10, 't', [[1, ['set', [0, 0, 0],
+                                                                                     'minecraft:air', {}, True]]],
+                                                         []]]}
+        fast = {'key': 'f|c', 'steps': [['cmd', 'gamerule randomtickspeed 8', [0, 0, 0]]]}
+        slow = {'key': 'f|d', 'steps': [['cmd', 'gamerule randomtickspeed 128', [0, 0, 0]]]}
+        for item in (click, plain, fast, slow):
+            self.assertEqual(list(jobs.step_signature(item)), scenarios.signature(item))
+        self.assertIn('f|a', jobs.step_signature(click)[1])
+        self.assertEqual(jobs.step_signature(plain)[1], 'timeline10')
+        self.assertNotEqual(jobs.step_signature(fast), jobs.step_signature(slow))
+
+    def test_circuit_rows_derive_conductors_cuts_and_climbing(self):
+        trace_lit = [[0, 1, 'unpowered_repeater', {}], [0, 2, 'stone', {}], [0, 3, 'redstone_lamp', {}],
+                     [4, 1, 'powered_repeater', {}], [4, 3, 'lit_redstone_lamp', {}]]
+        trace_late = [[0, 1, 'unpowered_repeater', {}], [0, 2, 'bell', {}], [0, 3, 'redstone_lamp', {}],
+                      [4, 1, 'powered_repeater', {}], [8, 3, 'lit_redstone_lamp', {}]]
+        cut = [[0, 2, 'redstone_wire', {'redstone_signal': 0}], [0, 3, 'stone', {}],
+               [5, 1, 'redstone_wire', {'redstone_signal': 15}]]
+        climb = [[0, 3, 'redstone_wire', {'redstone_signal': 0}], [4, 3, 'redstone_wire', {'redstone_signal': 14}],
+                 [6, 3, 'air', {}]]
+        derived = summarize.circuit_blocks({
+            'redstone_conductors': [[['block', 'stone', {}], 2, [], trace_lit],
+                                    [['block', 'bell', {}], 2, [], trace_late]],
+            'redstone_dust_cut': [[['cut', 'stone', {}], 2, [], cut]],
+            'redstone_dust_blocks': [[['climb', 'acacia_trapdoor', {'open_bit': False}], 2, [], climb]],
+        })
+        self.assertEqual(derived['conductors'], ['minecraft:stone'])
+        self.assertEqual(derived['cuts'], ['minecraft:stone'])
+        # Ever lit: the dust on top popped later.
+        self.assertEqual(derived['rows'], [['minecraft:acacia_trapdoor', {'open_bit': False}, True, False]])
