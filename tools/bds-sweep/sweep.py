@@ -33,8 +33,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import bds_runtime  # noqa: E402
+import circuits  # noqa: E402
+import coral  # noqa: E402
 import native  # noqa: E402
 import placements  # noqa: E402
+import pvp_items  # noqa: E402
+import random_ticks  # noqa: E402
 import scenarios  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
@@ -45,6 +49,10 @@ PLAYER = 'BDSSweep'
 WATCHER = 'BDSWatch'
 # The second client of `--observer` (a second viewer of the job's actors).
 OBSERVER_NAME = 'BDSOther'
+# The lockstep clients of `pvp` after the sweep player (B, then C).
+PVP_OTHERS = ['BDSOther', 'BDSThird']
+PVP_SETUP = ['gamerule pvp true', 'gamerule keepinventory true', 'gamerule naturalregeneration false',
+             'gamerule doimmediaterespawn true', 'gamerule falldamage true']
 STOP_REQUEST = 'stop.request'
 # Superflat: grass top at y=-61, so the player stands at y=-60.
 # `miner` = x, y, z, yaw, pitch: facing east (yaw -90) at the west face (4) of
@@ -59,6 +67,11 @@ ARENA = {'player': [0.5, -60, 0.5], 'block': [3, -60, 0], 'furnaces': [-8, -60, 
          # watcher stands west of the box, looking at it.
          'placements': {'origin': [4, -60, 4], 'clear': [[-3, -1, -4], [5, 4, 13]],
                         'watcher': [-6.5, 0, 2.5, -90, 10]}}
+# Scenario cell layouts (`scenarios.layout`): the 8 x 8 cells above, and the
+# long redstone circuit cells of `circuits.py`, with the server properties
+# each needs (circuits reach farther from the player than tick distance 4).
+ARENAS = {'cells': (ARENA['scenarios'], {}), 'circuits': (circuits.LAYOUT, circuits.PROPERTIES),
+          'fields': (random_ticks.LAYOUT, random_ticks.PROPERTIES), 'coral': (coral.LAYOUT, coral.PROPERTIES)}
 SETUP = [
     'gamerule domobspawning false',
     'gamerule dodaylightcycle false',
@@ -611,6 +624,16 @@ def reload_items(args) -> list[dict]:
              'from': [-2.0, 0.0], 'yaw': -90, 'phase': args.items} for index in range(3)]
 
 
+def log_since(path: Path, offset: int) -> str:
+    """The text appended to `path` after byte `offset` ('' while missing)."""
+    try:
+        with path.open('rb') as log:
+            log.seek(offset)
+            return log.read().decode('utf-8', errors='replace')
+    except FileNotFoundError:
+        return ''
+
+
 def build_job(args, out: Path) -> dict:
     job = {'kind': args.kind.replace('-', '_'), 'player': PLAYER, 'output_dir': str(out),
            'arena': ARENA, 'setup_commands': SETUP}
@@ -630,6 +653,7 @@ def build_job(args, out: Path) -> dict:
             job['gamemode'] = args.gamemode
     elif args.kind == 'scenarios':
         job['items'] = scenarios.items(args.family)
+        job['arena'] = {**ARENA, 'scenarios': ARENAS[scenarios.layout(args.family)][0]}
     elif args.kind == 'placements':
         job['items'] = placements.items(args.cases)
         if not args.no_watcher:
@@ -657,6 +681,9 @@ def build_job(args, out: Path) -> dict:
             raise SystemExit('range needs --observer')
         job['kind'] = 'send_range'
         job['items'] = range_items(args)
+    elif args.kind == 'pvp':
+        job.update(others=PVP_OTHERS, pvp_setup=PVP_SETUP,
+                   items=pvp_items.pvp_items(args.items, args.repeats, args.entity_interactions_strict))
     if args.observer:
         job['observer'] = OBSERVER_NAME
     return job
@@ -666,7 +693,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('kind', choices=['drops', 'mining', 'armor-slots', 'armor-values', 'armor-wear', 'attack',
                                          'fuel', 'scenarios', 'placements', 'item-blocks', 'knockback',
-                                         'knockback-reload', 'range', 'bonus', 'walk'])
+                                         'knockback-reload', 'range', 'bonus', 'walk', 'pvp'])
     parser.add_argument('--out', type=Path)
     parser.add_argument('--blocks', default='slice', help="'slice', 'all' or comma-separated identifiers")
     parser.add_argument('--states', default='first', choices=['first', 'all'])
@@ -698,6 +725,9 @@ def main() -> int:
     parser.add_argument('--tick-distance', type=int, default=4, help='server simulation distance in chunks (4-12)')
     parser.add_argument('--difficulty', default='easy', choices=['easy', 'normal', 'hard'],
                         help='knockback, knockback-reload, bonus: the difficulty set before the job')
+    parser.add_argument('--repeats', type=int, default=3, help='pvp: runs of each item')
+    parser.add_argument('--entity-interactions-strict', action='store_true',
+                        help='pvp: run BDS with server-authoritative-entity-interactions-strict=true')
     parser.add_argument('--keep-world', action='store_true',
                         help='copy the world to <out>/world after BDS stops (it is deleted otherwise)')
     parser.add_argument('--world-from', type=Path,
@@ -732,22 +762,38 @@ def main() -> int:
         shutil.copytree(args.world_from, world)
     # A world with zombies in it must load above peaceful, which removes them.
     difficulty = args.difficulty if args.kind in ('knockback-reload', 'bonus') else 'peaceful'
+    distances = {'view_distance': args.view_distance, 'tick_distance': args.tick_distance}
+    if args.kind == 'scenarios':
+        distances.update(ARENAS[scenarios.layout(args.family)][1])
     properties = bds_runtime.base_properties(
         LEVEL, level_type='FLAT', gamemode='creative', force_gamemode='true', difficulty=difficulty,
-        default_player_permission_level='operator', view_distance=args.view_distance,
-        tick_distance=args.tick_distance)
-    env = {'BDS_SWEEP_JOB': str(job_path), 'CLIENT_DIFF_CAPTURE_DIR': str(out / 'client-diff-plugin'),
+        default_player_permission_level='operator', **distances)
+    if args.kind == 'pvp':
+        # Three lockstep clients; strict entity interactions on request.
+        properties['max-players'] = 1 + len(PVP_OTHERS)
+        properties['server-authoritative-entity-interactions-strict'] = str(
+            args.entity_interactions_strict).lower()
+    env = {'BDS_SWEEP_JOB': str(job_path),
+           # One capture folder per run: the capture plugin stops BDS when its
+           # files exist, which would end every resumed run.
+           'CLIENT_DIFF_CAPTURE_DIR': str(out / 'client-diff-plugin' / stamp),
            # This checkout's plugin source wins over the shared venv's editable
            # install, so a worktree runs its own jobs without reinstalling it.
            'PYTHONPATH': os.pathsep.join(filter(None, [
                str(REPO / 'tools' / 'bds-sweep' / 'endstone-sweep' / 'src'), os.environ.get('PYTHONPATH')]))}
     started = time.monotonic()
     status = 'timeout'
+    # Earlier runs of a resumed sweep wrote to the same log.
+    log_start = (out / 'bds.log').stat().st_size if (out / 'bds.log').exists() else 0
     client_command = [str(args.client), '--addr', bds_runtime.ADDR, '--name', PLAYER]
     if args.client_capture or args.kind in ('placements', 'item-blocks'):
         # The client records both directions: BDS's answer to every click,
         # the stack descriptors BDS sends.
         client_command += ['--capture-dir', str(out / 'client-capture')]
+    if args.kind == 'pvp':
+        # One process for all three, so the plugin orders their packets.
+        for other in PVP_OTHERS:
+            client_command += ['--also', other]
     watcher_command = None
     if job.get('watcher'):
         watcher_command = [str(args.client), '--addr', bds_runtime.ADDR, '--name', job['watcher'],
@@ -792,6 +838,11 @@ def main() -> int:
                             break
                         if (out / 'error.txt').exists():
                             status = 'error'
+                            break
+                        # A plugin that fails to import (a syntax error in
+                        # this checkout's jobs) leaves BDS idle forever.
+                        if "load plugin from entry point 'bds_sweep'" in log_since(out / 'bds.log', log_start):
+                            status = 'plugin failed to load (see bds.log)'
                             break
                         # Handover: `stop.request` in the output directory stops BDS
                         # gracefully; finished items stay in results.jsonl.

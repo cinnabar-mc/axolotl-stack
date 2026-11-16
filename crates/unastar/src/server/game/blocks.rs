@@ -753,7 +753,6 @@ pub(crate) fn commit_block_event(world: &mut World, event: &ServerEvent) {
             if let Some((other, _)) = upper {
                 super::block_actors::placed(world, *entity, other);
             }
-            super::block_use::placed(world, pos);
             if world.get::<crate::entity::components::GameMode>(*entity)
                 == Some(&crate::entity::components::GameMode::Survival)
             {
@@ -785,7 +784,7 @@ pub(crate) fn commit_block_event(world: &mut World, event: &ServerEvent) {
 /// click, placed or refused: the clicked block and the block on the clicked
 /// face, each followed by the blocks above and below it
 /// (`testdata/bds-placements.json`).
-fn click_corrections(world: &World, entity: Entity, clicked: IVec3, face: u8) {
+pub(crate) fn click_corrections(world: &World, entity: Entity, clicked: IVec3, face: u8) {
     let target = clicked + super::placement::face_offset(face).unwrap_or(IVec3::ZERO);
     for pos in [
         clicked,
@@ -1235,7 +1234,7 @@ fn handle_block_click(
         None => {}
     }
     // Signs (and the other blocks a click acts on) answer before placement.
-    if let Some(changed) = interact_with_block(world, entity, clicked_pos) {
+    if let Some(changed) = interact_with_block(world, entity, clicked_pos, data.face) {
         // BDS answers a use with the player's inventory, and a use that
         // changed something also with the click corrections.
         super::inventory::resync_inventory(world, entity);
@@ -1320,6 +1319,7 @@ fn handle_block_click(
         }
         return;
     };
+    let placement = super::placement::with_random_state(world, placement);
     let target = (
         placement.position.x,
         placement.position.y,
@@ -1349,13 +1349,19 @@ fn handle_block_click(
 /// `testdata/bds-placements-*.json`): `None` when the block does not react
 /// to this click, else whether the click changed something (BDS then sends
 /// the click corrections).
-fn interact_with_block(world: &mut World, entity: Entity, clicked: IVec3) -> Option<bool> {
+fn interact_with_block(
+    world: &mut World,
+    entity: Entity,
+    clicked: IVec3,
+    face: u8,
+) -> Option<bool> {
     if sneaking_with_item(world, entity) {
         return None;
     }
     let held = held_item(world, entity).filter(|stack| !stack.is_empty());
     let held_id = held.as_ref().map(|stack| stack.item_id().to_owned());
     super::signs::used(world, entity, clicked, held_id.as_deref())
+        .or_else(|| super::flower_pots::used(world, entity, clicked, face))
         .or_else(|| super::block_use::used(world, entity, clicked))
 }
 
@@ -1462,7 +1468,14 @@ pub(crate) fn set_block(world: &mut World, pos: IVec3, block_runtime_id: u32, pl
 /// [`set_block`] without block updates: store the block, broadcast it and
 /// schedule gravity checks.
 pub(crate) fn write_block(world: &mut World, pos: IVec3, block_runtime_id: u32, place_sound: bool) {
-    write_block_sending(world, pos, block_runtime_id, place_sound, true);
+    store_block(world, pos, block_runtime_id, place_sound, true, true);
+}
+
+/// [`write_block`] for the redstone circuit's own changes: not noted as an
+/// outside change, so the circuit does not see its own writes as a player's
+/// edit (which would recover burnt-out torches and delay what it sees).
+pub(crate) fn write_circuit_block(world: &mut World, pos: IVec3, block_runtime_id: u32) {
+    store_block(world, pos, block_runtime_id, false, false, true);
 }
 
 /// Put out a fire or soul fire block at `pos` (it becomes air).
@@ -1490,15 +1503,19 @@ pub(crate) fn extinguish_fire(world: &mut World, pos: IVec3) {
 /// batched block updates, after what the server sends meanwhile (BDS answers
 /// a flint and steel click with its corrections first).
 pub(crate) fn set_block_batched(world: &mut World, pos: IVec3, block_runtime_id: u32) {
-    write_block_sending(world, pos, block_runtime_id, false, false);
+    store_block(world, pos, block_runtime_id, false, true, false);
     super::block_update::world_changed(world, pos, true);
 }
 
-fn write_block_sending(
+/// Store, broadcast and schedule gravity checks; `outside` notes the change
+/// to the redstone circuit, `send_now` sends the update now rather than with
+/// the tick's batched block updates.
+fn store_block(
     world: &mut World,
     pos: IVec3,
     block_runtime_id: u32,
     place_sound: bool,
+    outside: bool,
     send_now: bool,
 ) {
     let (x, y, z) = (pos.x, pos.y, pos.z);
@@ -1542,6 +1559,9 @@ fn write_block_sending(
         old_block: old_block_id,
         new_block: block_runtime_id,
     });
+    if outside {
+        super::redstone::note_change(world, pos, old_block_id, block_runtime_id);
+    }
 
     world.write_message(BlockBroadcastEvent {
         chunk_entity,
