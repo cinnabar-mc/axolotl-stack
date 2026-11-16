@@ -30,6 +30,7 @@ pub mod lang;
 pub mod liquids;
 pub mod loot;
 pub mod melee;
+pub mod motion;
 pub mod pack_manifest;
 pub mod pistons;
 pub mod pmmp;
