@@ -32,6 +32,7 @@ pub mod motion;
 pub mod pack_manifest;
 pub mod pmmp;
 pub mod recipes;
+pub mod redstone;
 pub mod shapes;
 pub mod source;
 pub mod spawn_rules;
