@@ -13,7 +13,7 @@
 
 use std::collections::HashMap;
 
-use glam::IVec3;
+use glam::{DVec3, IVec3};
 use serde_json::{Map, Value};
 
 use super::{Circuit, Redstone, container_reading};
@@ -71,6 +71,13 @@ impl Cell {
         }
     }
 
+    /// Change the block at `pos` from outside the circuit, with the block
+    /// updates of a change (not a placement).
+    fn change(&mut self, pos: IVec3, state: u32) {
+        UpdateTarget::write(self, pos, state);
+        changed(self, pos, false);
+    }
+
     fn step(&mut self) {
         // The block updates of the circuit's changes of the last tick.
         let written = self.redstone.as_mut().expect("circuit").take_written();
@@ -122,6 +129,10 @@ impl Circuit for Cell {
         self.blocks.insert(pos, state);
     }
 
+    fn break_block(&mut self, pos: IVec3) {
+        self.blocks.insert(pos, air());
+    }
+
     fn container_signal(&mut self, pos: IVec3) -> Option<u8> {
         let state = self.block_at(pos)?;
         let entry = registry().get_by_runtime_id(state)?;
@@ -144,8 +155,13 @@ impl Circuit for Cell {
 
 /// The rows of a measured circuit family.
 pub(crate) fn rows(family: &str) -> Vec<Value> {
+    rows_in("redstone", family)
+}
+
+/// The rows of a measured circuit family under `data/measured/<dir>/`.
+pub(crate) fn rows_in(dir: &str, family: &str) -> Vec<Value> {
     let path = format!(
-        "{}/../unastar-data/data/measured/redstone/{family}.json",
+        "{}/../unastar-data/data/measured/{dir}/{family}.json",
         env!("CARGO_MANIFEST_DIR")
     );
     let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{path}: {e}"));
@@ -346,7 +362,14 @@ impl Bench for LiveBench {
 }
 
 /// Apply one scenario action to the bench; `Err` when the replay cannot.
-fn apply(cell: &mut impl Bench, stored: &Stored, event: &Value) -> Result<(), Skip> {
+/// With `recorded_actors` the actors a command or drop adds or removes come
+/// from the row's actor records instead.
+fn apply(
+    cell: &mut impl Bench,
+    stored: &Stored,
+    event: &Value,
+    recorded_actors: bool,
+) -> Result<(), Skip> {
     let kind = event[0].as_str().unwrap();
     match kind {
         "set" => {
@@ -364,7 +387,12 @@ fn apply(cell: &mut impl Bench, stored: &Stored, event: &Value) -> Result<(), Sk
         }
         "cmd" => {
             let text = event[1].as_str().unwrap();
-            if text.starts_with("tp ") {
+            if text.starts_with("tp ")
+                || recorded_actors
+                    && (text.starts_with("summon ")
+                        || text.starts_with("kill ")
+                        || text.starts_with("execute as @e"))
+            {
                 return Ok(());
             }
             let words: Vec<&str> = text.split_whitespace().collect();
@@ -379,6 +407,7 @@ fn apply(cell: &mut impl Bench, stored: &Stored, event: &Value) -> Result<(), Sk
         }
         // Clicks are applied from the trace (see `switches`).
         "use" => {}
+        "drop" if recorded_actors => {}
         other => return Err(format!("event `{other}` is not modelled")),
     }
     Ok(())
@@ -422,15 +451,32 @@ fn switches(events: &[Value], watch: &[IVec3], trace: &[Value]) -> Vec<(u64, boo
 /// Replay one row in the in-memory [`Cell`], comparing every watched
 /// position but `ignored`; `Ok(Err(skip))` for rows it cannot run.
 fn replay(row: &Value, ignored: &[usize]) -> Result<Result<(), Skip>, String> {
-    replay_in(row, ignored, Cell::new)
+    replay_in(row, ignored, Cell::new, None)
 }
 
-/// [`replay`] in the bench `bench` makes from the circuit.
+/// What the recorded actors do in tick `t`: called before the bench steps
+/// (`false`) and after (`true`).
+type Pressing<'a, B> = &'a mut dyn FnMut(&mut B, u64, bool);
+
+/// [`replay`], with `pressing` run every timeline tick around the step (the
+/// actors of the row's records pressing string or pushed by pistons; their
+/// commands and drops are then not modelled as such).
+fn replay_with(
+    row: &Value,
+    ignored: &[usize],
+    pressing: Option<Pressing<'_, Cell>>,
+) -> Result<Result<(), Skip>, String> {
+    replay_in(row, ignored, Cell::new, pressing)
+}
+
+/// [`replay_with`] in the bench `bench` makes from the circuit.
 fn replay_in<B: Bench>(
     row: &Value,
     ignored: &[usize],
     bench: impl FnOnce(Redstone) -> B,
+    mut pressing: Option<Pressing<'_, B>>,
 ) -> Result<Result<(), Skip>, String> {
+    let recorded_actors = pressing.is_some();
     let witness = row[1].as_u64().unwrap();
     let steps = row[2].as_array().unwrap();
     let trace = row[3].as_array().unwrap();
@@ -486,7 +532,7 @@ fn replay_in<B: Bench>(
                 for t in 0..ticks {
                     for event in events {
                         if event[0].as_u64() == Some(t)
-                            && let Err(skip) = apply(&mut cell, &stored, &event[1])
+                            && let Err(skip) = apply(&mut cell, &stored, &event[1], recorded_actors)
                         {
                             return Ok(Err(skip));
                         }
@@ -525,11 +571,17 @@ fn replay_in<B: Bench>(
                             cell.set(watch[*k], *state, true);
                         }
                     }
+                    if let Some(pressing) = pressing.as_mut() {
+                        pressing(&mut cell, t, false);
+                    }
                     cell.step();
+                    if let Some(pressing) = pressing.as_mut() {
+                        pressing(&mut cell, t, true);
+                    }
                 }
             }
             _ => {
-                if let Err(skip) = apply(&mut cell, &stored, step) {
+                if let Err(skip) = apply(&mut cell, &stored, step, recorded_actors) {
                     return Ok(Err(skip));
                 }
             }
@@ -543,9 +595,6 @@ fn replay_in<B: Bench>(
 fn skip_reason(name: &Value) -> Option<&'static str> {
     let text = name.to_string();
     let has = |part: &str| text.contains(part);
-    if has("\"tnt\"") {
-        return Some("primed TNT is an actor unastar cannot spawn yet");
-    }
     if has("daylight_detector") {
         return Some("daylight detectors do not measure daylight yet");
     }
@@ -565,14 +614,106 @@ fn skip_reason(name: &Value) -> Option<&'static str> {
             "a big dripleaf on dust is not modelled (it stays, tilts and drops on its own)",
         );
     }
-    if has("\"piston\"") || has("\"sticky_piston\"") {
-        return Some("pistons do not move blocks yet");
+    if has("[\"lever_on_top\"]") {
+        return Some(
+            "Endstone set_data on a lever does not change its power (the replay's lever does)",
+        );
+    }
+    if text.starts_with("[\"block\",") {
+        for (prefix, reason) in PISTON_BLOCK_SKIPS {
+            if text.starts_with(&format!("[\"block\",\"{prefix}")) {
+                return Some(reason);
+            }
+        }
+        if (has("_wall_sign\"") || has("\"wall_sign\"")) && has("\"facing_direction\":0") {
+            return Some(SUPPORT_SKIP);
+        }
     }
     if has("\"torch_facing_direction\":\"unknown\"") {
         return Some("BDS turns a torch set with the unknown facing into a standing one");
     }
     None
 }
+
+const SUPPORT_SKIP: &str = "unastar's support rules treat this default state differently when it is set (not a piston rule)";
+
+/// `pistons_blocks` rows whose block does something of its own in the cell
+/// before or after the piston moves it.
+const PISTON_BLOCK_SKIPS: &[(&str, &str)] = &[
+    ("ladder", SUPPORT_SKIP),
+    ("lever", SUPPORT_SKIP),
+    ("hanging_roots", SUPPORT_SKIP),
+    ("spore_blossom", SUPPORT_SKIP),
+    ("pale_hanging_moss", SUPPORT_SKIP),
+    ("weeping_vines", SUPPORT_SKIP),
+    ("amethyst_cluster", SUPPORT_SKIP),
+    ("large_amethyst_bud", SUPPORT_SKIP),
+    ("medium_amethyst_bud", SUPPORT_SKIP),
+    ("small_amethyst_bud", SUPPORT_SKIP),
+    ("chalkboard", SUPPORT_SKIP),
+    ("small_dripleaf_block", SUPPORT_SKIP),
+    ("dead_brain_coral_wall_fan", SUPPORT_SKIP),
+    ("dead_bubble_coral_wall_fan", SUPPORT_SKIP),
+    ("dead_fire_coral_wall_fan", SUPPORT_SKIP),
+    ("dead_horn_coral_wall_fan", SUPPORT_SKIP),
+    ("dead_tube_coral_wall_fan", SUPPORT_SKIP),
+    (
+        "border_block",
+        "unastar connects a border wall to the piston beside it; BDS does not (not a piston rule)",
+    ),
+    (
+        "cave_vines",
+        "BDS gives a cave vine set by the sweep a random age",
+    ),
+    (
+        "large_fern",
+        "Endstone sets the upper half of a double plant with the lower one",
+    ),
+    (
+        "lilac",
+        "Endstone sets the upper half of a double plant with the lower one",
+    ),
+    (
+        "peony",
+        "Endstone sets the upper half of a double plant with the lower one",
+    ),
+    (
+        "pitcher_plant",
+        "Endstone sets the upper half of a double plant with the lower one",
+    ),
+    (
+        "rose_bush",
+        "Endstone sets the upper half of a double plant with the lower one",
+    ),
+    (
+        "sunflower",
+        "Endstone sets the upper half of a double plant with the lower one",
+    ),
+    (
+        "tall_grass",
+        "Endstone sets the upper half of a double plant with the lower one",
+    ),
+    (
+        "brain_coral_block",
+        "a live coral block dies 45 ticks after it was set (block_updates/coral_timing.json), moved or not; the circuit replay does not run coral checks",
+    ),
+    (
+        "bubble_coral_block",
+        "a live coral block dies 45 ticks after it was set; the circuit replay does not run coral checks",
+    ),
+    (
+        "fire_coral_block",
+        "a live coral block dies 45 ticks after it was set; the circuit replay does not run coral checks",
+    ),
+    (
+        "horn_coral_block",
+        "a live coral block dies 45 ticks after it was set; the circuit replay does not run coral checks",
+    ),
+    (
+        "tube_coral_block",
+        "a live coral block dies 45 ticks after it was set; the circuit replay does not run coral checks",
+    ),
+];
 
 /// Observer cells (family, row) where BDS pulsed a tick earlier than every
 /// other cell of the same kind (one tick after the change instead of three;
@@ -593,9 +734,14 @@ fn check_family(family: &str) {
 
 /// [`check_family`] without comparing the watched positions `ignored`.
 fn check_family_ignoring(family: &str, ignored: &[usize]) {
+    check_rows(family, rows(family), ignored);
+}
+
+/// Replay `all` (the rows of `family`), comparing every watched position
+/// but `ignored`; panics listing the rows that differ.
+pub(crate) fn check_rows(family: &str, all: Vec<Value>, ignored: &[usize]) {
     let mut failures = Vec::new();
     let mut skipped = Vec::new();
-    let all = rows(family);
     for row in &all {
         let name = &row[0];
         if let Some(reason) = skip_reason(name) {
@@ -687,6 +833,483 @@ fn buttons_and_levers_power_like_bds() {
     check_family("redstone_switches");
 }
 
+/// The rows of a measured piston family.
+fn piston_rows(family: &str) -> Vec<Value> {
+    rows_in("pistons", family)
+}
+
+#[test]
+fn pistons_push_lines_like_bds() {
+    check_rows("pistons_push", piston_rows("pistons_push"), &[]);
+}
+
+#[test]
+fn pistons_treat_every_block_like_bds() {
+    check_rows("pistons_blocks", piston_rows("pistons_blocks"), &[]);
+}
+
+#[test]
+fn slime_and_honey_drag_blocks_like_bds() {
+    check_rows("pistons_slime", piston_rows("pistons_slime"), &[]);
+}
+
+#[test]
+fn pistons_are_powered_like_bds() {
+    check_rows("pistons_power", piston_rows("pistons_power"), &[]);
+}
+
+#[test]
+fn pistons_time_moves_like_bds() {
+    check_rows("pistons_timing", piston_rows("pistons_timing"), &[]);
+}
+
+#[test]
+fn pistons_push_pistons_like_bds() {
+    check_rows("pistons_chains", piston_rows("pistons_chains"), &[]);
+}
+
+/// Blocks whose tool-less drops unastar gets wrong whether a piston breaks
+/// them or a block update pops them (no vanilla loot table, so unastar drops
+/// the block itself; a campfire drops charcoal or soul soil): a drop-table
+/// gap, not a piston rule.
+const POPPED_DROP_GAPS: &[&str] = &[
+    "bush",
+    "campfire",
+    "chorus_plant",
+    "orange_poplar_leaves",
+    "poplar_standing_sign",
+    "red_poplar_leaves",
+    "resin_clump",
+    "sculk_vein",
+    "short_dry_grass",
+    "soul_campfire",
+    "suspicious_gravel",
+    "suspicious_sand",
+    "tall_dry_grass",
+    "twisting_vines",
+    "yellow_poplar_leaves",
+];
+
+/// A block a piston breaks drops what it drops by hand without the
+/// correct-tool requirement, like a popped block: every item BDS dropped is
+/// a possible drop, and blocks whose drops never vary drop exactly BDS's.
+#[test]
+fn blocks_pistons_break_drop_like_bds() {
+    use bevy_ecs::prelude::World;
+
+    use crate::entity::item_drop::EntityRandom;
+    use crate::registry::ItemRegistry;
+    use crate::server::game::block_drops::popped_drops;
+    use crate::server::game::types::{BlockRegistryResource, ItemRegistryResource};
+
+    let mut world = World::new();
+    let mut items = ItemRegistry::new();
+    items.load_vanilla();
+    world.insert_resource(ItemRegistryResource(std::sync::Arc::new(items)));
+    world.insert_resource(BlockRegistryResource(std::sync::Arc::new(
+        registry().clone(),
+    )));
+    world.insert_resource(EntityRandom::seeded(4));
+    let table = super::kinds::Table::build(registry());
+    let mut failures = Vec::new();
+    let mut compared = 0;
+    for row in piston_rows("pistons_blocks") {
+        let name = &row[0];
+        if skip_reason(name).is_some() {
+            continue;
+        }
+        let block = name[1].as_str().unwrap();
+        if POPPED_DROP_GAPS.contains(&block) {
+            continue;
+        }
+        let state = state(block, &name[2]);
+        if table.get(state).movement != unastar_data::pistons::Movement::Breaks {
+            continue;
+        }
+        let mut bds: Vec<(String, u64)> = row[4]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|stack| {
+                (
+                    full_name(stack[0].as_str().unwrap()),
+                    stack[2].as_u64().unwrap(),
+                )
+            })
+            .collect();
+        bds.sort();
+        let rolls: Vec<Vec<(String, u64)>> = (0..32)
+            .map(|_| {
+                let mut out: Vec<(String, u64)> = popped_drops(&mut world, state)
+                    .iter()
+                    .map(|stack| (stack.item_id().to_string(), u64::from(stack.count)))
+                    .collect();
+                out.sort();
+                out
+            })
+            .collect();
+        compared += 1;
+        let fixed = rolls.iter().all(|roll| *roll == rolls[0]);
+        if fixed {
+            if rolls[0] != bds {
+                failures.push(format!(
+                    "{name}: BDS dropped {bds:?}, unastar {:?}",
+                    rolls[0]
+                ));
+            }
+        } else if let Some((item, _)) = bds
+            .iter()
+            .find(|(item, _)| !rolls.iter().flatten().any(|(got, _)| got == item))
+        {
+            failures.push(format!("{name}: BDS dropped {item}, unastar never does"));
+        }
+    }
+    assert!(compared > 200, "only {compared} broken blocks compared");
+    assert!(
+        failures.is_empty(),
+        "{} of {compared} differ:\n{}",
+        failures.len(),
+        failures.join("\n")
+    );
+}
+
+/// The box an actor of the sweep presses plates with.
+fn presser_size(kind: &str) -> Option<(f64, f64)> {
+    Some(match kind {
+        "armor_stand" => (0.5, 1.975),
+        "pig" => (0.9, 0.9),
+        "item" => (0.25, 0.25),
+        _ => return None,
+    })
+}
+
+/// The actors of a row's records (`[tick, [[id, type, dx, dy, dz, ...]]]`)
+/// at read `read`: (id, presser).
+fn actors_at(actors: &[Value], read: u64) -> Vec<(i64, super::plates::Presser)> {
+    use super::plates::Presser;
+    use crate::registry::collision::Aabb;
+    actors
+        .iter()
+        .rev()
+        .find(|entry| entry[0].as_u64().unwrap() <= read)
+        .map(|entry| {
+            entry[1]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter_map(|a| {
+                    let (width, height) = presser_size(a[1].as_str()?)?;
+                    let feet = DVec3::new(a[2].as_f64()?, a[3].as_f64()?, a[4].as_f64()?);
+                    Some((
+                        a[0].as_i64()?,
+                        Presser {
+                            aabb: Aabb::from_feet(feet, width, height),
+                            item: a[1] == "item",
+                        },
+                    ))
+                })
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// The actors that press plates in tick `t`: those that existed when it
+/// began (read `t`), where its movement left them (read `t + 1`); a mob
+/// removed in the tick still counts where it was, an item merged into
+/// another does not (items merge before plates read; a mob is removed
+/// after).
+fn pressers_in_tick(actors: &[Value], t: u64) -> Vec<super::plates::Presser> {
+    let after = actors_at(actors, t + 1);
+    actors_at(actors, t)
+        .into_iter()
+        .filter_map(
+            |(id, presser)| match after.iter().find(|(other, _)| *other == id) {
+                Some((_, moved)) => Some(*moved),
+                None => (!presser.item).then_some(presser),
+            },
+        )
+        .collect()
+}
+
+/// Every plate row replayed from the actors BDS had in the cell each tick:
+/// the plate's stored signal matches at every read (wooden, stone,
+/// blackstone and weighted plates under armour stands, pigs, items and
+/// stacks; the weighted plates under 1-64 items as they merge).
+#[test]
+fn plates_press_like_bds_under_the_measured_actors() {
+    use super::plates::{PlateKind, Plates};
+    let mut failures = Vec::new();
+    let mut compared = 0;
+    for family in ["plates_press", "plates_weighted"] {
+        for row in rows(family) {
+            let name = &row[0];
+            let plate = full_name(name[0].as_str().unwrap());
+            let kind = PlateKind::of(&plate).expect("a plate");
+            let pos = IVec3::new(1, 0, 0);
+            let plate_at = |trace: &[Value], t: u64| {
+                trace
+                    .iter()
+                    .rev()
+                    .find(|e| e[1] == 1 && e[0].as_u64().unwrap() <= t)
+                    .map_or(0, |e| e[3]["redstone_signal"].as_u64().unwrap_or(0) as u8)
+            };
+            let trace = row[3].as_array().unwrap();
+            let actors = row[5].as_array().unwrap();
+            let ticks = row[2]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|step| step[0] == "timeline")
+                .unwrap()[1]
+                .as_u64()
+                .unwrap();
+            let mut plates = Plates::default();
+            let mut stored = 0u8;
+            for t in 0..ticks.saturating_sub(1) {
+                let seen = pressers_in_tick(actors, t);
+                for (_, signal) in plates.tick(t, &[(pos, kind, stored)], &seen) {
+                    stored = signal;
+                }
+                compared += 1;
+                let bds = plate_at(trace, t + 1);
+                if bds != stored {
+                    failures.push(format!(
+                        "{name}: read {}: BDS {bds}, unastar {stored}",
+                        t + 1
+                    ));
+                    break;
+                }
+            }
+        }
+    }
+    assert!(
+        failures.is_empty(),
+        "{} rows differ:\n{}",
+        failures.len(),
+        failures.join("\n")
+    );
+    assert!(compared > 3000, "{compared}");
+}
+
+/// Every tripwire row replayed block by block, tick by tick, with the
+/// string pressed by the actors BDS had in the cell each tick: the hooks,
+/// the string and the lamp a hook powers match BDS at every read (the line
+/// attaching as it is built, an armour stand and items on the string, the
+/// string cut).
+#[test]
+fn tripwires_follow_bds_under_the_measured_actors() {
+    let mut replayed = 0;
+    for family in ["plates_tripwire", "plates_tripwire_more"] {
+        for row in rows(family) {
+            let actors = row[5].as_array().unwrap().clone();
+            let mut pressing = tripwire_pressing(actors);
+            match replay_with(&row, &[], Some(&mut pressing)) {
+                Ok(Ok(())) => replayed += 1,
+                Ok(Err(skip)) => panic!("{}: {skip}", row[0]),
+                Err(message) => panic!("{}: {message}", row[0]),
+            }
+        }
+    }
+    assert!(replayed >= 5, "{replayed}");
+}
+
+/// The string and hooks the recorded `actors` press each tick, through the
+/// live server's `plates::press`.
+fn tripwire_pressing(actors: Vec<Value>) -> impl FnMut(&mut Cell, u64, bool) {
+    use super::plates::Plates;
+    let mut plates = Plates::default();
+    move |cell: &mut Cell, t: u64, stepped: bool| {
+        if stepped {
+            return;
+        }
+        let seen = pressers_in_tick(&actors, t);
+        let candidates: Vec<IVec3> = cell.blocks.keys().copied().collect();
+        super::plates::press(cell, &mut plates, t, candidates, &seen, Cell::change);
+    }
+}
+
+/// Every piston row with actors replayed block by block, and every actor
+/// BDS had in the cell moved by the replay's piston moves of each tick: what
+/// it moved along the move's axis between two reads is the push or carry
+/// plus its own motion (the velocity BDS read before or after the tick: a
+/// landing item moves with the one before, within 0.02).
+#[test]
+fn pistons_move_actors_like_bds() {
+    let mut compared = 0;
+    for family in ["pistons_entities", "pistons_riding"] {
+        for row in piston_rows(family) {
+            let actors = row[5].as_array().unwrap().clone();
+            // Ticks a command moves the actors itself (a `tp`).
+            let moved_by_command: Vec<u64> = row[2]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter(|step| step[0] == "timeline")
+                .flat_map(|step| step[2].as_array().unwrap().iter())
+                .filter(|event| {
+                    event[1][0] == "cmd"
+                        && event[1][1]
+                            .as_str()
+                            .is_some_and(|text| text.contains(" run tp "))
+                })
+                .filter_map(|event| event[0].as_u64())
+                .collect();
+            let mut failures = Vec::new();
+            let mut check = |cell: &mut Cell, t: u64, stepped: bool| {
+                if !stepped {
+                    return;
+                }
+                let pushes = cell.redstone.as_ref().expect("circuit").actor_pushes();
+                let before = recorded_actors(&actors, t);
+                for (id, kind, feet, velocity_before) in &before {
+                    let Some((width, height)) = presser_size(kind) else {
+                        continue;
+                    };
+                    let Some((_, _, after, velocity)) = recorded_actors(&actors, t + 1)
+                        .into_iter()
+                        .find(|(other, ..)| other == id)
+                    else {
+                        continue;
+                    };
+                    let aabb = crate::registry::collision::Aabb::from_feet(*feet, width, height);
+                    let axis = pushes
+                        .first()
+                        .map_or(DVec3::X, |push| push.dir.abs().as_dvec3());
+                    let moved = super::piston_actors::moved(&aabb, &pushes);
+                    let own = (after - *feet - moved).dot(axis);
+                    if moved_by_command.contains(&(t + 1)) {
+                        continue;
+                    }
+                    compared += 1;
+                    if [velocity, *velocity_before]
+                        .iter()
+                        .all(|v| (own - v.dot(axis)).abs() > 0.02)
+                    {
+                        failures.push(format!(
+                            "read {}: {kind} from {feet} to {after}, unastar moves it {moved}",
+                            t + 1
+                        ));
+                    }
+                }
+            };
+            match replay_with(&row, &[], Some(&mut check)) {
+                Ok(Ok(())) => {}
+                Ok(Err(skip)) => panic!("{}: {skip}", row[0]),
+                Err(message) => panic!("{}: {message}", row[0]),
+            }
+            assert!(
+                failures.is_empty(),
+                "{}: {}",
+                row[0],
+                failures.join(
+                    "
+"
+                )
+            );
+        }
+    }
+    assert!(compared > 300, "{compared}");
+}
+
+/// The actors of a row's records at read `read`: (id, type, feet, velocity).
+fn recorded_actors(actors: &[Value], read: u64) -> Vec<(i64, String, DVec3, DVec3)> {
+    actors
+        .iter()
+        .rev()
+        .find(|entry| entry[0].as_u64().unwrap() <= read)
+        .map(|entry| {
+            entry[1]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter_map(|a| {
+                    let v = |i: usize| a[i].as_f64();
+                    Some((
+                        a[0].as_i64()?,
+                        a[1].as_str()?.to_string(),
+                        DVec3::new(v(2)?, v(3)?, v(4)?),
+                        DVec3::new(v(5)?, v(6)?, v(7)?),
+                    ))
+                })
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// Why a block has no measured piston class: the per-block sweep could not
+/// stand its default state in a cell. Such blocks break.
+fn unmeasured_reason(id: &str) -> Option<&'static str> {
+    let short = id.strip_prefix("minecraft:").unwrap_or(id);
+    let water = short.ends_with("_coral_fan") && !short.starts_with("dead_")
+        || short.ends_with("_coral_wall_fan") && !short.starts_with("dead_")
+        || matches!(
+            short,
+            "kelp"
+                | "seagrass"
+                | "sea_pickle"
+                | "underwater_torch"
+                | "underwater_tnt"
+                | "water"
+                | "flowing_water"
+                | "lava"
+                | "flowing_lava"
+                | "bubble_column"
+        );
+    if water {
+        return Some("water plants and liquids flood the cells beside them");
+    }
+    if short.ends_with("_button")
+        || matches!(
+            short,
+            "frame"
+                | "glow_frame"
+                | "chalkboard"
+                | "small_dripleaf_block"
+                | "wall_banner"
+                | "tripwire_hook"
+        )
+    {
+        return Some("the default state falls off when set");
+    }
+    if short == "air" || short == "moving_block" || short == "unknown" {
+        return Some("not a block a piston meets as such");
+    }
+    if matches!(short, "fire" | "soul_fire" | "portal" | "end_gateway") {
+        return Some(
+            "not measured: the sweep's cell does not keep it (fire burns out, a portal needs its frame)",
+        );
+    }
+    None
+}
+
+/// Every block without a measured piston class has a reason; the list
+/// fails when a new block appears that the sweep has not measured.
+#[test]
+fn every_unmeasured_piston_block_has_a_reason() {
+    let measured = unastar_data::pistons::blocks();
+    let mut missing = Vec::new();
+    for entry in registry().iter() {
+        let id = entry.string_id.as_str();
+        let rest = id.strip_prefix("minecraft:").unwrap_or(id);
+        let base = ["lit_", "unlit_", "powered_", "unpowered_"]
+            .iter()
+            .find_map(|prefix| rest.strip_prefix(prefix))
+            .unwrap_or(rest);
+        let known = ["", "lit_", "unlit_", "powered_", "unpowered_"]
+            .iter()
+            .any(|prefix| measured.movement(&format!("{prefix}{base}")).is_some());
+        if !known && unmeasured_reason(id).is_none() {
+            missing.push(id.to_string());
+        }
+    }
+    missing.sort();
+    assert!(
+        missing.is_empty(),
+        "{} blocks have no piston class or reason: {missing:?}",
+        missing.len()
+    );
+}
+
 /// The burnout rows through the live server world: the circuit's own writes
 /// (a torch turning off) take the game's block path and must not count as
 /// outside changes, which would recover the burnt-out torch next tick.
@@ -705,7 +1328,7 @@ fn torch_burnout_runs_like_bds_in_the_live_world() {
         .collect();
     assert!(picked.len() >= 2);
     for row in picked {
-        match replay_in(row, &[], LiveBench::new) {
+        match replay_in(row, &[], LiveBench::new, None) {
             Ok(Ok(())) => {}
             Ok(Err(skip)) => panic!("{}: skipped: {skip}", row[0]),
             Err(message) => panic!("{}: {message}", row[0]),

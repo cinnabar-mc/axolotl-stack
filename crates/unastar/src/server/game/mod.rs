@@ -21,6 +21,7 @@ mod containers;
 pub mod durability;
 pub mod effects;
 pub mod elytra;
+pub(crate) mod explosion;
 mod falling;
 mod flower_pots;
 pub mod hunger;
@@ -669,7 +670,12 @@ impl GameServer {
         // Redstone, after this tick's other block changes, then random block
         // ticks (exclusive: edit chunks).
         ecs.schedule_mut().add_systems(
-            (redstone::tick_redstone, random_ticks::tick_random_blocks)
+            (
+                redstone::press_plates,
+                redstone::tick_redstone,
+                redstone::push_actors,
+                random_ticks::tick_random_blocks,
+            )
                 .chain()
                 .in_set(EntityLogicSet)
                 .after(block_use::tick_scheduled_blocks)
@@ -687,6 +693,7 @@ impl GameServer {
                 crate::entity::mob::combat::damage_over_time,
                 crate::entity::mob::combat::fire::burn_in_daylight,
                 crate::entity::mob::combat::fire::burn_mobs,
+                crate::entity::mob::combat::explode::tick_fuses,
                 crate::entity::mob::combat::death::die_at_zero_health,
                 crate::entity::mob::combat::death::tick_dying,
                 crate::entity::xp_orb::tick_xp_orbs,

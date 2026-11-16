@@ -72,8 +72,8 @@ pub enum ArchetypeError {
     #[error("{0}: no native AddActor attribute observation")]
     NoAttributeObservation(String),
     /// The native summon carries no attributes: the class is not a living
-    /// mob (boats, minecarts, the cushion, lightning, fireworks, TNT, ...),
-    /// and only living mobs and projectiles are implemented.
+    /// mob (boats, minecarts, the cushion, lightning, fireworks, ...), and
+    /// only living mobs, projectiles and primed TNT are implemented.
     #[error("{0} is not a living mob, and non-living actors are not implemented")]
     NotLiving(String),
     /// A living class whose native behaviour makes it something else than
@@ -254,6 +254,11 @@ pub struct MobArchetype {
     pub base_height: f64,
 }
 
+/// Non-living actors (no attributes on the native summon) whose whole
+/// behaviour is implemented: primed TNT is its `minecraft:explode` fuse, its
+/// physics and the push a piston gives it (`server::game::explosion`).
+const IMPLEMENTED_NON_LIVING: &[ActorType] = &[ActorType::Tnt];
+
 impl MobArchetype {
     fn compile(
         source: &Arc<ActorDefinition>,
@@ -292,7 +297,8 @@ impl MobArchetype {
             &mut bindings,
         )?;
         let (attributes, attribute_seed) = attribute_seed(identifier)?;
-        if !projectile && attribute_seed.is_empty() {
+        if !projectile && attribute_seed.is_empty() && !IMPLEMENTED_NON_LIVING.contains(&actor_type)
+        {
             return Err(ArchetypeError::NotLiving(identifier.to_owned()));
         }
         if actor_type == ActorType::ArmorStand {

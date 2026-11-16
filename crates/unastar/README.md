@@ -1006,9 +1006,26 @@ blocks power acts on: lamps, doors, trapdoors, fence gates, copper bulbs, hopper
 dispensers, droppers, crafters (`triggered_bit` only) and powered and activator rails. Which
 blocks conduct, cut climbing dust and let dust climb are measured per block
 (`unastar_data::redstone`). Levers and buttons switch through `block_use.rs`. Not modelled:
-pistons, entities on pressure plates and tripwires, target blocks, daylight measurement, sculk
-sensors, note block sounds, TNT priming and dispensing; a circuit already in a chunk loaded
+tripwires pressed by actors, target blocks, daylight measurement, sculk
+sensors, note block sounds and dispensing; a circuit already in a chunk loaded
 from disk starts working once a block next to it changes.
+
+Pressure plates (`redstone/plates.rs`) press in the tick an actor touches them and release at a
+check every 20 ticks (10 for weighted plates), replayed against BDS from the measured actor
+positions.
+
+Pistons (`redstone/pistons.rs`, decision
+[0050](../../docs/decisions/0050-move-pistons-from-the-circuit-update.md)) read their power in
+the circuit update and move a tick later; heads and moving blocks appear at once and land two
+ticks later; at most 12 blocks move, slime and honey drag their neighbours, and how each block
+moves, breaks or holds is measured (`unastar_data::pistons`). Block actors move with their
+blocks; clients get the `PistonArm` and `MovingBlock` actors. Actors are not pushed yet.
+
+Explosions (`server/game/explosion.rs`) break blocks along 1352 rays, drop every block they
+break and hurt actors by distance and exposure, compared with BDS by distribution
+(`explosion/tests.rs`, `crates/unastar-data/data/measured/explosions/`). Power primes TNT in
+the circuit update; the primed TNT (`minecraft:explode`, `entity/mob/combat/explode.rs`)
+explodes 81 ticks later a sixteenth of its height above its feet.
 
 Random block ticks (`server/game/random_ticks.rs`) follow BDS 1.26.51 by distribution
 (`random_ticks/tests.rs` compares measured fields of
