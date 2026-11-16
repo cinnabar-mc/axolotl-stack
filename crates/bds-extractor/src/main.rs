@@ -44,7 +44,6 @@ struct Args {
     #[arg(long)]
     fixture: Option<PathBuf>,
 
-
     /// Derive the outputs of an existing capture directory again from its
     /// packets.jsonl (a session that stopped before writing them), without
     /// connecting
