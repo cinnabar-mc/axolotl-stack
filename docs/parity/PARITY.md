@@ -15,7 +15,7 @@ Each domain's first line is its headline: the rows its family table, gap list an
 | [Entities](#entities): actor rows (summon and replication) | 137 | 112 | 1 | 4 | 16 | 4 | 15.0% |
 | Entities: behaviour sub-rows (components, spawn rules) | 4082 | 1004 | 2674 | 309 | 49 | 46 | 8.9% |
 | [Blocks](#blocks) | 1477 | 0 | 410 | 511 | 389 | 167 | 68.7% |
-| [Items](#items): behaviour sub-rows (food, durability, placement, ...) | 2347 | 99 | 847 | 619 | 605 | 177 | 56.4% |
+| [Items](#items): behaviour sub-rows (food, durability, placement, ...) | 2347 | 99 | 832 | 619 | 620 | 177 | 57.1% |
 | Items: registered (exists in the registry, no behaviour) | 2076 | 0 | 0 | 2076 | 0 | 0 | 100.0% |
 | [Commands](#commands) | 82 | 8 | 35 | 2 | 36 | 1 | 46.9% |
 | [Protocol](#protocol) | 231 | 125 | 28 | 42 | 21 | 15 | 29.2% |
@@ -65,11 +65,11 @@ Add a `[[claim]]` to [claims.toml](claims.toml) in your first pull request for t
 | Liquids: water and lava flow, waterlogging, sponges | a contributor | 2026-10-29 | 7 |
 | Workstation blocks | lane ITEMS | 2026-10-29 | 10 |
 
-**Items**: 0 open rows free, 946 claimed.
+**Items**: 0 open rows free, 931 claimed.
 
 | Claimed area | Claimed by | Since | Open |
 |---|---|---|---:|
-| Item use | lane ITEMS | 2026-10-29 | 946 |
+| Item use | lane ITEMS | 2026-10-29 | 931 |
 
 **Commands**: 0 open rows free, 43 claimed.
 
@@ -416,13 +416,13 @@ The family table and gaps below count sub-rows; top-level rows are counted in th
 | entity_placers | 57 | 31 | 0 | 0 | 24 | 2 | 43.6% |
 | food | 46 | 4 | 4 | 0 | 37 | 1 | 82.2% |
 | materials_misc | 40 | 0 | 0 | 0 | 40 | 0 | 100.0% |
-| melee_weapons | 17 | 0 | 9 | 0 | 8 | 0 | 47.1% |
+| melee_weapons | 17 | 0 | 1 | 0 | 16 | 0 | 94.1% |
 | other_tools | 1 | 0 | 0 | 0 | 1 | 0 | 100.0% |
 | potions_drinks | 3 | 0 | 0 | 0 | 2 | 1 | 100.0% |
 | ranged_weapons | 8 | 0 | 2 | 2 | 4 | 0 | 75.0% |
 | spawn_eggs | 91 | 0 | 85 | 1 | 4 | 1 | 5.6% |
 | throwables | 16 | 6 | 2 | 0 | 8 | 0 | 50.0% |
-| tools | 280 | 31 | 61 | 1 | 183 | 4 | 66.7% |
+| tools | 280 | 31 | 54 | 1 | 190 | 4 | 69.2% |
 
 Sub-rows by facet, most incomplete first (25 of 25):
 
@@ -430,7 +430,7 @@ Sub-rows by facet, most incomplete first (25 of 25):
 |---|---:|---:|---:|---:|---:|---:|---:|
 | block_placer | 1504 | 28 | 692 | 615 | 0 | 169 | 46.1% |
 | spawn_egg | 91 | 0 | 85 | 1 | 4 | 1 | 5.6% |
-| durability | 83 | 3 | 45 | 2 | 31 | 2 | 40.7% |
+| durability | 83 | 3 | 30 | 2 | 46 | 2 | 59.3% |
 | entity_placer | 33 | 31 | 0 | 0 | 0 | 2 | 0.0% |
 | bundle | 17 | 17 | 0 | 0 | 0 | 0 | 0.0% |
 | kinetic_weapon | 7 | 0 | 7 | 0 | 0 | 0 | 0.0% |
@@ -489,7 +489,6 @@ Sub-rows by facet, most incomplete first (25 of 25):
 
 **melee_weapons**
 
-- `minecraft:copper_sword/durability`, `minecraft:diamond_sword/durability`, `minecraft:golden_sword/durability`, `minecraft:iron_sword/durability`, `minecraft:mace/durability`, `minecraft:netherite_sword/durability`, `minecraft:stone_sword/durability`, `minecraft:wooden_sword/durability`: Unbreaking on a wear worth 2 points (a digger's hit, a sword's broken block) is spared point by point here; only one-point wear was measured
 - `minecraft:mace/weapon`: base damage only: the smash bonus from falling is not applied
 
 **ranged_weapons**
@@ -514,7 +513,7 @@ Sub-rows by facet, most incomplete first (25 of 25):
 
 **tools**
 
-- `minecraft:copper_axe/durability`, `minecraft:copper_hoe/durability`, `minecraft:copper_pickaxe/durability`, `minecraft:copper_shovel/durability`, `minecraft:diamond_axe/durability`, `minecraft:diamond_hoe/durability`, `minecraft:diamond_pickaxe/durability`, `minecraft:diamond_shovel/durability`, `minecraft:golden_axe/durability`, `minecraft:golden_hoe/durability`, `minecraft:golden_pickaxe/durability`, `minecraft:golden_shovel/durability` and 16 more: Unbreaking on a wear worth 2 points (a digger's hit, a sword's broken block) is spared point by point here; only one-point wear was measured
+- `minecraft:copper_axe/durability`, `minecraft:copper_hoe/durability`, `minecraft:copper_shovel/durability`, `minecraft:diamond_axe/durability`, `minecraft:diamond_hoe/durability`, `minecraft:diamond_shovel/durability`, `minecraft:golden_axe/durability`, `minecraft:golden_hoe/durability`, `minecraft:golden_shovel/durability`, `minecraft:iron_axe/durability`, `minecraft:iron_hoe/durability`, `minecraft:iron_shovel/durability` and 9 more: wear from use on blocks (tilling, stripping, making paths) is not measured
 - `minecraft:brewing_stand/block_placer`, `minecraft:cake/block_placer`, `minecraft:campfire/block_placer`, `minecraft:cauldron/block_placer`, `minecraft:flower_pot/block_placer`, `minecraft:kelp/block_placer`, `minecraft:nether_sprouts/block_placer`, `minecraft:red_shrub/block_placer`, `minecraft:shelf_mushroom/block_placer`, `minecraft:soul_campfire/block_placer`: non-cube block: support and attachment rules are not checked and its placement has no test
 - `minecraft:copper_spear/durability`, `minecraft:diamond_spear/durability`, `minecraft:golden_spear/durability`, `minecraft:iron_spear/durability`, `minecraft:netherite_spear/durability`, `minecraft:stone_spear/durability`, `minecraft:wooden_spear/durability`: the charge attack is not implemented; whether a jab that hits nothing wears the spear is not measured
 - `minecraft:copper_spear/kinetic_weapon`, `minecraft:diamond_spear/kinetic_weapon`, `minecraft:golden_spear/kinetic_weapon`, `minecraft:iron_spear/kinetic_weapon`, `minecraft:netherite_spear/kinetic_weapon`, `minecraft:stone_spear/kinetic_weapon`, `minecraft:wooden_spear/kinetic_weapon`: the charge is not implemented: no kinetic damage, knockback or dismount from the relative speed while the spear is held
