@@ -928,34 +928,49 @@ fn act(world: &mut World, entity: Entity, effect: EffectType, state: &ActiveEffe
                     (hunger.food_level + i32::from(level) + 1).clamp(0, Hunger::MAX_FOOD);
             }
         }
-        EffectType::INSTANT_HEALTH => {
-            if is_undead(world, entity) {
-                hurt(
-                    world,
-                    entity,
-                    INSTANT_HEALTH * scale,
-                    ActorDamageCause::Magic,
-                    false,
-                );
-            } else {
-                heal(world, entity, INSTANT_HEALTH * scale);
-            }
-        }
-        EffectType::INSTANT_DAMAGE => {
-            if is_undead(world, entity) {
-                heal(world, entity, INSTANT_DAMAGE * scale);
-            } else {
-                hurt(
-                    world,
-                    entity,
-                    INSTANT_DAMAGE * scale,
-                    ActorDamageCause::Magic,
-                    true,
-                );
-            }
-        }
+        EffectType::INSTANT_HEALTH => instant(world, entity, effect, INSTANT_HEALTH * scale),
+        EffectType::INSTANT_DAMAGE => instant(world, entity, effect, INSTANT_DAMAGE * scale),
         _ => {}
     }
+}
+
+/// Instant health heals `amount` (hurts the undead), instant damage hurts
+/// for it (heals the undead).
+fn instant(world: &mut World, entity: Entity, effect: EffectType, amount: f32) {
+    let healing = (effect == EffectType::INSTANT_HEALTH) != is_undead(world, entity);
+    if healing {
+        heal(world, entity, amount);
+    } else {
+        let animate = effect == EffectType::INSTANT_DAMAGE;
+        hurt(world, entity, amount, ActorDamageCause::Magic, animate);
+    }
+}
+
+/// A splash potion's instant health or damage: `factor` of the drink's
+/// amount, rounded to the nearest point, and no `MobEffect` (BDS 1.26.51
+/// throwables capture: splash harming at the thrower's feet hurt it and sent
+/// no effect packet).
+pub fn act_instant_splash(
+    world: &mut World,
+    entity: Entity,
+    effect: EffectType,
+    level: u8,
+    factor: f64,
+) {
+    let base = match effect {
+        EffectType::INSTANT_HEALTH => INSTANT_HEALTH,
+        EffectType::INSTANT_DAMAGE => INSTANT_DAMAGE,
+        _ => return,
+    };
+    if !affects(world, entity, effect)
+        || world.get::<Dead>(entity).is_some()
+        || world.get::<Health>(entity).is_none_or(Health::is_dead)
+    {
+        return;
+    }
+    let full = f64::from(base * 2f32.powi(i32::from(level.min(30))));
+    let amount = (factor * full + 0.5).floor() as f32;
+    instant(world, entity, effect, amount);
 }
 
 fn survival(world: &World, entity: Entity) -> bool {

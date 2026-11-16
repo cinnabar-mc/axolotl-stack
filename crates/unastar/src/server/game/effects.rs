@@ -33,6 +33,18 @@ pub fn add_effect_with(world: &mut World, player: Entity, effect: EffectType, st
     crate::entity::effects::give_from_item(world, player, effect, state);
 }
 
+/// An instant effect from a splash potion: `factor` of the drink's healing
+/// or damage, through [`crate::entity::effects::act_instant_splash`].
+pub fn apply_instant(
+    world: &mut World,
+    player: Entity,
+    effect: EffectType,
+    amplifier: u8,
+    factor: f64,
+) {
+    crate::entity::effects::act_instant_splash(world, player, effect, amplifier, factor);
+}
+
 /// Remove one effect from `player`.
 pub fn remove_effect(world: &mut World, player: Entity, effect: EffectType) {
     crate::entity::effects::take(world, player, effect);
