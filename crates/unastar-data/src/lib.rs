@@ -8,6 +8,7 @@
 pub mod actor_components;
 pub mod actor_definitions;
 pub mod actor_identifiers;
+pub mod actor_picks;
 pub mod actor_wire;
 pub mod armour;
 pub mod bds_packets;
@@ -31,6 +32,7 @@ pub mod loot;
 pub mod melee;
 pub mod pack_manifest;
 pub mod pack_stack;
+pub mod pistons;
 pub mod pmmp;
 pub mod recipes;
 pub mod redstone;

@@ -10,22 +10,12 @@
 use bevy_ecs::prelude::*;
 use jolyne::valentine::types::{
     ActorRuntimeId, ActorUniqueId, CerealizerNetworkItemStackDescriptorSerializedData,
-    EnumsBuildPlatform, EnumsCommandPermissionLevel, EnumsGameType, EnumsPlayerPermissionLevel,
-    PlayerInputTick, PropertySyncData, SerializedAbilitiesData,
-    SerializedAbilitiesDataSerializedLayer, SynchedActorDataCopyableDataList, Vec2, Vec3,
+    EnumsBuildPlatform, EnumsGameType, PlayerInputTick, PropertySyncData,
+    SynchedActorDataCopyableDataList, Vec2, Vec3,
 };
 use jolyne::valentine::{AddPlayerPacket, McpePacket, RemoveActorPacket};
 use std::collections::HashMap;
 use uuid::Uuid;
-
-// Ability bit values and the base-layer ordinal are the protocol values used
-// by Dragonfly/gophertunnel. Protocolgen exposes the generated fields but not
-// these shared constants.
-const ABILITY_BUILD: u32 = 1 << 0;
-const ABILITY_MINE: u32 = 1 << 1;
-const ABILITY_DOORS_AND_SWITCHES: u32 = 1 << 2;
-const ABILITY_COUNT: u32 = 1 << 20;
-const ABILITY_LAYER_BASE: u16 = 1;
 
 use crate::entity::components::{
     GameMode, Player, PlayerSession, Position, Rotation, RuntimeEntityId, SpatialChunk,
@@ -87,6 +77,7 @@ pub(crate) fn add_player_game_type(game_mode: GameMode, explicit: bool) -> Enums
 /// every other player packet carries), its whole actor data as its viewers
 /// last received it (`player_life::actor_data::full_actor_data`) and its
 /// game type (`server::player_view`).
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn build_add_player_packet(
     runtime_id: i64,
     uuid: Uuid,
@@ -95,6 +86,8 @@ pub(crate) fn build_add_player_packet(
     rotation: &Rotation,
     player_game_type: EnumsGameType,
     actor_data: &PlayerActorData,
+    game_mode: GameMode,
+    operator: bool,
 ) -> AddPlayerPacket {
     let entity_data = SynchedActorDataCopyableDataList {
         data: full_actor_data(name, actor_data),
@@ -122,21 +115,13 @@ pub(crate) fn build_add_player_packet(
         player_game_type,
         entity_data,
         synched_properties: PropertySyncData::default(),
-        abilities_data: SerializedAbilitiesData {
-            target_player_raw_id: runtime_id,
-            player_permissions: EnumsPlayerPermissionLevel::Member,
-            command_permissions: EnumsCommandPermissionLevel::Any,
-            layers: vec![SerializedAbilitiesDataSerializedLayer {
-                serialized_layer: ABILITY_LAYER_BASE,
-                // AbilityCount - 1 from Dragonfly/gophertunnel: all defined
-                // ability bits except the sentinel COUNT value.
-                abilities_set: ABILITY_COUNT - 1,
-                ability_values: ABILITY_BUILD | ABILITY_MINE | ABILITY_DOORS_AND_SWITCHES,
-                fly_speed: 0.05,
-                vertical_fly_speed: 0.05,
-                walk_speed: 0.1,
-            }],
-        },
+        // The player's own abilities, as its UpdateAbilities carries them
+        // (BDS 1.26.51 `protocol_probe.py relay`: an operator's AddPlayer
+        // has its operator abilities).
+        abilities_data: crate::server::game::join::abilities_packet(
+            runtime_id, game_mode, operator,
+        )
+        .data,
         actor_links: vec![],
         device_id: "".into(),
         build_platform: EnumsBuildPlatform::Unknown,
@@ -785,6 +770,25 @@ mod actor_viewer_tests {
 // Arm swings
 // =============================================================================
 
+/// The other players who see `player`: those within a chunk of it (the
+/// range client actions such as swings and emotes are relayed to).
+pub(crate) fn players_seeing(world: &World, player: Entity) -> Vec<Entity> {
+    let Some(position) = world.get::<Position>(player) else {
+        return Vec::new();
+    };
+    let chunk = (
+        (position.0.x.floor() as i32) >> 4,
+        (position.0.z.floor() as i32) >> 4,
+    );
+    let Some(grid) = world.get_resource::<EntityGrid>() else {
+        return Vec::new();
+    };
+    grid.get_neighbors(chunk, 1)
+        .into_iter()
+        .filter(|viewer| *viewer != player)
+        .collect()
+}
+
 /// Relay a player's arm swing (`Animate` with the swing action) to the
 /// players around them and raise the `on-player-swing` plugin event.
 ///
@@ -801,10 +805,7 @@ pub fn relay_player_swing(
         tracing::debug!(action = ?packet.action, "Ignoring non-swing Animate from client");
         return;
     }
-    let (Some(runtime_id), Some(position)) = (
-        world.get::<RuntimeEntityId>(player).map(|rid| rid.0),
-        world.get::<Position>(player).copied(),
-    ) else {
+    let Some(runtime_id) = world.get::<RuntimeEntityId>(player).map(|rid| rid.0) else {
         return;
     };
     if packet.target_actor_runtime_id.actor_runtime_id != runtime_id as u64 {
@@ -814,16 +815,6 @@ pub fn relay_player_swing(
     if let Some(mut events) = world.get_resource_mut::<crate::ecs::events::EventBuffer>() {
         events.push(crate::ecs::events::ServerEvent::PlayerSwing { entity: player });
     }
-    let chunk = (
-        (position.0.x.floor() as i32) >> 4,
-        (position.0.z.floor() as i32) >> 4,
-    );
-    let Some(nearby) = world
-        .get_resource::<EntityGrid>()
-        .map(|grid| grid.get_neighbors(chunk, 1))
-    else {
-        return;
-    };
     let relay = McpePacket::from(jolyne::valentine::AnimatePacket {
         action: EnumsAnimatePacketPayloadAction::Swing,
         target_actor_runtime_id: ActorRuntimeId {
@@ -832,10 +823,7 @@ pub fn relay_player_swing(
         data: packet.data,
         swing_source: packet.swing_source.clone(),
     });
-    for viewer in nearby {
-        if viewer == player {
-            continue;
-        }
+    for viewer in players_seeing(world, player) {
         if let Some(session) = world.get::<PlayerSession>(viewer) {
             let _ = session.send(relay.clone());
         }

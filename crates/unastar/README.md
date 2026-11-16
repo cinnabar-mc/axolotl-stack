@@ -100,7 +100,11 @@ Java world radius 4, about 0.5 s / 3.0 s fresh and 0.16 s / 0.45 s when the area
 is already generated; radius 12, about 0.6 s / 17 s fresh and 0.14 s / 2.9 s
 generated (8 chunks per player per tick bound the generated case).
 
-After `StartGame` the player gets the rest of the BDS 1.26.51 join in BDS order
+The `StartGame` batch opens with the sleeping-player count, the player's own
+`PlayerList` entry and the clock state, as BDS 1.26.51 sends them: the
+connection task reserves the player's place and colour in the shared
+`OnlineRoster` first (decision 0044). After `StartGame` the player gets the rest
+of the BDS 1.26.51 join in BDS order
 (`server/game/join.rs`): the fixed packets byte-identical to the member join
 capture, then `SetHealth` right before `PlayStatus(PlayerSpawn)`. The game mode
 travels in `StartGame` only. Each player's `PlayerList` entry (skin, platform,
@@ -123,6 +127,15 @@ charged as BDS charges it (`entity/player_life/motion.rs`); falls (landing
 blocks, powder snow, a slowed glide, Feather Falling) and burning follow the
 BDS movement capture. The evidence and tests are in `entity/player_life/testdata/`
 and `entity/player_life/tests/`.
+
+Skins are forwarded the way BDS forwards them (`server/game/roster/skin.rs`:
+geometry rewritten, persona pieces and tints mapped, empty PlayFab id), and
+abilities follow BDS for every game mode and permission: each listed
+player's `UpdateAbilities` after the full list, the newcomer's to online
+players, none on a game mode change. Emotes and emote lists are relayed to
+nearby players and the client packets BDS ignores are ignored
+(`server/game/client_packets.rs`); evidence in
+`crates/bds-extractor/captures/1.26.51/protocol/`.
 
 ## World Generation
 
@@ -776,7 +789,7 @@ copied on purpose are in `docs/quirks/bds.md`. Known differences from BDS:
 |---|---|---|
 | `/give`, `/clear`, `/setblock`, `/fill`, `/clone` | Legacy names with old block states map only for the colour families (and `/give`'s data values also for log, log2 and planks); other legacy names fail with "not implemented" | No full legacy item/block upgrade table yet |
 | `/give`, `/recipe` | Items reaching an inventory unlock no recipes (BDS follows a give with `UnlockedRecipes`); unlocked recipes are not saved; `PlayerHotbar` sent with `shouldselectslot=true` | No recipe-unlock system; shared inventory resync |
-| `/gamemode` | Also resends `UpdateAbilities`; `default` puts the player in the configured mode instead of keeping it on `default` | Unastar's join abilities depend on the game mode; no `default` player mode |
+| `/gamemode` | `default` puts the player in the configured mode instead of keeping it on `default` | No `default` player mode |
 | `/weather`, `/toggledownfall` | State, client events and the fading levels `/weather query` reports; no natural cycle, durations do not count down, no gameplay effect | Weather is not simulated |
 | `/setworldspawn` | New players stand in the world spawn block; BDS's `spawnRadius` spread is not applied | Not measured |
 | `/scoreboard` | `belowname` sends no score actor data | Not built |
@@ -921,9 +934,26 @@ blocks power acts on: lamps, doors, trapdoors, fence gates, copper bulbs, hopper
 dispensers, droppers, crafters (`triggered_bit` only) and powered and activator rails. Which
 blocks conduct, cut climbing dust and let dust climb are measured per block
 (`unastar_data::redstone`). Levers and buttons switch through `block_use.rs`. Not modelled:
-pistons, entities on pressure plates and tripwires, target blocks, daylight measurement, sculk
-sensors, note block sounds, TNT priming and dispensing; a circuit already in a chunk loaded
+tripwires pressed by actors, target blocks, daylight measurement, sculk
+sensors, note block sounds and dispensing; a circuit already in a chunk loaded
 from disk starts working once a block next to it changes.
+
+Pressure plates (`redstone/plates.rs`) press in the tick an actor touches them and release at a
+check every 20 ticks (10 for weighted plates), replayed against BDS from the measured actor
+positions.
+
+Pistons (`redstone/pistons.rs`, decision
+[0050](../../docs/decisions/0050-move-pistons-from-the-circuit-update.md)) read their power in
+the circuit update and move a tick later; heads and moving blocks appear at once and land two
+ticks later; at most 12 blocks move, slime and honey drag their neighbours, and how each block
+moves, breaks or holds is measured (`unastar_data::pistons`). Block actors move with their
+blocks; clients get the `PistonArm` and `MovingBlock` actors. Actors are not pushed yet.
+
+Explosions (`server/game/explosion.rs`) break blocks along 1352 rays, drop every block they
+break and hurt actors by distance and exposure, compared with BDS by distribution
+(`explosion/tests.rs`, `crates/unastar-data/data/measured/explosions/`). Power primes TNT in
+the circuit update; the primed TNT (`minecraft:explode`, `entity/mob/combat/explode.rs`)
+explodes 81 ticks later a sixteenth of its height above its feet.
 
 Random block ticks (`server/game/random_ticks.rs`) follow BDS 1.26.51 by distribution
 (`random_ticks/tests.rs` compares measured fields of

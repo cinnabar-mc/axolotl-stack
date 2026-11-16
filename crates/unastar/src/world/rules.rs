@@ -378,6 +378,11 @@ impl StartGameWorldState {
         }
     }
 
+    /// The world clock as last published.
+    pub fn time(&self) -> WorldTime {
+        self.0.lock().time
+    }
+
     pub fn set_level_tick(&self, tick: u64) {
         self.0.lock().level_tick = tick;
     }

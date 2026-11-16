@@ -37,6 +37,19 @@ pub fn packet_violation(
     }
 }
 
+/// The warning for a packet refused before it is read because of its size:
+/// BDS's message is `Server-bound packet too large! Type=<id> Size=<size>`,
+/// with no reader line and no `packetId` line.
+pub fn packet_too_large(packet_id: i32, size: usize) -> PacketViolationWarningPacket {
+    PacketViolationWarningPacket {
+        violation_type: EnumsPacketViolationType::Packetmalformed,
+        violation_severity: EnumsPacketViolationSeverity::Terminatingconnection,
+        violation_packet_id: packet_id,
+        violation_context: format!("Server-bound packet too large! Type={packet_id} Size={size}")
+            .into(),
+    }
+}
+
 /// Removes BDS's reader-failure suffix from a captured violation message, so
 /// it can be compared with what unastar sends: a line
 /// `<reader> failed! packetId: N` becomes `packetId: N`. Other text is kept.
