@@ -901,8 +901,15 @@ Survival breaking follows BDS input by input:
   the mace. An input carrying `CreativeDestroyBlock` is refused as malformed and ends the session,
   as on BDS.
 
+- A block put where a break goes on is broken by the inputs since counted at that block's speed:
+  at once if it is no slower than the progress built over the air.
+
 `server/game/blocks/breaking_tests.rs` replays BDS captures of all of this, one with a second
-player watching.
+player watching, with `[gameplay] block_breaking = "bds"`. The default, `"guarded"`
+([decision 0056](../../docs/decisions/0056-guarded-block-breaking.md)), changes two things a
+modified client could use: at most one input of progress counts per server tick since the
+progress began (a lagging client may catch up, never get ahead), and the progress begins again
+when the block at the position is no longer the one being broken.
 Block break/place intents dispatch before mutation; cancellation sends authoritative
 corrections. Allowed intents revalidate current state before committing, and
 Survival placement consumes one server-owned selected item. Placement does not
@@ -919,12 +926,17 @@ per-item sounds of `server/game/place_sounds.rs`), the inventory resync, and wha
 other player is sent (blocks, sounds, level events, block actors). Stacks describe
 the block BDS describes them with (`unastar_data::item_blocks`, measured for every
 item). Covered since round 2: door hinges from neighbouring doors and blocks; coral
-fans on floors and walls (placed dead out of water) and coral blocks dying after a
-placement; skulls; beehives, bee nests, looms, chiseled bookshelves, decorated pots,
+fans on floors and walls (placed dead out of water) and coral blocks dying 45 ticks
+after any placement out of water (or 54 to 184 ticks after their water goes,
+`block_use.rs`, `crates/unastar-data/data/measured/block_updates/coral_timing.json`); skulls; beehives, bee nests, looms, chiseled bookshelves, decorated pots,
 crafters, grindstones, shelf mushrooms; bells under blocks and on walls; vines, glow
 lichen, sculk veins and resin clumps on every face; stacking candles, snow layers, sea
-pickles, turtle eggs and petals; candles on cakes; seeds and other planting items;
-player-placed leaves. Placed blocks BDS announces with a block actor get the measured
+pickles, turtle eggs and petals; candles on cakes; seeds and other planting items (a
+cave vine with BDS's random age); player-placed leaves; string, linked to the
+tripwire beside it. Since round 3 (`testdata/bds-placements-leftovers.json`): cake
+eaten slice by slice (a candle cake drops its candle; a full player eats only on
+peaceful) and flower pots taking the 37 plants BDS takes and giving them back
+(`server/game/flower_pots.rs`). Placed blocks BDS announces with a block actor get the measured
 default (`unastar_data::block_updates::block_actor_default`, `block_actors.rs`).
 
 Signs (`server/game/signs.rs`) work like BDS: placing one opens its editor for the
@@ -935,8 +947,35 @@ change it, and the text is kept in the chunk's block actor (saved and sent with 
 chunk). Doors, trapdoors, fence gates, buttons and levers open, close and press on
 use (`server/game/block_use.rs`); buttons pop back after 20 or 30 ticks. Not copied:
 the attribute and actor-data resend BDS sends after every click, banners (BDS's
-banner stack carries item user data unastar's lacks), flower pots taking plants,
-eating cake, and the click corrections BDS sends after lighting with flint and steel.
+banner stack carries item user data unastar's lacks), the plant a broken flower pot
+holds, and the click corrections BDS sends after lighting with flint and steel.
+
+Redstone (`server/game/redstone/`) runs like BDS 1.26.51, tick by tick
+(`redstone/tests.rs` replays every circuit of
+`crates/unastar-data/data/measured/redstone/`; decision
+[0041](../../docs/decisions/0041-run-redstone-as-a-two-tick-circuit-update.md)). The circuit
+is worked every other game tick; a change made in a tick is seen from the next update of a
+later tick. An update takes each dust's level from the outputs as they stand (and shows it on
+the dust), then the new outputs of repeaters (delay, pulse stretching, locking), comparators
+(compare, subtract, block and container readings), torches (burnout) and observers, then the
+blocks power acts on: lamps, doors, trapdoors, fence gates, copper bulbs, hoppers (locked),
+dispensers, droppers, crafters (`triggered_bit` only) and powered and activator rails. Which
+blocks conduct, cut climbing dust and let dust climb are measured per block
+(`unastar_data::redstone`). Levers and buttons switch through `block_use.rs`. Not modelled:
+pistons, entities on pressure plates and tripwires, target blocks, daylight measurement, sculk
+sensors, note block sounds, TNT priming and dispensing; a circuit already in a chunk loaded
+from disk starts working once a block next to it changes.
+
+Random block ticks (`server/game/random_ticks.rs`) follow BDS 1.26.51 by distribution
+(`random_ticks/tests.rs` compares measured fields of
+`crates/unastar-data/data/measured/random_ticks/` by chi-square): each sub-chunk of a ticking
+chunk gets `2 x randomtickspeed` random positions per game tick (a block is ticked
+`randomtickspeed / 2048` times per tick on average). Crops grow by the growth factor of the
+farmland around them, sugar cane ages and grows to three blocks, farmland dries away from
+water and turns to dirt, grass spreads to dirt, leaves with no log within four steps through
+leaves decay, and copper oxidises (a door's halves together), held back by younger copper
+near it. Not modelled: light levels, cactus flowers, saplings, bamboo, kelp, vines, ice and
+snow, fire and the other random-tick blocks.
 
 Using a crafting table (unless sneaking with an item in hand) opens BDS's
 WORKBENCH screen (type 1 at the block, no actor) from the shared window-ID
@@ -1038,12 +1077,15 @@ scenarios); "public reference" rows are not measured yet and are listed in
 | Flint and steel: the click corrections, update, `ignite` position, relit campfire actor data and wear (no slot update) | done | BDS capture (`server/game/item_use/flint_tests.rs`) |
 | Placed containers announced with actor data: chests, ender chests and barrels, not furnaces or hoppers | done | BDS capture (`server/game/containers/tests.rs`) |
 | Bone meal on crops, stems, berry bushes and grass | done | public reference; saplings (tree features) and flowers not done |
-| Buckets: take and place water, lava, powder snow | done | public reference; liquids do not flow, fish/axolotl buckets not done |
-| Bow, crossbow, snowball, egg | done | capture (speeds 3.0/3.15/1.5, sounds); draw curve and spread are public references |
+| Buckets: take and place water, lava, powder snow; milk | done | BDS buckets capture (`server/game/item_use/bucket_tests.rs`, sounds at the player's feet); liquids do not flow, no waterlogging, fish/axolotl buckets not done (their mobs cannot spawn) |
+| Bow, crossbow, snowball, egg | done | capture (speeds 3.0/3.15/1.5, sounds); throws replayed against the BDS throwables capture (`server/game/item_use/throw_tests.rs`); draw curve and spread are public references |
+| Splash potions and experience bottles: splash colours, effects by distance, fire put out, orbs | done | BDS throwables captures (`server/game/item_use/throw_tests.rs`); the splash reaches players only |
+| Spawn eggs on blocks: survival use, peaceful monsters, the PlayerSpawnedMob event | done | BDS buckets-eggs capture; a spawner set by an egg not done |
+| `/give` user data (Damage 0, banner, map, fireworks) | done | BDS `/give` sweep of every item (`command/exec/give.rs`) |
 | Stuck arrows: shake, pickup, despawn after 1200 ticks | done | capture (shake event); lifetime is a public reference |
-| Ender pearls | not done | needs `teleport_owner` and the endermite archetype (entity lane) |
+| Ender pearls, lingering potions, wind charges | not done | measured (row notes in `docs/parity/items.toml`); their actors cannot spawn yet |
 | Tridents | not done | `minecraft:thrown_trident` lacks a measured `AddActor` shape |
-| Potions and ominous bottles: drinking (32 ticks), the effects of all 47 potion data values, instant health and damage, Bad Omen, sounds, glass bottle | done | BDS item-use capture (`server/game/item_use/drink_tests.rs`); splash and lingering potions and tipped arrows not done |
+| Potions and ominous bottles: drinking (32 ticks), the effects of all 47 potion data values, instant health and damage, Bad Omen, sounds, glass bottle | done | BDS item-use capture (`server/game/item_use/drink_tests.rs`); tipped arrows not done |
 | Effect pulses (poison, wither, regeneration on the duration before the tick), poison as a hurt, invisibility sounds, effect packet order | done | BDS item-use capture |
 | Goat horns (`horn_call<data>`, 140-tick cooldown, using flag) and the spyglass (using flag) | done | BDS item-use capture |
 | Jukeboxes: music discs in and out, popup, actor data, drops, breaking a playing jukebox | done | BDS jukebox capture (`server/game/jukebox/tests.rs`); no redstone signal |

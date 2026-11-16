@@ -2047,9 +2047,11 @@ impl Bot {
     /// the platform at `feet` (x, z), facing `yaw`, walking forward when
     /// `walking`.
     fn auth_input(&mut self, feet: (f32, f32), yaw: f32, walking: bool, tick: u64) {
+        // The eye as a client reports it, the feet plus the wire offset
+        // (1.62 would put the feet inside the platform for the server's copy).
         let eye = Vec3 {
             x: feet.0,
-            y: PLATFORM_TOP + EYE_HEIGHT,
+            y: PLATFORM_TOP + unastar_rules::movement::NETWORK_OFFSET,
             z: feet.1,
         };
         let delta = Vec3 {
