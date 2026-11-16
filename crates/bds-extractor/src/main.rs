@@ -86,7 +86,6 @@ struct Args {
     #[arg(long, requires = "capture_dir")]
     uuid: Option<uuid::Uuid>,
 
-
     /// Decode a recorded `packets.jsonl` (from `--capture-dir` or
     /// `bds-sweep-client --capture-dir`) instead of connecting: one JSON line
     /// per record `{seq, t_ms, dir, name, packet}` to `--output`
