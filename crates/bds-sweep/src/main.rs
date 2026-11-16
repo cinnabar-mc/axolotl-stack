@@ -21,6 +21,8 @@
 //! * `bds-sweep:attack RUNTIME_ID`: attack that actor with the held item
 //!   (`InventoryTransaction` use-item-on-actor, hotbar slot 0 as last sent
 //!   by the server).
+//! * `bds-sweep:interact RUNTIME_ID`: interact with that actor (shears on a
+//!   mooshroom, a bowl to milk it) with the held item, the same way.
 //! * `bds-sweep:drop hotbar SLOT COUNT`: closed-screen Q (`COUNT=1`) or
 //!   ctrl-Q (`COUNT=stack size`) from hotbar index 0..8;
 //! * `bds-sweep:drop inventory SLOT COUNT`: open the native inventory, wait
@@ -235,6 +237,8 @@ enum Order {
     Burst(u32),
     /// Attack the actor with this runtime id with the held item.
     Attack(u64),
+    /// Interact with the actor with this runtime id using the held item.
+    Interact(u64),
     /// Attack the actor added with this name tag.
     AttackNamed(String),
     /// Item use `UseAsAttack`: the held item attacks by itself.
@@ -613,6 +617,7 @@ fn parse_order(text: &str) -> Option<Order> {
             }))
         }
         "attack" => Some(Order::Attack(u64::try_from(numbers(words, 1)?[0]).ok()?)),
+        "interact" => Some(Order::Interact(u64::try_from(numbers(words, 1)?[0]).ok()?)),
         "drop" => {
             let source = match words.next()? {
                 "hotbar" => DropSource::Hotbar,
@@ -991,7 +996,6 @@ impl Player {
                 facing: face,
             }),
             Order::Burst(inputs) => self.burst = inputs,
-            Order::Attack(target) => return Ok(vec![self.attack(target)]),
             Order::AttackNamed(name) => {
                 let target = *self
                     .named
@@ -1042,6 +1046,15 @@ impl Player {
             Order::HeldFlags(flags) => self.held = flags,
             Order::Use(order) => return Ok(vec![self.use_on_block(order)?]),
             Order::Sign(order) => return Ok(self.edit_sign(&order).into_iter().collect()),
+            Order::Attack(target) => {
+                return Ok(vec![self.attack(target)]);
+            }
+            Order::Interact(target) => {
+                return Ok(vec![self.use_on_actor(
+                    target,
+                    EnumsItemUseOnActorInventoryTransactionActionType::Interact,
+                )]);
+            }
             Order::Drop(drop) => return self.drop_order(drop),
             Order::Walk(walk) => self.walk = Some(walk),
             Order::CloseInventory => {
@@ -1179,9 +1192,23 @@ impl Player {
         })
     }
 
-    /// `InventoryTransaction` use-item-on-actor `Attack` with the held slot,
-    /// claiming the client's position (moved by any `claim` offset).
+    /// `InventoryTransaction` use-item-on-actor `Attack` with the held slot
+    /// ([`Self::use_on_actor`]).
     fn attack(&self, target: u64) -> McpePacket {
+        self.use_on_actor(
+            target,
+            EnumsItemUseOnActorInventoryTransactionActionType::Attack,
+        )
+    }
+
+    /// `InventoryTransaction` use-item-on-actor (`Attack` or `Interact`)
+    /// with the held slot, claiming the client's position (moved by any
+    /// `claim` offset; a `claim_slot` names another slot).
+    fn use_on_actor(
+        &self,
+        target: u64,
+        action_type: EnumsItemUseOnActorInventoryTransactionActionType,
+    ) -> McpePacket {
         let mut from = self.position();
         from.x += self.claim_offset[0];
         from.y += self.claim_offset[1];
@@ -1193,7 +1220,7 @@ impl Player {
                     runtime_id: ActorRuntimeId {
                         actor_runtime_id: target,
                     },
-                    action_type: EnumsItemUseOnActorInventoryTransactionActionType::Attack,
+                    action_type,
                     slot: i32::from(slot),
                     item: self.inventory[usize::from(slot)]
                         .clone()
@@ -2404,6 +2431,10 @@ there"
         assert_eq!(
             parse_order(r#"{ message: "bds-sweep:attack 4294967297" }"#),
             Some(Order::Attack(4294967297))
+        );
+        assert_eq!(
+            parse_order(r#"{ message: "bds-sweep:interact 12" }"#),
+            Some(Order::Interact(12))
         );
         assert_eq!(parse_order("bds-sweep:pause 10"), Some(Order::Pause(10)));
     }

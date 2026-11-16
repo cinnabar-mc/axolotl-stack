@@ -113,16 +113,10 @@ pub(super) fn splash(
             }
             let ticks = (factor * f64::from(duration)).ceil() as u32;
             if ticks > 20 {
-                // One more: the effect step of this tick, which already ran
-                // for the player, takes one off before the client hears of
-                // it (BDS sent the full 900 ticks of a poison splash).
-                crate::server::game::effects::add_effect(
-                    world,
-                    player,
-                    effect,
-                    amplifier,
-                    ticks + 1,
-                );
+                // An item's effect first counts down on the next effect step
+                // (`effects::give_from_item`), so the client hears the full
+                // duration (BDS sent the full 900 ticks of a poison splash).
+                crate::server::game::effects::add_effect(world, player, effect, amplifier, ticks);
             }
         }
     }

@@ -22,13 +22,10 @@ use unastar_data::actor_components::body::ActorDamageCause;
 use super::{Hit, fire, hurt_mob, knockback_power_of, send_actor_event};
 use crate::ecs::resources::TickCounter;
 use crate::entity::EntityRandom;
-use crate::entity::components::{EffectType, Effects, GameMode, Health, Player, Position};
+use crate::entity::components::{GameMode, Health, Player, Position};
 use crate::entity::mob::MobKind;
 use crate::entity::mob::components::{AttackConfig, MeleeBoxAttackGoal, SelfEvent};
-use crate::entity::mob::constants::{
-    MELEE_FIRE_SPREAD_CHANCE, STRENGTH_DAMAGE_ADD, STRENGTH_DAMAGE_SCALE, TICKS_PER_SECOND,
-    WEAKNESS_DAMAGE_ADD, WEAKNESS_DAMAGE_SCALE,
-};
+use crate::entity::mob::constants::{MELEE_FIRE_SPREAD_CHANCE, TICKS_PER_SECOND};
 use crate::entity::mob::events::fire_event;
 use crate::entity::mob::gear;
 use crate::entity::mob::state::{Dead, MeleeAttackedOnce};
@@ -78,17 +75,18 @@ pub fn melee_attack(world: &mut World, attacker: Entity, target: Entity) {
             .insert(crate::entity::mob::state::LastAttack { tick, target });
         after_hurt(world, attacker, target, &goal, holding, is_player);
     }
+    // Through the shared effect system (`entity::effects`), which keeps it
+    // off an immune target and shows it.
     if let Some(effect) = attack.effect
         && alive(world, target)
         && !immune(world, target)
-        && !crate::entity::mob::components::stats::immune_to_effect(world, target, effect.effect)
     {
-        world
-            .entity_mut(target)
-            .entry::<Effects>()
-            .or_default()
-            .get_mut()
-            .add(effect.effect, 0, effect.duration_ticks);
+        crate::entity::effects::give(
+            world,
+            target,
+            effect.effect,
+            crate::entity::components::ActiveEffect::new(0, effect.duration_ticks),
+        );
     }
 }
 
@@ -145,23 +143,8 @@ fn attack_damage(world: &mut World, attacker: Entity, attack: &AttackConfig) -> 
     } else {
         attack.damage_min
     };
-    let mut damage = base + weapon_damage(world, attacker);
-    if let Some(effects) = world.get::<Effects>(attacker) {
-        if let Some(strength) = effects.get(EffectType::STRENGTH) {
-            for _ in 0..=strength.level {
-                damage = damage * STRENGTH_DAMAGE_SCALE + STRENGTH_DAMAGE_ADD;
-            }
-        }
-        if let Some(weakness) = effects.get(EffectType::WEAKNESS) {
-            for _ in 0..=weakness.level {
-                damage = damage * WEAKNESS_DAMAGE_SCALE + WEAKNESS_DAMAGE_ADD;
-                if damage < 0.0 {
-                    return 0.0;
-                }
-            }
-        }
-    }
-    damage
+    let damage = base + weapon_damage(world, attacker);
+    crate::entity::effects::strengthened(world, attacker, damage)
 }
 
 /// The held item's own attack damage: its measured player damage less the
