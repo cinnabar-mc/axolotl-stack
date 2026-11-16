@@ -166,8 +166,8 @@ fn handle_subchunk_request(
         .min(MAX_SUBCHUNK_REQUESTS)];
     let column_of = |offset: &SubChunkPacketPayloadSubChunkPosOffset| {
         (
-            chunk_x + offset.subchunk_offset_x as i32,
-            chunk_z + offset.subchunk_offset_z as i32,
+            chunk_x.saturating_add(i32::from(offset.subchunk_offset_x)),
+            chunk_z.saturating_add(i32::from(offset.subchunk_offset_z)),
         )
     };
 
@@ -245,7 +245,9 @@ fn handle_subchunk_request(
         if !answering.contains(&target) {
             continue;
         }
-        let sub_y = origin.subchunk_position_y + offset.subchunk_offset_y as i32;
+        let sub_y = origin
+            .subchunk_position_y
+            .saturating_add(i32::from(offset.subchunk_offset_y));
         if sub_y < min_sub_y || sub_y > max_sub_y {
             entries.push(empty_entry(
                 offset.clone(),
