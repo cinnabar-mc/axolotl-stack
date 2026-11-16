@@ -86,14 +86,18 @@ fn release(slot: i32) -> InventoryTransactionPacket {
     }
 }
 
-/// A `PlayerAuthInput` at the spawn eye position, looking south tilted
-/// down by `pitch`, carrying `actions`.
+/// A `PlayerAuthInput` standing on the platform (feet at y 16), looking
+/// south tilted down by `pitch`, carrying `actions`. The position is the
+/// eye as a client reports it, the feet plus the wire offset 1.62001: at
+/// 17.62 the feet would be 1e-5 inside the stone, which does not hold a
+/// body it overlaps, and the server's copy of the player would fall
+/// through it and correct the client a block down.
 fn auth_input(tick: u64, pitch: f32, actions: Vec<PlayerBlockActionData>) -> PlayerAuthInputPacket {
     PlayerAuthInputPacket {
         player_rotation: Vec2 { x: pitch, y: 0.0 },
         position: Vec3 {
             x: 0.5,
-            y: 17.62,
+            y: 16.0 + unastar::entity::item_drop::PLAYER_REPORTED_EYE_HEIGHT as f32,
             z: 0.5,
         },
         client_tick: PlayerInputTick { inputtick: tick },
@@ -237,7 +241,9 @@ fn eat_mine_and_shoot_over_loopback() {
         .await;
         assert!(eaten >= food + 4.0, "food {food} -> {eaten}");
 
-        // Mine the platform stone under the spawn with the iron pickaxe.
+        // Mine the platform stone under the spawn with the iron pickaxe: start,
+        // then keep breaking an input per tick like a client; the server
+        // completes the break itself on the 8th input (6 / 1.5 / 30 per input).
         send(&mut client, select(runtime_id, 1)).await;
         let stone = BlockPos { x: 0, y: 15, z: 1 };
         let action = |kind| PlayerBlockActionData {
@@ -254,16 +260,18 @@ fn eat_mine_and_shoot_over_loopback() {
             ),
         )
         .await;
-        tokio::time::sleep(Duration::from_millis(1500)).await;
-        send(
-            &mut client,
-            auth_input(
-                32,
-                60.0,
-                vec![action(EnumsPlayerActionType::Stopdestroyblock)],
-            ),
-        )
-        .await;
+        for tick in 3..14 {
+            tokio::time::sleep(Duration::from_millis(50)).await;
+            send(
+                &mut client,
+                auth_input(
+                    tick,
+                    60.0,
+                    vec![action(EnumsPlayerActionType::Continuedestroyblock)],
+                ),
+            )
+            .await;
+        }
         let worn = recv_until(&mut client, "pickaxe slot update", |data| match data {
             McpePacketData::InventorySlotPacket(slot)
                 if slot.container_id == 0 && slot.slot == 1 =>
@@ -281,7 +289,9 @@ fn eat_mine_and_shoot_over_loopback() {
         );
 
         // Draw the bow, then summon a cow four blocks south (just before
-        // letting go, so it has no time to wander off) and shoot it.
+        // letting go, so it has no time to wander off) and shoot it. The
+        // cow's default spawn event makes 1 in 20 a baby, which the shot
+        // flies over: `ageable_grow_up` always gives an adult.
         send(&mut client, select(runtime_id, 2)).await;
         send(&mut client, auth_input(40, 10.0, vec![])).await;
         send(&mut client, use_air(2)).await;
@@ -289,7 +299,7 @@ fn eat_mine_and_shoot_over_loopback() {
         send(
             &mut client,
             CommandRequestPacket {
-                command: "/summon minecraft:cow 0.5 16 4.5".into(),
+                command: "/summon minecraft:cow 0.5 16 4.5 0 0 minecraft:ageable_grow_up".into(),
                 ..Default::default()
             },
         )
@@ -302,22 +312,34 @@ fn eat_mine_and_shoot_over_loopback() {
         })
         .await;
         send(&mut client, release(2)).await;
-        recv_until(&mut client, "arrow flies", |data| match data {
-            McpePacketData::AddActorPacket(actor) if &*actor.actor_type == "minecraft:arrow" => {
-                Some(())
-            }
-            _ => None,
-        })
-        .await;
-        recv_until(&mut client, "cow is hurt", |data| match data {
-            McpePacketData::ActorEventPacket(event)
-                if event.target_runtime_id.actor_runtime_id == cow
-                    && event.event_id == EnumsActorEvent::Hurt =>
-            {
-                Some(())
-            }
-            _ => None,
-        })
+        // The arrow is announced and the cow hurt, in either order. A full
+        // draw's critical bonus is a roll from an unseeded RNG: up to 11
+        // damage kills the cow, and a killing hit sends only its death.
+        let (mut arrow, mut hurt) = (false, false);
+        recv_until(
+            &mut client,
+            "the arrow and the cow's hurt or death",
+            |data| {
+                match data {
+                    McpePacketData::AddActorPacket(actor)
+                        if &*actor.actor_type == "minecraft:arrow" =>
+                    {
+                        arrow = true;
+                    }
+                    McpePacketData::ActorEventPacket(event)
+                        if event.target_runtime_id.actor_runtime_id == cow
+                            && matches!(
+                                event.event_id,
+                                EnumsActorEvent::Hurt | EnumsActorEvent::Death
+                            ) =>
+                    {
+                        hurt = true;
+                    }
+                    _ => {}
+                }
+                (arrow && hurt).then_some(())
+            },
+        )
         .await;
         server_task.abort();
     });

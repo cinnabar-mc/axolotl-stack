@@ -119,6 +119,21 @@ fn state_value(world: &World, pos: IVec3, property: &str) -> Option<StateValue> 
         .state_value(runtime_id, property)
 }
 
+/// What a comparator reads from the container at `pos`: 0 when it is empty,
+/// else 1 + 14 x the average fullness of its slots, rounded down (BDS
+/// 1.26.51, `redstone_comparators.json`); `None` when there is no container.
+pub(crate) fn comparator_signal(world: &mut World, pos: IVec3) -> Option<u8> {
+    load(world, pos)?;
+    let container = world.resource::<BlockContainers>().live.get(&pos)?;
+    Some(crate::server::game::redstone::container_reading(
+        container.items.size(),
+        (0..container.items.size())
+            .filter_map(|slot| container.items.item(slot))
+            .filter(|stack| !stack.is_empty())
+            .map(|stack| (u32::from(stack.count), u32::from(stack.max_stack_size()))),
+    ))
+}
+
 /// Decode (or create) the actor at `pos` into the cache. `None` when the
 /// block is not a container, its chunk is not loaded, or its saved actor
 /// cannot be read (it is then left untouched rather than overwritten).
@@ -187,6 +202,33 @@ fn save(world: &mut World, pos: IVec3) {
     if let Some(mut flags) = world.get_mut::<ChunkStateFlags>(chunk) {
         flags.mark_dirty();
     }
+}
+
+/// The slots of the container block at `pos` (`/replaceitem block`), or
+/// `None` when the block holds no container.
+pub fn command_container_slots(world: &mut World, pos: IVec3) -> Option<Vec<ItemStack>> {
+    load(world, pos)?;
+    container(world, pos).map(|c| c.items.slots().to_vec())
+}
+
+/// Puts `stack` into `slot` of the container block at `pos`, saves it and
+/// shows it to the players who have it open. Returns whether it was placed.
+pub fn command_set_container_slot(
+    world: &mut World,
+    pos: IVec3,
+    slot: usize,
+    stack: ItemStack,
+) -> bool {
+    if load(world, pos).is_none() {
+        return false;
+    }
+    let placed =
+        container_mut(world, pos).is_some_and(|mut c| c.items.set_item(slot, stack).is_ok());
+    if placed {
+        save(world, pos);
+        refresh_viewers(world, pos, None);
+    }
+    placed
 }
 
 fn container(world: &World, pos: IVec3) -> Option<&BlockContainer> {
@@ -607,7 +649,7 @@ fn same_stack(a: &ItemStack, b: &ItemStack) -> bool {
         || (a.item_id() == b.item_id()
             && a.count == b.count
             && a.damage == b.damage
-            && a.nbt == b.nbt
+            && a.nbt() == b.nbt()
             && a.net_id == b.net_id)
 }
 
@@ -836,7 +878,7 @@ pub(super) fn grant_experience(world: &mut World, player: Entity, points: i32) {
                 actor_runtime_id: runtime_id as u64,
             },
             attribute_list: vec![
-                attribute("minecraft:player.level", level as f32, i32::MAX as f32),
+                attribute("minecraft:player.level", level as f32, 24_791.0),
                 attribute("minecraft:player.experience", progress, 1.0),
             ],
             tick,
@@ -870,13 +912,28 @@ pub(super) fn placed(world: &mut World, pos: IVec3) {
     if load(world, pos).is_none() {
         return;
     }
-    // BDS announces a new container actor with its client-side state
-    // (`{BlockEntityVersion, id, x, y, z}` after `/setblock chest`).
-    send_client_state(world, pos);
+    // BDS announces a new chest, trapped chest, ender chest or barrel with
+    // its client-side state (`{BlockEntityVersion, id, x, y, z}`), not a
+    // furnace, blast furnace, smoker or hopper (placement capture,
+    // `tools/bds-sweep/scripts/containers-flint.txt`).
+    if announced_on_placement(kind) {
+        send_client_state(world, pos);
+    }
     if kind.pairs() {
         try_pair(world, pos, kind);
     }
     save(world, pos);
+}
+
+/// Whether BDS sends a placed container's actor data right away.
+pub(super) fn announced_on_placement(kind: ContainerKind) -> bool {
+    matches!(
+        kind,
+        ContainerKind::Chest
+            | ContainerKind::TrappedChest
+            | ContainerKind::EnderChest
+            | ContainerKind::Barrel
+    )
 }
 
 fn try_pair(world: &mut World, pos: IVec3, kind: ContainerKind) {
@@ -1160,7 +1217,7 @@ fn can_burn(world: &World, container: &BlockContainer) -> bool {
     }
     if output.item_id() != result.item_id()
         || output.damage != result.damage
-        || output.nbt != result.nbt
+        || output.nbt() != result.nbt()
     {
         return false;
     }

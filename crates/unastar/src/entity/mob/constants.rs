@@ -23,7 +23,8 @@ pub const MOVE_ARRIVAL_FLOOR: f32 = 0.5;
 pub const MOVE_DESCEND_CAP: f32 = 0.25;
 /// The travel step's forward input is the move control's speed × this
 /// (BDS 1.26.51: a walking cow at speed `s` gains `0.98 s²` per tick on
-/// grass, through every step of its 10 %/tick speed ramp).
+/// grass, through every step of its 10 %/tick speed ramp). Measured on
+/// land and in the air only; it is applied in liquids too, unmeasured.
 pub const MOVE_INPUT_DECAY: f32 = 0.98;
 /// Vertical velocity of a living mob with gravity when it spawns or is born
 /// (80 of the 112 BDS 1.26.51 summon captures: every living actor with
@@ -295,9 +296,10 @@ pub const XP_ORB_SIZES: [u32; 11] = [2477, 1237, 617, 307, 149, 73, 37, 17, 7, 3
 /// (before the cap), so a grounded mob leaves at the 0.4 cap.
 pub const KNOCKBACK_VERTICAL_SCALE: f64 = 1.2;
 /// Farthest a player's eye may be from the nearest point of a mob's box to
-/// land a melee hit (provisional: the client reaches 3 blocks in survival
-/// and 5 in creative per the Minecraft Wiki "Reach" page; this bound adds
-/// latency tolerance on top).
+/// land a melee hit. BDS 1.26.51 landed a survival sword hit on a pig whose
+/// box was 5.55 blocks from the eye and refused one at 6.55 (spear capture,
+/// `docs/quirks/bds.md` Entities / melee); the exact limit between the two
+/// is not measured.
 pub const MELEE_REACH: f64 = 6.0;
 /// A mob counts as "last hit by a player" (loot `killed_by_player`,
 /// `query.last_hit_by_player`) for this many ticks after a player's hit
@@ -352,7 +354,8 @@ pub const PROJECTILE_VISIBLE_TICK: u64 = 2;
 /// them a sound).
 pub const DISAPPEARED_SOUND: &str = "disappeared";
 pub const REAPPEARED_SOUND: &str = "reappeared";
-/// `grant_xp`: the potion-splash level event at the hit …
+/// Level event of a splash where a potion, a lingering potion or an
+/// experience bottle breaks (`grant_xp` at the hit), its data the colour …
 pub const POTION_SPLASH_LEVEL_EVENT: i32 = 2002;
 /// … with the default potion colour (ARGB `0xFF385DC6`) as its data: BDS
 /// 1.26.51 sends data -13083194 where an xp bottle breaks.
@@ -370,9 +373,16 @@ pub const SNOWBALLPOOF_PARTICLE: i32 = 15;
 pub const ICONCRACK_ITEM_SHIFT: u32 = 16;
 /// Level sound of a player throwing a projectile item.
 pub const THROW_SOUND: &str = "throw";
-/// The throw sound plays at the player's drop attach point, this far below
-/// the eyes. Provisional: the height thrown item drops spawn at.
-pub const THROW_SOUND_EYE_DROP: f64 = 0.5;
+/// The throw sound plays this far below the eyes and [`THROW_SOUND_AHEAD`]
+/// ahead along the yaw, whatever the pitch (BDS 1.26.51 capture of
+/// `tools/bds-sweep/scripts/throwables.txt`: thrown level and straight
+/// down, facing east, it played at the eyes - 0.3 and + 0.15 east).
+pub const THROW_SOUND_EYE_DROP: f64 = 0.3;
+pub const THROW_SOUND_AHEAD: f64 = 0.15;
+/// How many item-crack particles of the splash potion item a splash
+/// potion makes where it breaks (BDS 1.26.51 throwables capture: five,
+/// though its definition has no `particle_on_hit`).
+pub const SPLASH_POTION_ICONCRACKS: u32 = 5;
 /// Items that throw a `minecraft:egg` actor when used (a native item
 /// class, not item components), with the egg's climate variant.
 pub const THROWN_EGG_ITEMS: [(&str, &str); 3] = [
@@ -440,10 +450,29 @@ pub const LEGACY_BUCKET_ITEMS: [(i16, &str); 11] = [
 /// regard to case, as item names are. Provisional: pmmp's
 /// BedrockItemUpgradeSchema, which agrees with the identity BDS reports for
 /// its own `muttonRaw` furnace recipe input.
-pub const LEGACY_ITEM_NAMES: [(&str, &str); 1] = [("minecraft:muttonRaw", "minecraft:mutton")];
+pub const LEGACY_ITEM_NAMES: [(&str, &str); 2] = [
+    ("minecraft:muttonRaw", "minecraft:mutton"),
+    // `entities/wither_boss` (measured: `/loot … loot "entities/wither_boss"`
+    // drops a nether star).
+    ("minecraft:netherStar", "minecraft:nether_star"),
+];
 /// The legacy loot item name that picks its wool item by data value
 /// (the palette colour): `minecraft:wool` with data 14 is red wool.
 pub const LEGACY_WOOL: &str = "minecraft:wool";
+/// The legacy loot item name that picks its head item by data value: the
+/// vanilla wither skeleton table drops `minecraft:skull` with data 1.
+pub const LEGACY_SKULL: &str = "minecraft:skull";
+/// Head item of each legacy skull data value. Provisional: pmmp's
+/// BedrockItemUpgradeSchema, as for [`LEGACY_ITEM_NAMES`].
+pub const SKULL_ITEMS: [&str; 7] = [
+    "minecraft:skeleton_skull",
+    "minecraft:wither_skeleton_skull",
+    "minecraft:zombie_head",
+    "minecraft:player_head",
+    "minecraft:creeper_head",
+    "minecraft:dragon_head",
+    "minecraft:piglin_head",
+];
 
 // --- Palette colours ------------------------------------------------------------
 
@@ -769,9 +798,6 @@ pub const GEAR_LOOTING_DROP_BONUS: f32 = 0.01;
 /// (`Damage`) `max_damage - r`, `r` uniform in `0..=k` with `k` uniform in
 /// `0..max(max_damage, this) - 3`, so it keeps `r` durability (confirmed).
 pub const GEAR_DROP_MIN_MAX_DAMAGE: i32 = 4;
-/// Bedrock's Curse of Binding enchantment id: armour carrying it is never
-/// swapped for a picked-up piece (confirmed).
-pub const BINDING_CURSE_ID: i16 = 27;
 /// `MobEquipment` container id of a mob's off hand in the inventory send
 /// (confirmed).
 pub const GEAR_OFFHAND_CONTAINER: u8 = 119;

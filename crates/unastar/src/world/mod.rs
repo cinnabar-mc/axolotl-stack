@@ -8,6 +8,7 @@ pub mod ecs;
 pub mod generator;
 pub mod regional_difficulty;
 pub mod rules;
+pub mod scoreboard;
 pub mod weather;
 
 pub use chunk::{Chunk, HeightMapType, SUBCHUNK_COUNT, request_mode};

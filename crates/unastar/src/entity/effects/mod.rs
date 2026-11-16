@@ -13,7 +13,12 @@
 //! `MovementSpeed` (+0.2 per level) or `MovementSlowdown` (−0.15 per level)
 //! total multiplier on the movement attribute, fire resistance sets the
 //! `FIRE_IMMUNE` flag (so fire, fire tick, lava and magma are ignored) and
-//! invisibility the `INVISIBLE` flag (with its `disappeared` sound).
+//! invisibility the `INVISIBLE` flag (with its `disappeared` sound; a
+//! player only hears the sound, played by its next effect step). An item
+//! ([`give_from_item`]) gives instant health and instant damage at once
+//! instead: they act straight away and the client sees them added for 1 tick
+//! and removed. The other effects an item gives first act (and count down)
+//! on the effect step after the one of the tick they were given in.
 //!
 //! **The effect step** ([`tick_mob_effects`], [`tick_player_effects`]) runs
 //! once per tick for every actor with effects, in effect id order:
@@ -24,7 +29,8 @@
 //!   tick it was given) acts: poison deals 1 magic damage while health is
 //!   above 1 when `r` is a multiple of `25 >> level`, wither 1 wither damage
 //!   every `40 >> level`, regeneration heals 1 every `50 >> level`, hunger
-//!   adds `0.005 × (level + 1)` exhaustion every tick; instant health heals
+//!   adds `0.005 × (level + 1)` exhaustion every tick, saturation adds
+//!   `level + 1` food every step it is listed; instant health heals
 //!   `4 << level` (undead: takes it as damage, without the hurt animation)
 //!   and instant damage deals `6 << level` magic damage (undead: heals it),
 //!   on the first step after they were given only (they stay listed for
@@ -46,6 +52,9 @@
 //! as `(id << 1) | ambient`, 7 bits each, lowest id first. BDS sends no
 //! effect colour or ambience actor data. (A player's visible effects come
 //! from `server::game::effects`.)
+//!
+//! **Attacking** ([`strengthened`]): strength and weakness change a melee
+//! hit's damage, a mob's and a player's alike.
 //!
 //! **Damage** ([`resisted`], [`absorbed`]): resistance takes `0.2 × (level +
 //! 1)` of a hit (a level 5 resistance all of it, though the hit still
@@ -69,6 +78,9 @@ use crate::entity::definition::metadata::EntityMetadata;
 use crate::entity::mob::MobKind;
 use crate::entity::mob::combat::Hit;
 use crate::entity::mob::components::KnockbackPower;
+use crate::entity::mob::constants::{
+    STRENGTH_DAMAGE_ADD, STRENGTH_DAMAGE_SCALE, WEAKNESS_DAMAGE_ADD, WEAKNESS_DAMAGE_SCALE,
+};
 use crate::entity::mob::state::Dead;
 use crate::server::game::attributes::{Absorption, MAX_ABSORPTION};
 
@@ -174,6 +186,15 @@ pub struct EffectsChanged;
 #[component(storage = "SparseSet")]
 pub struct PendingInstant(pub Vec<EffectType>);
 
+/// Effects an item gave since the last effect step, which leaves them alone
+/// once: an item's use finishes after its user's effect step in the BDS
+/// 1.26.51 tick (potion capture: strong poison, 450 ticks, had 444 left
+/// when `/effect clear` took it, without having hurt; poison I hurt the
+/// tick after the drink).
+#[derive(Component, Debug, Clone, Default)]
+#[component(storage = "SparseSet")]
+pub struct GivenByItem(pub Vec<EffectType>);
+
 /// Flags an effect turned on, to turn off again when it ends (and only
 /// then: a fire-immune mob stays fire immune).
 #[derive(Component, Debug, Clone, Copy, Default, PartialEq)]
@@ -189,14 +210,6 @@ pub fn pulses(base: u32, level: u8, remaining: u32) -> bool {
     interval == 0 || remaining.is_multiple_of(interval)
 }
 
-/// The effects that act once, on the first step after they are given.
-pub fn is_instant(effect: EffectType) -> bool {
-    matches!(
-        effect,
-        EffectType::INSTANT_HEALTH | EffectType::INSTANT_DAMAGE | EffectType::SATURATION
-    )
-}
-
 /// The `ActorEvent` hurt data for a hit of `cause`: the cause's number
 /// (none -1, magic 14, wither 15, as BDS 1.26.51 sends them).
 pub fn hurt_event_data(cause: ActorDamageCause) -> i32 {
@@ -208,9 +221,15 @@ pub fn hurt_event_data(cause: ActorDamageCause) -> i32 {
 /// the highest bits (BDS 1.26.51: speed, weakness, poison and absorption
 /// pack to 4789036), at most eight.
 pub fn visible_effects(effects: &Effects) -> i64 {
+    pack_visible_effects(effects.active.iter())
+}
+
+/// The `VISIBLE_MOB_EFFECTS` packing of [`visible_effects`] over `effects`
+/// (the ones without particles left out).
+pub fn pack_visible_effects<'a>(
+    effects: impl Iterator<Item = (&'a EffectType, &'a ActiveEffect)>,
+) -> i64 {
     let mut visible: Vec<(u8, bool)> = effects
-        .active
-        .iter()
         .filter(|(_, state)| state.show_particles)
         .map(|(effect, state)| (effect.0, state.ambient))
         .collect();
@@ -273,7 +292,7 @@ pub fn give(
     };
     send_mob_effect(world, entity, event, effect, &current);
     if given != Given::Kept {
-        if is_instant(effect) {
+        if effect.is_instant() {
             world
                 .entity_mut(entity)
                 .entry::<PendingInstant>()
@@ -293,6 +312,63 @@ pub fn give(
         refresh(world, entity);
     }
     Some(given)
+}
+
+/// Give `entity` an effect from an item it used (a potion, a food). Instant
+/// health and instant damage act at once and are never listed: the target's
+/// client sees `MobEffect` `Add` with a duration of 1 tick and `Remove` with
+/// 0, then the health changes (BDS 1.26.51 potion capture: harming took the
+/// player from 20 to 14 health). Every other effect is given as [`give`]
+/// gives it, but first acts on the step after this tick's ([`GivenByItem`]).
+pub fn give_from_item(world: &mut World, entity: Entity, effect: EffectType, active: ActiveEffect) {
+    if !matches!(
+        effect,
+        EffectType::INSTANT_HEALTH | EffectType::INSTANT_DAMAGE
+    ) {
+        if matches!(
+            give(world, entity, effect, active),
+            Some(Given::Added | Given::Replaced)
+        ) {
+            world
+                .entity_mut(entity)
+                .entry::<GivenByItem>()
+                .or_default()
+                .get_mut()
+                .0
+                .push(effect);
+        }
+        return;
+    }
+    if !affects(world, entity, effect)
+        || world.get::<Dead>(entity).is_some()
+        || world.get::<Health>(entity).is_none_or(Health::is_dead)
+    {
+        return;
+    }
+    let shown = ActiveEffect {
+        duration_ticks: 1,
+        infinite: false,
+        ..active.clone()
+    };
+    send_mob_effect(
+        world,
+        entity,
+        EnumsMobEffectPacketPayloadEvent::Add,
+        effect,
+        &shown,
+    );
+    let gone = ActiveEffect {
+        duration_ticks: 0,
+        ..shown
+    };
+    send_mob_effect(
+        world,
+        entity,
+        EnumsMobEffectPacketPayloadEvent::Remove,
+        effect,
+        &gone,
+    );
+    act(world, entity, effect, &active);
 }
 
 /// Take one effect from `entity`, telling its client (`MobEffect` `Remove`
@@ -454,6 +530,33 @@ fn refresh(world: &mut World, entity: Entity) {
             );
         }
         set_effect_flags(world, entity, fire_immune, invisible);
+    }
+}
+
+/// A player's invisibility starting or ending plays `disappeared` or
+/// `reappeared` at its feet + 0.9 on its next effect step, as BDS 1.26.51
+/// does (potion capture: `disappeared` follows the drink's `bottle.empty`).
+fn player_invisibility_sound(world: &mut World, player: Entity) {
+    let invisible = world
+        .get::<Effects>(player)
+        .is_some_and(|effects| effects.has(EffectType::INVISIBILITY));
+    let set = world
+        .get::<EffectFlags>(player)
+        .copied()
+        .unwrap_or_default();
+    if set.invisible == invisible {
+        return;
+    }
+    world
+        .entity_mut(player)
+        .insert(EffectFlags { invisible, ..set });
+    let sound = if invisible {
+        crate::entity::mob::constants::DISAPPEARED_SOUND
+    } else {
+        crate::entity::mob::constants::REAPPEARED_SOUND
+    };
+    if let Some(at) = crate::server::game::item_use::swing_sound_at(world, player) {
+        crate::entity::mob::net::sound::play_level_sound(world, Some(player), at, sound, -1);
     }
 }
 
@@ -620,6 +723,30 @@ pub fn resisted(world: &World, entity: Entity, damage: f32) -> f32 {
     (damage * (1.0 - RESISTANCE_PER_LEVEL * level)).max(0.0)
 }
 
+/// An attacker's melee `damage` after its effects: raised once per Strength
+/// level by `d × 1.3 + 1`, then lowered once per Weakness level by
+/// `d × 0.8 − 0.5`, a negative result dealing nothing. Mobs and players
+/// attack through it alike.
+pub fn strengthened(world: &World, attacker: Entity, mut damage: f32) -> f32 {
+    let Some(effects) = world.get::<Effects>(attacker) else {
+        return damage;
+    };
+    if let Some(strength) = effects.get(EffectType::STRENGTH) {
+        for _ in 0..=strength.level {
+            damage = damage * STRENGTH_DAMAGE_SCALE + STRENGTH_DAMAGE_ADD;
+        }
+    }
+    if let Some(weakness) = effects.get(EffectType::WEAKNESS) {
+        for _ in 0..=weakness.level {
+            damage = damage * WEAKNESS_DAMAGE_SCALE + WEAKNESS_DAMAGE_ADD;
+            if damage < 0.0 {
+                return 0.0;
+            }
+        }
+    }
+    damage
+}
+
 /// Take `damage` from the target's absorption first; returns what is left
 /// for its health.
 pub fn absorbed(world: &mut World, entity: Entity, damage: f32) -> f32 {
@@ -665,6 +792,9 @@ fn step(world: &mut World, entity: Entity) {
         world.entity_mut(entity).remove::<EffectsChanged>();
         refresh(world, entity);
     }
+    if world.get::<Player>(entity).is_some() {
+        player_invisibility_sound(world, entity);
+    }
     let Some(effects) = world.get::<Effects>(entity) else {
         return;
     };
@@ -679,14 +809,25 @@ fn step(world: &mut World, entity: Entity) {
         .take::<PendingInstant>()
         .map(|pending| pending.0)
         .unwrap_or_default();
+    let given_by_item = world
+        .entity_mut(entity)
+        .take::<GivenByItem>()
+        .map(|given| given.0)
+        .unwrap_or_default();
     let mut expired = false;
     for (effect, state) in active {
+        if given_by_item.contains(&effect) {
+            continue;
+        }
         if world.get::<Dead>(entity).is_some()
             || world.get::<Health>(entity).is_none_or(Health::is_dead)
         {
             break;
         }
-        if !is_instant(effect) || instant.contains(&effect) {
+        // Saturation feeds on every step it is listed (BDS 1.26.51 food
+        // capture: a suspicious stew's 6 ticks of it took food 15 to 20);
+        // the other instant effects act on their first step only.
+        if !effect.is_instant() || effect == EffectType::SATURATION || instant.contains(&effect) {
             act(world, entity, effect, &state);
         }
         let ran_out = {
@@ -777,39 +918,59 @@ fn act(world: &mut World, entity: Entity, effect: EffectType, state: &ActiveEffe
                 hunger.exhaust(HUNGER_EXHAUSTION * (f32::from(level) + 1.0));
             }
         }
+        // The food level rises by `level + 1` and saturation stays as it is
+        // (BDS 1.26.51 food capture: amplifier 0 took food 11 to 12 and
+        // amplifier 1 took 0 to 2, saturation 0 both times; a suspicious
+        // stew's pulses kept saturation 7.2).
         EffectType::SATURATION => {
             if let Some(mut hunger) = world.get_mut::<Hunger>(entity) {
-                hunger.eat(i32::from(level) + 1, 1.0);
+                hunger.food_level =
+                    (hunger.food_level + i32::from(level) + 1).clamp(0, Hunger::MAX_FOOD);
             }
         }
-        EffectType::INSTANT_HEALTH => {
-            if is_undead(world, entity) {
-                hurt(
-                    world,
-                    entity,
-                    INSTANT_HEALTH * scale,
-                    ActorDamageCause::Magic,
-                    false,
-                );
-            } else {
-                heal(world, entity, INSTANT_HEALTH * scale);
-            }
-        }
-        EffectType::INSTANT_DAMAGE => {
-            if is_undead(world, entity) {
-                heal(world, entity, INSTANT_DAMAGE * scale);
-            } else {
-                hurt(
-                    world,
-                    entity,
-                    INSTANT_DAMAGE * scale,
-                    ActorDamageCause::Magic,
-                    true,
-                );
-            }
-        }
+        EffectType::INSTANT_HEALTH => instant(world, entity, effect, INSTANT_HEALTH * scale),
+        EffectType::INSTANT_DAMAGE => instant(world, entity, effect, INSTANT_DAMAGE * scale),
         _ => {}
     }
+}
+
+/// Instant health heals `amount` (hurts the undead), instant damage hurts
+/// for it (heals the undead).
+fn instant(world: &mut World, entity: Entity, effect: EffectType, amount: f32) {
+    let healing = (effect == EffectType::INSTANT_HEALTH) != is_undead(world, entity);
+    if healing {
+        heal(world, entity, amount);
+    } else {
+        let animate = effect == EffectType::INSTANT_DAMAGE;
+        hurt(world, entity, amount, ActorDamageCause::Magic, animate);
+    }
+}
+
+/// A splash potion's instant health or damage: `factor` of the drink's
+/// amount, rounded to the nearest point, and no `MobEffect` (BDS 1.26.51
+/// throwables capture: splash harming at the thrower's feet hurt it and sent
+/// no effect packet).
+pub fn act_instant_splash(
+    world: &mut World,
+    entity: Entity,
+    effect: EffectType,
+    level: u8,
+    factor: f64,
+) {
+    let base = match effect {
+        EffectType::INSTANT_HEALTH => INSTANT_HEALTH,
+        EffectType::INSTANT_DAMAGE => INSTANT_DAMAGE,
+        _ => return,
+    };
+    if !affects(world, entity, effect)
+        || world.get::<Dead>(entity).is_some()
+        || world.get::<Health>(entity).is_none_or(Health::is_dead)
+    {
+        return;
+    }
+    let full = f64::from(base * 2f32.powi(i32::from(level.min(30))));
+    let amount = (factor * full + 0.5).floor() as f32;
+    instant(world, entity, effect, amount);
 }
 
 fn survival(world: &World, entity: Entity) -> bool {

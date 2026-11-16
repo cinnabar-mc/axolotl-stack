@@ -89,6 +89,11 @@ pub struct ProjectileRules {
     /// `on_hit.arrow_effect`: a tipped arrow ([`super::ArrowPotion`]) gives
     /// an actor it hits its potion's effect.
     pub arrow_effect: bool,
+    /// `thrown_potion_effect`: the projectile's potion (its aux value) is
+    /// applied to the actors around the hit point.
+    pub thrown_potion_effect: bool,
+    /// `douse_fire`: a water potion puts out fire around the hit point.
+    pub douse_fire: bool,
 }
 
 /// `on_hit.impact_damage`.
@@ -234,6 +239,8 @@ fn compile(b: body::Projectile, items: &ItemRegistry) -> Result<ProjectileRules,
         uncertainty_base: b.uncertainty_base,
         uncertainty_multiplier: b.uncertainty_multiplier,
         arrow_effect: false,
+        thrown_potion_effect: false,
+        douse_fire: false,
     };
     let Some(on_hit) = b.on_hit else {
         return Ok(rules);
@@ -241,7 +248,6 @@ fn compile(b: body::Projectile, items: &ItemRegistry) -> Result<ProjectileRules,
     for (present, name) in [
         (on_hit.catch_fire.is_some(), "catch_fire"),
         (on_hit.definition_event.is_some(), "definition_event"),
-        (on_hit.douse_fire.is_some(), "douse_fire"),
         (on_hit.freeze_on_hit.is_some(), "freeze_on_hit"),
         (on_hit.hurt_owner.is_some(), "hurt_owner"),
         (on_hit.ignite.is_some(), "ignite"),
@@ -249,8 +255,11 @@ fn compile(b: body::Projectile, items: &ItemRegistry) -> Result<ProjectileRules,
         (on_hit.spawn_aoe_cloud.is_some(), "spawn_aoe_cloud"),
         (on_hit.teleport_owner.is_some(), "teleport_owner"),
         (
-            on_hit.thrown_potion_effect.is_some(),
-            "thrown_potion_effect",
+            on_hit
+                .thrown_potion_effect
+                .as_ref()
+                .is_some_and(|potion| potion.effect != -1),
+            "thrown_potion_effect with a fixed effect",
         ),
         (on_hit.wind_burst_on_hit.is_some(), "wind_burst_on_hit"),
     ] {
@@ -265,6 +274,8 @@ fn compile(b: body::Projectile, items: &ItemRegistry) -> Result<ProjectileRules,
         .map(|particle| compile_particle(particle, items))
         .transpose()?;
     rules.remove_on_hit = on_hit.remove_on_hit.is_some();
+    rules.thrown_potion_effect = on_hit.thrown_potion_effect.is_some();
+    rules.douse_fire = on_hit.douse_fire.is_some();
     // Players' bows only shoot plain arrows (tipped arrows are not
     // implemented as items); mobs shoot the tipped arrows of their
     // `minecraft:shooter`.
