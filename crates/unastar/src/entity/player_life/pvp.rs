@@ -24,9 +24,9 @@
 //!    interactions, which are off by default).
 //! 2. Damage: the held item's melee damage plus Sharpness
 //!    ([`crate::entity::mob::combat::melee_damage`]); Strength and Weakness
-//!    as for mobs; then × 1.5 for a critical hit (falling, not on the
-//!    ground, no Blindness, no Slow Falling; sprinting allowed). Difficulty
-//!    does not scale it.
+//!    as for mobs (`entity::effects::strengthened`); then × 1.5 for a
+//!    critical hit (falling, not on the ground, no Blindness, no Slow
+//!    Falling; sprinting allowed). Difficulty does not scale it.
 //! 3. The victim's side ([`super::hurt`]): armour with toughness,
 //!    Protection, Resistance, then the hurt window; `SetLastHurtBy`; the
 //!    native push away from the attacker and a second push of power
@@ -49,9 +49,6 @@ use crate::entity::components::{
 };
 use crate::entity::mob::combat::Hit;
 use crate::entity::mob::components::KnockbackPower;
-use crate::entity::mob::constants::{
-    STRENGTH_DAMAGE_ADD, STRENGTH_DAMAGE_SCALE, WEAKNESS_DAMAGE_ADD, WEAKNESS_DAMAGE_SCALE,
-};
 use crate::entity::mob::events::held_item;
 use crate::entity::mob::state::Dead;
 use crate::world::rules::GameRules;
@@ -199,7 +196,7 @@ pub fn player_hits_player(
         .as_ref()
         .map_or(0, |stack| stack.enchantment_level(Enchantment::Knockback));
     let mut damage = crate::entity::mob::combat::melee_damage(held.as_ref());
-    damage = with_effects(world, attacker, damage);
+    damage = crate::entity::effects::strengthened(world, attacker, damage);
     if crit {
         damage *= CRITICAL_FACTOR;
     }
@@ -395,23 +392,4 @@ fn critical(world: &World, attacker: Entity, swing: Swing) -> bool {
         && !swing.on_ground
         && !has(EffectType::BLINDNESS)
         && !has(EffectType::SLOW_FALLING)
-}
-
-/// `damage` raised by each level of Strength, then lowered by each level of
-/// Weakness (never below 0).
-fn with_effects(world: &World, attacker: Entity, mut damage: f32) -> f32 {
-    let Some(effects) = world.get::<Effects>(attacker) else {
-        return damage;
-    };
-    if let Some(strength) = effects.get(EffectType::STRENGTH) {
-        for _ in 0..=strength.level {
-            damage = damage * STRENGTH_DAMAGE_SCALE + STRENGTH_DAMAGE_ADD;
-        }
-    }
-    if let Some(weakness) = effects.get(EffectType::WEAKNESS) {
-        for _ in 0..=weakness.level {
-            damage = (damage * WEAKNESS_DAMAGE_SCALE + WEAKNESS_DAMAGE_ADD).max(0.0);
-        }
-    }
-    damage
 }
