@@ -52,23 +52,13 @@ const KNOWN_GAPS: &[(&str, u32, &str)] = &[
     ("bubble_column_up", 1, "bubble columns are not simulated"),
     (
         "elytra_glide_yaw",
-        6,
-        "a glide at yaw 37.5 is 3 ULP off on its first tick: BDS's sine table entries are a few ULP off the correctly rounded sines",
+        22,
+        "1 ULP on y after 16 gliding ticks: some f32 order in the glide is not BDS's (the glide_* probes drift 1 to 5 ULP the same way)",
     ),
     (
         "powder_snow_walk_into",
         18,
         "powder snow's freezing slowdown (a movement modifier growing each tick) is not simulated",
-    ),
-    (
-        "random_14",
-        54,
-        "4 ULP on x velocity late in a random scenario (soul sand, strafing sprint jumps)",
-    ),
-    (
-        "random_172",
-        6,
-        "a sprint jump at yaw 60 is 3 ULP off on z: BDS's sine table entry for cos 60 is 3 ULP under the correctly rounded one",
     ),
     (
         "random_186",
@@ -79,11 +69,6 @@ const KNOWN_GAPS: &[(&str, u32, &str)] = &[
         "random_291",
         72,
         "a slime bounce an ULP off after the tick's gravity; no f32 order found",
-    ),
-    (
-        "random_66",
-        60,
-        "2 ULP on x after a strafing sprint jump on ice",
     ),
     (
         "random_a141",

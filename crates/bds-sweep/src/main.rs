@@ -63,6 +63,7 @@
 //! Exits successfully when the server closes the session.
 
 use bds_sweep::{physics, scenario, world};
+use unastar_rules::math;
 
 use anyhow::{Context, Result, ensure};
 use clap::Parser;
@@ -1468,9 +1469,9 @@ impl Player {
                 z: vz,
             },
             camera_orientation: Vec3 {
-                x: -yaw.sin() * pitch.cos(),
-                y: -pitch.sin(),
-                z: yaw.cos() * pitch.cos(),
+                x: -math::sin(yaw) * math::cos(pitch),
+                y: -math::sin(pitch),
+                z: math::cos(yaw) * math::cos(pitch),
             },
             input_data,
             input_mode: EnumsInputMode::Mouse,

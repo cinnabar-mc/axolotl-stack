@@ -12,6 +12,7 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 
 rand = { workspace = true }
+libm = { workspace = true }
 
 [build-dependencies]
 convert_case = { workspace = true }

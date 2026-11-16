@@ -27,7 +27,7 @@ pub mod authority;
 #[cfg(test)]
 mod tests;
 
-use std::sync::LazyLock;
+use crate::math::{cos, sin, table_cos, table_sin};
 
 /// Gravity per tick.
 pub const GRAVITY: f32 = 0.08;
@@ -218,30 +218,6 @@ impl Aabb {
     }
 }
 
-/// The 65536-entry sine table Minecraft's movement trigonometry reads, its
-/// angles worked out in `f32` (`i × pi × 2 / 65536`): entry 32768 is
-/// sin(pi in f32) = -8.742278e-8, not 0, which is the sideways residue of a
-/// glide straight along z on BDS 1.26.51. The sine itself is taken in `f64`
-/// and rounded, so the table is the same on every platform.
-static SIN_TABLE: LazyLock<Vec<f32>> = LazyLock::new(|| {
-    (0u16..=u16::MAX)
-        .map(|i| {
-            let angle = f32::from(i) * std::f32::consts::PI * 2.0 / 65536.0;
-            f64::from(angle).sin() as f32
-        })
-        .collect()
-});
-
-/// `sin` from the table: entry `(r × 10430.378) & 65535`.
-pub fn table_sin(radians: f32) -> f32 {
-    SIN_TABLE[((radians * 10430.378) as i32 & 65535) as usize]
-}
-
-/// `cos` from the table: a quarter turn (16384 entries) on.
-pub fn table_cos(radians: f32) -> f32 {
-    SIN_TABLE[((radians * 10430.378 + 16384.0) as i32 & 65535) as usize]
-}
-
 /// The body's shape, which sets its box.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Pose {
@@ -278,6 +254,25 @@ pub struct Controls {
     pub jump: bool,
     pub sneak: bool,
     pub sprint: bool,
+}
+
+impl Controls {
+    /// The yaw the look vector is taken at: wrapped into -180..180 (BDS
+    /// 1.26.51, `glide_p4` and `glide_pm60`: a glide at yaw 180.33 or 180.86
+    /// moves as at -179.67 and -179.14 bit for bit, where the unwrapped yaw
+    /// reads other sine table entries). The walk and the sprint jump turn by
+    /// the yaw as sent (`sprint_turn_jump` differs from BDS with either
+    /// wrapped).
+    pub fn look_yaw(&self) -> f32 {
+        let yaw = self.yaw % 360.0;
+        if yaw >= 180.0 {
+            yaw - 360.0
+        } else if yaw < -180.0 {
+            yaw + 360.0
+        } else {
+            yaw
+        }
+    }
 }
 
 /// A liquid's material, resolved once from the block data.
@@ -773,9 +768,12 @@ fn move_relative(body: &mut Body, controls: &Controls, speed: f32) {
         return;
     }
     let scale = speed / force.sqrt().max(1.0);
-    // The input turns by the exact sine and cosine (the sine table is only
-    // the sprint jump's): yaw 37.5 matches BDS only this way.
-    let (sin, cos) = controls.yaw.to_radians().sin_cos();
+    // The input turns by the C runtime's sine and cosine of the yaw, not the
+    // sine table (that is the sprint jump's and the look vector's): yaw 37.5
+    // matches BDS only this way, and the walks of the `sin_*` probes take its
+    // one-ULP exceptions ([`crate::math`]).
+    let yaw = controls.yaw.to_radians();
+    let (sin, cos) = (sin(yaw), cos(yaw));
     let (strafe, forward) = (strafe * scale, forward * scale);
     body.velocity[0] += strafe * cos - forward * sin;
     body.velocity[2] += strafe * sin + forward * cos;
@@ -1180,7 +1178,7 @@ fn climb_out_of_liquid(body: &mut Body, terrain: &impl Terrain, y: f32) {
 /// residue of table entry 32768 included).
 fn look_vector(controls: &Controls) -> [f32; 3] {
     const DEGREES: f32 = 0.017_453_292;
-    let heading = -controls.yaw * DEGREES - std::f32::consts::PI;
+    let heading = -controls.look_yaw() * DEGREES - std::f32::consts::PI;
     let (heading_cos, heading_sin) = (table_cos(heading), table_sin(heading));
     let pitch = -controls.pitch * DEGREES;
     let (pitch_cos, pitch_sin) = (-table_cos(pitch), table_sin(pitch));
@@ -1348,7 +1346,7 @@ fn wall_stops_sprint(meant: [f32; 3], made: [f32; 3]) -> bool {
         return true;
     }
     let dot = meant[0] * made[0] + meant[2] * made[2];
-    dot / (meant_sq * made_sq).sqrt() < SPRINT_WALL_ANGLE.cos()
+    dot / (meant_sq * made_sq).sqrt() < cos(SPRINT_WALL_ANGLE)
 }
 
 /// Whether a body box at `bb` overlaps any block's collision box.
