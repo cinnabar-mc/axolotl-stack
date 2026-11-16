@@ -2051,7 +2051,7 @@ impl Bot {
         // (1.62 would put the feet inside the platform for the server's copy).
         let eye = Vec3 {
             x: feet.0,
-            y: PLATFORM_TOP + unastar_rules::movement::NETWORK_OFFSET,
+            y: PLATFORM_TOP + unastar::entity::item_drop::PLAYER_REPORTED_EYE_HEIGHT as f32,
             z: feet.1,
         };
         let delta = Vec3 {
