@@ -90,6 +90,9 @@ const SPRINT_WALL_ANGLE: f32 = std::f32::consts::FRAC_PI_4;
 /// a sprint (BDS 1.26.51, `dt_gap_*`: 5 idle inputs between the presses
 /// sprint, 6 do not).
 const SPRINT_TAP: u8 = 7;
+/// A body standing up into blocks less deep than this on x or z is pushed
+/// out of them ([`room_to_stand`]).
+const STAND_PUSH: f32 = 0.01;
 /// Penetrations this small count as touching (BDS 1.26.51, `random_248`: a
 /// box 3e-7 into a slab's side is stopped by it; 1e-7 lets it through).
 const EPSILON: f32 = 1.0e-6;
@@ -473,6 +476,9 @@ pub struct Body {
     pub jump_delay: u8,
     pub sprinting: bool,
     pub sneaking: bool,
+    /// The sneak key is let go but there is no room to stand: the body keeps
+    /// the sneaking box and the sneak's slow move ([`update_state`]).
+    pub crouched: bool,
     /// The move vector is slowed as a sneak's this tick: sneaking, or let
     /// go of the sneak in this input ([`update_state`]).
     pub sneak_slowed: bool,
@@ -518,6 +524,7 @@ impl Body {
             jump_delay: 0,
             sprinting: false,
             sneaking: false,
+            crouched: false,
             sneak_slowed: false,
             sprint_ready: false,
             sprint_tap: 0,
@@ -567,7 +574,7 @@ impl Body {
     pub fn pose(&self) -> Pose {
         if self.swimming || self.gliding {
             Pose::Low
-        } else if self.sneaking {
+        } else if self.sneaking || self.crouched {
             Pose::Sneaking
         } else {
             Pose::Standing
@@ -581,6 +588,15 @@ impl Body {
             Some((aabb, feet, pose)) if feet == self.feet && pose == self.pose() => aabb,
             _ => Aabb::from_feet(self.feet, WIDTH, self.pose().height()),
         }
+    }
+
+    /// The box the body would have standing up where it is, less the
+    /// collision tolerance on every side ([`EPSILON`]: `random_248`, a box
+    /// touching a top slab's side stands up).
+    fn standing_box(&self) -> Aabb {
+        let mut bb = self.aabb();
+        bb.max[1] = bb.min[1] + Pose::Standing.height();
+        bb.inflate([-EPSILON; 3])
     }
 
     /// The wire position.
@@ -644,9 +660,23 @@ pub struct Changes {
 /// sneak's, and no sprint starts with it (`random_a67` and the `sr_*`
 /// scenarios: the release's move accelerates like a sneak's; `flat_sneak`:
 /// the box is the standing one from that move on; `sprint_sneak_toggle`
-/// tick 31: the sprint starts with the next input).
-pub fn update_state(body: &mut Body, controls: &Controls, submerged: bool, changes: &mut Changes) {
-    body.sneak_slowed = body.sneaking || controls.sneak;
+/// tick 31: the sprint starts with the next input). A sneak let go where a
+/// standing body has no room keeps the sneaking box and the sneak's slow
+/// move until there is room; like a release, the input that stands it up is
+/// still slowed (BDS 1.26.51, `ceil_release_*`: under a top slab 1.5 above
+/// the floor the body walks at a sneak's 0.0648 a tick, also with the
+/// sprint key, and jumps 0.01 into the slab; `ceil_exit_*`: it walks at
+/// 0.098 from the second input after the move that took its box out).
+pub fn update_state(
+    body: &mut Body,
+    controls: &Controls,
+    surroundings: Surroundings,
+    changes: &mut Changes,
+) {
+    let crouched =
+        !controls.sneak && (body.sneaking || body.crouched) && !surroundings.room_to_stand;
+    body.sneak_slowed = body.sneaking || controls.sneak || body.crouched;
+    body.crouched = crouched;
     if controls.sneak && !body.sneaking {
         body.sneaking = true;
         changes.started_sneaking = true;
@@ -698,7 +728,7 @@ pub fn update_state(body: &mut Body, controls: &Controls, submerged: bool, chang
         && if body.swimming {
             body.in_water
         } else {
-            submerged
+            surroundings.submerged
         };
     if want_swim && !body.swimming {
         body.swimming = true;
@@ -708,10 +738,92 @@ pub fn update_state(body: &mut Body, controls: &Controls, submerged: bool, chang
     }
 }
 
+/// What [`update_state`] needs from around the body.
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
+pub struct Surroundings {
+    /// The block at the eyes holds water ([`eyes_in_water`]).
+    pub submerged: bool,
+    /// A standing body's box fits where the body is, or within
+    /// [`STAND_PUSH`] of it ([`Surroundings::stand_push`]).
+    pub room_to_stand: bool,
+    /// How far a body standing up is pushed out of the blocks its standing
+    /// box overlaps by less than [`STAND_PUSH`] (zero for none).
+    pub stand_push: [f32; 3],
+}
+
+impl Surroundings {
+    /// Around `body`: the room to stand is looked at only for a body that
+    /// sneaks or is held crouching and lets go of the key.
+    pub fn of(body: &Body, controls: &Controls, terrain: &impl Terrain) -> Self {
+        let standing_up = !controls.sneak && (body.sneaking || body.crouched);
+        let (room_to_stand, stand_push) = if standing_up {
+            room_to_stand(body, terrain)
+        } else {
+            (true, [0.0; 3])
+        };
+        Self {
+            submerged: eyes_in_water(body, terrain),
+            room_to_stand,
+            stand_push,
+        }
+    }
+}
+
+/// Whether a body standing up where it is fits, and how far it is pushed
+/// out on x or z to fit: a standing box overlapping blocks by less than
+/// [`STAND_PUSH`] on the side it is least deep into stands, moved out to the
+/// blocks' faces (BDS 1.26.51, `ceil_push_*`: walking out from under a top
+/// slab, a box 0.005, 0.0075 or 0.009 into it stands and is moved out, one
+/// 0.0105 to 0.03 into it stays crouched).
+fn room_to_stand(body: &Body, terrain: &impl Terrain) -> (bool, [f32; 3]) {
+    let standing = body.standing_box();
+    let blocking: Vec<Aabb> = collisions(terrain, &standing)
+        .into_iter()
+        .filter(|b| b.intersects(&standing))
+        .collect();
+    if blocking.is_empty() {
+        return (true, [0.0; 3]);
+    }
+    let narrow = standing.inflate([-STAND_PUSH, 0.0, -STAND_PUSH]);
+    if blocking.iter().any(|b| b.intersects(&narrow)) {
+        return (false, [0.0; 3]);
+    }
+    let bb = Aabb::from_feet(body.feet, WIDTH, Pose::Standing.height());
+    let mut push = [0.0f32; 3];
+    for block in &blocking {
+        // Out through the face the box is least deep into.
+        let (axis, by) = [0, 2]
+            .into_iter()
+            .flat_map(|axis| {
+                [
+                    (axis, block.max[axis] - bb.min[axis]),
+                    (axis, block.min[axis] - bb.max[axis]),
+                ]
+            })
+            .min_by(|a, b| a.1.abs().total_cmp(&b.1.abs()))
+            .expect("two axes");
+        if by.abs() > push[axis].abs() {
+            push[axis] = by;
+        }
+    }
+    (true, push)
+}
+
 /// Move the body one tick.
 pub fn step(body: &mut Body, controls: &Controls, terrain: &impl Terrain) -> Changes {
     let mut changes = Changes::default();
-    update_state(body, controls, eyes_in_water(body, terrain), &mut changes);
+    let surroundings = Surroundings::of(body, controls, terrain);
+    update_state(body, controls, surroundings, &mut changes);
+    let push = surroundings.stand_push;
+    if push != [0.0; 3] {
+        // Standing up out of a block moves the standing box (rebuilt at the
+        // feet) out to its face, and stops the body on that axis after this
+        // move (`ceil_push_*`: the move is the push and the sneak's, and the
+        // next input walks from rest).
+        let bb = Aabb::from_feet(body.feet, WIDTH, Pose::Standing.height()).offset(push);
+        body.feet = bb.feet();
+        body.swept = Some((bb, body.feet, body.pose()));
+    }
     if !terrain.loaded(&body.aabb().inflate([1.0, 1.0, 1.0])) {
         body.velocity = [0.0; 3];
         changes.frozen = true;
@@ -744,6 +856,11 @@ pub fn step(body: &mut Body, controls: &Controls, terrain: &impl Terrain) -> Cha
     } else {
         body.fall_distance + (y - body.feet[1]).max(0.0)
     };
+    for (axis, by) in push.into_iter().enumerate() {
+        if by != 0.0 {
+            body.velocity[axis] = 0.0;
+        }
+    }
     if !controls.jump {
         body.jump_delay = 0;
     } else if body.jump_delay > 0 {

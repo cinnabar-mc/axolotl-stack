@@ -61,19 +61,9 @@ const KNOWN_GAPS: &[(&str, u32, &str)] = &[
         "powder snow's freezing slowdown (a movement modifier growing each tick) is not simulated",
     ),
     (
-        "random_186",
-        32,
-        "a sneak let go under a top slab keeps BDS's copy in the 1.49 box, so a jump rises 0.01; unastar stands it up",
-    ),
-    (
         "random_291",
         72,
         "a slime bounce an ULP off after the tick's gravity; no f32 order found",
-    ),
-    (
-        "random_a141",
-        58,
-        "a sneak let go under a ceiling keeps BDS's copy in the 1.49 box; unastar stands it up",
     ),
     (
         "water_climb_out",
