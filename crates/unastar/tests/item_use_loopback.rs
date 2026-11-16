@@ -86,14 +86,18 @@ fn release(slot: i32) -> InventoryTransactionPacket {
     }
 }
 
-/// A `PlayerAuthInput` at the spawn eye position, looking south tilted
-/// down by `pitch`, carrying `actions`.
+/// A `PlayerAuthInput` standing on the platform (feet at y 16), looking
+/// south tilted down by `pitch`, carrying `actions`. The position is the
+/// eye as a client reports it, the feet plus the wire offset 1.62001: at
+/// 17.62 the feet would be 1e-5 inside the stone, which does not hold a
+/// body it overlaps, and the server's copy of the player would fall
+/// through it and correct the client a block down.
 fn auth_input(tick: u64, pitch: f32, actions: Vec<PlayerBlockActionData>) -> PlayerAuthInputPacket {
     PlayerAuthInputPacket {
         player_rotation: Vec2 { x: pitch, y: 0.0 },
         position: Vec3 {
             x: 0.5,
-            y: 17.62,
+            y: 16.0 + unastar::entity::item_drop::PLAYER_REPORTED_EYE_HEIGHT as f32,
             z: 0.5,
         },
         client_tick: PlayerInputTick { inputtick: tick },
@@ -285,7 +289,9 @@ fn eat_mine_and_shoot_over_loopback() {
         );
 
         // Draw the bow, then summon a cow four blocks south (just before
-        // letting go, so it has no time to wander off) and shoot it.
+        // letting go, so it has no time to wander off) and shoot it. The
+        // cow's default spawn event makes 1 in 20 a baby, which the shot
+        // flies over: `ageable_grow_up` always gives an adult.
         send(&mut client, select(runtime_id, 2)).await;
         send(&mut client, auth_input(40, 10.0, vec![])).await;
         send(&mut client, use_air(2)).await;
@@ -293,7 +299,7 @@ fn eat_mine_and_shoot_over_loopback() {
         send(
             &mut client,
             CommandRequestPacket {
-                command: "/summon minecraft:cow 0.5 16 4.5".into(),
+                command: "/summon minecraft:cow 0.5 16 4.5 0 0 minecraft:ageable_grow_up".into(),
                 ..Default::default()
             },
         )

@@ -13,13 +13,18 @@
 //!    zombie's 2.5 / 3 / 4.5). A hit scaled to nothing is ignored.
 //! 3. Armour: the summed defence and toughness of the worn pieces reduce
 //!    the damage of the causes armour stops (`unastar_data::armour`); for
-//!    melee, Protection (4 % a level) and Resistance (20 % a level) follow.
+//!    melee, Protection (4 % a level) follows; then Resistance
+//!    (`entity::effects`, 20 % a level) for every cause.
 //! 4. The hurt timer, shared with mobs (`mob::combat::HurtTimer`): for
 //!    [`HURT_TICKS`] after a hit a new one only deals what exceeds the
 //!    damage that started the timer, both after step 3, and nothing when it
 //!    does not exceed it; a hit that exceeds it restarts the timer (override
 //!    and self-destruct damage ignore the timer). A player's melee hit is
 //!    counted at the tick its packet arrived in (BDS 1.26.51 PvP sweep).
+//! 5. Effects (`entity::effects`): fire resistance ignores fire, fire tick,
+//!    lava and magma (BDS 1.26.51 refuses `/damage` with them), checked
+//!    first; absorption takes what it can of what step 4 leaves before
+//!    health.
 //!
 //! A hit that leaves the player alive, a hit that exceeds the hurt window
 //! included, knocks it back when the hit has a source position: half the
@@ -57,6 +62,7 @@ use crate::entity::EntityRandom;
 use crate::entity::components::{
     ArmourInventory, GameMode, Health, Player, PlayerInput, Position, RuntimeEntityId,
 };
+use crate::entity::mob::attributes::KnockbackResistance;
 use crate::entity::mob::combat::{Hit, HurtTimer, knockback_velocity};
 use crate::entity::mob::components::KnockbackPower;
 use crate::entity::mob::constants::{HURT_TICKS, LIVING_GRAVITY, LIVING_VERTICAL_DRAG};
@@ -137,6 +143,15 @@ pub(super) fn apply_player_hit(
     if !allowed_by_rules(world.resource::<GameRules>(), hit.cause) {
         return 0.0;
     }
+    if crate::entity::mob::constants::FIRE_IMMUNE_CAUSES.contains(&hit.cause)
+        && world
+            .get::<crate::entity::components::Effects>(player)
+            .is_some_and(|effects| {
+                effects.has(crate::entity::components::EffectType::FIRE_RESISTANCE)
+            })
+    {
+        return 0.0;
+    }
     let damage = if hit.attacker.is_some() && !hit.by_player {
         let scaled = scale_for_difficulty(*world.resource::<Difficulty>(), hit.damage);
         if scaled <= 0.0 {
@@ -164,10 +179,13 @@ pub(super) fn apply_player_hit(
         damage
     };
     let damage = if hit.cause == ActorDamageCause::EntityAttack {
-        after_resistance(world, player, after_protection(world, player, damage))
+        after_protection(world, player, damage)
     } else {
         damage
     };
+    // Resistance: BDS 1.26.51 PvP sweep, a diamond sword's 8 -> 6.4, 4.8,
+    // 3.2, 1.6, 0 at levels I to V.
+    let damage = crate::entity::effects::resisted(world, player, damage);
     let now = world.resource::<TickCounter>().current;
     let at = extras.at_tick.unwrap_or(now);
     // A hit that exceeds the window restarts it (BDS 1.26.51 PvP sweep: 4,
@@ -181,6 +199,7 @@ pub(super) fn apply_player_hit(
         }
         _ => damage,
     };
+    let dealt = crate::entity::effects::absorbed(world, player, dealt);
     let until_tick = at + u64::from(HURT_TICKS);
 
     let (applied, dead) = {
@@ -346,34 +365,23 @@ fn after_protection(world: &World, player: Entity, damage: f32) -> f32 {
 
 /// Protection's share of the damage per level.
 const PROTECTION_PER_LEVEL: f32 = 0.04;
-/// Resistance's share of the damage per level (level V and up: none left).
-const RESISTANCE_PER_LEVEL: f32 = 0.2;
-
-/// `damage` under the Resistance effect: 20 % a level, none from level V
-/// (BDS 1.26.51 PvP sweep: a diamond sword's 8 -> 6.4, 4.8, 3.2, 1.6, 0).
-fn after_resistance(world: &World, player: Entity, damage: f32) -> f32 {
-    let Some(level) = world
-        .get::<crate::entity::components::Effects>(player)
-        .and_then(|effects| effects.get(crate::entity::components::EffectType::RESISTANCE))
-        .map(|effect| u32::from(effect.level) + 1)
-    else {
-        return damage;
-    };
-    damage * (1.0 - (RESISTANCE_PER_LEVEL * level as f32).min(1.0))
-}
 
 /// Summed knockback resistance of the pieces `player` wears (netherite: 0.1
-/// each).
-fn worn_knockback_resistance(world: &World, player: Entity) -> f64 {
-    world.get::<ArmourInventory>(player).map_or(0.0, |armour| {
+/// each), as the one knockback resistance mobs have too.
+fn worn_knockback_resistance(world: &World, player: Entity) -> KnockbackResistance {
+    let base = world.get::<ArmourInventory>(player).map_or(0.0, |armour| {
         armour
             .slots()
             .iter()
             .filter(|stack| !stack.is_empty())
             .filter_map(|stack| unastar_data::armour::armour_values(stack.item_id()))
-            .map(|values| f64::from(values.knockback_resistance))
+            .map(|values| values.knockback_resistance)
             .sum()
-    })
+    });
+    KnockbackResistance {
+        base,
+        spawn_bonus: None,
+    }
 }
 
 /// Summed defence and toughness of the pieces `player` wears.
@@ -430,16 +438,13 @@ fn send_hurt_event(world: &World, player: Entity, cause: ActorDamageCause) {
             y: position.0.y as f32,
             z: position.0.z as f32,
         });
-    send_player_event_with_data(world, player, EnumsActorEvent::Hurt, cause_id(cause), at);
-}
-
-/// The wire ID of a damage cause: its place in the published
-/// `ActorDamageCause` enum, counting `override` as 0 (`none` is -1). BDS
-/// 1.26.51 sends it as the hurt event's data (fall 5, lava 8, entity attack
-/// 2, magic 14, drowning 9 and void 12 in `testdata/bds-1.26.51-breath.json`).
-fn cause_id(cause: ActorDamageCause) -> i32 {
-    // The generated enum declares the causes in the published order.
-    cause as i32 - 1
+    send_player_event_with_data(
+        world,
+        player,
+        EnumsActorEvent::Hurt,
+        crate::entity::effects::hurt_event_data(cause),
+        at,
+    );
 }
 
 /// Push `player` away from `from` (horizontally) with each of `pushes` in
@@ -476,10 +481,9 @@ fn knock_back(
     );
     let mut count = 0;
     for power in pushes {
-        let power = if resistance > 0.0 {
-            crate::entity::mob::combat::knockback::KnockbackResistance(resistance).resist(power)
-        } else {
-            power
+        // A resistance of 1 or more stops the push altogether, as for mobs.
+        let Some(power) = resistance.resist(power) else {
+            continue;
         };
         velocity = bounded_knockback(knockback_velocity(velocity, away.normalize(), power));
         count += 1;
