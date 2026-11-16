@@ -83,10 +83,20 @@ pub fn run(ctx: &mut CommandContext<'_>, args: GiveArgs) -> CommandResult {
     .with_count(targets.len()))
 }
 
-fn given_stack(world: &World, name: &str, data: i32) -> Result<ItemStack, CommandOutput> {
+pub(super) fn given_stack(
+    world: &World,
+    name: &str,
+    data: i32,
+) -> Result<ItemStack, CommandOutput> {
     let invalid = || CommandOutput::failure("commands.give.item.invalid", vec![name.to_owned()]);
     let items = &world.resource::<ItemRegistryResource>().0;
     let blocks = &world.resource::<BlockRegistryResource>().0;
+    // Flattened families take their data value as the item (`wool 1 14`).
+    if data != 0
+        && let Some(current) = crate::command::legacy::item(name, data)
+    {
+        return given_stack(world, &current, 0);
+    }
     let spelled = if data == 0 {
         name.to_owned()
     } else {
@@ -97,6 +107,10 @@ fn given_stack(world: &World, name: &str, data: i32) -> Result<ItemStack, Comman
     let stack = items
         .stack_with_block(entry.identifier(), 1, blocks)
         .ok_or_else(invalid)?;
+    let stack = with_given_user_data(
+        stack,
+        crate::server::game::durability::max_durability(entry) > 0,
+    );
     let qualified = unastar_data::item_identity::qualify(name);
     let aliased = entry.identifier() != qualified;
     let aux = identity.data.unwrap_or(0);
@@ -119,8 +133,73 @@ fn given_stack(world: &World, name: &str, data: i32) -> Result<ItemStack, Comman
     ))
 }
 
+/// The NBT compound BDS 1.26.51 writes into a stack it gives, beyond
+/// `Damage` (capture of `tools/bds-sweep/scripts/give.txt`,
+/// `testdata/bds-give.json`).
+fn given_tag(item_id: &str) -> Option<tag::Compound> {
+    let compound = |entries: Vec<(&str, NBTTag)>| {
+        tag::Compound(
+            entries
+                .into_iter()
+                .map(|(name, value)| (name.to_owned(), value))
+                .collect(),
+        )
+    };
+    let byte = |value: u8| NBTTag::Byte(tag::Byte(value));
+    Some(match item_id {
+        "minecraft:banner" => compound(vec![("Type", NBTTag::Int(tag::Int(0)))]),
+        "minecraft:firework_rocket" => compound(vec![(
+            "Fireworks",
+            NBTTag::Compound(compound(vec![
+                ("Explosions", NBTTag::List(tag::List(Vec::new()))),
+                ("Flight", byte(1)),
+            ])),
+        )]),
+        "minecraft:firework_star" => compound(vec![
+            (
+                "FireworksItem",
+                NBTTag::Compound(compound(vec![
+                    ("FireworkColor", NBTTag::ByteArray(tag::ByteArray(vec![0]))),
+                    (
+                        "FireworkFade",
+                        NBTTag::ByteArray(tag::ByteArray(Vec::new())),
+                    ),
+                    ("FireworkFlicker", byte(0)),
+                    ("FireworkTrail", byte(0)),
+                    ("FireworkType", byte(0)),
+                ])),
+            ),
+            // ARGB 0xff1d1d21, the black dye's firework colour.
+            ("customColor", NBTTag::Int(tag::Int(0xff1d_1d21_u32 as i32))),
+        ]),
+        _ => return None,
+    })
+}
+
+/// A given stack as BDS writes it: an item with durability carries
+/// `Damage` 0 (the flint and steel, every tool, weapon and armour piece, the
+/// shield...), and the banner and fireworks their measured tags. (BDS also
+/// gives a filled map a new `map_uuid`; maps are not implemented.)
+fn with_given_user_data(stack: ItemStack, durable: bool) -> ItemStack {
+    if let Some(compound) = given_tag(stack.item_id()) {
+        return with_item_tag(&stack, compound);
+    }
+    if durable || UNDECLARED_DURABLE.contains(&stack.item_id()) {
+        return with_durability_damage(&stack, 0);
+    }
+    stack
+}
+
+/// Items BDS gives with `Damage` 0 though the native item data declares no
+/// durability for them (the `/give` sweep); this server does not wear them.
+const UNDECLARED_DURABLE: [&str; 3] = [
+    "minecraft:fishing_rod",
+    "minecraft:warped_fungus_on_a_stick",
+    "minecraft:wolf_armor",
+];
+
 /// `stack` carrying the vanilla item components of `/give`'s JSON.
-fn with_components(
+pub(super) fn with_components(
     world: &World,
     stack: ItemStack,
     components: &serde_json::Value,
@@ -191,7 +270,7 @@ fn with_components(
 
 /// Put `amount` of `stack` into `player`'s main inventory, matching stacks
 /// first; what does not fit drops at the player as if it threw it.
-fn give(world: &mut World, player: Entity, stack: &ItemStack, amount: u32) {
+pub(super) fn give(world: &mut World, player: Entity, stack: &ItemStack, amount: u32) {
     let per_stack = u32::from(stack.max_stack_size().max(1));
     let mut overflow = Vec::new();
     if let Some(mut main) = world.get_mut::<MainInventory>(player) {
@@ -360,14 +439,18 @@ mod tests {
             h.run(op, "/give @s bucket 1 2"),
             CommandOutput::failure("commands.give.item.invalid", vec!["bucket".into()])
         );
-        let legacy = h.run(op, "/give @s wool 3 14");
+        // Flattened families take the data value as the item.
+        assert!(h.run(op, "/give @s wool 3 14").is_success());
+        assert_eq!(slot(&mut h, op, 2).item_id(), "minecraft:red_wool");
+        // Other legacy data values are not mapped.
+        let legacy = h.run(op, "/give @s stone 3 1");
         assert!(!legacy.is_success());
         assert!(
             legacy.messages[0]
                 .key
                 .contains("not implemented in unastar yet")
         );
-        assert_eq!(main_slots(&mut h, op)[2].1, 0, "nothing given");
+        assert_eq!(main_slots(&mut h, op)[3].1, 0, "nothing given");
     }
 
     #[test]
@@ -424,5 +507,96 @@ mod tests {
             ),
             CommandOutput::failure("commands.give.tagError", vec!["minecraft:item_lock".into()])
         );
+    }
+
+    /// Every item of the native registry given on BDS 1.26.51
+    /// (`testdata/bds-give.json`): the same user data for every item BDS
+    /// gives. (The table's `refused` items, which BDS's `/give` does not
+    /// accept, are given here: a commands-lane gap.)
+    #[test]
+    fn every_item_is_given_like_bds() {
+        #[derive(serde::Deserialize)]
+        struct Given {
+            id: i32,
+            aux: u32,
+            block: u32,
+            user_data: String,
+        }
+        #[derive(serde::Deserialize)]
+        struct Table {
+            given: std::collections::BTreeMap<String, Given>,
+        }
+        let table: Table = serde_json::from_str(include_str!("testdata/bds-give.json")).unwrap();
+        let mut h = Harness::new();
+        let world = h.world();
+        let items = world.resource::<ItemRegistryResource>().0.clone();
+        let block_ids = crate::server::game::types::block_network_ids(world);
+        let hex = |bytes: &[u8]| bytes.iter().map(|b| format!("{b:02x}")).collect::<String>();
+        let mut wrong = Vec::new();
+        // Item and block differences found by the sweep, not fixed yet: BDS
+        // gives the legacy item a legacy name names (`wool`, `boat`, ...),
+        // sends block 0 for items that place a block of another name
+        // (doors, beds, cake, ...) and another state for some blocks.
+        let mut other = 0;
+        for (name, bds) in &table.given {
+            // A new map id each time; maps are not implemented.
+            if name == "minecraft:filled_map" {
+                continue;
+            }
+            let short = name.trim_start_matches("minecraft:");
+            let Ok(stack) = given_stack(world, short, 0) else {
+                wrong.push(format!("{name}: refused, BDS gives it"));
+                continue;
+            };
+            let ours = crate::server::game::item_descriptor(&stack, &items, block_ids).unwrap();
+            // Compared as NBT (a compound's key order is not kept) and as
+            // the bytes after it.
+            let bds_bytes: Vec<u8> = (0..bds.user_data.len())
+                .step_by(2)
+                .map(|i| u8::from_str_radix(&bds.user_data[i..i + 2], 16).unwrap())
+                .collect();
+            let bds_stack = stack.clone().with_nbt(bds_bytes.clone());
+            // Equal tags encode to the same length in any key order, so the
+            // lengths and the last 8 bytes (the can-place-on and
+            // can-destroy counts) compare what follows the NBT.
+            let tail = |bytes: &[u8]| bytes[bytes.len().saturating_sub(8)..].to_vec();
+            if item_tag(&stack) != item_tag(&bds_stack)
+                || ours.user_data_buffer.len() != bds_bytes.len()
+                || tail(&ours.user_data_buffer) != tail(&bds_bytes)
+            {
+                wrong.push(format!(
+                    "{name}: user data BDS {}, ours {}",
+                    bds.user_data,
+                    hex(&ours.user_data_buffer)
+                ));
+            }
+            if (i32::from(ours.id), ours.auxvalue, ours.block_runtime_id)
+                != (bds.id, bds.aux, bds.block)
+            {
+                other += 1;
+            }
+        }
+        assert!(
+            wrong.is_empty(),
+            "{}",
+            wrong.join(
+                "
+"
+            )
+        );
+        assert_eq!(other, 36, "item, aux or block differences");
+    }
+}
+
+/// Replays of the committed BDS 1.26.51 command capture
+/// (`crates/bds-extractor/captures/1.26.51/operator-commands`).
+#[cfg(test)]
+mod bds_capture {
+    use crate::command::exec::evidence::{Replay, assert_same_packets};
+
+    #[test]
+    fn give_and_clear_match_the_bds_capture() {
+        let steps = Replay::new().assert_segment("give", &[]);
+        assert_same_packets(&steps, &["TextPacket"], &[]);
     }
 }

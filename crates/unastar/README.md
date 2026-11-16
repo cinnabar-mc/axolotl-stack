@@ -112,13 +112,29 @@ generated in parallel (one lock per chunk; see `world::generator::pipeline`).
 Load timings, method and history are in
 [`tools/perf/README.md`](../../tools/perf/README.md).
 
+After `StartGame` the player gets the rest of the BDS 1.26.51 join in BDS order
+(`server/game/join.rs`): the fixed packets byte-identical to the member join
+capture, then `SetHealth` right before `PlayStatus(PlayerSpawn)`. The game mode
+travels in `StartGame` only. Each player's `PlayerList` entry (skin, platform,
+colour) is built from its validated login (`server/game/roster.rs`); online
+players get the sleeping-player count, the newcomer's entry and the adventure
+settings before its `AddPlayer`, and the count and a removal when a player
+leaves, as measured with `tools/bds-sweep/capture.py --pair`.
+
 A player's actor data follows BDS 1.26.51 (`entity/player_life/actor_data.rs`):
 its own join `SetActorData` and the `AddPlayer` other players get carry every
 row BDS sends (72 and 79), from the state the player's viewers last received;
-`AddPlayer` names game type `default` until the player's mode is set. Changes
-(breath, game mode, sneak, crawl pose, burning, effects, death) reach the
-player and its viewers as BDS groups them; the evidence and tests are in
-`entity/player_life/testdata/` and `entity/player_life/tests/`.
+`AddPlayer` names game type `default` until the player's mode is set and carries
+the feet position (the eyes are 1.62 higher). Changes (breath, game mode, sneak,
+sprint, swim, glide, crawl pose, `MOVING`, burning, effects, death) reach the
+player and its viewers as BDS groups them, and so do its attribute updates. The
+viewers are the players in BDS's send range (`entity/send_range.rs`:
+Δx² + Δz² ≤ 17 chunks). The sprint, swim and glide toggles a client asks for
+are accepted or refused with BDS's rules, and each move's food exhaustion is
+charged as BDS charges it (`entity/player_life/motion.rs`); falls (landing
+blocks, powder snow, a slowed glide, Feather Falling) and burning follow the
+BDS movement capture. The evidence and tests are in `entity/player_life/testdata/`
+and `entity/player_life/tests/`.
 
 ## World Generation
 
@@ -214,8 +230,12 @@ The cave-boundary regression fails before the fix and passes after it.
 Native biome ties are history-dependent, including across chunk calls on a worker.
 Request-order and parallel checks must match the reference's worker/query context
 or report that dependency; resetting tie history to force seed-only determinism
-would change native behavior. Bedrock keeps its current independent-nearest policy
-until a BDS reference establishes a different rule.
+would change native behavior. A fill whose every search found a unique nearest
+leaf is the same from any history, so `JavaGenerator` computes it once per chunk
+and replays it for the other eight surfaces that read it (sharing its biomes and
+restoring the history its last search leaves); fills that met a tie run every time.
+Bedrock keeps its current independent-nearest policy until a BDS reference
+establishes a different rule.
 
 `JavaGenerationOptions::dimension` selects the native preset. Java states, native
 biome identities and actor recipes remain intact through
@@ -281,6 +301,62 @@ ignores plain-air writes) until a non-air block enters it. `SubChunk` keeps the
 same non-air count, so the stored `cave_air` is observed as `air` in that case;
 with that change all 2,171 frames match exactly. Neither holdout seed stayed
 untouched: each exposed one pale moss carpet voxel that led to a fix.
+
+Exact frames say nothing about code no capture reached, so the
+`worldgen-coverage` feature (unastar and unastar_noise; compiled out otherwise)
+records which registry entries wrote a block into a compared chunk: placed and
+configured features, structures, templates, named processor lists, carvers,
+surface-rule leaves and biomes. `java_canonical_compare --generate` writes the
+hits next to each actual capture, and
+`unastar_noise/tools/coverage_report.py` totals them against the entries each
+dimension's world generation can reach in the pinned 1.21.11 registries
+(bonemeal, sapling, bonus chest and spawn platform features are listed as
+excluded, not counted). An entry that runs but writes nothing in a compared
+chunk counts as not exercised.
+
+Captures aimed at the unexercised entries of the first count
+(1,236 frames over the eight seeds) exposed 46 differing frames. Their causes:
+beached shipwrecks waterlog; ruined portal vines also attach to full
+cubes such as leaves; mirroring keeps a chest's left/right half; template data
+markers act only inside the placement box; bee nests store their bees; end
+gateways save their exit; desert well suspicious sand gets its archaeology
+loot; nether fossils may carry a dried ghast; the aquifer's deep-dark test
+reads erosion and depth through the chunk's flat cache (the quart corner at
+y 0) for centers over the chunk; and iceberg ellipses with a zero axis give NaN,
+which Java's `d < 0` test treats as outside. Three fresh holdout seeds followed
+in turn. 5823730942511315655 differed in one cave-edge voxel: 1.21.11 `Mth.sin`
+and `Mth.cos` scale the angle as a double, and the carvers' float product picked
+a neighbouring table entry. -3412945871029348671 differed in one stronghold
+room-crossing torch (a wall torch, not a standing torch). The third,
+8890523146617004213, matched all 408 frames before any change. With every fix,
+all 4,619 frames match exactly (529,629,184 voxels; Overworld 3,341 frames and
+378,765,312 voxels, Nether 769 and 83,951,616, End 509 and 66,912,256). That is
+evidence for these coordinates and seeds, not a proof for every seed.
+
+| Exercised / reachable | Overworld | Nether | End |
+|---|---|---|---|
+| Placed features | 207/213 | 36/37 | 5/5 |
+| Configured features | 170/173 | 30/31 | 5/5 |
+| Structures | 29/29 | 4/4 | 1/1 |
+| Templates | 793/996 | 187/194 | 19/20 |
+| Named processor lists | 22/24 | 12/12 | 0/0 |
+| Carvers | 3/3 | 1/1 | 0/0 |
+| Surface-rule leaves | 89/102 | 20/22 | 1/1 |
+| Biomes | 54/54 | 5/5 | 5/5 |
+
+Never exercised:
+- Overworld features: `brown_mushroom_normal`, `red_mushroom_normal`,
+  `red_mushroom_swamp`, `fallen_super_birch_tree`, `fancy_oak_bees` and
+  `spring_lava_frozen`; no capture reached a placement.
+- Overworld processor lists: `zombie_desert` and `zombie_snowy` (zombie villages).
+- Overworld templates: 152 village pieces (five biome sets), 23 trail ruins,
+  12 fossils, 9 trial chamber pieces and 7 others.
+- Overworld surface leaves: 13, including badlands terracotta bands and frozen
+  ocean ice and water.
+- Nether: `spring_lava` (its configuration replaces only overworld rock and
+  dirt, none of which generate in the Nether), 7 bastion and giant ruined portal templates,
+  and the warped and crimson wart-block surface leaves.
+- End: the `end_city/tower_floor` template.
 
 At the Bedrock boundary, waterlogged states and fluid-bearing aquatic plants
 produce a secondary source-water storage without changing their primary block.
@@ -475,6 +551,20 @@ and decoded once at startup; see `../unastar-data/README.md` for prerequisites.
 Runtime rules/loot evaluation is in the bevy-free `unastar-rules` crate.
 These data/registry checks do not establish mob gameplay or crafted-pack parity.
 
+### Status effects
+
+`entity::effects` gives, takes and steps the effects of mobs and players
+alike (one implementation; `/effect`, food, milk, mob attacks and
+`spell_effects` all go through it). `sweep.py effects --client-capture`
+(`src/entity/effects/testdata/bds-1.26.51-effects.json`, 45 scenarios on a
+cow, a zombie and the sweep player) is replayed tick by tick by
+`src/entity/effects/tests.rs`: pulses of poison, regeneration and wither,
+instant effects, resistance, fire resistance, health boost, absorption,
+speed and slowness modifiers, invisibility, hidden particles, stacking,
+clearing, expiry, levitation and slow falling, with every `MobEffect`,
+visible-effects actor data, effect flag, `UpdateAttributes` entry and hurt
+event on BDS's tick (a player's within the tick its input moves it).
+
 ### Measured mob behaviour
 
 Mob AddActor packets are compared field by field with the retained native
@@ -484,10 +574,27 @@ measured with scripted command captures (`tools/bds-sweep/capture.py
 naming its source capture by hash: which damage causes a `minecraft:fire_immune`
 mob ignores (`bds-1.26.51-fire-immune-causes.json`), the effect a husk or wither
 skeleton hit applies per difficulty (`bds-1.26.51-attack-effects.json`), how a
-zombie pigman's anger spreads and ends (`bds-1.26.51-pigman-anger.json`), and
-how often its spawn event draws a branch that names an undeclared event
-(`bds-1.26.51-pigman-spawn-branches.json`). The tests in
-`src/entity/mob/tests/hostile.rs` replay each fixture.
+zombie pigman's anger spreads and ends (`bds-1.26.51-pigman-anger.json`, and
+with pigmen pinned in barrier cells `bds-1.26.51-anger-chain.json`, which also
+holds the retaliation distances and a zoglin's anger sounds), how often its
+spawn event draws a branch that names an undeclared event
+(`bds-1.26.51-pigman-spawn-branches.json`), and what 30 bottles o' enchanting
+send from their AddActor to their orbs (`bds-1.26.51-xp-bottles.json`). The
+tests in `src/entity/mob/tests/hostile.rs`, `src/entity/mob/tests/anger.rs`
+and `src/entity/mob/tests/projectiles.rs` replay each fixture;
+`src/entity/mob/tests/facets.rs` runs every shared behaviour
+check (physics, strolling, loot, targeting, gear, ...) for each spawnable mob
+that uses it.
+
+Mooshroom interactions (`sweep.py mooshroom --client-capture`, distilled by
+`tools/bds-sweep/mooshroom_fixture.py` into
+`src/entity/mob/interaction/testdata/bds-1.26.51-mooshroom.json`) are replayed
+by `src/entity/mob/interaction/bds_mooshroom.rs`: stew and suspicious stew
+into the hand (`add_items`, `has_mark_variant` loot), flowers eaten with
+`particle_on_start` smoke, shearing with largeexplode particles, five
+mushrooms and the cow it turns into (`minecraft:transformation`, which runs
+only when it names nothing but its target), the particle positions for an
+adult, a baby and a raised player, and the sounds at the middle of its box.
 
 ### Measured item and falling-block motion
 
@@ -589,19 +696,37 @@ of the complete timing/motion matrix.
 
 ### Mob movement replication
 
-Mobs and projectiles replicate like BDS 1.26.51 (`src/entity/mob/net/network.rs`):
-a `MoveActorDelta` is measured against one shared "last sent" movement state, and
-each viewer gets it only as often as the actor's
-`minecraft:conditional_bandwidth_optimization` allows for that viewer's distance
-(every ⌊min(d, D) / D × M⌋ ticks, `ticks` set to that number; the empty component
-is 10 ticks over 80 blocks, so every tick within 8 blocks). A viewer's first
-update and a change of ground contact go at once with `ticks` 0, and the shared
-state moves on only when some viewer got the update, so far viewers can keep a
-stale axis, as on BDS. A newly spawned mob's `AddActor` shows it as it spawned.
-`src/entity/mob/net/bds_replication.rs` replays two-client BDS captures
+**Who sees what.** Every actor, players included, is sent to the players in its
+send range (`src/entity/send_range.rs`): the viewer's chunk within Δx² + Δz² ≤ 17
+chunks of the actor's, whatever the view or simulation distance. An actor is
+added in the tick a viewer comes into range and removed one tick after it
+leaves. `src/entity/bds_send_range.rs` replays BDS's add and remove steps for
+the sweep player, a cow, an item, an arrow and an orb along every walk of
+`tools/bds-sweep/sweep.py range` (three view / simulation distances).
+
+**Mobs, projectiles and experience orbs** replicate like BDS 1.26.51
+(`src/entity/mob/net/network.rs`): a `MoveActorDelta` is measured against one
+shared "last sent" movement state, and each viewer gets it only as often as the
+actor's `minecraft:conditional_bandwidth_optimization` allows for that viewer's
+distance (every ⌊min(d, D) / D × M⌋ ticks, `ticks` set to that number; the empty
+component is 10 ticks over 80 blocks, so every tick within 8 blocks). Conditional
+values apply while their filter holds: the vehicles' `is_moving` (0 / 0) is
+answered by whether the actor moved in the tick before. A viewer's first update
+and a change of ground contact go at once with `ticks` 0, and the shared state
+moves on only when some viewer got the update, so far viewers can keep a stale
+axis, as on BDS. A newly spawned actor's `AddActor` shows it as it spawned, its
+rotation cut to whole rotation bytes; actors that are not living have head and
+body yaw 0. A projectile that sticks in a block stops where its flight entered
+it. `src/entity/mob/net/bds_replication.rs` replays two-client BDS captures
 (`testdata/bds-1.26.51-replication.json`, from `tools/bds-sweep/sweep.py knockback
---items cadence|cadence2 --observer`) packet for packet; `docs/quirks/bds.md`
+--items cadence|cadence2|cadence3 --observer`) packet for packet; `docs/quirks/bds.md`
 lists the copied oddities.
+
+**Other players** (`src/server/player_view.rs`): every input a player sends is
+relayed to its viewers as one `MovePlayer` with the position, ground contact and
+head yaw after the input, the input's tick, and the pitch and yaw before it, as
+BDS does; `src/server/bds_player_relay.rs` replays 411 inputs of
+`tools/bds-sweep/sweep.py walk`.
 
 ## Commands
 
@@ -621,56 +746,76 @@ Commands follow BDS 1.26.51 (`src/command/`):
   declaration against the captured syntax, and the executor matches over it.
   Feedback is BDS's `CommandOutputPacket`: the same translation keys,
   parameters, success flags and counts, plus the side packets BDS sends
-  (rawtext target messages, `UpdatePlayerGameType`, `MovePlayer`, …), checked
-  against a scripted BDS capture of 81 commands.
+  (rawtext target messages, `UpdatePlayerGameType`, `MovePlayer`, …).
+- **Evidence is a replayed capture.** `tools/bds-sweep/command-script.txt`
+  (908 steps in segments, including server-console lines and a second player
+  who joins, watches and leaves) was run on BDS 1.26.51 and its answers
+  committed (`crates/bds-extractor/captures/1.26.51/operator-commands/feedback.json`);
+  each executor's `bds_capture` tests replay their segment on the test harness
+  (`src/command/exec/evidence.rs`) and compare every answer, the feedback
+  packets, the console lines and what the second player received with BDS's.
+- **`/execute`** runs its subcommands as a list of execution contexts (actor
+  sources, positions, rotations, the eye anchor) and nests other commands
+  through the same registry; chains are validated with the whole line when it
+  is parsed. Selectors read entity tags (`tag=`), the scoreboard (`scores=`) and
+  input locks (`haspermission=`).
 - **Permissions:** players have BDS command level `any`; operators
-  (`server.operators` in the config, or `/op` from the console) get
-  `gamedirectors`, BDS's operator abilities and permission level. Unknown
-  commands answer `commands.generic.unknown`, commands above the source's level
+  (`server.operators` in the config, `permissions.json` by XUID, or `/op` and
+  `/permission` from the console) get `gamedirectors`, BDS's operator
+  abilities and permission level. Unknown commands answer
+  `commands.generic.unknown`, commands above the source's level
   `commands.generic.error.permissions`. Client-supplied origins never grant
-  permissions.
+  permissions. Other operators see a player's successful commands as BDS's grey
+  admin line.
 - **Server console:** lines typed on stdin run as commands with owner level
-  (so `/stop`, `/op`, `/deop` work there); output is printed in English from
-  the vanilla `en_US.lang`.
+  (so `/stop`, `/op`, `/deop`, `/allowlist`, `/permission`, `/save` work there);
+  like BDS, each answer is one log record (messages one per line, `ERROR` when
+  the command failed), printed in English from the vanilla `en_US.lang`.
+- **Order:** a player's command request that arrives before that player's
+  inputs of the tick runs before them, so a `/setblock` sent just before an
+  input is in place for it, as on BDS
+  (`src/server/game/command_order_tests.rs`). A request that arrives after an
+  input runs after all of the tick's inputs.
 
-Implemented: `/clear`, `/clone`, `/deop`, `/difficulty`, `/effect`, `/enchant`,
-`/fill`, `/gamemode`, `/gamerule`, `/give`, `/help` (`/?`), `/kill`, `/list`,
-`/me`, `/op`, `/say`, `/setblock`, `/setworldspawn`, `/spawnpoint`, `/stop`,
-`/summon`, `/teleport` (`/tp`), `/tell` (`/msg`, `/w`), `/time`, `/weather`,
-`/xp`. Known differences from BDS:
+Every command BDS advertises is implemented except `/locate`, `/packstack`,
+`/place`, `/reloadconfig`, `/reloadpacketlimitconfig`, `/ride`, `/script` and
+`/wsserver` (and the Editor's `/editor-allowlist`); these stay advertised
+exactly as BDS sends them and answer a literal "/<name> is not implemented in
+unastar yet" failure. Each command's status is in
+[`docs/parity/commands.toml`](../../docs/parity/commands.toml); odd BDS answers
+copied on purpose are in `docs/quirks/bds.md`. Known differences from BDS:
 
 | Command | Difference | Why |
 |---|---|---|
-| `/give`, `/clear`, `/setblock`, `/fill` | Legacy names and data values (`wool 14`, `wool ["color"="red"]`) fail with "not implemented"; current identifiers (`red_wool`) work | No legacy item/block upgrade table in the repository yet |
-| `/give` | No `UnlockedRecipes`; `PlayerHotbar` sent with `shouldselectslot=true` | No recipe-unlock system; shared inventory resync |
-| `/gamemode` | Also resends `UpdateAbilities` | Unastar's join abilities depend on the game mode |
-| `/effect` | Speed/slowness do not change movement; no visible-effects actor data | No attribute-modifier system yet |
-| `/weather` | State and client events only; no natural cycle, durations do not count down, no gameplay effect | Weather is not simulated |
-| `/spawnpoint`, `/setworldspawn` | Not persisted; new joiners still use the config spawn rules | No level-data store |
-| `/op`, `/deop` | Not written back to the config file | Runtime-only operator list |
-| `/fill`, `/clone` | One `UpdateBlock` per block instead of `UpdateSubChunkBlocks`; `/clone` copies no block-entity data | Block update path |
+| `/give`, `/clear`, `/setblock`, `/fill`, `/clone` | Legacy names with old block states map only for the colour families (and `/give`'s data values also for log, log2 and planks); other legacy names fail with "not implemented" | No full legacy item/block upgrade table yet |
+| `/give`, `/recipe` | Items reaching an inventory unlock no recipes (BDS follows a give with `UnlockedRecipes`); unlocked recipes are not saved; `PlayerHotbar` sent with `shouldselectslot=true` | No recipe-unlock system; shared inventory resync |
+| `/gamemode` | Also resends `UpdateAbilities`; `default` puts the player in the configured mode instead of keeping it on `default` | Unastar's join abilities depend on the game mode; no `default` player mode |
+| `/weather`, `/toggledownfall` | State, client events and the fading levels `/weather query` reports; no natural cycle, durations do not count down, no gameplay effect | Weather is not simulated |
+| `/setworldspawn`, `/scoreboard`, `/tickingarea`, `/structure`, `/mobevent` | The world spawn, objectives and scores, ticking areas, structures and mob event switches are not saved with the world (players' spawn points, tags and recipes, and mobs' tags, are) | No level-data store yet |
+| `/scoreboard` | `belowname` sends no score actor data | Not built |
+| `/tickingarea` | Areas do not keep their chunks loaded or ticking | Chunk loading follows players only |
+| `/fill`, `/clone`, `/structure` | One `UpdateBlock` per block instead of `UpdateSubChunkBlocks`; `/clone` copies no block-entity data; `/structure` neither turns block states with the box nor saves block entities or entities | Block update path |
+| `/execute` | `in nether` and `in the_end` answer as BDS does where nothing is loaded for `testfor`, `setblock`, `testforblock`, `fill`, `clone`, `summon` and `if block`; any other command there (and `if blocks`) fails with "not implemented" | One dimension per world |
+| `/damage` | The hurt `ActorEvent` carries no damage cause | Shared hurt path |
+| `/replaceitem` | No armour equip sound; armour and offhand changes resend the whole inventory | No equip-sound table |
+| `/mobevent`, `/scriptevent` | Switches and events are kept or acknowledged but nothing acts on them | No mob events or behaviour-pack scripts |
+| `/aimassist` | `set` always answers that the camera type is unsupported | The client's camera type is not tracked |
+| `/dialogue`, `/gametest` | Answer as BDS does for a world without NPC dialogue or GameTests | No NPC dialogue; no behaviour-pack scripts |
+| `/loot` | An unquoted table path with a `/` is read whole; BDS answers a syntax error at the `/` | Shared string lexing |
+| `/tellraw`, `/titleraw` | A malformed JSON message's syntax error names another token | Unastar parses JSON in one piece |
 | `/help` | Lists the operator listing for the console too | Owner-only usage lines were not captured |
-| Item names in feedback | Flattened block items without their own language key use the title-cased identifier ("Red Wool") | No legacy description-id data |
-
-Every other command BDS offers stays advertised exactly as BDS sends it and
-answers a literal "/<name> is not implemented in unastar yet" failure, because
-the game system behind it does not exist yet: `aimassist`, `allowlist`,
-`camera`, `camerashake`, `changesetting`, `clearspawnpoint`, `controlscheme`,
-`damage`, `daylock`, `dialogue`, `editor-allowlist`, `event`, `execute`, `fog`,
-`function`, `gametest`, `hud`, `inputpermission`, `kick`, `locate`, `loot`,
-`mobevent`, `music`, `packstack`, `particle`, `permission`, `place`,
-`playanimation`, `playsound`, `recipe`, `reload`, `reloadconfig`,
-`reloadpacketlimitconfig`, `replaceitem`, `ride`, `save`, `schedule`,
-`scoreboard`, `script`, `scriptevent`, `sendshowstoreoffer`, `serveridentity`,
-`setmaxplayers`, `spreadplayers`, `stopsound`, `structure`, `tag`, `tellraw`,
-`testfor`, `testforblock`, `testforblocks`, `tickingarea`, `title`,
-`titleraw`, `toggledownfall`, `transfer`, `wsserver`.
+| Item names in feedback | Flattened block items without their own language key use the title-cased identifier ("Red Wool") | Block names are measured as translation keys only |
 
 Adding a command: declare its overloads and write `run` in
 `src/command/exec/<name>.rs`, then add one `register` line in
 `src/command/exec/mod.rs` (see `src/command/mod.rs` and the existing executors).
-Tests use `exec::test_support::Harness`. The loopback check is
-`cargo test -p unastar --test commands_e2e -- --ignored --nocapture`.
+Tests use `exec::test_support::Harness`; to compare with BDS, add the
+command's lines to a segment of `tools/bds-sweep/command-script.txt`, capture
+(`tools/bds-sweep/README.md`), commit the feedback with
+`commit_fixtures.py --commands` and replay the segment with
+`exec::evidence::Replay::assert_segment` (the ignored
+`survey_the_bds_capture` test lists every differing answer). The loopback check
+is `cargo test -p unastar --test commands_e2e -- --ignored --nocapture`.
 
 ## Gameplay Permissions and Chat
 
@@ -703,6 +848,12 @@ Every non-air item the server sends carries Bedrock item user data
 eighteen for the shield). The client drops the connection with `BadPacket`
 right after spawning when creative items carry an empty buffer. Client user
 data is stored verbatim and compared decoded, so a default buffer equals none.
+Enchantments are the generated `unastar_rules::ids::Enchantment` (decision
+[0052](../../docs/decisions/0052-generate-one-enchantment-type.md)): a stack
+decodes its `ench` levels once when its user data is set, so
+`stack.enchantment_level(Enchantment::Sharpness)` is an array index, and
+`item::enchant::with_enchantments` writes them back. `ench` entries with ids
+that are not Bedrock enchantments stay in the buffer untouched.
 
 Block interaction requires Survival or Creative mode and server-position reach
 (five blocks in Survival, six in Creative, measured to the block's bounding box).
@@ -715,9 +866,21 @@ Survival breaking follows BDS input by input:
   the blocks back and the break goes on.
 - `StopDestroyBlock` does not end the break, and a completed break goes on at that position from
   zero.
-- Every input is answered with BDS's crack events, and no sound is sent for a break.
+- Every input is answered with BDS's crack events, and no sound is sent to the breaking client.
+  Other players near the block hear its hit sound every fifth input.
+- In creative, `StartDestroyBlock` breaks the block at once, except with a sword, the trident or
+  the mace. An input carrying `CreativeDestroyBlock` is refused as malformed and ends the session,
+  as on BDS.
 
-`server/game/blocks/breaking_tests.rs` replays a BDS capture of all of this.
+- A block put where a break goes on is broken by the inputs since counted at that block's speed:
+  at once if it is no slower than the progress built over the air.
+
+`server/game/blocks/breaking_tests.rs` replays BDS captures of all of this, one with a second
+player watching, with `[gameplay] block_breaking = "bds"`. The default, `"guarded"`
+([decision 0056](../../docs/decisions/0056-guarded-block-breaking.md)), changes two things a
+modified client could use: at most one input of progress counts per server tick since the
+progress began (a lagging client may catch up, never get ahead), and the progress begins again
+when the block at the position is no longer the one being broken.
 Block break/place intents dispatch before mutation; cancellation sends authoritative
 corrections. Allowed intents revalidate current state before committing, and
 Survival placement consumes one server-owned selected item. Placement does not
@@ -725,16 +888,82 @@ replace occupied blocks. Item-specific replacement, adventure CanPlaceOn/CanDest
 rules, and unsupported inventory operations are not implemented.
 
 Survival block clicks answer like BDS 1.26.51 click by click
-(`server/game/placement_capture_tests.rs` replays the 205 captured clicks of
-`server/game/testdata/bds-placements.json`): the placed state (orientation rules in
+(`server/game/placement_capture_tests.rs` replays the 780 captured clicks of
+`server/game/testdata/bds-placements*.json`, one file per case group, for the clicking
+player and for a second player watching): the placed state (orientation rules in
 `server/game/placement.rs`), refusals where the block could not stay, the six
-`UpdateBlock` corrections after every click, the `place` sound (data, position, actor
-id -1) and the inventory resync (after a placement, a click out of reach or a click
-claiming a stack the player does not hold; a refused click in reach gets only the
-corrections). Stacks describe the block BDS describes them with
-(`unastar_data::item_blocks`, measured for every item). Not copied: the attribute and
-actor-data resend BDS sends after every click, and the sign editor BDS opens after a
-sign is placed (sign text is not implemented).
+`UpdateBlock` corrections after every click, the placement sound (`place` and the
+per-item sounds of `server/game/place_sounds.rs`), the inventory resync, and what the
+other player is sent (blocks, sounds, level events, block actors). Stacks describe
+the block BDS describes them with (`unastar_data::item_blocks`, measured for every
+item). Covered since round 2: door hinges from neighbouring doors and blocks; coral
+fans on floors and walls (placed dead out of water) and coral blocks dying 45 ticks
+after any placement out of water (or 54 to 184 ticks after their water goes,
+`block_use.rs`, `crates/unastar-data/data/measured/block_updates/coral_timing.json`); skulls; beehives, bee nests, looms, chiseled bookshelves, decorated pots,
+crafters, grindstones, shelf mushrooms; bells under blocks and on walls; vines, glow
+lichen, sculk veins and resin clumps on every face; stacking candles, snow layers, sea
+pickles, turtle eggs and petals; candles on cakes; seeds and other planting items (a
+cave vine with BDS's random age); player-placed leaves; string, linked to the
+tripwire beside it. Since round 3 (`testdata/bds-placements-leftovers.json`): cake
+eaten slice by slice (a candle cake drops its candle; a full player eats only on
+peaceful) and flower pots taking the 37 plants BDS takes and giving them back
+(`server/game/flower_pots.rs`). Placed blocks BDS announces with a block actor get the measured
+default (`unastar_data::block_updates::block_actor_default`, `block_actors.rs`).
+
+Signs (`server/game/signs.rs`) work like BDS: placing one opens its editor for the
+placer (the actor is locked for them), using one opens the side the player faces,
+the client's edit (`BlockActorData`) is applied for a player with the sign open (both
+sides' text, up to 512 characters each), dyes, glow ink sacs, ink sacs and honeycomb
+change it, and the text is kept in the chunk's block actor (saved and sent with the
+chunk). Doors, trapdoors, fence gates, buttons and levers open, close and press on
+use (`server/game/block_use.rs`); buttons pop back after 20 or 30 ticks. Not copied:
+the attribute and actor-data resend BDS sends after every click, banners (BDS's
+banner stack carries item user data unastar's lacks), the plant a broken flower pot
+holds, and the click corrections BDS sends after lighting with flint and steel.
+
+Redstone (`server/game/redstone/`) runs like BDS 1.26.51, tick by tick
+(`redstone/tests.rs` replays every circuit of
+`crates/unastar-data/data/measured/redstone/`; decision
+[0041](../../docs/decisions/0041-run-redstone-as-a-two-tick-circuit-update.md)). The circuit
+is worked every other game tick; a change made in a tick is seen from the next update of a
+later tick. An update takes each dust's level from the outputs as they stand (and shows it on
+the dust), then the new outputs of repeaters (delay, pulse stretching, locking), comparators
+(compare, subtract, block and container readings), torches (burnout) and observers, then the
+blocks power acts on: lamps, doors, trapdoors, fence gates, copper bulbs, hoppers (locked),
+dispensers, droppers, crafters (`triggered_bit` only) and powered and activator rails. Which
+blocks conduct, cut climbing dust and let dust climb are measured per block
+(`unastar_data::redstone`). Levers and buttons switch through `block_use.rs`. Not modelled:
+tripwires pressed by actors, target blocks, daylight measurement, sculk
+sensors, note block sounds and dispensing; a circuit already in a chunk loaded
+from disk starts working once a block next to it changes.
+
+Pressure plates (`redstone/plates.rs`) press in the tick an actor touches them and release at a
+check every 20 ticks (10 for weighted plates), replayed against BDS from the measured actor
+positions.
+
+Pistons (`redstone/pistons.rs`, decision
+[0050](../../docs/decisions/0050-move-pistons-from-the-circuit-update.md)) read their power in
+the circuit update and move a tick later; heads and moving blocks appear at once and land two
+ticks later; at most 12 blocks move, slime and honey drag their neighbours, and how each block
+moves, breaks or holds is measured (`unastar_data::pistons`). Block actors move with their
+blocks; clients get the `PistonArm` and `MovingBlock` actors. Actors are not pushed yet.
+
+Explosions (`server/game/explosion.rs`) break blocks along 1352 rays, drop every block they
+break and hurt actors by distance and exposure, compared with BDS by distribution
+(`explosion/tests.rs`, `crates/unastar-data/data/measured/explosions/`). Power primes TNT in
+the circuit update; the primed TNT (`minecraft:explode`, `entity/mob/combat/explode.rs`)
+explodes 81 ticks later a sixteenth of its height above its feet.
+
+Random block ticks (`server/game/random_ticks.rs`) follow BDS 1.26.51 by distribution
+(`random_ticks/tests.rs` compares measured fields of
+`crates/unastar-data/data/measured/random_ticks/` by chi-square): each sub-chunk of a ticking
+chunk gets `2 x randomtickspeed` random positions per game tick (a block is ticked
+`randomtickspeed / 2048` times per tick on average). Crops grow by the growth factor of the
+farmland around them, sugar cane ages and grows to three blocks, farmland dries away from
+water and turns to dirt, grass spreads to dirt, leaves with no log within four steps through
+leaves decay, and copper oxidises (a door's halves together), held back by younger copper
+near it. Not modelled: light levels, cactus flowers, saplings, bamboo, kelp, vines, ice and
+snow, fire and the other random-tick blocks.
 
 Using a crafting table (unless sneaking with an item in hand) opens BDS's
 WORKBENCH screen (type 1 at the block, no actor) from the shared window-ID
@@ -815,31 +1044,66 @@ scenarios); "public reference" rows are not measured yet and are listed in
 | Behaviour | Status | Evidence |
 |---|---|---|
 | Eat/drink: start on air use, server finishes after the use duration, early consume finishes at once, release or slot switch cancels | done | BDS capture (timing, `CompletedUsingItem` 1 / -1, burp at eye - 0.1, using flag word to the user too) |
-| Food values, effects, removed effects, bowls/bottles, milk clears effects | done | pack data; golden apple, rotten flesh, honey, milk compared with the capture |
-| Suspicious stew effects (data 0-9) | done | BDS capture table |
+| Food values, effects (in document order), removed effects, bowls/bottles, the burp, milk clears effects | done | every vanilla food eaten against the BDS food captures (`server/game/item_use/food_tests.rs`) |
+| Suspicious stew effects (data 0-13), the Saturation effect (food level only), chorus fruit teleport (random x/z kept, teleport sounds) | done | BDS food captures |
 | Chorus fruit teleport | done | `on_use_range` from pack data; 16 tries and the landing search are public references |
 | Hunger tick: exhaustion steps, regeneration at 18 food, starvation floors, peaceful refill | done | survival research; hunger drain matched the capture (0.005 x 256 per tick) |
-| Exhaustion from sprinting, swimming, jumping, mining, attacking, being hurt | done | `player.json` values; per-metre accounting is a public reference |
-| Attribute sync (health, absorption, hunger, saturation, exhaustion) | done, changed values once | BDS join ranges; BDS also repeats some attributes, not copied |
-| Player effects (regeneration, poison, wither, hunger, saturation, absorption, instant health) and `MobEffect` packets | done | stew/golden apple captures; BDS sends a duplicate modify after a stew effect, not copied |
+| Exhaustion from sprinting, swimming, jumping, mining, attacking, being hurt | done | `player.json` values; movement exhaustion matches the BDS movement capture tick by tick (`entity/player_life/tests/movement.rs`) |
+| Attribute sync (health, absorption, hunger, saturation, exhaustion, movement with the sprint modifier) to the player and its viewers | done, changed values once | BDS join ranges and movement capture; BDS also repeats some attributes, not copied |
+| Player effects (regeneration, poison, wither, hunger, saturation, absorption, health boost, resistance, fire resistance, speed and slowness attributes, instant health/damage) and `MobEffect` packets | done | the shared `entity::effects` step, replayed against BDS effects captures (`entity/effects/testdata`) and the stew/golden apple captures; BDS sends a duplicate modify after a stew effect, not copied |
 | Tool wear: mining (swords, mace, trident 2; other tools and shears 1; non-tools 0), melee (swords, mace, trident, spears 1; other tools 2), bow and crossbow shots, Unbreaking, break sound | done | BDS mining and attack sweeps (`unastar-data/data/measured/`) for mining and melee wear; Unbreaking and sounds are public references |
 | Break time: tier speed, Efficiency (not on a sword's cobweb speed), Haste `(1 + 0.2L) × 1.2^L`, Mining Fatigue `0.21^L`, harvestability divisor | done | BDS mining sweep, every measured cell within ±1 tick (`server/game/mining/measured_tests.rs`); airborne, riding and underwater divisors are public references |
 | Melee damage: measured per item, Sharpness +1.25 per level truncated to whole points | done | BDS attack sweep (`entity/mob/combat/hit/measured_tests.rs`); critical hits not done |
+| Melee reach (6 blocks from the eye to the mob's box) and a killing hit showing only the death | done | BDS spear capture (`entity/mob/combat/hit/spear_tests.rs`): a sword hit 5.55 blocks away lands, 6.55 does not |
+| Item cooldowns (`minecraft:cooldown`): a spear's attack cooldown starts on a hit and on a jab that hits nothing, `PlayerStartItemCooldown` with the category, every hit and jab of that category refused while it runs | done | BDS spear capture (`entity/mob/combat/hit/spear_tests.rs`); use cooldowns (wind charge) are not wired |
+| Spear jab (`UseAsAttack`, also packed into the input): the tier's miss sound and the cooldown, no damage; holding a spear sets the using flag | done | BDS spear capture; the charge (kinetic damage) and a jab that pierces several entities are not done |
+| Missed swing (`MissedSwing` input): the item's `swing_sounds` miss sound or `attack.nodamage` | done | BDS spear capture |
+| `/enchant` on spears | done | BDS command capture (`item/spear_enchant_tests.rs`) |
 | Armour wear when hurt (`max(1, floor(damage/4))` per piece with armour points; the elytra never) | done | BDS armour-wear sweep (`entity/player_life/tests/hurt.rs`) |
 | Grid repair (multi recipe `...0001`) | not done | BDS advertises it; result rule unmeasured |
-| Hoe, shovel, axe (strip, wax off, scrape), shears on pumpkins, flint and steel, fire charges | done | public reference; sound names unmeasured |
+| Hoe, shovel, axe (strip, wax off, scrape), shears on pumpkins, fire charges | done | public reference; sound names unmeasured |
+| Flint and steel: the click corrections, update, `ignite` position, relit campfire actor data and wear (no slot update) | done | BDS capture (`server/game/item_use/flint_tests.rs`) |
+| Placed containers announced with actor data: chests, ender chests and barrels, not furnaces or hoppers | done | BDS capture (`server/game/containers/tests.rs`) |
 | Bone meal on crops, stems, berry bushes and grass | done | public reference; saplings (tree features) and flowers not done |
-| Buckets: take and place water, lava, powder snow | done | public reference; liquids do not flow, fish/axolotl buckets not done |
-| Bow, crossbow, snowball, egg | done | capture (speeds 3.0/3.15/1.5, sounds); draw curve and spread are public references |
+| Buckets: take and place water, lava, powder snow; milk | done | BDS buckets capture (`server/game/item_use/bucket_tests.rs`, sounds at the player's feet); liquids do not flow, no waterlogging, fish/axolotl buckets not done (their mobs cannot spawn) |
+| Bow, crossbow, snowball, egg | done | capture (speeds 3.0/3.15/1.5, sounds); throws replayed against the BDS throwables capture (`server/game/item_use/throw_tests.rs`); draw curve and spread are public references |
+| Splash potions and experience bottles: splash colours, effects by distance, fire put out, orbs | done | BDS throwables captures (`server/game/item_use/throw_tests.rs`); the splash reaches players only |
+| Spawn eggs on blocks: survival use, peaceful monsters, the PlayerSpawnedMob event | done | BDS buckets-eggs capture; a spawner set by an egg not done |
+| `/give` user data (Damage 0, banner, map, fireworks) | done | BDS `/give` sweep of every item (`command/exec/give.rs`) |
 | Stuck arrows: shake, pickup, despawn after 1200 ticks | done | capture (shake event); lifetime is a public reference |
-| Ender pearls | not done | needs `teleport_owner` and the endermite archetype (entity lane) |
+| Ender pearls, lingering potions, wind charges | not done | measured (row notes in `docs/parity/items.toml`); their actors cannot spawn yet |
 | Tridents | not done | `minecraft:thrown_trident` lacks a measured `AddActor` shape |
-| Potions, splash potions, tipped arrows | not done | potion effect table not measured |
+| Potions and ominous bottles: drinking (32 ticks), the effects of all 47 potion data values, instant health and damage, Bad Omen, sounds, glass bottle | done | BDS item-use capture (`server/game/item_use/drink_tests.rs`); tipped arrows not done |
+| Effect pulses (poison, wither, regeneration on the duration before the tick), poison as a hurt, invisibility sounds, effect packet order | done | BDS item-use capture |
+| Goat horns (`horn_call<data>`, 140-tick cooldown, using flag) and the spyglass (using flag) | done | BDS item-use capture |
+| Jukeboxes: music discs in and out, popup, actor data, drops, breaking a playing jukebox | done | BDS jukebox capture (`server/game/jukebox/tests.rs`); no redstone signal |
+| Elytra: a glide needs one with more than 1 durability left, wears it every 20 ticks, ends at 1 left | done | BDS elytra captures (`server/game/elytra/tests.rs`); the glide's movement is the client's |
+| Experience from breaking ores, sculk blocks and the spawner (ranges, orb sizes, Silk Touch, harvesting tool, hoe for sculk) | done | BDS ore captures (`server/game/block_drops/experience_tests.rs`) |
 | Player death from starvation or arrows | not done | entity lane (player death and respawn) |
 
 The loopback test `tests/item_use_loopback.rs` eats an apple, mines stone
 with an iron pickaxe and shoots a cow with a bow through a real client
 (take the native lock to run it).
+
+### Player-versus-player
+
+`entity/player_life/pvp.rs` is one player's melee hit on another, handled
+with the world as it is when BDS applies it (with the attacker's next
+input); `hurt.rs` is the victim's side. Evidence: three lockstep
+`bds-sweep-client` players against BDS 1.26.51 (`sweep.py pvp`, 710 trials,
+`entity/player_life/testdata/bds-1.26.51-pvp.json`), replayed by
+`entity/player_life/tests/pvp.rs`; the copied oddities are the "PvP /" rows
+of `docs/quirks/bds.md`.
+
+| Behaviour | Status | Evidence |
+|---|---|---|
+| Checks: dead attacker, immune victim (creative, spectator), the `pvp` rule, held slot and item, claimed position within 6, reach 6.7 / 12 between positions | done | sweep; no facing or wall check (strict entity interactions off, as BDS's default) |
+| Damage: weapon, Sharpness, Strength and Weakness, crit x 1.5 (falling, off the ground, no Blindness or Slow Falling), no difficulty scaling | done | sweep |
+| Victim: armour with toughness, Protection, Resistance, then the hurt window (arrival ticks, excess hit pushes and restarts it) | done | sweep |
+| Knockback: half the victim's velocity kept, netherite resistance, the sprint and Knockback second push | done | sweep; the victim's velocity is the one its client reported (no server-side player simulation yet) |
+| Feedback: `SetLastHurtBy`, crit and magic-crit `Animate`, the attack sound a tick later to all but the attacker | done | sweep |
+| Order: attacks after their player's input of the tick, and different players' attacks in one tick | not done | needs packets applied in BDS's order (decision 0045); ignored tests |
+| Shields, thrown tridents, mace smash, totems | not done | not measured |
 
 
 ## Plugin Isolation
@@ -876,10 +1140,13 @@ kept on disk untouched; players see a gap there until it is repaired. A
 stored subchunk, biome or block-entity record that doesn't decode fails the load
 of its column the same way, in both providers, rather than loading as air.
 
-Sub-chunks saved by BDS 1.26.51 load block for block. Each sub-chunk storage says
-in the low bit of its header how its palette is written: BDS writes block names
-and states as NBT (resolved through `BlockRegistry::state_by_properties`),
-unastar writes runtime ids. Reading follows what BDS reads: the key places a
+Sub-chunks are saved as BDS 1.26.51 saves them, and those BDS saved load block for block.
+Each sub-chunk storage says in the low bit of its header how its palette is
+written: as block names and states in NBT (`{name, states, version}`, resolved
+through `BlockRegistry::state_by_properties`), the form BDS writes and unastar
+writes, or as runtime ids, the form unastar wrote before (still read; a column
+saved that way is rewritten in BDS's form the next time it is saved). Reading
+follows what BDS reads: the key places a
 record whatever its Y byte, bytes after the last storage are skipped, and a
 palette may list more entries than its bit width indexes. Damage that BDS would
 paper over fails the column instead: an index past its palette, or an unknown
@@ -889,10 +1156,21 @@ written by `tools/bds-sweep/subchunk_fixture.py`). Block names and states are
 not upgraded, so a sub-chunk an older Bedrock version wrote with a block or
 state renamed since fails its column too.
 
-Saving still writes runtime ids, which BDS reads as air (OpenSpec change
-`persist-block-states-by-name`). A column is saved again after any edit and
-whenever it holds or held actors, so running unastar on a BDS world makes those
-columns unreadable to BDS: use a copy of the world.
+Sub-chunk records are saved as BDS writes them when a chunk unloads, byte for
+byte: palette entries in the order edits added them, the smallest width that holds them, a
+changed section's unused entries dropped only when that narrows the width, a
+second storage once a section has held a waterlogged block, no record for a
+section of air, and unchanged sections exactly as they were read
+(`tests/bds_subchunks.rs` against BDS's records after the same edits,
+`tests/fixtures/bds_1_26_51_subchunk_edits.json`; BDS reopened worlds unastar
+edited and generated, `tools/bds-sweep/subchunk_roundtrip.py`), so BDS worlds can
+be served in place. Biomes go to Data3D with
+the "same as below" marker only above the last stored section: BDS stops loading a
+chunk with the marker under a stored section. Its heights are relative to y -64 and
+it has 24 sections in every dimension, where BDS uses the dimension's bottom and
+height. The column's other records differ from BDS's too: version 41 where BDS
+writes 42, and none of the per-chunk records BDS adds (`0x3f`, `0x40`, `0x41`) or
+deletes (`0x77`) on save. BDS loads unastar's columns either way.
 Loaded columns start clean, while generated or edited columns are saved on
 unload and shutdown. A chunk whose save before unload fails stays loaded, with
 its edits and mobs. Its unload is retried with a per-chunk exponential backoff
@@ -922,9 +1200,11 @@ enabled, saves also update the per-player TOML position used by spawn rules.
 Spawn rules retain their ordering and only use saved positions in the current
 dimension.
 
-Mobs are saved as Bedrock actor records with their chunk (`src/entity/mob/persistence`); a zombie's random
-spawn knockback resistance is saved the way BDS saves it (a `RandomSpawnBonus` modifier of
-`minecraft:knockback_resistance`) and restored on load instead of being rolled again.
+Mobs are saved as Bedrock actor records with their chunk (`src/entity/mob/persistence`); the zombie
+classes' random spawn bonuses (a knockback resistance, and for about a third of them a raised follow
+range) are saved the way BDS saves them (`RandomSpawnBonus` modifiers of
+`minecraft:knockback_resistance` and `minecraft:follow_range`) and restored on load instead of being
+rolled again.
 
 Regression coverage: `cargo test -p unastar --test persistence` exercises both
 world providers, stored-column preservation through asynchronous loading and

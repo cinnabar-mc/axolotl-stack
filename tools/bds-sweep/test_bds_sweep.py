@@ -4,6 +4,7 @@
 """
 
 import json
+import re
 import struct
 import sys
 import tempfile
@@ -13,13 +14,30 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import bds_runtime  # noqa: E402
+import breaking_fixture  # noqa: E402
+import combat_fixture  # noqa: E402
+import experience_table  # noqa: E402
+import food_table  # noqa: E402
+import capture  # noqa: E402
+import commit_fixtures  # noqa: E402
+import effects_fixture  # noqa: E402
 import knockback_fixture  # noqa: E402
 import replication_fixture  # noqa: E402
 import leveldb_read  # noqa: E402
 import native  # noqa: E402
+import player_fixture  # noqa: E402
+import player_relay_fixture  # noqa: E402
+import player_script  # noqa: E402
+import pvp_fixture  # noqa: E402
+import pvp_items  # noqa: E402
+import range_fixture  # noqa: E402
+import scenarios  # noqa: E402
+import spawn_bonus_fixture  # noqa: E402
 import subchunk_fixture  # noqa: E402
+import subchunk_roundtrip  # noqa: E402
 import summarize  # noqa: E402
 import sweep  # noqa: E402
+import unbreaking_table  # noqa: E402
 
 
 class LootTableFit(unittest.TestCase):
@@ -116,6 +134,57 @@ class ToolSets(unittest.TestCase):
                          'minecraft:oak_log[a=1,b=false,pillar_axis="y"]')
 
 
+class CommandFeedback(unittest.TestCase):
+    def test_commands_take_the_last_segment_above_them(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            script = Path(tmp) / 'commands.txt'
+            lines = ['# intro', '/a', '# segment: one', '', '/b', '#note', '/c', '# segment: two', '/d']
+            script.write_text('\n'.join(lines) + '\n', encoding='utf-8')
+            self.assertEqual(commit_fixtures.script_segments(script),
+                             [('', '/a'), ('one', '/b'), ('one', '/c'), ('two', '/d')])
+
+    def test_world_packets_count_only_on_the_platform_or_at_the_origin(self):
+        relevance = commit_fixtures.Relevance.__new__(commit_fixtures.Relevance)
+        relevance.player_runtime, relevance.player_unique = 1, -5
+        relevance.runtime, relevance.unique = {1}, {-5}
+        event = {'position': {'x': 0.0, 'y': 0.0, 'z': 0.0}, 'event_id': 3001, 'data': 65535}
+        self.assertTrue(relevance.keep('/weather rain', 'LevelEventPacket', event, 30))
+        far = dict(event, position={'x': 100.5, 'y': 64.0, 'z': -28.5})
+        self.assertFalse(relevance.keep('/weather rain', 'LevelEventPacket', far, 30))
+        other = {'target_runtime_id': {'actor_runtime_id': 9}}
+        self.assertFalse(relevance.keep('/time query day', 'SetActorDataPacket', other, 30))
+        added = {'target_runtime_id': {'actor_runtime_id': 9}, 'target_actor_id': {'actor_unique_id': -9}}
+        self.assertTrue(relevance.keep('/execute align xyz run summon pig ~ ~ ~', 'AddActorPacket', added, 50))
+        self.assertTrue(relevance.keep('/damage @e 1', 'SetActorDataPacket', other, 30))
+        self.assertFalse(relevance.keep('/damage @e 1', 'SetActorDataPacket', other, 400))
+        self.assertFalse(relevance.keep('/say hi', 'NetworkChunkPublisherUpdatePacket', {}, 30))
+        # A second client's own actor packets are kept from its point of view.
+        alice = {'target_runtime_id': {'actor_runtime_id': 2}}
+        self.assertFalse(relevance.keep('/effect @a speed', 'MobEffectPacket', alice, 400))
+        self.assertTrue(relevance.keep('/effect @a speed', 'MobEffectPacket', alice, 400, viewer=2))
+        self.assertTrue(relevance.keep('/effect @a speed', 'MobEffectPacket',
+                                       {'runtime_entity_id': {'actor_runtime_id': 1}}, 30, viewer=2))
+
+    def test_console_lines_become_records_without_timestamps(self):
+        lines = ['[2026-11-10 16:24:48:388 INFO] §aList of all ticking areas in current dimension',
+                 '- area1: 0 0 0 to 15 0 15', '1/10 ticking areas in use.',
+                 ' [2026-11-10 16:24:32:789 ERROR] Syntax error: Unexpected "x": at "y"',
+                 '[2026-11-10 16:24:34:382 INFO] There are 0/2 players online:', '']
+        self.assertEqual(commit_fixtures.console_records(['stray line'] + lines), [
+            {'level': 'INFO', 'text': '§aList of all ticking areas in current dimension\n'
+                                      '- area1: 0 0 0 to 15 0 15\n1/10 ticking areas in use.'},
+            {'level': 'ERROR', 'text': 'Syntax error: Unexpected "x": at "y"'},
+            {'level': 'INFO', 'text': 'There are 0/2 players online:\n'},
+        ])
+
+    def test_directives_are_steps_of_their_segment(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            script = Path(tmp) / 'commands.txt'
+            lines = ['# segment: two', '!join Alice', '/tp Alice 8 200 8', '!console kick Alice', '!leave Alice']
+            script.write_text('\n'.join(lines) + '\n', encoding='utf-8')
+            self.assertEqual([c for _, c in commit_fixtures.script_segments(script)], lines[1:])
+
+
 class HeldAndEffectVariants(unittest.TestCase):
     def args(self, **overrides):
         import argparse
@@ -210,6 +279,124 @@ class Wear(unittest.TestCase):
                          [1, 2, None])
 
 
+def record(direction, packet_id, name, payload, seq=0):
+    return {'seq': seq, 't_ms': seq, 'dir': direction, 'id': packet_id, 'name': name, 'hex': payload.hex()}
+
+
+def auth_input(tick):
+    """A PlayerAuthInput laid out as `combat_fixture.input_tick` reads it."""
+    return bytes([144, 1]) + bytes(32) + bytes([0, 0, 0, 0]) + bytes(8) + bytes([tick])
+
+
+class CombatFixture(unittest.TestCase):
+    def test_windows_keep_inputs_actions_and_answers_but_not_ambient_sounds(self):
+        sound = lambda name: bytes([123, len(name)]) + name  # noqa: E731
+        rows = [
+            record('c2s', 144, 'PlayerAuthInputPacket', auth_input(5)),
+            record('c2s', 30, 'InventoryTransactionPacket', bytes([30])),
+            record('c2s', 144, 'PlayerAuthInputPacket', auth_input(10)),
+            record('c2s', 30, 'InventoryTransactionPacket', bytes([30])),
+            record('s2c', 123, 'LevelSoundEventPacket', sound(b'item.iron_spear.attack_miss')),
+            record('s2c', 123, 'LevelSoundEventPacket', sound(b'ambient')),
+            record('s2c', 29, 'UpdateAttributesPacket', bytes([29, 1])),
+            record('s2c', 29, 'UpdateAttributesPacket', bytes([29, 4])),
+            record('s2c', 39, 'SetActorDataPacket', bytes([39, 1])),
+            record('s2c', 13, 'AddActorPacket', bytes([13, 8])),
+        ]
+        kept = combat_fixture.cut(rows, windows=[(8, 20)])
+        self.assertEqual([(r['name'], r['input']) for r in kept], [
+            ('PlayerAuthInputPacket', 10), ('InventoryTransactionPacket', 10), ('LevelSoundEventPacket', 10),
+            ('UpdateAttributesPacket', 10), ('SetActorDataPacket', 10), ('AddActorPacket', 10)])
+        self.assertEqual(kept[3]['hex'], '1d04', "only other actors' attributes")
+
+    def test_commands_keep_one_command_and_the_output_answering_each(self):
+        request = lambda text: bytes([77, len(text)]) + text  # noqa: E731
+        rows = [
+            record('c2s', 77, 'CommandRequestPacket', request(b'/replaceitem entity @s slot.weapon.mainhand 0 iron_spear')),
+            record('c2s', 77, 'CommandRequestPacket', request(b'/enchant @s sharpness 1')),
+            record('s2c', 79, 'CommandOutputPacket', bytes([79, 1])),
+            record('s2c', 79, 'CommandOutputPacket', bytes([79, 2])),
+        ]
+        kept = combat_fixture.cut(rows, commands='enchant')
+        self.assertEqual([r['hex'] for r in kept], [request(b'/enchant @s sharpness 1').hex(), '4f02'])
+
+
+class ExperienceTable(unittest.TestCase):
+    def test_breaks_take_the_tool_the_script_gave_last(self):
+        script = '\n'.join([
+            '# comment',
+            '30 /give @s netherite_pickaxe',
+            '32 /enchant @s efficiency 5',
+            '40 /setblock 1 -59 0 coal_ore',
+            '50 /clear @s',
+            '60 /setblock 1 -59 0 coal_ore',
+            '61 /setblock 9 9 9 stone',
+        ])
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'script.txt'
+            path.write_text(script, encoding='utf-8')
+            breaks = experience_table.schedule(path)
+        self.assertEqual(breaks, [(40, 'minecraft:coal_ore', 'netherite_pickaxe+efficiency5'),
+                                  (60, 'minecraft:coal_ore', 'hand')])
+
+
+class BreakingFixture(unittest.TestCase):
+    @staticmethod
+    def rows(*specs):
+        return [{'seq': i, 't_ms': t, 'dir': d, 'id': packet_id, 'name': name, 'hex': payload}
+                for i, (t, d, packet_id, name, payload) in enumerate(specs)]
+
+    def test_the_observer_is_moved_onto_the_players_clock_and_inputs(self):
+        player = self.rows(
+            (1000, 'c2s', 144, 'PlayerAuthInputPacket', '80'),
+            (1040, 's2c', 21, 'UpdateBlockPacket', 'aa'),
+            (1050, 'c2s', 144, 'PlayerAuthInputPacket', '81'),
+            (1090, 's2c', 21, 'UpdateBlockPacket', 'bb'),
+            (1100, 'c2s', 144, 'PlayerAuthInputPacket', '82'),
+        )
+        observer = self.rows(
+            (3040, 's2c', 21, 'UpdateBlockPacket', 'aa'),
+            (3060, 's2c', 123, 'LevelSoundEventPacket', 'cc'),
+            (3090, 's2c', 21, 'UpdateBlockPacket', 'bb'),
+            (3095, 's2c', 30, 'InventoryTransactionPacket', 'dd'),
+        )
+        # The inputs' ticks, without encoding real PlayerAuthInputs.
+        with mock.patch.object(breaking_fixture, 'input_tick', int):
+            self.assertEqual(breaking_fixture.clock_offset(player, observer), -2000)
+            out = breaking_fixture.cut_observer(player, observer, [(80, 90)])
+        self.assertEqual([(r['dir'], r['input'], r['t_ms'], r['hex']) for r in out],
+                         [('s2o', 80, 1040, 'aa'), ('s2o', 81, 1060, 'cc'), ('s2o', 81, 1090, 'bb')])
+
+    def test_captures_without_a_common_block_update_are_not_aligned(self):
+        with self.assertRaises(SystemExit):
+            breaking_fixture.clock_offset(self.rows((0, 's2c', 21, 'UpdateBlockPacket', 'aa')),
+                                          self.rows((0, 's2c', 21, 'UpdateBlockPacket', 'bb')))
+
+    def test_windows_parse(self):
+        self.assertEqual(breaking_fixture.parse_windows('80-110,120-130'), [(80, 110), (120, 130)])
+
+
+class FoodTable(unittest.TestCase):
+    def test_each_use_runs_to_the_clear_after_it(self):
+        script = '\n'.join([
+            '# comment',
+            '50 /effect @s hunger 6 63 true',
+            '175 /effect @s clear',
+            '177 /give @s apple 1 0',
+            '180 use',
+            '220 /effect @s clear',
+            '225 /effect @s clear',
+            '230 /give @s suspicious_stew 1 5',
+            '235 use',
+            '275 /effect @s clear',
+        ])
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'script.txt'
+            path.write_text(script, encoding='utf-8')
+            foods = food_table.schedule(path)
+        self.assertEqual(foods, [(180, 220, 'apple', 0), (235, 275, 'suspicious_stew', 5)])
+
+
 class RuntimeSlotTest(unittest.TestCase):
     def test_only_processes_from_this_server_folder_belong_to_the_runtime(self):
         server = Path(tempfile.gettempdir()) / 'slot1' / 'server'
@@ -224,6 +411,116 @@ class RuntimeSlotTest(unittest.TestCase):
         self.assertEqual(properties['server-portv6'], bds_runtime.PORT + 1)
         self.assertEqual(properties['enable-lan-visibility'], 'false')
         self.assertEqual(bds_runtime.ADDR, f'127.0.0.1:{bds_runtime.PORT}')
+
+
+class UnbreakingTable(unittest.TestCase):
+    def test_damage_reads_the_first_stack_that_has_one(self):
+        body = ('InventoryContentPacket { container_id: 0, slots: [{ id: 0, user_data_buffer: b"" }, '
+                r'{ id: 301, user_data_buffer: b"\xff\xff\x01\n\0\0\x03\x06\0Damage\x05\0\0\0\0" }] }')
+        self.assertEqual(unbreaking_table.damage(body), 5)
+        self.assertEqual(unbreaking_table.damage('no stacks'), 0)
+
+    def test_script_counts_hits_and_uses_per_marker(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            script = Path(tmp) / 'unbreaking.txt'
+            script.write_text('\n'.join([
+                '10 /say unbreaking armour 1', '11 /damage @s 8 entity_attack', '22 /damage @s 8 entity_attack',
+                '30 /say unbreaking use 2', '31 use-on 2 -60 0 1',
+                '40 /say unbreaking use 2', '41 use-on 2 -60 0 1', '43 use-on 2 -60 0 1',
+                '50 /say unbreaking attack 3', '51 attack-named p1', '60 attack-named p2',
+                '70 /say unbreaking elytra 3', '71 /tp @s 0.5 300 0.5 -90 0', '75 /tp @s 0.5 -60 0.5 -90 0',
+                '80 /say unbreaking threshold mining 2030', '81 mine 1 -59 0 4 0',
+            ]), encoding='utf-8')
+            hits, uses, events = unbreaking_table.script_counts(script)
+        self.assertEqual(hits, {'1': 2})
+        self.assertEqual(uses, {'2': [1, 2]})
+        self.assertEqual(events, {'elytra': {'3': 1}})
+
+    def test_events_count_each_rise_of_the_damage_as_one_event(self):
+        events = unbreaking_table.Events(5)
+        for value in (2, 2, 4, 0, 2):
+            events.saw(value)
+        # The drop to 0 is a fresh item, not wear.
+        self.assertEqual(events.row(), {'events': 5, 'worn': [2, 0, 3]})
+
+    def test_broken_reads_an_empty_slot(self):
+        self.assertTrue(unbreaking_table.broken('item: CerealizerNetworkItemStackDescriptorSerializedData { id: 0, '))
+        self.assertFalse(unbreaking_table.broken('item: CerealizerNetworkItemStackDescriptorSerializedData { id: 7, '))
+
+
+class PairCaptureTest(unittest.TestCase):
+    def test_guests_are_numbered_after_the_host(self):
+        self.assertEqual(capture.guest_names(3), ['BDSExtractor2', 'BDSExtractor3', 'BDSExtractor4'])
+
+    def test_overlapping_guests_stay_until_the_last_one_joined(self):
+        # Taking turns: a short stay each.
+        self.assertEqual([capture.guest_settle(i, 3, None) for i in range(3)], [3, 3, 3])
+        # Started 7 s apart: the first stays 14 s longer than the last.
+        self.assertEqual([capture.guest_settle(i, 3, 7.0) for i in range(3)], [17, 10, 3])
+
+    def test_settle_is_passed_to_the_extractor(self):
+        command = capture.extractor_command(Path('x.exe'), Path('out'), name='G', settle=4)
+        self.assertEqual(command[command.index('--name') + 1], 'G')
+        self.assertEqual(command[command.index('--settle') + 1], '4')
+        self.assertNotIn('--commands', command)
+
+
+class PlayerScript(unittest.TestCase):
+    def test_steps_and_properties_parse(self):
+        properties, steps = player_script.parse('\n'.join([
+            'property difficulty=peaceful',
+            '# comment',
+            'launch Mover 00000000-0000-0000-0000-000000000001',
+            'wait 1.5',
+            'cmd tp Mover 0.5 -60 0.5',
+            'order Mover move 1 0',
+            'mark walk  # trailing comment',
+            "expect 'Teleported Mover' 10",
+            'quit Mover',
+        ]))
+        self.assertEqual(properties, {'difficulty': 'peaceful'})
+        self.assertEqual(steps, [
+            ['launch', 'Mover', '00000000-0000-0000-0000-000000000001'],
+            ['wait', '1.5'],
+            ['cmd', 'tp Mover 0.5 -60 0.5'],
+            ['order', 'Mover', 'move 1 0'],
+            ['mark', 'walk'],
+            ['expect', 'Teleported Mover', '10'],
+            ['quit', 'Mover'],
+        ])
+
+    def test_unknown_steps_and_bad_values_are_refused(self):
+        for text in ('walk 3', 'property difficulty', 'wait soon'):
+            with self.assertRaises(ValueError):
+                player_script.parse(text)
+
+    def test_orders_are_tellraw_to_one_player(self):
+        self.assertEqual(player_script.tellraw('Mover', 'jump 3'),
+                         'tellraw Mover {"rawtext": [{"text": "bds-sweep:jump 3"}]}')
+
+
+class PlayerFixture(unittest.TestCase):
+    SPEC = {'client': 'Subject', 'subject': 'Subject'}
+
+    def test_only_packets_about_the_subject_carry_its_ticks(self):
+        about = player_fixture.about_subject
+        mine = 'MovePlayerPacket { player_runtime_id: ActorRuntimeId { actor_runtime_id: 1 }, tick: 5 }'
+        other = 'MovePlayerPacket { player_runtime_id: ActorRuntimeId { actor_runtime_id: 2 }, tick: 5 }'
+        correction = 'CorrectPlayerMovePredictionPacket { tick: PlayerInputTick { inputtick: 5 } }'
+        self.assertTrue(about(mine, 1, self.SPEC))
+        self.assertFalse(about(other, 1, self.SPEC))
+        self.assertTrue(about(correction, 1, self.SPEC))
+        self.assertFalse(about(correction, 1, {'client': 'Viewer', 'subject': 'Subject'}))
+
+    def test_attribute_values_are_read_by_name(self):
+        body = ('attribute_list: [AttributeData { min_value: 0.0, max_value: 20.0, current_value: 19.0, '
+                'default_min_value: 0.0, default_max_value: 20.0, default_value: 20.0, '
+                'name: "minecraft:health", modifiers: [] }, AttributeData { min_value: 0.0, '
+                'max_value: 20.0, current_value: 1.3973968, default_min_value: 0.0, '
+                'default_max_value: 20.0, default_value: 0.0, name: "minecraft:player.exhaustion", '
+                'modifiers: [] }]')
+        self.assertEqual(player_fixture.ATTRIBUTE.findall(body), [
+            ('19.0', 'minecraft:health'), ('1.3973968', 'minecraft:player.exhaustion')])
 
 
 class KnockbackTrials(unittest.TestCase):
@@ -256,6 +553,30 @@ class KnockbackTrials(unittest.TestCase):
             for action in item.get('actions', []):
                 self.assertEqual(set(action), {'t', 'commands'})
                 self.assertTrue(action['commands'] and all(isinstance(c, str) for c in action['commands']))
+
+    def test_cadence3_rests_vehicles_twice_and_shoots_from_dispensers(self):
+        items = self.items('cadence3')
+        vehicles = [item for item in items if item['mob'] in ('minecraft:minecart', 'minecraft:boat')]
+        self.assertEqual(len(vehicles), 2)
+        for item in vehicles:
+            self.assertEqual([action['t'] for action in item['actions']], [40, 80])
+        shots = [item for item in items if 'spawn_commands' in item]
+        self.assertEqual(len(shots), 4)
+        for item in shots:
+            self.assertTrue(any(line.startswith('setblock 20 ') and 'dispenser' in line for line in item['setup']))
+            self.assertTrue(item['spawn_commands'][0].endswith('redstone_block'))
+
+    def test_range_walks_one_block_per_step_out_and_back(self):
+        items = sweep.range_items(type('Args', (), {'items': 'all'})())
+        self.assertEqual([item['key'] for item in items],
+                         ['east-out', 'east-in', 'diagonal-out', 'diagonal-in', 'west-out', 'west-in', 'jump'])
+        east = items[0]['path']
+        self.assertEqual(len(east), 73)
+        self.assertEqual(east[0], [48.5, 8.5])
+        self.assertEqual(east[1][0] - east[0][0], 1)
+        self.assertEqual(items[1]['path'], east[::-1])
+        self.assertEqual(items[-1]['ticks'], 60)
+        self.assertEqual(len(sweep.range_items(type('Args', (), {'items': 'pilot'})())), 1)
 
     def test_reload_phases_name_the_same_zombies(self):
         def items(which):
@@ -402,5 +723,409 @@ class LevelDbLog(unittest.TestCase):
             self.assertEqual(leveldb_read.read_db(tmp), {b'a': b'new'})
 
 
+class SubchunkRoundTrip(unittest.TestCase):
+    def test_writes_follow_setblock_layers(self):
+        water = subchunk_roundtrip.WATER
+        source = {}  # the section has no record: air
+        plan = [
+            {'dim': 0, 'pos': [1, 1, 1], 'state': water, 'measure': False},
+            {'dim': 0, 'pos': [1, 1, 1], 'state': subchunk_roundtrip.SLAB, 'measure': False},
+            {'dim': 0, 'pos': [2, 1, 1], 'state': water, 'measure': False},
+            {'dim': 0, 'pos': [2, 1, 1], 'state': subchunk_roundtrip.GLASS, 'measure': False},
+            {'dim': 0, 'pos': [3, 1, 1], 'state': subchunk_roundtrip.STONE, 'measure': True},
+        ]
+        sections, writes = subchunk_roundtrip.apply_plan(source, plan, include_measure=False)
+        first, liquid = sections[(0, 0, 0, 0)]
+        slab, glass = subchunk_roundtrip.index(1, 1, 1), subchunk_roundtrip.index(2, 1, 1)
+        self.assertEqual((first[slab], liquid[slab]), (subchunk_roundtrip.SLAB, water))
+        self.assertEqual((first[glass], liquid[glass]), (subchunk_roundtrip.GLASS, subchunk_fixture.AIR))
+        self.assertEqual([w[0] for w in writes], [0, 1, 2, 3])  # the measure-only edit is BDS's alone
+        plan.append({'dim': 0, 'pos': [1, 1, 1], 'state': subchunk_roundtrip.STONE, 'measure': False})
+        sections, _ = subchunk_roundtrip.apply_plan(source, plan, include_measure=False)
+        self.assertEqual(sections[(0, 0, 0, 0)][1][slab], subchunk_fixture.AIR)
+
+    def test_sparse_records_rebuild_from_placements_in_palette_order(self):
+        # Cells 0 and 300 hold entry 2, cell 5 entry 1, the rest air.
+        indices = [0] * 4096
+        indices[0], indices[300], indices[5] = 2, 2, 1
+        words = b''.join(struct.pack('<I', sum(indices[w * 16 + i] << (2 * i) for i in range(16)))
+                         for w in range(256))
+        value = (bytes([9, 1, 0, 2 << 1]) + words + struct.pack('<i', 3) + palette_entry('minecraft:air')
+                 + palette_entry('minecraft:stone') + palette_entry('minecraft:dirt'))
+        self.assertEqual(subchunk_roundtrip.sparse_build(value), [(5, 1), (0, 2), (300, 2)])
+        unused = (bytes([9, 1, 0, 2 << 1]) + words + struct.pack('<i', 4) + palette_entry('minecraft:air')
+                  + palette_entry('minecraft:stone') + palette_entry('minecraft:dirt')
+                  + palette_entry('minecraft:gold_block'))
+        self.assertIsNone(subchunk_roundtrip.sparse_build(unused))
+
+    def test_fill_edits_cover_their_box(self):
+        edit = {'dim': 0, 'fill': [[0, 0, 0], [1, 2, 0]], 'state': subchunk_fixture.AIR, 'measure': False}
+        self.assertEqual(len(subchunk_roundtrip.plan_cells(edit)), 6)
+        self.assertEqual(subchunk_roundtrip.plan_column({'dim': 2, 'pos': [-1, 5, 17], 'state': None}), (2, -1, 1))
+
+
+class VehicleWireOffset(unittest.TestCase):
+    capture = KnockbackFixture.capture
+
+    def test_a_minecart_is_matched_0_35_above_its_sampled_position(self):
+        add_actor = (varint(4) + varint(2) + varint(len(b'minecraft:minecart')) + b'minecraft:minecart'
+                     + struct.pack('<6f', 32.5, -54.0, 0.5, 0.0, 0.0, 0.0))
+        delta = (varint(2) + b'\x00' + b'\x01' + struct.pack('<f', -54.04) + b'\x00' + b'\x00' * 3
+                 + b'\x00' * 4 + varint(10))
+        capture = list(replication_fixture.packets(self.capture([(1000, 13, add_actor), (1001, 111, delta)])))
+        samples = [{'mob': {'pos': [32.5, -54.35, 0.5]}}, {'mob': {'pos': [32.5, -54.39, 0.5]}}]
+        offset = replication_fixture.wire_offset(2, capture, samples)
+        self.assertAlmostEqual(offset, 0.35, places=4)
+        wire = replication_fixture.wire_for(2, capture, samples, offset)
+        self.assertEqual([(event['sample'], event.get('timed', False)) for event in wire], [(0, False), (1, False)])
+        self.assertEqual(wire[1]['ticks'], 10)
+
+
+class RangeFixture(unittest.TestCase):
+    def test_actor_packets_are_put_on_the_last_mark_before_them(self):
+        def text(message: str) -> bytes:
+            body = message.encode()
+            return varint(9) + b'\x00' + varint(len(body)) + body
+        remove = varint(14) + varint(9)  # unique id -5, zigzag
+        add_actor = varint(13) + varint(7) + varint(3)
+        records = [
+            {'t_ms': 1, 'dir': 's2c', 'id': 14, 'hex': remove.hex()},
+            {'t_ms': 2, 'dir': 's2c', 'id': 9, 'hex': text('bds-sweep:mark east-out 4 104').hex()},
+            {'t_ms': 3, 'dir': 's2c', 'id': 13, 'hex': add_actor.hex()},
+            {'t_ms': 50, 'dir': 's2c', 'id': 9, 'hex': text('bds-sweep:mark east-out 4 105').hex()},
+            {'t_ms': 51, 'dir': 's2c', 'id': 14, 'hex': remove.hex()},
+        ]
+        path = Path(tempfile.mkdtemp()) / 'packets.jsonl'
+        path.write_text('\n'.join(json.dumps(record) for record in records) + '\n', encoding='utf-8')
+        events = list(range_fixture.actor_events(path))
+        self.assertEqual(events, [
+            (('east-out', 4, 104), 'add', ('unique', -4)),
+            (('east-out', 4, 105), 'remove', ('unique', -5)),
+        ])
+
+
+class SpawnBonusFixture(unittest.TestCase):
+    def test_nbt_compounds_lists_and_binary_strings_are_read(self):
+        def named(kind: int, name: str, payload: bytes) -> bytes:
+            return bytes([kind]) + struct.pack('<H', len(name)) + name.encode() + payload
+        modifier = (named(5, 'Amount', struct.pack('<f', 1.25)) + named(3, 'Operation', struct.pack('<i', 2))
+                    + b'\x00')
+        attribute = (named(8, 'Name', struct.pack('<H', 22) + b'minecraft:follow_range')
+                     + named(9, 'Modifiers', bytes([10]) + struct.pack('<i', 1) + modifier) + b'\x00')
+        root = named(10, '', named(8, 'identifier', struct.pack('<H', 16) + b'minecraft:zombie')
+                     + named(8, 'Key', struct.pack('<H', 2) + b'\xff\x00')
+                     + named(9, 'Attributes', bytes([10]) + struct.pack('<i', 1) + attribute) + b'\x00')
+        record = spawn_bonus_fixture.read_nbt(root)
+        self.assertEqual(record['identifier'], 'minecraft:zombie')
+        self.assertEqual(record['Key'], 'hex:ff00')
+        self.assertEqual(record['Attributes'][0]['Modifiers'][0], {'Amount': {'Float': 1.25}, 'Operation': {'Int': 2}})
+
+
+class PlayerRelayFixture(unittest.TestCase):
+    def test_inputs_are_read_by_their_tick(self):
+        body = (varint(144) + struct.pack('<2f', -2.0, 5.0) + struct.pack('<3f', 0.5, -58.38, 0.5)
+                + struct.pack('<2f', 0.0, 1.0) + struct.pack('<f', 5.0) + varint(1) + varint(20) + varint(1)
+                + varint(0) + varint(2) + struct.pack('<2f', 0.0, 0.0) + varint(800))
+        path = Path(tempfile.mkdtemp()) / 'packets.jsonl'
+        path.write_text(json.dumps({'t_ms': 0, 'dir': 'c2s', 'id': 144, 'hex': body.hex()}) + '\n', encoding='utf-8')
+        self.assertEqual(player_relay_fixture.inputs(path), {800: {'pitch': -2.0, 'yaw': 5.0, 'head': 5.0}})
+
+
+class EffectTrials(unittest.TestCase):
+    def args(self, items: str = 'slice', difficulty: str = 'easy'):
+        return type('Args', (), {'items': items, 'difficulty': difficulty})()
+
+    def test_mob_and_player_items_time_their_effects_after_the_spawn(self):
+        mobs = sweep.effect_items(self.args('mobs'))
+        players = sweep.effect_items(self.args('players'))
+        everything = sweep.effect_items(self.args())
+        self.assertEqual(len(everything), len(mobs) + len(players))
+        keys = [item['key'] for item in everything]
+        self.assertEqual(len(keys), len(set(keys)))
+        for item in mobs:
+            self.assertTrue(item['mob'].startswith('minecraft:'), item['key'])
+            self.assertTrue(all(action['t'] < item['ticks'] for action in item['actions']), item['key'])
+            for action in item['actions']:
+                for command in action['commands']:
+                    self.assertNotIn('@T', command)
+                    if command.startswith('effect') or command.startswith('damage'):
+                        self.assertIn(item['mob'], command)
+        for item in players:
+            self.assertIsNone(item['mob'])
+            self.assertIn('gamemode survival', item['setup'][0])
+            self.assertIn('gamemode creative', item['cleanup'][-1])
+
+    def test_unknown_effect_set_is_refused(self):
+        with self.assertRaises(SystemExit):
+            sweep.effect_items(self.args('every'))
+
+    def test_ranged_items_protect_the_survival_player(self):
+        items = sweep.ranged_items(self.args())
+        self.assertEqual([item['key'] for item in items],
+                         ['skeleton|shoot-8', 'skeleton|shoot-15', 'stray|shoot-8', 'bogged|shoot-8',
+                          'parched|shoot-8'])
+        for item in items:
+            self.assertTrue(item['frozen'])
+            self.assertTrue(any('resistance 100000 4' in line for line in item['setup']))
+
+    def test_mooshroom_items_interact_twice_with_the_held_item(self):
+        items = sweep.mooshroom_items(self.args())
+        self.assertEqual([item['hold']['item'] for item in items],
+                         ['minecraft:bowl', 'minecraft:allium', 'minecraft:shears'])
+        for item in items:
+            orders = [action['t'] for action in item['actions'] if action.get('order') == 'interact']
+            self.assertEqual(orders, [10, 30])
+
+    def test_melee_effect_items_keep_the_player_alive_without_resistance(self):
+        items = sweep.melee_effect_items(self.args())
+        self.assertEqual([item['key'] for item in items], ['husk|hits'])
+        husk = items[0]
+        self.assertFalse(husk['frozen'])
+        self.assertTrue(any('health_boost' in line for line in husk['setup']))
+        self.assertFalse(any('resistance' in line for line in husk['setup']))
+        self.assertIn('effect "BDSSweep" clear', husk['cleanup'])
+
+    def test_mooshroom_geometry_items_move_the_player_and_restore_the_block(self):
+        items = sweep.mooshroom_items(self.args('geometry'))
+        self.assertEqual([item['key'] for item in items],
+                         ['mooshroom|allium-raised', 'mooshroom|allium-baby', 'mooshroom|suspicious-stew'])
+        raised = items[0]
+        self.assertIn('setblock 0 -60 3 stone', raised['setup'])
+        self.assertIn('setblock 0 -60 3 air', raised['cleanup'])
+        self.assertEqual(raised['player'][:3], [0.5, -59, 3.5])
+        stew = items[2]
+        orders = sorted(action['t'] for action in stew['actions'] if action.get('order') == 'interact')
+        self.assertEqual(orders, [10, 30, 50, 60])
+        with self.assertRaises(SystemExit):
+            sweep.mooshroom_items(self.args('every'))
+
+    def test_resist_set_hits_the_resistant_mobs_like_the_slice(self):
+        items = sweep.knockback_items(type('Args', (), {'items': 'resist'})())
+        self.assertEqual([item['mob'] for item in items],
+                         ['minecraft:zoglin', 'minecraft:hoglin', 'minecraft:iron_golem'])
+        self.assertTrue(all(item['frozen'] and len(item['hits']) == 3 for item in items))
+
+
+class EffectFixture(unittest.TestCase):
+    def test_packets_are_put_on_their_mark_and_attributed_to_mob_or_player(self):
+        def text(message):
+            return {'name': 'TextPacket', 'packet': {'body': {'MessageOnly': {'message': message}}}}
+
+        def data(rid, rows):
+            return {'name': 'SetActorDataPacket', 'packet': {
+                'target_runtime_id': {'actor_runtime_id': rid},
+                'actor_data': {'data': [{'id': key, 'payload': {'DataItemInt64Payload': {'value': value}}}
+                                        for key, value in rows]}}}
+
+        records = [
+            text('bds-sweep:mark cow|poison 9'),
+            data(2, [(131, 99)]),
+            text('bds-sweep:mark cow|poison 10'),
+            data(2, [(131, 38), (7, 300)]),
+            data(1, [(131, 2)]),
+            data(5, [(131, 4)]),
+            {'name': 'ActorEventPacket', 'packet': {'target_runtime_id': {'actor_runtime_id': 2},
+                                                    'event_id': 'Hurt', 'data': 14}},
+            text('bds-sweep:mark other 0'),
+            data(2, [(131, 0)]),
+        ]
+        result = {'key': 'cow|poison', 'mob': 'minecraft:cow', 'runtime_id': 2, 'player_runtime_id': 1,
+                  'first_tick': 100, 'spec': {}, 'failed_commands': [],
+                  'damage': [[130, 'minecraft:cow', 1.0, 'magic']],
+                  'samples': [{'player': {'health': 20}, 'mob': {'health': 10, 'pos': [1, 2, 3], 'ground': True}}]}
+        item = effects_fixture.distil(result, records)
+        self.assertEqual(item['packets'], [
+            {'t': 9, 'about': 'mob', 'kind': 'data', 'data': {'131': 99}},
+            {'t': 10, 'about': 'mob', 'kind': 'data', 'data': {'131': 38}},
+            {'t': 10, 'about': 'player', 'kind': 'data', 'data': {'131': 2}},
+            {'t': 10, 'about': 'mob', 'kind': 'event', 'event': 'Hurt', 'data': 14},
+        ])
+        self.assertEqual(item['damage'], [{'t': 30, 'about': 'mob', 'damage': 1.0, 'cause': 'magic'}])
+        self.assertNotIn('mob_positions', item)
+
+
+class PvpItems(unittest.TestCase):
+    def test_sets_repeat_every_item_under_its_own_key(self):
+        items = pvp_items.pvp_items('hurt', 2, False)
+        keys = [item['key'] for item in items]
+        self.assertEqual(len(keys), len(set(keys)))
+        self.assertIn('burst|up|batch#1', keys)
+        burst = next(item for item in items if item['key'] == 'burst|up|batch#0')
+        self.assertEqual(burst['script']['5'], '[o0=select:1,a0>1,o0=select:2,a0>1,o0=select:3,a0>1,'
+                                               'o0=select:4,a0>1,o0=select:5,a0>1,i0] i1 i2')
+
+    def test_strict_reach_items_are_named_apart_and_unknown_keys_refused(self):
+        keys = {item['key'] for item in pvp_items.pvp_items('reach', 1, True)}
+        self.assertIn('strict|reach|survival|6.7#0', keys)
+        with self.assertRaises(SystemExit):
+            pvp_items.pvp_items('nonsense', 1, False)
+        self.assertEqual([i['key'] for i in pvp_items.pvp_items('weapon|hand', 1, False)], ['weapon|hand#0'])
+
+
+class PvpFixture(unittest.TestCase):
+    def test_server_packets_decode_to_values(self):
+        motion = varint(2) + struct.pack('<3f', 0.4, 0.4, 0.0) + varint(273)
+        self.assertEqual(pvp_fixture.decode_out(40, motion),
+                         {'packet': 'SetActorMotion', 'about': 2, 'motion': [0.400000006, 0.400000006, 0.0],
+                          'tick': 273})
+        self.assertEqual(pvp_fixture.decode_out(27, bytes([2, 2, 4, 0])),
+                         {'packet': 'ActorEvent', 'about': 2, 'event': 2, 'data': 2})
+        animate = varint(4) + varint(2) + struct.pack('<f', 55.0)
+        self.assertEqual(pvp_fixture.decode_out(44, animate),
+                         {'packet': 'Animate', 'about': 2, 'action': 4, 'data': 55.0})
+        sound = varint(13) + b'attack.strong' + struct.pack('<3f', 0.5, -59.1, 0.5)
+        self.assertEqual(pvp_fixture.decode_out(123, sound)['sound'], 'attack.strong')
+
+    def test_an_attack_joins_its_lines_input_or_the_next(self):
+        result = {'spec': {'script': {'5': 'a0>1 i0 i1 i2', '6': 'i0 a0>1 i1 i2', '8': 'o0=select:3 a0>1 i0'}},
+                  'names': ['A', 'B', 'C'], 'first_tick': 0, 'events': [], 'fired': []}
+        consumption = {'A': {5: 6, 7: 8, 8: 10}, 'B': {}, 'C': {}}
+        attempts = pvp_fixture.attempts_of(result, consumption, [])
+        self.assertEqual([(a['joins'], a['consumed'], a['slot']) for a in attempts],
+                         [(5, 6, 0), (7, 8, 0), (8, 10, 3)])
+        self.assertEqual([a['t'] for a in attempts], [5, 7, 9])
+
+    def test_landed_hits_keep_bds_order_within_a_tick(self):
+        result = {'spec': {'script': {'5': 'a0>1 i0 a2>1 i2 i1'}}, 'names': ['A', 'B', 'C'], 'first_tick': 0,
+                  'events': [], 'fired': []}
+        consumption = {'A': {5: 6}, 'B': {}, 'C': {5: 6}}
+        hits = [{'t': 6, 'attacker': 'A', 'victim': 'B'}, {'t': 6, 'attacker': 'C', 'victim': 'B'}]
+        attempts = pvp_fixture.attempts_of(result, consumption, hits)
+        self.assertEqual([(a['attacker'], a['landed']) for a in attempts], [('A', 0), ('C', 1)])
+        attempts = pvp_fixture.attempts_of(result, consumption, hits[1:])
+        self.assertEqual([(a['attacker'], a['landed'], a['t']) for a in attempts], [('C', 0, 6), ('A', None, 6)])
+
+    def test_trials_take_their_own_run_of_marked_inputs(self):
+        rows = [(-89.99, [], 1, [0.0, 0.0, 0.0]), (-89.98, ['Sprinting'], 2, [0.0, 0.0, 0.0]),
+                (-90.0, [], 3, [0.0, 0.0, 0.0]), (-89.99, [], 4, [0.0, 0.0, 0.0]),
+                (-89.98, [], 5, [0.0, -0.0784, 0.0])]
+        inputs = pvp_fixture.Inputs(rows)
+        self.assertEqual({line: row[2] for line, row in inputs.take(-90.0, 40).items()}, {0: 1, 1: 2})
+        self.assertEqual({line: row[2] for line, row in inputs.take(-90.0, 40).items()}, {0: 4, 1: 5})
+        self.assertEqual(inputs.by_tick[2][1], ['Sprinting'])
+
+
 if __name__ == '__main__':
     unittest.main()
+
+
+class PlacementCases(unittest.TestCase):
+    def test_keys_are_unique_marker_safe_and_grouped(self):
+        import placements
+        items = placements.items()
+        keys = [item['key'] for item in items]
+        self.assertEqual(len(keys), len(set(keys)))
+        self.assertTrue(all(re.fullmatch(r'[A-Za-z0-9_-]+', key) for key in keys))
+        self.assertEqual({item['group'] for item in items}, set(placements.GROUPS))
+        signs = placements.items('signs')
+        self.assertTrue(all(item['group'] == 'signs' for item in signs))
+        steps = {step[0] for item in items for step in item.get('after', [])}
+        self.assertLessEqual(steps, {'wait', 'hand', 'use', 'sign'})
+
+
+class CaptureMarkers(unittest.TestCase):
+    def test_packets_are_cut_per_marker_with_hex_only_where_decoded(self):
+        import summarize
+
+        def text(message: str) -> str:
+            return (bytes([9, 0, 0, 0]) + message.encode()).hex()
+
+        records = [
+            {'dir': 's2c', 'name': 'TextPacket', 'hex': text('bds-sweep:mark case_1')},
+            {'dir': 'c2s', 'name': 'InventoryTransactionPacket', 'hex': 'aa'},
+            {'dir': 's2c', 'name': 'MoveActorDeltaPacket', 'hex': 'bb'},
+            {'dir': 's2c', 'name': 'UpdateAttributesPacket', 'hex': 'cc'},
+            {'dir': 's2c', 'name': 'TextPacket', 'hex': text('bds-sweep:mark end')},
+            {'dir': 's2c', 'name': 'UpdateBlockPacket', 'hex': 'dd'},
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'packets.jsonl'
+            path.write_text('\n'.join(json.dumps(r) for r in records), encoding='utf-8')
+            cut = summarize.capture_by_marker(path)
+        self.assertEqual(cut, {'case_1': [
+            {'dir': 'c2s', 'name': 'InventoryTransactionPacket', 'hex': 'aa'},
+            {'dir': 's2c', 'name': 'UpdateAttributesPacket'},
+        ]})
+
+
+class RoundTwoScenarios(unittest.TestCase):
+    def test_round_two_families_are_registered_and_small_enough(self):
+        import scenarios
+        for name in ('stairs_blocks', 'connections_blocks', 'wall_heights_blocks', 'multiface_support', 'rails',
+                     'soils_more', 'coral_death'):
+            self.assertIn(name, scenarios.FAMILIES)
+        rails = scenarios.FAMILIES['rails']()
+        self.assertEqual(len(rails), 4 * 81 * 2)
+        self.assertEqual(len({item['key'] for item in rails}), len(rails))
+
+
+class RoundThree(unittest.TestCase):
+    """Circuit and random tick families and the wave signature."""
+
+    def test_measured_families_have_unique_keys_and_one_layout(self):
+        import circuits
+        import random_ticks
+        for family in list(circuits.MEASURED) + list(random_ticks.FAMILIES):
+            items = scenarios.FAMILIES[family]()
+            keys = [item['key'] for item in items]
+            self.assertEqual(len(keys), len(set(keys)), family)
+            self.assertTrue(all(key.startswith(family + '|') for key in keys), family)
+        self.assertEqual(scenarios.layout(','.join(circuits.MEASURED)), 'circuits')
+        self.assertEqual(scenarios.layout(','.join(random_ticks.FAMILIES)), 'fields')
+        with self.assertRaises(SystemExit):
+            scenarios.layout('redstone_dust,random_crops')
+
+    def test_coral_families_share_the_spaced_layout(self):
+        import coral
+        for family in list(coral.FAMILIES) + ['coral_death']:
+            keys = [item['key'] for item in scenarios.FAMILIES[family]()]
+            self.assertEqual(len(keys), len(set(keys)), family)
+        self.assertEqual(scenarios.layout('coral_death,coral_water,coral_timing'), 'coral')
+        spacing = coral.LAYOUT['spacing']
+        (low_x, _, low_z), (high_x, _, high_z) = coral.LAYOUT['clear_box']
+        # Water flows 7 blocks: two cells' boxes never overlap.
+        self.assertGreater(min(spacing), max(high_x - low_x, high_z - low_z))
+
+    def test_leftover_clicks_end_with_the_normal_difficulty_cases(self):
+        import placements
+        items = placements.items('leftovers')
+        keys = [item['key'] for item in items]
+        self.assertEqual(len(keys), len(set(keys)))
+        changes = [i for i, item in enumerate(items) if item.get('before')]
+        self.assertEqual(changes, [len(items) - 2, len(items) - 1])
+
+    def test_signature_splits_clicks_and_commands_into_their_own_waves(self):
+        sys.path.insert(0, str(Path(__file__).resolve().parent / 'endstone-sweep' / 'src'))
+        from endstone_bds_sweep import jobs
+        click = {'key': 'f|a', 'steps': [['build', []], ['timeline', 10, 't', [[1, ['use', [0, 0, 0], 1,
+                                                                                     [0, 0, 0]]]], []]]}
+        plain = {'key': 'f|b', 'steps': [['build', []], ['timeline', 10, 't', [[1, ['set', [0, 0, 0],
+                                                                                     'minecraft:air', {}, True]]],
+                                                         []]]}
+        fast = {'key': 'f|c', 'steps': [['cmd', 'gamerule randomtickspeed 8', [0, 0, 0]]]}
+        slow = {'key': 'f|d', 'steps': [['cmd', 'gamerule randomtickspeed 128', [0, 0, 0]]]}
+        for item in (click, plain, fast, slow):
+            self.assertEqual(list(jobs.step_signature(item)), scenarios.signature(item))
+        self.assertIn('f|a', jobs.step_signature(click)[1])
+        self.assertEqual(jobs.step_signature(plain)[1], 'timeline10')
+        self.assertNotEqual(jobs.step_signature(fast), jobs.step_signature(slow))
+
+    def test_circuit_rows_derive_conductors_cuts_and_climbing(self):
+        trace_lit = [[0, 1, 'unpowered_repeater', {}], [0, 2, 'stone', {}], [0, 3, 'redstone_lamp', {}],
+                     [4, 1, 'powered_repeater', {}], [4, 3, 'lit_redstone_lamp', {}]]
+        trace_late = [[0, 1, 'unpowered_repeater', {}], [0, 2, 'bell', {}], [0, 3, 'redstone_lamp', {}],
+                      [4, 1, 'powered_repeater', {}], [8, 3, 'lit_redstone_lamp', {}]]
+        cut = [[0, 2, 'redstone_wire', {'redstone_signal': 0}], [0, 3, 'stone', {}],
+               [5, 1, 'redstone_wire', {'redstone_signal': 15}]]
+        climb = [[0, 3, 'redstone_wire', {'redstone_signal': 0}], [4, 3, 'redstone_wire', {'redstone_signal': 14}],
+                 [6, 3, 'air', {}]]
+        derived = summarize.circuit_blocks({
+            'redstone_conductors': [[['block', 'stone', {}], 2, [], trace_lit],
+                                    [['block', 'bell', {}], 2, [], trace_late]],
+            'redstone_dust_cut': [[['cut', 'stone', {}], 2, [], cut]],
+            'redstone_dust_blocks': [[['climb', 'acacia_trapdoor', {'open_bit': False}], 2, [], climb]],
+        })
+        self.assertEqual(derived['conductors'], ['minecraft:stone'])
+        self.assertEqual(derived['cuts'], ['minecraft:stone'])
+        # Ever lit: the dust on top popped later.
+        self.assertEqual(derived['rows'], [['minecraft:acacia_trapdoor', {'open_bit': False}, True, False]])

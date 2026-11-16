@@ -32,6 +32,10 @@ const UP: u8 = 1;
 /// Use the held item on the clicked block. Returns whether the item did
 /// something (then nothing is placed).
 pub fn use_on_block(world: &mut World, player: Entity, clicked: IVec3, face: u8) -> bool {
+    // A jukebox takes a disc or gives one back, also to an empty hand.
+    if crate::server::game::jukebox::use_jukebox(world, player, clicked, face) {
+        return true;
+    }
     let Some((slot, stack)) = held(world, player) else {
         return false;
     };
@@ -140,6 +144,16 @@ fn convert(world: &mut World, ctx: &Use, new_state: u32) {
         "item.use.on",
         wire as i32,
     );
+}
+
+/// Where a bucket's sound plays: at the player's feet, not at the block
+/// (BDS 1.26.51 capture of `tools/bds-sweep/scripts/buckets-eggs.txt`).
+fn feet(world: &World, player: Entity) -> DVec3 {
+    world
+        .get::<crate::entity::components::Position>(player)
+        .map_or(DVec3::ZERO, |eye| {
+            eye.0 - DVec3::Y * crate::entity::PLAYER_EYE_HEIGHT
+        })
 }
 
 fn sound(world: &World, player: Entity, at: DVec3, name: &str, data: i32) {
@@ -370,19 +384,102 @@ fn ignite(world: &mut World, ctx: &Use) -> bool {
             (target, state)
         }
     };
-    set_block(world, pos, state, false);
+    crate::server::game::blocks::set_block_batched(world, pos, state);
+    click_corrections(world, ctx);
+    if matches!(
+        ctx.block_name(),
+        "minecraft:campfire" | "minecraft:soul_campfire"
+    ) && pos == ctx.clicked
+    {
+        announce_campfire(world, pos);
+    }
     let sound_name = if flint {
         "ignite"
     } else {
         "mob.ghast.fireball"
     };
-    sound(world, ctx.player, centre(pos), sound_name, -1);
+    // BDS plays it at the corner of a block lit where it stands and at the
+    // centre of new fire (`tools/bds-sweep/scripts/containers-flint.txt`).
+    let at = if pos == ctx.clicked {
+        pos.as_dvec3()
+    } else {
+        centre(pos)
+    };
+    sound(world, ctx.player, at, sound_name, -1);
     if flint {
-        wear_held(world, ctx.player, 1);
+        crate::server::game::durability::wear_held_predicted(world, ctx.player, 1);
     } else {
         use_one(world, ctx);
     }
     true
+}
+
+/// A relit campfire's actor data, as BDS sends it to the block's viewers
+/// (`{BlockEntityVersion, ItemTime1-4, id, x, y, z}`, all 0 but the id and
+/// position; `tools/bds-sweep/scripts/containers-flint.txt`).
+fn announce_campfire(world: &World, pos: IVec3) {
+    use std::collections::HashMap;
+    use zuri_nbt::{NBTTag, tag};
+    let mut fields: HashMap<String, NBTTag> = HashMap::new();
+    fields.insert("id".into(), NBTTag::String(tag::String("Campfire".into())));
+    for (name, value) in [
+        ("BlockEntityVersion", 0),
+        ("ItemTime1", 0),
+        ("ItemTime2", 0),
+        ("ItemTime3", 0),
+        ("ItemTime4", 0),
+        ("x", pos.x),
+        ("y", pos.y),
+        ("z", pos.z),
+    ] {
+        fields.insert(name.into(), NBTTag::Int(tag::Int(value)));
+    }
+    let Ok(actor) =
+        crate::world::block_entity::BlockEntity::from_bedrock_compound(tag::Compound(fields))
+    else {
+        return;
+    };
+    let packet = jolyne::valentine::McpePacket::from(jolyne::valentine::BlockActorDataPacket {
+        block_position: jolyne::valentine::types::BlockPos {
+            x: pos.x,
+            y: pos.y,
+            z: pos.z,
+        },
+        actor_data_tags: actor.network_nbt().clone(),
+    });
+    let (cx, cz) = crate::world::ecs::world_to_chunk_coords(pos.x, pos.z);
+    let Some(viewers) = world
+        .get_resource::<crate::world::ecs::ChunkManager>()
+        .and_then(|chunks| chunks.get_by_coords(cx, cz))
+        .and_then(|chunk| world.get::<crate::world::ecs::ChunkViewers>(chunk))
+    else {
+        return;
+    };
+    for viewer in viewers.iter() {
+        if let Some(session) = world.get::<crate::entity::components::PlayerSession>(viewer) {
+            let _ = session.send(packet.clone());
+        }
+    }
+}
+
+/// What BDS 1.26.51 sends the clicking player after flint and steel lit a
+/// candle or campfire or set fire on netherrack or stone
+/// (`tools/bds-sweep/scripts/containers-flint.txt`): the clicked block, the
+/// block on the clicked face, the block under the clicked one, the block on
+/// the face again, the block above it and the clicked block again, as they
+/// now are (the same updates as after a placement).
+fn click_corrections(world: &World, ctx: &Use) {
+    let (clicked, target) = (ctx.clicked, ctx.target());
+    for pos in [
+        clicked,
+        target,
+        clicked - IVec3::Y,
+        target,
+        target + IVec3::Y,
+        clicked,
+    ] {
+        crate::server::game::blocks::correct_block(world, ctx.player, (pos.x, pos.y, pos.z));
+    }
 }
 
 /// Growth stages a crop with `growth` 0..=7 advances by from bone meal.
@@ -508,7 +605,7 @@ fn fill_bucket(world: &mut World, ctx: &Use) -> bool {
         return false;
     };
     set_block(world, ctx.clicked, air, false);
-    sound(world, ctx.player, centre(ctx.clicked), filled.1, -1);
+    sound(world, ctx.player, feet(world, ctx.player), filled.1, -1);
     if world.get::<GameMode>(ctx.player) != Some(&GameMode::Creative) {
         let rest = ctx.stack.grow(-1);
         if rest.is_empty() {
@@ -551,7 +648,7 @@ fn empty_bucket(world: &mut World, ctx: &Use) -> bool {
         return false;
     };
     set_block(world, pos, state, false);
-    sound(world, ctx.player, centre(pos), sound_name, -1);
+    sound(world, ctx.player, feet(world, ctx.player), sound_name, -1);
     if world.get::<GameMode>(ctx.player) != Some(&GameMode::Creative) {
         set_slot(world, ctx.player, ctx.slot, empty);
     }

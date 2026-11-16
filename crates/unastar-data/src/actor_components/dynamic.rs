@@ -56,6 +56,20 @@ macro_rules! defaults {
 }
 
 defaults! {
+    explode_allow_underwater -> bool = p::EXPLODE_ALLOW_UNDERWATER;
+    explode_breaks_blocks -> bool = p::EXPLODE_BREAKS_BLOCKS;
+    explode_causes_fire -> bool = p::EXPLODE_CAUSES_FIRE;
+    explode_damage_scaling -> f32 = p::EXPLODE_DAMAGE_SCALING;
+    explode_destroy_affected_by_griefing -> bool = p::EXPLODE_DESTROY_AFFECTED_BY_GRIEFING;
+    explode_fire_affected_by_griefing -> bool = p::EXPLODE_FIRE_AFFECTED_BY_GRIEFING;
+    explode_fuse_lit -> bool = p::EXPLODE_FUSE_LIT;
+    explode_knockback_scaling -> f32 = p::EXPLODE_KNOCKBACK_SCALING;
+    explode_max_resistance -> f32 = p::EXPLODE_MAX_RESISTANCE;
+    explode_negates_fall_damage -> bool = p::EXPLODE_NEGATES_FALL_DAMAGE;
+    explode_particle_effect -> String = p::EXPLODE_PARTICLE_EFFECT.to_owned();
+    explode_power -> f32 = p::EXPLODE_POWER;
+    explode_sound_effect -> String = p::EXPLODE_SOUND_EFFECT.to_owned();
+    explode_toggles_blocks -> bool = p::EXPLODE_TOGGLES_BLOCKS;
     ageable_duration -> f32 = p::AGEABLE_DURATION;
     ambient_event_name -> String = p::AMBIENT_SOUND_INTERVAL_EVENT_NAME.to_owned();
     ambient_range -> f32 = p::AMBIENT_SOUND_INTERVAL_RANGE;
@@ -626,6 +640,53 @@ pub enum DealsDamageMode {
     No,
     NoButSideEffectsApply,
     NoButEntityEffectsApply,
+}
+
+/// `minecraft:explode`: a fuse that ends in an explosion.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Explode {
+    /// The explosion also affects blocks and actors under water.
+    #[serde(default = "explode_allow_underwater")]
+    pub allow_underwater: bool,
+    #[serde(default = "explode_breaks_blocks")]
+    pub breaks_blocks: bool,
+    #[serde(default = "explode_causes_fire")]
+    pub causes_fire: bool,
+    /// Factor on the damage actors take.
+    #[serde(default = "explode_damage_scaling")]
+    pub damage_scaling: f32,
+    /// `breaks_blocks` only applies while the `mobGriefing` game rule is on.
+    #[serde(default = "explode_destroy_affected_by_griefing")]
+    pub destroy_affected_by_griefing: bool,
+    /// `causes_fire` only applies while the `mobGriefing` game rule is on.
+    #[serde(default = "explode_fire_affected_by_griefing")]
+    pub fire_affected_by_griefing: bool,
+    /// Seconds the fuse burns (fixed or random); absent explodes at once.
+    pub fuse_length: Option<ValueOrRange<f32>>,
+    /// The fuse is lit as soon as the component is added.
+    #[serde(default = "explode_fuse_lit")]
+    pub fuse_lit: bool,
+    /// Factor on the knockback actors take.
+    #[serde(default = "explode_knockback_scaling")]
+    pub knockback_scaling: f32,
+    /// Cap on a block's explosion resistance.
+    #[serde(default = "explode_max_resistance")]
+    pub max_resistance: f32,
+    #[serde(default = "explode_negates_fall_damage")]
+    pub negates_fall_damage: bool,
+    /// `explosion`, `wind_burst` or `breeze_wind_burst`.
+    #[serde(default = "explode_particle_effect")]
+    pub particle_effect: String,
+    #[serde(default = "explode_power")]
+    pub power: f32,
+    /// The level sound played when the explosion happens.
+    #[serde(default = "explode_sound_effect")]
+    pub sound_effect: String,
+    /// The explosion toggles blocks (doors, trapdoors) instead of breaking
+    /// them.
+    #[serde(default = "explode_toggles_blocks")]
+    pub toggles_blocks: bool,
 }
 
 /// `minecraft:despawn`.
@@ -1374,6 +1435,91 @@ pub struct AnnotationBreakDoor {
     pub min_difficulty: Difficulty,
 }
 
+/// An attribute component body: the attribute's `value` and, optionally,
+/// its `max`.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AttributeBody {
+    pub value: f32,
+    #[serde(default)]
+    pub max: Option<f32>,
+}
+
+/// `minecraft:follow_range`: how far a mob keeps track of its target (the
+/// follow range attribute). Vanilla authors `{"value": v, "max": m}`, and
+/// once a bare number.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(untagged)]
+pub enum FollowRange {
+    Value(f32),
+    Attribute(AttributeBody),
+}
+
+/// `minecraft:knockback_resistance`: the knockback resistance attribute.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct KnockbackResistance {
+    pub value: f32,
+    #[serde(default)]
+    pub max: Option<f32>,
+}
+
+/// One box of `minecraft:custom_hit_test`, centred on the actor's position
+/// plus `pivot`.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Hitbox {
+    pub width: f32,
+    pub height: f32,
+    pub pivot: Vec3,
+}
+
+/// `minecraft:custom_hit_test`: boxes a player's hit on the actor may land
+/// on besides its collision box.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CustomHitTest {
+    #[serde(default)]
+    pub hitboxes: Vec<Hitbox>,
+}
+
+/// `minecraft:mob_effect_immunity`: effects that are never applied to the
+/// actor.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct MobEffectImmunity {
+    #[serde(default, deserialize_with = "super::de::optional_one_or_many")]
+    pub mob_effects: Option<Vec<String>>,
+}
+
+/// One effect `minecraft:spell_effects` adds.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SpellEffect {
+    pub effect: String,
+    /// Seconds.
+    pub duration: f32,
+    #[serde(default = "spell_effect_amplifier")]
+    pub amplifier: i32,
+    #[serde(default)]
+    pub display_on_screen_animation: bool,
+}
+
+/// `minecraft:spell_effects`: effects added to and removed from the actor
+/// when the component is applied.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SpellEffects {
+    #[serde(default)]
+    pub add_effects: Option<Vec<SpellEffect>>,
+    #[serde(default, deserialize_with = "super::de::optional_one_or_many")]
+    pub remove_effects: Option<Vec<String>>,
+}
+
+defaults! {
+    spell_effect_amplifier -> i32 = p::SPELL_EFFECTS_AMPLIFIER;
+}
+
 macro_rules! dynamic_bodies {
     ($($name:ident),* $(,)?) => {
         $(impl ComponentBody for $name {
@@ -1411,19 +1557,24 @@ dynamic_bodies!(
     Color,
     Color2,
     ConditionalBandwidthOptimization,
+    CustomHitTest,
     DamageSensor,
     Despawn,
     EnvironmentSensor,
     EquipItem,
     Equipment,
+    Explode,
+    FollowRange,
     Health,
     HurtOnCondition,
     IsDyeable,
     ItemControllable,
+    KnockbackResistance,
     Leashable,
     LeashableTo,
     Loot,
     MarkVariant,
+    MobEffectImmunity,
     Movement,
     MovementBasic,
     Nameable,
@@ -1436,6 +1587,7 @@ dynamic_bodies!(
     SkinId,
     SpawnEggInteraction,
     SpawnEntity,
+    SpellEffects,
     Transformation,
     Timer,
     TypeFamily,

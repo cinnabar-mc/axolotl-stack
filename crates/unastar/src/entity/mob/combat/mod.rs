@@ -1,23 +1,23 @@
 //! Mob combat: hits and the hurt rule ([`hit`]), knockback resistance
 //! ([`knockback`]), damage sensors ([`damage_sensor`]), fall damage
-//! ([`fall`]), fire ([`fire`]), mob melee hits ([`melee`]) and death
-//! ([`death`]).
+//! ([`fall`]), fire ([`fire`]), mob melee hits ([`melee`]), death
+//! ([`death`]) and fuses ([`explode`]).
 //!
 //! Every damage source goes through [`hurt_mob`]; the component
 //! configuration these systems read lives in `mob::components`.
 
 pub mod damage_sensor;
 pub mod death;
+pub mod explode;
 pub mod fall;
 pub mod fire;
 pub mod hit;
-pub mod knockback;
 pub mod melee;
 
 #[cfg(test)]
 mod bds_knockback;
 
 pub use hit::{
-    Hit, HurtTimer, fire_immune, hurt_mob, hurt_on_condition, knockback_power_of,
-    knockback_velocity, player_attack, send_actor_event,
+    Hit, HurtTimer, fire_immune, hurt_mob, hurt_mob_quietly, hurt_on_condition, knockback_power_of,
+    knockback_velocity, melee_damage, player_attack, send_actor_event,
 };

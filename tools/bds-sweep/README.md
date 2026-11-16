@@ -9,22 +9,63 @@ sweep harness (T2). Everything here needs a BDS runtime: the shared one
 | File | Role |
 |---|---|
 | `bds_runtime.py` | Starts/stops the BDS of one runtime, `BDS_RUNTIME` on `BDS_PORT` (plain or under Endstone): refuses when a `bedrock_server` from that runtime's `server/` runs or the port is bound, backs up and restores `server.properties`, harness-owned world names only, graceful `stop` |
-| `capture.py` | T1: two `bds-extractor --capture-dir` sessions on plain BDS (member join; operator join + `/summon` of every summonable identifier) into `<runtime>/captures/1.26.51/<UTC>/`; `--commands FILE` runs one operator session of scripted commands instead (`operator-commands/command-outputs.json`) |
-| `command-script.txt` | The vanilla command feedback script for `capture.py --commands` |
+| `capture.py` | T1: two `bds-extractor --capture-dir` sessions on plain BDS (member join; operator join + `/summon` of every summonable identifier) into `<runtime>/captures/1.26.51/<UTC>/`; `--commands FILE` runs one operator session of scripted commands instead (`operator-commands/command-outputs.json`, plus `console-outputs.json`: BDS's console lines by step, typed for `!console` steps; `allowlist.json`, `permissions.json` and `keys/` are restored afterwards) |
+| `command-script.txt` | The vanilla command feedback script for `capture.py --commands` (`# segment: NAME` groups lines that unastar's tests replay together; every segment leaves the world as it found it; `!console COMMAND` runs on the server console, `!join NAME` / `!leave NAME` bring a second player in and out) |
+| `capture.py --pair FILE` | Two or more overlapping operator sessions on one fresh world: `host/` runs FILE, guests join and leave during it (`--guests N`, one after the other or `--guest-gap S` seconds apart and online together); for what BDS sends online players when others join and leave |
+| `roster_probe.py` | Player-colour reuse probe: a guest leaves before the next one joins (schedule in its docstring) |
+| `commit_roster_fixtures.py` | Copies the roster packets of `--pair`/probe runs into `crates/bds-extractor/captures/1.26.51/roster/` |
 | `command_digest.py` | `command-outputs.json` to a readable per-command `digest.md` (CommandOutput fields, key fields of every other packet) |
-| `commit_fixtures.py` | Copies the committed subset of a capture into `crates/bds-extractor/captures/1.26.51/` (see the crate README) |
+| `commit_fixtures.py` | Copies the committed subset of a capture into `crates/bds-extractor/captures/1.26.51/` (see the crate README); `--commands CAPTURE` commits a command session's `feedback.json` |
+| `scripts/command-order.txt` | A `bds-sweep-client --script` script: block commands sent right before (or one input before) the input that starts breaking the block, on plain BDS (flat world, survival, operator) |
+| `command_order_fixture.py` | Cuts a capture of `scripts/command-order.txt` into `crates/unastar/src/server/game/testdata/bds-command-order.jsonl` (commands, inputs and crack starts of four scenarios) |
+| `player_script.py` | Plain-BDS scripted player captures: a timed script of console commands and client orders with every client's packets recorded (see [Movement](#movement)) |
+| `player_fixture.py` | Distils `player_script.py` captures into a value-only test fixture: per phase the subject's inputs, the packets one client got about the subject, and the subject's attributes before the phase |
+| `block_names.py` | `script OUT` writes a `/testforblock` script over every palette block; `table CAPTURE` turns its capture into `crates/unastar-data/data/measured/block_name_keys.json` |
 | `sweep.py` | T2: one sweep job under Endstone with `bds-sweep-client` as the player; output in `<runtime>/sweeps/1.26.51/<kind>-<UTC>/` |
 | `endstone-sweep/` | The Endstone Python plugin that runs jobs server-side (inert unless `BDS_SWEEP_JOB` is set) |
 | `summarize.py` | Raw sweep results to `crates/unastar-data/data/measured/` + `manifest.json` |
 | `knockback_fixture.py` | `knockback` sweeps (run with `--client-capture`) to the committed knockback fixture `crates/unastar/src/entity/mob/combat/testdata/bds-1.26.51-knockback.json`: per-tick mob positions, knockback events, and the mob's position and motion packets |
-| `replication_fixture.py` | `knockback --items cadence` / `cadence2` sweeps (run with `--observer --client-capture`) to the committed replication fixture `crates/unastar/src/entity/mob/net/testdata/bds-1.26.51-replication.json`: per-tick actor state, where each viewer stood, and each viewer's `AddActor`, `MoveActorDelta` and `SetActorMotion` about the actor |
+| `replication_fixture.py` | `knockback --items cadence` / `cadence2` / `cadence3` sweeps (run with `--observer --client-capture`) to the committed replication fixture `crates/unastar/src/entity/mob/net/testdata/bds-1.26.51-replication.json`: per-tick actor state, where each viewer stood, and each viewer's `AddActor`, `MoveActorDelta` and `SetActorMotion` about the actor (a vehicle's deltas matched with its wire offset) |
+| `range_fixture.py` | `range` sweeps (one per view / simulation distance) to `crates/unastar/src/entity/testdata/bds-1.26.51-send-range.json`: each marker's kind and position, the observer's steps, and the step and tick of every add and remove it got |
+| `player_relay_fixture.py` | `walk` sweeps to `crates/unastar/src/server/testdata/bds-1.26.51-player-relay.json`: for every input of the sweep player, the input it sent and the `MovePlayer` the observer got for it |
+| `pvp_items.py` | The `pvp` job's items: three lockstep clients (A attacker, B victim, C second attacker) and what each sends tick by tick (`numbers`, `reach`, `hurt`, `extra`) |
+| `pvp_fixture.py` | `pvp` sweeps (with `--client-capture`) to `crates/unastar/src/entity/player_life/testdata/bds-1.26.51-pvp.json`: per trial the setup, every attack in the tick and order BDS applied it with both players' state, the hits, and the packets about each player and the hit feedback (needs `bds-sweep-dump` built) |
+| `spawn_bonus_fixture.py` | `bonus` sweeps (with `--keep-world`; their actor records dumped by `cargo run -p unastar --example bds_actor_records`) to `crates/unastar/src/entity/mob/persistence/testdata/bds-1.26.51-spawn-bonus.json`: per kind, how many were saved and every `RandomSpawnBonus` amount |
+| `effects_fixture.py` | `effects` sweeps (run with `--client-capture`) to the committed effects fixture `crates/unastar/src/entity/effects/testdata/bds-1.26.51-effects.json`: per item the commands and their ticks, every damage event, the mob's position and health per tick and every `MobEffect`, effect actor data, `UpdateAttributes` and `ActorEvent` about the mob or the player, each on the tick of the `bds-sweep:mark` before it (decoded with `bds-extractor --decode`) |
+| `mooshroom_fixture.py` | `mooshroom` sweeps (`--items basic` and `--items geometry`, run with `--client-capture`) to `crates/unastar/src/entity/mob/interaction/testdata/bds-1.26.51-mooshroom.json`: per item the mooshroom's feet, facing and events, and per interaction BDS let through the player's eyes and held item, the particle level event, the held slot afterwards, the sounds, the mark variant, the dropped items and the actor it turned into, each with its tick |
 | `script.py` | Plays a `bds-sweep-client --script` scenario against plain BDS (no Endstone) and records the client's packets; the same script runs against unastar with `bds-sweep-client --addr <unastar> --script ...` |
 | `scripts/breaking.txt` | Survival block breaking scenarios: by hand, tools, instant, abort, a frozen client, Haste, a block above, client predictions on time and early, `StopDestroyBlock`, blocks put back where a break goes on, a burst of inputs |
-| `breaking_fixture.py` | Cuts the committed breaking fixture (`crates/unastar/src/server/game/blocks/testdata/bds-breaking.jsonl`) out of a `script.py` capture of `scripts/breaking.txt` |
+| `breaking_fixture.py` | Cuts the committed breaking fixtures (`crates/unastar/src/server/game/blocks/testdata/bds-breaking*.jsonl`) out of a `script.py` capture of `scripts/breaking.txt` (or other windows, `--windows`), with a second player's packets moved onto the first player's clock (`--observer`) |
+| `scripts/breaking-2.txt`, `scripts/breaking-observer.txt` | Breaking seen by a second player (run with `script.py --observer scripts/breaking-observer.txt`), creative breaking (a start, a start and prediction in one input, a sword) and a `CreativeDestroyBlock` action, which ends the session |
+| `scripts/breaking-3.txt` | Other blocks put where a break goes on: obsidian or coarse dirt on the air of a dirt break, a block swapped and a tool selected mid-break, a released break, obsidian and dirt on the air of obsidian broken with a diamond pickaxe |
+| `scripts/unbreaking.txt`, `scripts/unbreaking-events.txt`, `unbreaking_script.py`, `unbreaking_table.py` | Wear with Unbreaking 0-III: a pickaxe breaking stone every input, four armour pieces taking `/damage`, flint and steel lighting netherrack (`unbreaking.txt`); a pickaxe and an iron spear hitting pigs, a sword breaking cobweb, an elytra gliding, and a pickaxe and a helmet worn from one short of their durability (`unbreaking-events.txt`, `--kinds attack,spear,sword,elytra,threshold`); the table counts samples and points worn per wear event (`crates/unastar/src/server/game/durability/testdata/bds-unbreaking.json`) |
+| `scripts/creative-break-items.txt` | A creative start on stone with each sword, the trident, the mace, each spear and other items held: which break nothing |
+| `scripts/spears.txt` | Spear scenarios with named pigs: plain hits and the attack cooldown (its last input, its category, three hits in one input), jabs without a target for every tier (also packed into the input), missed swings, holding a spear, a sword's reach |
+| `scripts/enchant-spears.txt` | `/enchant` with every enchantment (and Lunge III/IV) on a fresh spear of every tier |
+| `scripts/use-items.txt` | The spyglass, goat horns 0-7, potions 0-46 and ominous bottles 0-4 drunk to the end, and an elytra (see `scripts/elytra.txt`) |
+| `scripts/records.txt` | All 22 music discs into a jukebox and out, a disc on a playing jukebox, creative, breaking a playing jukebox, disc 11 to its end |
+| `scripts/elytra.txt`, `scripts/elytra-2.txt`, `scripts/elytra-3.txt` | Gliding with and without an elytra; potions drunk facing south, north and down (where the drink sound plays); which jump inputs start a glide; seven glides with the elytra's damage read back (an item use makes BDS resend the inventory, armour included) |
+| `scripts/ore-xp.txt`, `scripts/ore-xp-2.txt` | Experience from breaking ores, sculk blocks and the spawner: 30 breaks each with an Efficiency V netherite pickaxe, Silk Touch, then the hoe, a wooden pickaxe and the hand |
+| `experience_table.py` | Experience orbs per break of an `ore-xp` capture (`bds-sweep-dump ... --input-tick --name AddActor` piped in) as the committed table `crates/unastar/src/server/game/block_drops/testdata/bds-block-experience*.json` |
+| `scripts/foods.txt`, `scripts/foods-2.txt`, `food_script.py` | Every vanilla food eaten once (suspicious stew per data value) at easy difficulty, each after a Hunger drain sized so its nutrition fits; then the chance foods again, dried kelp and the Saturation effect at food 10. `food_script.py` prints them |
+| `food_table.py` | Per food of a `foods` capture: the food level, saturation and exhaustion before and after the eat, the effects added and removed, `CompletedUsingItem`, slot 0 and sounds, as the committed tables `crates/unastar/src/server/game/item_use/testdata/bds-foods*.json` |
+| `scripts/containers-flint.txt` | Every container block placed by a survival click (which BDS announces with actor data), then flint and steel on an unlit candle, netherrack, an unlit campfire and stone |
+| `scripts/throwables.txt` | Snowballs, eggs, ender pearls (and their cooldown), experience bottles, wind charges, splash and lingering potions thrown ahead and straight down, survival and creative |
+| `scripts/throwables-2.txt`, `scripts/throwables-2-observer.txt` | Poison splashed at the thrower's feet with a second player (`--observer`) 1 to 4.5 blocks away, water splashed beside fire, then every potion data value 0-46 |
+| `scripts/buckets-eggs.txt` | Water, lava and powder snow buckets placed and taken (a one-block pit keeps liquids still), water into a slab, milk, the fish buckets, creative; cow, pig, chicken and zombie spawn eggs (peaceful), a side face, creative, the air and a monster spawner |
+| `scripts/give.txt`, `give_script.py`, `give_table.py` | `/give` of every registry item to an empty inventory; `give_table.py` keeps the slot BDS resent for each (`crates/unastar/src/command/exec/testdata/bds-give.json`) |
+| `combat_fixture.py` | Cuts replay fixtures out of a `script.py` capture: the client's inputs and actions with BDS's hurt, health, cooldown, sound and flag packets inside scenario windows (`crates/unastar/src/entity/mob/combat/hit/testdata/bds-spears.jsonl`), or the requests of one command and their outputs (`--commands enchant`, `crates/unastar/src/item/testdata/bds-enchant-spears.jsonl`) |
 | `native.py` | Readers for protocolgen's CC0 native data (block palette, mining classes, items, item tags) the jobs are built from |
-| `scenarios.py` | Block scenario families for the `scenarios` job (stairs, connections, wall_above, gate_in_wall, support, surfaces, soils, junctions, halves) |
-| `placements.py` | The survival clicks of the `placements` job (blocks set around the click, the stack in hand, the player's feet and look, the click, the positions read back) |
+| `scenarios.py` | Block scenario families for the `scenarios` job (stairs, connections, wall_above, gate_in_wall, support, surfaces, soils, junctions, halves; round 2: stairs_blocks, connections_blocks, wall_heights_blocks, multiface_support, rails, soils_more, coral_death) |
+| `circuits.py` | Round 3: redstone circuit families for the `scenarios` job (`redstone_*`, `MEASURED`; the `circuits_pilot*` families are the pilots): a circuit built in a 22 x 6 cell, a timeline of inputs at known ticks and a read of every position every tick |
+| `random_ticks.py` | Round 3: random tick families (`random_*`): 16 x 16 fields of crops, sugar cane, cacti, copper, leaves and farmland at a set `randomtickspeed`, read every 100 ticks |
+| `coral.py` | Round 3: coral death families (`coral_water`, `coral_timing`; round 2's `coral_death` also runs on this layout): cells 16 blocks apart so the water a cell brings reaches no other, coral set, `/setblock`ed, clicked into place or losing its water, read every 10 ticks or every tick |
+| `pistons.py` | Round 4: piston families for the `scenarios` job on the circuit layout (`pistons_*`): push lines, every block in front of a sticky piston, slime and honey, power, timing, chains and actors (the timeline's actor box) |
+| `plates.py` | Round 4: pressure plate and tripwire families on the circuit layout (`plates_*`): every plate kind under armour stands, pigs held still, items and stacks, the weighted plates under 1-64 items, tripwires; the actors in the cell every tick |
+| `tnt.py` | Round 4: TNT families on their own layout (`tnt.LAYOUT`, cells 16 apart, a 13 x 10 x 13 box refilled): priming and the primed actor's path, 64 blasts per material in a 9 x 9 x 9 cube (`tnt_blast_*`), and mobs held still at known spots (`tnt_hits`) |
+| `placements.py` | The survival clicks of the `placements` job in case groups (`GROUPS`: round 1's `blocks`, then signs, door hinges, uses, coral, skulls, directions, mushrooms, bells, multi-face blocks, candles, crops, plants and stacks, block actors, follow-up; round 3's `leftovers`: flower pot plants, cave vine ages, cake slices, string): blocks set around the click, the stack in hand, the player's feet and look, `before` commands, the click, follow-up steps, the positions read back |
 | `subchunk_fixture.py` | Sub-chunk records BDS saves: builds every palette shape in a flat world (and generates a seed-12345 world), reloads each and checks cells with `/testforblock`, then writes `crates/unastar/tests/fixtures/bds_1_26_51_subchunks.json` (steps `build`, `probe`, `natural`, `natural-probe`, `fixture`) |
+| `subchunk_roundtrip.py` | Sub-chunk records between BDS and unastar: one BDS-saved world edited by the same plan from BDS's console (chunks then unloaded) and through unastar's provider (`cargo run -p unastar --example subchunk_roundtrip`), every record of the edited columns compared byte for byte; BDS reopens the world unastar edited and one unastar generated and checks cells with `/testforblock`; writes `crates/unastar/tests/fixtures/bds_1_26_51_subchunk_edits.json` (steps `source`, `plan`, `bds-edit`, `unastar-edit`, `compare`, `bds-verify`, `generate`, `generated-verify`, `fixture`) |
 | `leveldb_read.py` | Read-only LevelDB reader (tables and logs, raw-deflate blocks) for BDS world copies, independent of unastar |
 | `test_bds_sweep.py` | Tests for the BDS-free parts: `python -m unittest discover -s tools/bds-sweep -p "test_*.py"` |
 
@@ -66,6 +107,10 @@ To create a slot, copy `bds-runtime/server` without `worlds/`, `logs/` and
 `mklink /J <slot>\venv C:\Users\jvigu\orca\bds-runtime\venv`. Slots hold the
 same BDS 1.26.51 build; the launcher checks `version.txt` either way.
 
+Each `bds-extractor` debug process needs a few hundred MB: about 20 guests at
+once ran this machine out of memory (2026-11-11), so keep `--guests` with
+`--guest-gap` around 12 or fewer.
+
 ## Scripted client controls
 
 The plugin sends these chat orders to `bds-sweep-client` (plain BDS scripts
@@ -79,19 +124,130 @@ send the same text with `tellraw <player> {"rawtext":[{"text":"bds-sweep:..."}]}
 | `bds-sweep:burst INPUTS` | Send that many more `PlayerAuthInput`s right after the next one, at once (a client running faster than real time) |
 | `bds-sweep:release` | Release the button: `StopDestroyBlock` with the default position, and no more mining |
 | `bds-sweep:attack RUNTIME_ID` | Attack using the synchronized held stack |
+| `bds-sweep:interact RUNTIME_ID` | Interact with the actor using the synchronized held stack (the first use after the plugin changed the hand is refused and makes BDS resend the slot) |
 | `bds-sweep:drop hotbar SLOT COUNT` | Closed-screen Drop from hotbar index 0..8; count 1 is Q, a full stack is ctrl-Q |
 | `bds-sweep:drop inventory SLOT COUNT` | Open the inventory, wait for its server-allocated window ID, then Drop from native inventory index 0..35 |
 | `bds-sweep:close-inventory` | Close the tracked native inventory window |
+| `bds-sweep:walk DX DY DZ DYAW TICKS FLAGS [DPITCH]` | For the next `TICKS` inputs, move the reported position by (`DX`, `DY`, `DZ`) and turn yaw and head yaw by `DYAW` (pitch by `DPITCH`), all in thousandths of a block or degree per input; `FLAGS` bit 0 adds forward movement (`Up`, move vector (0, 1)), bit 1 `VerticalCollision`; the body moves by the steps unsimulated (no velocity), and the simulated movement resumes after the walk |
 | `bds-sweep:press FLAG...` | Add these `PlayerAuthInput` input flags (lower-case names: `startsneaking`, `sneaking`, `startsprinting`, `startswimming`, `startcrawling`, ...) to the next input only |
 | `bds-sweep:hold FLAG...` / `bds-sweep:release FLAG...` | Add the flags to every input from the next one on, until released (`sneaking sneakdown` while a sneak lasts) |
-| `bds-sweep:use` | Use the held item in the air (`InventoryTransaction` item use); BDS rejects it for armour and resends the whole inventory, which refreshes stack net IDs |
-| `bds-sweep:equip-head SLOT` | Open the inventory and move one item from hotbar index SLOT to the head armour slot (`ItemStackRequest` place) |
+| `bds-sweep:use` | Use the held item in the air (`InventoryTransaction` item use `Use`, the next input flagged `StartUsingItem`); BDS rejects it for armour and resends the whole inventory, which refreshes stack net IDs |
+| `bds-sweep:equip-head SLOT` / `bds-sweep:equip-feet SLOT` | Open the inventory and move one item from hotbar index SLOT to the head or feet armour slot (`ItemStackRequest` place) |
 | `bds-sweep:quit` | Close the connection and exit (BDS still keeps the player about 10 s, until its connection times out) |
+| `bds-sweep:resync` | Send an inventory-mismatch transaction; BDS answers with the whole inventory (how an item a plugin set reaches the client) |
+| `bds-sweep:claim DX DY DZ` | Attacks claim a position this far (blocks) from the client's own, until the next `claim` |
+| `bds-sweep:claim-slot N` / `claim-slot off` | Attacks name hotbar slot `N` and its item whatever is held |
+| `bds-sweep:tick ID STEPS ;` | Lockstep only (see [Lockstep](#lockstep-pvp)): what every client sends now |
+| `bds-sweep:move F S` | Hold the movement keys: forward `F` (W positive) and strafe `S` (A positive), each -1..1, until the next `move` (`move 0 0` lets go) |
+| `bds-sweep:look YAW PITCH` | Turn to this yaw and pitch (degrees; pitch -90..90) |
+| `bds-sweep:sprint on\|off` | Press or release the sprint key; a sprint starts while moving forward and lasts until forward movement stops or a sneak starts, as in vanilla |
+| `bds-sweep:sneak on\|off` | Press or release the sneak key |
+| `bds-sweep:jump [TICKS]` | Hold the jump key for TICKS ticks (default 1); held, the player jumps again on landing |
+| `bds-sweep:glide` | Open the elytra: a jump press in the air (needs an elytra in the chest slot) |
 | `bds-sweep:use X Y Z FACE CX CY CZ TARGET` | Click block face `FACE` of `X Y Z` with the selected hotbar stack (an `ItemUse` place transaction; click position `C*`/1000 inside the block; `TARGET` the clicked block's runtime id), as a survival player's right click |
+| `bds-sweep:sign X Y Z FRONT HEX` | Edit the sign at `X Y Z`: the block-actor data the server last sent for it, with the `Text` of the front (`FRONT` 1) or back side replaced by the UTF-8 text `HEX` (`-` for empty), sent as `BlockActorData` the way a client submits an edit |
+| `bds-sweep:attack-named NAME` | Attack the actor whose `AddActor` carried the name tag `NAME` (`/summon ... <nameTag>`) |
+| `bds-sweep:jab` / `jab-input` | Item use `UseAsAttack` with the held item, on its own or packed into the next `PlayerAuthInput` (`PerformItemInteraction`) |
+| `bds-sweep:swing` / `animate` / `missed-swing` | An arm swing that hits nothing: `Animate` plus the `MissedSwing` input flag, or one of the two |
+| `bds-sweep:use-on X Y Z FACE` | `use X Y Z FACE ...` clicking the face's centre, with the block's network id as the server last sent it |
+| `bds-sweep:release-item` / `consume` | Item release `Release` / `Use` |
+| `bds-sweep:select SLOT` | `MobEquipment` selecting hotbar index 0..8 |
+| `bds-sweep:flags A,B` / `held-flags A,B` | Input flags by any name and case (`Jumpdown`, `Startgliding`, ...) on the next input only, or on every input (replacing the held set) until `held-flags none` |
+| `bds-sweep:action NAME X Y Z FACE` | One raw block action with the next input (`start`, `continue`, `crack`, `predict`, `abort`, `stop`, `creative-destroy`); several on one tick share the input |
 
 `bds-sweep-client --script FILE` plays timed orders without the plugin: one `TICK ORDER` line per
 step at that client input tick, an order above without its `bds-sweep:` prefix, a slash command
 (sent as `CommandRequest`; the player must be an operator) or `exit`.
+
+With `script.py --observer SCRIPT` a
+second player, `BDSObserver`, plays its own script, recorded to `DIR/observer-capture`. It joins
+first, and the player follows a few seconds after it spawned, because BDS refuses a second login
+from one address right away ("ip recently connected").
+
+`bds-sweep-dump DIR/packets.jsonl --input-tick [--name ActorEvent,LevelSoundEvent]` prints a
+recording decoded, one packet per line with the client tick of the latest input first.
+
+### Lockstep (`pvp`)
+
+`bds-sweep-client --also NAME [--also NAME]` logs further clients in from the
+same process (`--stagger` seconds apart, 7 by default; each records to
+`CAPTURE_DIR/NAME/packets.jsonl`). Once the first client gets a
+`bds-sweep:tick` line, no client sends on its own timer any more: every line
+names, in order, what each client sends, each step written out before the
+next starts (`crates/bds-sweep/src/lockstep.rs`):
+
+| Step | Meaning |
+|---|---|
+| `iN` | client `N`'s next `PlayerAuthInput` (clients are numbered in login order: 0 is `--name`) |
+| `aN>M` | client `N` attacks client `M` with its held item |
+| `oN=ORDER` | a chat order to client `N`, `:` for spaces (`o0=sprint:on`, `o1=look:90:0`) |
+| `[STEP,STEP,...]` | one client's steps in one game batch |
+
+The `pvp` job sends a line at the end of every server tick (every client's
+input in login order unless the item says otherwise), and every line also
+turns each client 0.01 degrees further: BDS takes rotation from each input it
+consumes, so the yaw sampled each tick says which line's input BDS consumed.
+Timing alone cannot place a step in a tick: BDS handles client packets late
+in the tick, so a line answered at once landed in the same tick for most lines
+and the next for the rest, ticks under Endstone were 24 to 90 ms apart, and BDS
+sometimes consumes two queued inputs of a player in one tick (see
+`docs/solutions/tooling/lockstep-clients-measure-consumption-not-send-time.md`).
+The plugin also records every packet the players send as BDS handles it,
+selected server packets to them with their payload, and the damage and
+knockback events, all on one sequence counter.
+
+### Movement
+
+The client simulates its own movement like a vanilla client and reports it in
+every `PlayerAuthInput`, so BDS's server-authoritative movement accepts it:
+gravity and drag, ground friction and acceleration (sprint speed 0.13,
+air speed 0.02/0.026), jumps (0.42, sprint-jump push 0.2, 10-tick delay),
+sneaking (BDS applies the 0.3 itself, so the move vector is sent unscaled)
+and its edge stop, collisions with step-up, slime and bed bounces, cobwebs and
+powder snow, water (drag 0.8 or 0.9 sprinting, sink 0.005 unless sprinting,
+swimming toward the look pitch, the climb-out lift) and elytra gliding. The
+blocks come from the world BDS sends: the client asks for the sub-chunks of
+the chunks around it (`SubChunkRequest`, BDS's request mode) and follows
+`UpdateBlock`/`UpdateSubChunkBlocks`; block states, collision boxes and
+friction come from `unastar-data`. Until the blocks around it have arrived the
+player stays put.
+
+Input flags follow the keys like a vanilla client's (`Up`, `Sprintdown`,
+`Sprinting` with `StartSprinting`/`StopSprinting`, the sneak and jump flags
+with their raw-key companions, `StartSwimming`, `StartGliding`, the collision
+flags, `HandledTeleport`). The wire position is the feet plus 1.62001 in
+every pose, `pos_delta` the velocity after the move. Server packets set the
+state: a teleport (`MovePlayer`) leaves the player resting at its destination
+through the next input, as BDS does, `SetActorMotion` sets the velocity,
+`UpdateAttributes` the movement speed, `MobEffect` jump boost and slow
+falling. A `CorrectPlayerMovePrediction` rewinds to BDS's state at its tick
+and replays the inputs sent since; the client logs each one that disagrees
+with its own prediction (`BDS corrected the movement`) and the total on exit.
+With these rules, walking, strafing, sprinting, sneaking, jumps, falls,
+swimming and gliding run without a correction (2026-11-11). Still corrected:
+knockback landings (the client applies `SetActorMotion` when it arrives, a tick
+after BDS's copy takes it) and the entry into powder snow; after a sprint-swim
+stop the client keeps the sprint's water drag a tick too long (inside the
+threshold, uncorrected); lava is not simulated.
+
+Tooling for such runs:
+
+- `player_script.py SCRIPT` runs a timed script on plain BDS (`launch`,
+  `wait`, `cmd`, `order`, `mark`, `expect`, `quit` steps; see its docstring)
+  with each client's capture, `bds.log` and `phases.json` in
+  `<runtime>/captures/<label>-<UTC>/`.
+- `cargo run -p bds-sweep --bin bds-sweep-dump -- CAPTURE/packets.jsonl
+  --name PlayerAuthInput --from MS --to MS` prints decoded packets.
+- `player_fixture.py SPEC.json OUT.json --captures DIR` writes a fixture from
+  such captures (needs `bds-sweep-dump` built): each phase names a capture, the
+  recording client, the subject and its client tick range; the packets kept are
+  those between the first and last packet about the subject stamped in that
+  range. `unastar`'s movement tests replay these
+  (`crates/unastar/src/entity/player_life/testdata/bds-1.26.51-movement.json`).
+- A second client standing near the first receives BDS's own simulation of it
+  (`MovePlayer` every tick); while the first client disagrees, BDS moves its
+  copy towards the client's position by up to about 0.005 blocks a tick, so
+  calibrate against runs without corrections.
 
 Drop references come only from server `InventoryContent`/`InventorySlot`
 updates; missing/empty/idless slots and invalid counts fail rather than invent
@@ -119,8 +275,18 @@ see `crates/unastar/README.md` for its setup and retained native evidence.
 | `fuel` | furnace burn ticks per item | pool of 32 furnaces, 1 cobblestone input + the item as fuel |
 | `knockback` | one mob's motion, tick by tick, around the sweep player's hits (or under its AI) | a fresh cow or zombie, frozen with Slowness 255 or left to its AI; before each hit the player is put 2 blocks west (or south-west) of it, facing east (or west); Endstone samples position, rotation, velocity (the last tick's position change) and ground contact every tick, and records each `ActorKnockbackEvent` (its `knockback` is the velocity change applied). `--items slice` (hits), `air` (tempted cows jumping a step, mobs hit while falling, a panicking cow), `far` (cows falling at 4-48 blocks, for the send rate by distance), `cadence` and `cadence2` (two viewers per actor, see below) |
 | `knockback-reload` | whether a zombie's knockback response survives a save and load | `--items spawn --keep-world`: three named, frozen zombies 200 blocks from the world spawn, each hit once and left in the world; then `--items reload --world-from <spawn run>/world`: the loaded zombies (found by name) hit again; the server starts at easy, as peaceful would remove them |
+| `range` | which actors BDS sends a viewer, by where it stands (needs `--observer`) | still markers (cows, armor stand, item, arrow, minecart, xp orb, and the sweep player) around chunk (0, 0); the observer walks away and back along +x, the diagonal and -x in one-block steps of ten ticks, then jumps between 40 and 112 blocks; a `bds-sweep:mark` chat line every tick puts each observer packet on a tick. Run once per `--view-distance` / `--tick-distance` |
+| `bonus` | the random spawn bonuses BDS saves for each kind (`--keep-world`, `--difficulty easy\|hard`) | 870 mobs of 13 kinds (no villagers, golems, wolves or illagers, which fight the others) frozen on a grid around the sweep player and left in the world; read their records from the kept world |
+| `walk` | how BDS relays a player's movement to another player (needs `--observer`) | the sweep player driven by `bds-sweep:walk` (standing, turning, walking, stepping up, tilting) with the observer 8 blocks south and a cow spawned at yaw 33.3 for its `AddActor` rotation |
+| `effects` | what effects do to a mob or to the sweep player, tick by tick (`--items mobs\|players\|all`) | a cow or zombie in a barrier cell three blocks east, or the survival player; `/effect` and `/damage` at fixed ticks (poison, regeneration, wither, instant effects, resistance, fire resistance, health boost, absorption, speed, slowness, invisibility, hidden particles, several at once, stacking, clearing, expiry; levitation and slow falling on a frozen cow; hunger and saturation on the player); every tick a `bds-sweep:mark` chat line puts the capture on the samples |
+| `ranged` | how the skeleton family shoots (once per `--difficulty`) | a frozen skeleton (8 and 15 blocks), stray, bogged and parched shooting at the survival sweep player, kept alive by Resistance V and Regeneration; 300 ticks each |
+| `melee-effects` | the effect a husk's hit applies, per `--difficulty` | a husk walks up to the survival player and hits it for 200 ticks; Health Boost X, a full heal and Regeneration V keep the player alive without Resistance (which would change the hits); `--client-capture` holds each hit's hunger `MobEffect` |
+| `mooshroom` | the mooshroom's interactions | the survival player holding a bowl, an allium (brown mooshroom) or shears interacts with a frozen mooshroom (`bds-sweep:interact`, twice); `--items geometry` moves the particle: the player on a block diagonally above, a baby mooshroom, and a bowl after the allium (suspicious stew). One mooshroom in 20 spawns a baby, which has no interactions, so those items grow theirs up first |
+| `entity-loot` | `/loot spawn … kill <mob>` outcomes, like `drops` for blocks (`--items <mob>,...`, `--samples`) | a frozen, resistant mob; the sweep player runs the command |
+| `pvp` | player-versus-player hits between three lockstep clients (`--items numbers,reach,hurt` or `all`, `extra`, or item keys; `--repeats N`; `--entity-interactions-strict` runs BDS with that property) | survival, normal difficulty unless an item says otherwise, `keepinventory`, no natural regeneration; per item: game modes, held items and hotbars, armour, effects, positions, a heal and optional `/damage`, then 40 to 50 lockstep ticks with every player sampled each tick; see `pvp_items.py` |
 | `scenarios` | block states BDS stores after a scripted sequence of block sets (with or without the block update a placement triggers), waits and reads | items from `scenarios.py` families run in waves of up to 64 cells (6 blocks apart, east of the player); one wait covers a wave; touched cells are cleared without updates and the superflat layers restored after each wave |
-| `placements` | what BDS stores and sends when the survival player clicks a block face with a stack (blocks read back, the held stack, every packet both ways) | per item: the arena box around (4,-60,4) is cleared, its blocks set with block updates, the stack put in hotbar slot 0 with `/replaceitem` (the inventory API does not reach the client), the player teleported with its look; chat markers `bds-sweep:mark <key>` / `bds-sweep:mark end` cut the client capture (`--capture-dir`, on automatically) per item |
+| `scenarios` (round 3) | step kinds `build` (several sets in order), `cmd` (a console command; `{x} {y} {z}`, `{cx} {cz}` and `{player}` are filled in), `timeline` (events at given ticks, every listed position read once per tick; the trace keeps the first read and each change); round 4: an optional actor box records the actors in the cell every tick (`actor_traces`) with events `set`, `setblock`, `cmd`, `drop` (an item actor) and `use` (a click by the scripted player, standing where a `cmd` tp put it; such an item runs alone) | layouts per family (`scenarios.LAYOUTS`): the 8 x 8 cells above, `circuits` (22 x 6 cells, tick distance 8, a whole-cell refill after each wave, and a witness: a redstone block and dust west of the cells whose lighting tick gives each wave's redstone parity) and `fields` (16 x 16 fields, 20 apart); a `cmd` step is part of the wave signature, so waves with different game rules run apart |
+| `placements` | what BDS stores and sends when the survival player clicks a block face with a stack (blocks read back, the held stack, every packet both ways), and what a second scripted player watching sees | per item: the arena box around (4,-60,4) is cleared, its blocks set with block updates, the stack put in hotbar slot 0 with `/replaceitem` (the inventory API does not reach the client), the player teleported with its look; chat markers `bds-sweep:mark <key>` / `bds-sweep:mark end` cut the client capture (`--capture-dir`, on automatically) per item |
 | `item-blocks` | the block state BDS describes a stack of each item with | `/replaceitem` of every registry item into hotbar slot 0, one per two ticks behind a chat marker; slot 0 of the next main-inventory `InventoryContent` in the client capture |
 
 ```powershell
@@ -132,24 +298,71 @@ see `crates/unastar/README.md` for its setup and retained native evidence.
 & $py tools/bds-sweep/sweep.py attack --items spears --gap 20 --gamemode survival --client-capture
 & $py tools/bds-sweep/sweep.py mining --variants capture --client-capture   # breaking packet flow
 python tools/bds-sweep/script.py tools/bds-sweep/scripts/breaking.txt --out <dir>   # plain BDS, no plugin
+python tools/bds-sweep/script.py tools/bds-sweep/scripts/breaking-2.txt --observer tools/bds-sweep/scripts/breaking-observer.txt --out <dir>
+python tools/bds-sweep/breaking_fixture.py <dir>/client-capture/packets.jsonl <fixture> --windows 80-110,120-130,130-150,150-190,200-220,230-280,290-300,310-330,350-370,380-391,400-420,430-450,460-480 --observer <dir>/observer-capture/packets.jsonl
+python tools/bds-sweep/script.py tools/bds-sweep/scripts/spears.txt --out <dir>
+python tools/bds-sweep/combat_fixture.py <dir>/client-capture/packets.jsonl <fixture> --windows 40-160,170-275,280-520,528-588,588-628,628-670
 & $py tools/bds-sweep/sweep.py armor-slots --items all
 & $py tools/bds-sweep/sweep.py armor-wear
 & $py tools/bds-sweep/sweep.py fuel --items all
 & $py tools/bds-sweep/sweep.py scenarios --family stairs,connections,wall_above,gate_in_wall,support
-& $py tools/bds-sweep/sweep.py placements      # ~6 min for 205 clicks
+& $py tools/bds-sweep/sweep.py placements      # ~24 min for 719 clicks with the watcher
+& $py tools/bds-sweep/sweep.py placements --cases signs,uses   # case groups of placements.py
 & $py tools/bds-sweep/sweep.py item-blocks     # ~4 min for 2076 items
 & $py tools/bds-sweep/summarize.py drops <dir> [<repeat dir> ...]
 & $py tools/bds-sweep/summarize.py mining <slice dir> <held dir> <effects dir>   # merged, first wins
 & $py tools/bds-sweep/summarize.py scenarios <dir>
+& $py tools/bds-sweep/sweep.py scenarios --family redstone_dust,redstone_repeaters   # circuits.MEASURED, ~1-2 min per 500 circuits
+& $py tools/bds-sweep/sweep.py scenarios --family random_crops,random_copper          # random_ticks.FAMILIES, ~3 min per wave
+& $py tools/bds-sweep/summarize.py circuits <dir> [<dir> ...]   # -> data/measured/redstone/ and redstone/blocks.json
+& $py tools/bds-sweep/summarize.py random-ticks <dir>           # -> data/measured/random_ticks/
+& $py tools/bds-sweep/sweep.py scenarios --family pistons_push,pistons_slime,pistons_power,pistons_timing,pistons_chains,pistons_entities   # ~1 min
+& $py tools/bds-sweep/sweep.py scenarios --family pistons_blocks   # 1448 blocks, ~3 min
+& $py tools/bds-sweep/sweep.py scenarios --family tnt_prime,tnt_actors,tnt_hits   # ~2 min
+& $py tools/bds-sweep/sweep.py scenarios --family tnt_blast_dirt,tnt_blast_oak_planks,tnt_blast_cobblestone,tnt_blast_glass   # ~2 min
+& $py tools/bds-sweep/summarize.py round4 <dir> [<dir> ...]     # -> data/measured/pistons/, explosions/ and pistons/blocks.json
 & $py tools/bds-sweep/summarize.py placements <dir>   # -> crates/unastar/src/server/game/testdata/bds-placements.json
 & $py tools/bds-sweep/summarize.py item-blocks <dir>  # -> data/measured/item_blocks.json
-& $py tools/bds-sweep/sweep.py knockback --items slice --client-capture   # also air, far
+& $py tools/bds-sweep/sweep.py knockback --items slice --client-capture   # also air, far, resist
 python tools/bds-sweep/knockback_fixture.py <fixture.json> <sweep dir> [<sweep dir> ...]
 & $py tools/bds-sweep/sweep.py knockback --items cadence --observer --client-capture --view-distance 10 --tick-distance 10
 python tools/bds-sweep/replication_fixture.py <fixture.json> <cadence dir> <cadence2 dir>
 & $py tools/bds-sweep/sweep.py knockback-reload --items spawn --client-capture --keep-world --out <spawn dir>
 & $py tools/bds-sweep/sweep.py knockback-reload --items reload --client-capture --world-from <spawn dir>/world
+& $py tools/bds-sweep/sweep.py knockback --items cadence3 --observer --client-capture --view-distance 10 --tick-distance 10
+& $py tools/bds-sweep/sweep.py range --observer --client-capture --view-distance 10 --tick-distance 10   # also 6/4, 16/12
+python tools/bds-sweep/range_fixture.py <fixture.json> 10,10:<dir> 6,4:<dir> 16,12:<dir>
+& $py tools/bds-sweep/sweep.py walk --observer --client-capture --client <a client built from this checkout>
+python tools/bds-sweep/player_relay_fixture.py <fixture.json> <walk dir>
+& $py tools/bds-sweep/sweep.py bonus --difficulty easy --keep-world --client-capture   # and hard
+& $py tools/bds-sweep/sweep.py pvp --items all --repeats 3 --client-capture   # about 35 min
+& $py tools/bds-sweep/sweep.py pvp --items reach --repeats 2 --entity-interactions-strict --client-capture
+& $py tools/bds-sweep/sweep.py pvp --items extra --repeats 3 --client-capture
+python tools/bds-sweep/pvp_fixture.py <fixture.json> <all dir> <strict dir> <extra dir>
+cargo run -p unastar --example bds_actor_records -- <bonus dir>/world/db <bonus dir>/actor_records.jsonl
+python tools/bds-sweep/spawn_bonus_fixture.py <fixture.json> <easy dir> <hard dir>
+& $py tools/bds-sweep/sweep.py effects --client-capture   # --items mobs | players
+python tools/bds-sweep/effects_fixture.py <fixture.json> <effects dir> [<effects dir> ...]
+& $py tools/bds-sweep/sweep.py ranged --difficulty easy --client-capture   # and normal, hard
+& $py tools/bds-sweep/sweep.py mooshroom --client-capture   # and --items geometry
+& $py tools/bds-sweep/sweep.py melee-effects --difficulty hard --client-capture
+python tools/bds-sweep/mooshroom_fixture.py <fixture.json> <basic dir> <geometry dir>
+& $py tools/bds-sweep/sweep.py entity-loot --items wither_skeleton --samples 800
+cargo run -p bds-extractor -- --decode <dir>/client-capture/packets.jsonl --only MobEffectPacket --output <out.jsonl>
 ```
+
+The `placements` job runs a second scripted player, `BDSWatch`, unless
+`--no-watcher` is given: it joins once the sweep player has spawned (BDS
+refuses a second login from the same address right after the first, "ip
+recently connected", so it retries), stands outside the arena (or at a
+case's `watcher` spot) and records its own capture
+(`<out>/watcher-capture`), cut by the same chat markers. A case may follow
+its click with `after` steps (`wait`, `hand` to swap a player's stack with
+`/replaceitem`, another `use`, a `sign` edit by either player) and a
+`read_later`; the plugin records the tick of each step (`timeline`) so the
+replay test can route each captured packet at the same tick.
+`summarize.py placements` writes one fixture per case group
+(`crates/unastar/src/server/game/testdata/bds-placements[-<group>].json`).
 
 `--items cadence` and `cadence2` measure how often each viewer gets a moving
 actor's position: run them with `--observer --client-capture --view-distance 10
@@ -164,6 +377,14 @@ from every player despawns at once, so keep trials inside both.
 `--keep-world` copies the world to `<out>/world` after BDS stops (read actor
 records from its LevelDB); `--world-from DIR` starts the next run from such a
 copy.
+
+`--items cadence3` adds vehicles (a minecart and a boat resting on a pillar that
+is removed in two steps) and projectiles a dispenser shoots (`spawn_commands`:
+the job follows the first new actor of the item's type those commands make).
+`range` and `walk` need `--observer`; `range` measured the same switches at view /
+simulation distance 6 / 4, 10 / 10 and 16 / 12, so one run is enough to
+recheck it. BDS simulates a player's movement itself: a `walk` without the
+forward flag is corrected to a drift, and the observer sees the server's position.
 
 `--client-capture` records the scripted client's packets (both directions) to
 `<out>/client-capture/packets.jsonl`, outside the repository like every raw result.

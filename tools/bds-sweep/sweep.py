@@ -33,15 +33,27 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import bds_runtime  # noqa: E402
+import circuits  # noqa: E402
+import coral  # noqa: E402
 import native  # noqa: E402
 import placements  # noqa: E402
+import pvp_items  # noqa: E402
+import random_ticks  # noqa: E402
 import scenarios  # noqa: E402
+import tnt  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
 LEVEL = 'bds-sweep-1.26.51'
 PLAYER = 'BDSSweep'
+# The second scripted player of the `placements` job: it watches every click
+# from outside the arena and records what another player is sent.
+WATCHER = 'BDSWatch'
 # The second client of `--observer` (a second viewer of the job's actors).
 OBSERVER_NAME = 'BDSOther'
+# The lockstep clients of `pvp` after the sweep player (B, then C).
+PVP_OTHERS = ['BDSOther', 'BDSThird']
+PVP_SETUP = ['gamerule pvp true', 'gamerule keepinventory true', 'gamerule naturalregeneration false',
+             'gamerule doimmediaterespawn true', 'gamerule falldamage true']
 STOP_REQUEST = 'stop.request'
 # Superflat: grass top at y=-61, so the player stands at y=-60.
 # `miner` = x, y, z, yaw, pitch: facing east (yaw -90) at the west face (4) of
@@ -52,8 +64,16 @@ ARENA = {'player': [0.5, -60, 0.5], 'block': [3, -60, 0], 'furnaces': [-8, -60, 
          # Block scenarios: 8 x 8 cells, 6 blocks apart, east of the player and
          # inside its ticking range.
          'scenarios': {'origin': [8, -60, -24], 'spacing': 6, 'columns': 8},
-         # Survival block clicks: cleared box (offsets) around the origin.
-         'placements': {'origin': [4, -60, 4], 'clear': [[-3, -1, -4], [5, 4, 13]]}}
+         # Survival block clicks: cleared box (offsets) around the origin; the
+         # watcher stands west of the box, looking at it.
+         'placements': {'origin': [4, -60, 4], 'clear': [[-3, -1, -4], [5, 4, 13]],
+                        'watcher': [-6.5, 0, 2.5, -90, 10]}}
+# Scenario cell layouts (`scenarios.layout`): the 8 x 8 cells above, and the
+# long redstone circuit cells of `circuits.py`, with the server properties
+# each needs (circuits reach farther from the player than tick distance 4).
+ARENAS = {'cells': (ARENA['scenarios'], {}), 'circuits': (circuits.LAYOUT, circuits.PROPERTIES),
+          'fields': (random_ticks.LAYOUT, random_ticks.PROPERTIES), 'coral': (coral.LAYOUT, coral.PROPERTIES),
+          'blast': (tnt.LAYOUT, tnt.PROPERTIES)}
 SETUP = [
     'gamerule domobspawning false',
     'gamerule dodaylightcycle false',
@@ -392,8 +412,13 @@ def knockback_items(args) -> list[dict]:
     far = [{'key': f'cow|fall-{distance}|frozen', 'mob': 'minecraft:cow', 'at': [0.5 + distance, -40, 0.5, 90],
             'frozen': True, 'tool': None, 'player': [0.5, -60, 0.5, -90], 'settle': 0, 'tail': 45, 'hits': []}
            for distance in (4, 6, 7, 10, 16, 24, 32, 48)]
+    # Mobs whose definitions give them a knockback resistance (zoglin and
+    # hoglin 0.6, iron golem 1), hit like the frozen cows and zombies.
+    resist = [{'key': f'{mob}|east|frozen', 'mob': f'minecraft:{mob}', 'at': [2.5, -60, 0.5, 90], 'frozen': True,
+               'tool': None, 'settle': 40, 'tail': 40, 'hits': [{**east, 'tick': tick} for tick in (0, 11, 30)]}
+              for mob in ('zoglin', 'hoglin', 'iron_golem')]
     sets = {'slice': hits, 'air': air, 'far': far, 'cadence': cadence_items(), 'cadence2': cadence2_items(),
-            'all': hits + air + far}
+            'cadence3': cadence3_items(), 'resist': resist, 'all': hits + air + far}
     if args.items not in sets:
         raise SystemExit(f"knockback --items must be one of {sorted(sets)}")
     return sets[args.items]
@@ -473,6 +498,301 @@ def cadence2_items() -> list[dict]:
     return items
 
 
+def cadence3_items() -> list[dict]:
+    """Follow-ups to `cadence2` (same flags): vehicles whose
+    `conditional_bandwidth_optimization` switches to 0 / 0 while `is_moving`
+    (a minecart and a boat resting on a pillar that is removed in two steps,
+    so each falls, rests and falls again), and arrows and a snowball shot by
+    a dispenser (`spawn_commands`) into a wall and onto the floor, for where a
+    projectile stops."""
+    player = [0.5, -60, 0.5, -90]
+    items = []
+    # Pillar top at y -54; the upper part goes at t 40, the rest at t 80.
+    pillar = 'fill 32 -60 0 32 -55 0 {}'
+    upper = 'fill 32 -56 0 32 -55 0 air'
+    for mob in ('minecart', 'boat'):
+        items.append({'key': f'{mob}|rest-fall|natural', 'mob': f'minecraft:{mob}', 'at': [32.5, -54, 0.5, 90],
+                      'frozen': False, 'tool': None, 'player': player, 'observer': OBSERVER,
+                      'setup': [pillar.format('stone')], 'cleanup': [pillar.format('air')],
+                      'actions': [{'t': 40, 'commands': [upper]}, {'t': 80, 'commands': [pillar.format('air')]}],
+                      'settle': 0, 'tail': 40, 'hits': []})
+
+    def shot(key, mob, item, y, wall):
+        """A dispenser facing east (+x) at (20, y, 0), powered from above."""
+        dispenser = f'setblock 20 {y} 0 dispenser ["facing_direction"=5]'
+        setup = [dispenser, f'replaceitem block 20 {y} 0 slot.container 0 {item} 1']
+        cleanup = [f'setblock 20 {y + 1} 0 air', f'setblock 20 {y} 0 air']
+        if y > -60:
+            setup.insert(0, f'fill 20 -60 0 20 {y - 1} 0 stone')
+            cleanup.append(f'fill 20 -60 0 20 {y - 1} 0 air')
+        if wall:
+            setup.append('fill 26 -60 -3 26 -54 3 stone')
+            cleanup.append('fill 26 -60 -3 26 -54 3 air')
+        return {'key': key, 'mob': f'minecraft:{mob}', 'at': [20.5, y, 0.5, 0], 'frozen': False, 'tool': None,
+                'player': player, 'observer': OBSERVER, 'setup': setup, 'cleanup': cleanup,
+                'spawn_commands': [f'setblock 20 {y + 1} 0 redstone_block'], 'settle': 0, 'tail': 40,
+                'hits': []}
+
+    items.append(shot('arrow|wall|natural', 'arrow', 'arrow', -60, True))
+    items.append(shot('arrow|floor|natural', 'arrow', 'arrow', -55, False))
+    items.append(shot('arrow|floor-2|natural', 'arrow', 'arrow', -57, False))
+    items.append(shot('snowball|wall|natural', 'snowball', 'snowball', -60, True))
+    return items
+
+
+# `range`: where BDS stops sending actors. The sweep player stands at the
+# middle of chunk (0, 0) among still markers of each kind; the observer walks
+# away from it and back in one-block steps.
+RANGE_CENTER = [8.5, 8.5]
+RANGE_MARKERS = [
+    {'type': 'minecraft:cow', 'at': [2.5, -60, 8.5, 90]},
+    {'type': 'minecraft:cow', 'at': [14.5, -60, 8.5, 90]},
+    {'type': 'minecraft:cow', 'at': [17.5, -60, 8.5, 90]},
+    {'type': 'minecraft:armor_stand', 'at': [8.5, -60, 2.5, 0]},
+    {'type': 'minecraft:item', 'at': [8.5, -60, 14.5]},
+    {'type': 'minecraft:arrow', 'at': [5.5, -58, 5.5, 0]},
+    {'type': 'minecraft:minecart', 'at': [11.5, -60, 2.5, 0]},
+    {'type': 'minecraft:xp_orb', 'at': [8.5, -60, -3.5, 0]},
+]
+
+
+def range_items(args) -> list[dict]:
+    """`--items all` (default): the observer walks away from the markers
+    along +x, along the +x+z diagonal and along -x (negative chunk
+    coordinates), 40 to 112 blocks from the sweep player in one-block steps,
+    and back, ten ticks per step; then jumps between 40 and 112 blocks east
+    three times, sixty ticks each, for how long an add or a remove takes.
+    `--items pilot`: a short east leg."""
+    cx, cz = RANGE_CENTER
+
+    def leg(key, direction, near=40, far=112):
+        dx, dz = direction
+        path = [[round(cx + d * dx, 4), round(cz + d * dz, 4)] for d in range(near, far + 1)]
+        return [{'key': f'{key}-out', 'center': RANGE_CENTER, 'markers': RANGE_MARKERS, 'path': path, 'ticks': 10},
+                {'key': f'{key}-in', 'center': RANGE_CENTER, 'markers': RANGE_MARKERS, 'path': path[::-1],
+                 'ticks': 10}]
+
+    diagonal = 0.5 ** 0.5
+    if args.items == 'pilot':
+        return leg('pilot', (1, 0), 60, 70)[:1]
+    if args.items not in ('all', 'slice'):
+        raise SystemExit("range --items must be 'all' or 'pilot'")
+    jump = [[cx + 40, cz], [cx + 112, cz]] * 3
+    return (leg('east', (1, 0)) + leg('diagonal', (diagonal, diagonal)) + leg('west', (-1, 0))
+            + [{'key': 'jump', 'center': RANGE_CENTER, 'markers': RANGE_MARKERS, 'path': jump, 'ticks': 60}])
+
+
+def bonus_items(args) -> list[dict]:
+    """`bonus`: many of each mob on a grid around the sweep player, left in
+    the world (`--keep-world`), for the random spawn bonuses BDS saves in
+    their attributes."""
+    # No villagers, golems, wolves or illagers: they fight the others, and
+    # only survivors are saved.
+    counts = {'zombie': 300, 'husk': 60, 'drowned': 60, 'zombie_villager_v2': 60, 'zombie_pigman': 60,
+              'skeleton': 40, 'stray': 30, 'creeper': 30, 'spider': 30, 'witch': 20, 'cow': 30, 'pig': 30,
+              'chicken': 20}
+    items = [{'key': mob, 'mob': f'minecraft:{mob}', 'count': count} for mob, count in counts.items()]
+    items.append({'key': 'zombie-summon', 'mob': 'minecraft:zombie', 'count': 100, 'via': 'summon'})
+    return items
+
+
+def walk_items(args) -> list[dict]:
+    """`walk`: the sweep player moves by scripted inputs (`bds-sweep:walk`
+    DX DY DZ DYAW TICKS FLAGS, thousandths of a block / degree per input;
+    FLAGS 1 = forward input, 2 = vertical collision) while the observer
+    stands 8 blocks south; a frozen cow with yaw 33.3 is spawned each item
+    for the rotation its `AddActor` carries."""
+    start = [0.5, -60, 0.5, 0]
+    observer = [0.5, -60, 8.5, 180]
+    cow = [3.5, -60, -3.5, 33.3]
+    orders = [
+        ('still', '0 0 0 0 40 2', 40),
+        ('turn', '0 0 0 9000 40 2', 50),
+        ('walk-plain', '200 0 0 0 30 0', 45),
+        ('walk-forward', '216 0 0 0 30 3', 45),
+        ('walk-turn', '150 0 150 -7000 30 3', 45),
+        ('step-up', '0 420 0 0 1 0', 20),
+        ('tilt', '0 0 0 0 30 2 3000', 40),
+        ('tilt-turn', '0 0 0 5000 30 2 -2000', 40),
+    ]
+    return [{'key': key, 'order': order, 'ticks': ticks, 'start': start, 'observer': observer, 'cow': cow}
+            for key, order, ticks in orders]
+
+
+# `effects`: the mob stands in a barrier cell (interior x 3, y -60..-58, z 0)
+# three blocks east of the sweep player.
+EFFECT_CELL = 'fill 2 -61 -1 4 -57 1 {}'
+EFFECT_CELL_SETUP = [EFFECT_CELL.format('barrier hollow')]
+EFFECT_CELL_CLEANUP = [EFFECT_CELL.format('air'), 'fill 2 -61 -1 4 -61 1 grass']
+EFFECT_PLAYER = [0.5, -60, 0.5, -90]
+EFFECT_MOB_AT = [3.5, -60, 0.5, 90]
+
+
+def effect_items(args) -> list[dict]:
+    """`effects --items mobs|players|all` (default all): what effects do to
+    a cow or zombie in a barrier cell and to the sweep player (survival),
+    tick by tick: poison, regeneration, wither, instant health and damage
+    (living and undead), resistance and fire resistance against `/damage`,
+    health boost, absorption, speed, slowness, invisibility, hidden
+    particles, several effects at once, a weaker or stronger effect over an
+    active one, clearing, expiry, levitation and slow falling (cow out of the
+    cell, frozen), hunger and saturation (player). Actions run at tick `t`
+    after the spawn; run with `--client-capture`."""
+    def cmd(target: str, text: str) -> str:
+        return text.replace('@T', target)
+
+    def mob_item(key, mob, actions, ticks=160, cell=True, at=None, frozen=False):
+        target = f'@e[type=minecraft:{mob}]'
+        return {'key': f'{mob}|{key}', 'mob': f'minecraft:{mob}', 'at': at or EFFECT_MOB_AT,
+                'player': EFFECT_PLAYER, 'frozen': frozen, 'ticks': ticks,
+                'setup': EFFECT_CELL_SETUP if cell else [], 'cleanup': EFFECT_CELL_CLEANUP if cell else [],
+                'actions': [{'t': t, 'commands': [cmd(target, line) for line in lines]} for t, lines in actions]}
+
+    def player_item(key, actions, ticks=160):
+        target = f'"{PLAYER}"'
+        return {'key': f'player|{key}', 'mob': None, 'player': EFFECT_PLAYER, 'ticks': ticks,
+                'setup': [f'gamemode survival {target}'],
+                # Back to full health and food, no effects, creative.
+                # (`instant_health 1 20` heals nothing on BDS; amplifier 4 does.)
+                'cleanup': [f'effect {target} clear', f'effect {target} instant_health 1 4 true',
+                            f'effect {target} saturation 1 4 true', f'effect {target} clear',
+                            f'gamemode creative {target}'],
+                'actions': [{'t': t, 'commands': [cmd(target, line) for line in lines]} for t, lines in actions]}
+
+    shared = [
+        ('poison', [(10, ['effect @T poison 6 0'])]),
+        ('poison-2', [(10, ['effect @T poison 6 1'])]),
+        ('regeneration', [(5, ['damage @T 6']), (10, ['effect @T regeneration 6 0'])]),
+        ('regeneration-2', [(5, ['damage @T 6']), (10, ['effect @T regeneration 6 1'])]),
+        ('wither', [(10, ['effect @T wither 6 0'])]),
+        ('instant-damage', [(10, ['effect @T instant_damage 1 0'])]),
+        ('instant-health', [(5, ['damage @T 8']), (10, ['effect @T instant_health 1 0']),
+                            (40, ['effect @T instant_health 1 1'])]),
+        ('resistance', [(10, ['effect @T resistance 10 0']), (20, ['damage @T 5']),
+                        (50, ['effect @T resistance 10 1']), (60, ['damage @T 5']),
+                        (90, ['effect @T resistance 10 4']), (100, ['damage @T 5'])]),
+        ('fire-resistance', [(10, ['effect @T fire_resistance 10 0']), (20, ['damage @T 3 fire']),
+                             (40, ['damage @T 3 lava']), (60, ['damage @T 3 fire_tick']),
+                             (80, ['damage @T 3 entity_attack'])]),
+        ('health-boost', [(10, ['effect @T health_boost 5 0']), (40, ['effect @T health_boost 5 1'])]),
+        ('absorption', [(10, ['effect @T absorption 5 0']), (30, ['damage @T 2']),
+                        (60, ['effect @T absorption 5 1'])]),
+        ('speed-slowness', [(10, ['effect @T speed 3 1']), (40, ['effect @T slowness 3 1']),
+                            (70, ['effect @T clear'])]),
+        ('invisibility', [(10, ['effect @T invisibility 3 0'])]),
+        ('hidden', [(10, ['effect @T speed 5 0 true']), (40, ['effect @T poison 5 0'])]),
+        ('several', [(10, ['effect @T speed 5 0']), (20, ['effect @T poison 5 0']),
+                     (30, ['effect @T weakness 5 0']), (40, ['effect @T absorption 5 0'])]),
+        ('stacking', [(10, ['effect @T poison 10 0']), (30, ['effect @T poison 4 1']),
+                      (50, ['effect @T poison 20 0']), (70, ['effect @T poison 2 0'])]),
+        ('clear', [(10, ['effect @T poison 10 0', 'effect @T speed 10 0']), (40, ['effect @T clear'])]),
+        ('expiry', [(10, ['effect @T poison 1 0', 'effect @T speed 2 0'])]),
+    ]
+    mobs = [mob_item(key, 'cow', actions, ticks=300 if key == 'stacking' else 160) for key, actions in shared]
+    for key, actions in shared:
+        if key in ('poison', 'regeneration', 'wither', 'instant-damage', 'instant-health'):
+            mobs.append(mob_item(key, 'zombie', actions))
+    # Out of the cell, frozen so its AI cannot move it sideways.
+    mobs.append(mob_item('levitation', 'cow', [(10, ['effect @T levitation 2 1'])], ticks=120, cell=False,
+                         frozen=True))
+    mobs.append(mob_item('slow-falling', 'cow', [(0, ['effect @T slow_falling 10 0'])], ticks=120, cell=False,
+                         frozen=True, at=[3.5, -40, 0.5, 90]))
+    players = [player_item(key, actions, ticks=300 if key == 'stacking' else 160) for key, actions in shared]
+    players.append(player_item('hunger', [(10, ['effect @T hunger 5 1'])]))
+    players.append(player_item('saturation', [(5, ['effect @T hunger 4 250']),
+                                              (100, ['effect @T saturation 1 0'])], ticks=180))
+    sets = {'mobs': mobs, 'players': players, 'all': mobs + players}
+    choice = 'all' if args.items == 'slice' else args.items
+    if choice not in sets:
+        raise SystemExit(f'effects --items must be one of {sorted(sets)}')
+    return sets[choice]
+
+
+def ranged_items(args) -> list[dict]:
+    """`ranged`: a frozen skeleton (stray, bogged, parched) 8 or 15 blocks
+    east of the sweep player, who stands in survival with Resistance V (no
+    damage) and Regeneration so it lives through every shot; the mob is
+    sampled every tick for 300 ticks and the capture holds every arrow it
+    shoots (run with `--client-capture`, once per `--difficulty`)."""
+    target = f'"{PLAYER}"'
+    protect = [f'gamemode survival {target}', f'effect {target} resistance 100000 4 true',
+               f'effect {target} regeneration 100000 4 true']
+    restore = [f'effect {target} clear', f'gamemode creative {target}', 'kill @e[type=minecraft:arrow]']
+    items = []
+    for mob, distance in (('skeleton', 8), ('skeleton', 15), ('stray', 8), ('bogged', 8), ('parched', 8)):
+        items.append({'key': f'{mob}|shoot-{distance}', 'mob': f'minecraft:{mob}',
+                      'at': [0.5 + distance, -60, 0.5, 90], 'player': [0.5, -60, 0.5, -90], 'frozen': True,
+                      'ticks': 300, 'setup': protect, 'cleanup': restore, 'actions': []})
+    return items
+
+
+def melee_effect_items(args) -> list[dict]:
+    """`melee-effects`: a husk spawned two blocks east of the sweep player
+    (survival) walks up and hits it for 200 ticks; the player lives through
+    the hits on Health Boost X, a full heal and Regeneration V (no
+    Resistance, which would change the hits). Run once per `--difficulty`
+    with `--client-capture` for the hunger `MobEffect` each hit sends."""
+    target = f'"{PLAYER}"'
+    protect = [f'gamemode survival {target}', f'effect {target} health_boost 1000 9 true',
+               f'effect {target} regeneration 1000 4 true']
+    restore = [f'effect {target} clear', f'gamemode creative {target}']
+    return [{'key': 'husk|hits', 'mob': 'minecraft:husk', 'at': [2.5, -60, 0.5, 90],
+             'player': [0.5, -60, 0.5, -90], 'frozen': False, 'ticks': 200, 'setup': protect,
+             'cleanup': restore, 'actions': [{'t': 0, 'commands': [f'effect {target} instant_health 1 9 true']}]}]
+
+
+def mooshroom_items(args) -> list[dict]:
+    """`mooshroom`: the sweep player (survival) interacts with a frozen
+    mooshroom two blocks east of it holding a bowl (red mooshroom: stew into
+    the hand), an allium (brown mooshroom: eats it, smoke particles) and
+    shears (red mooshroom: sheared into a cow, mushrooms dropped). The
+    `geometry` items (`--items geometry`) move the particles: the player on a
+    block north-west of the mooshroom, a baby mooshroom, and a brown
+    mooshroom milked with a bowl after its allium (suspicious stew). One
+    mooshroom in 20 spawns a baby, which has no interactions, so the
+    geometry items that need an adult grow theirs up first."""
+    target = f'"{PLAYER}"'
+    setup = [f'gamemode survival {target}']
+    restore = [f'gamemode creative {target}', 'kill @e[type=minecraft:item]']
+    brown = 'event entity @e[type=minecraft:mooshroom] minecraft:become_brown'
+    born = 'event entity @e[type=minecraft:mooshroom] minecraft:entity_born'
+    grown = 'event entity @e[type=minecraft:mooshroom] minecraft:ageable_grow_up'
+    bowl = f'replaceitem entity {target} slot.weapon.mainhand 0 minecraft:bowl'
+
+    # The first use of an item the plugin put in the hand is refused (the
+    # client still holds the old stack) and makes BDS resend the slot, so
+    # every item interacts twice, 20 ticks apart.
+    def item(key, hold, actions, at=(2.5, -60, 0.5, 90), player=(0.5, -60, 0.5, -90), ticks=80,
+             extra_setup=(), extra_cleanup=()):
+        uses = [{'t': 10, 'commands': [], 'order': 'interact'}, {'t': 30, 'commands': [], 'order': 'interact'}]
+        return {'key': f'mooshroom|{key}', 'mob': 'minecraft:mooshroom', 'at': list(at),
+                'player': list(player), 'frozen': True, 'ticks': ticks, 'setup': setup + list(extra_setup),
+                'cleanup': list(extra_cleanup) + restore, 'actions': actions + uses, 'hold': hold}
+
+    allium = {'item': 'minecraft:allium'}
+    basic = [
+        item('bowl', {'item': 'minecraft:bowl'}, []),
+        item('allium', allium, [{'t': 5, 'commands': [brown]}]),
+        item('shears', {'item': 'minecraft:shears'}, []),
+    ]
+    geometry = [
+        item('allium-raised', allium, [{'t': 3, 'commands': [grown]}, {'t': 5, 'commands': [brown]}],
+             at=(2.5, -60, 1.5, 90),
+             player=(0.5, -59, 3.5, -135), extra_setup=['setblock 0 -60 3 stone'],
+             extra_cleanup=['setblock 0 -60 3 air']),
+        item('allium-baby', allium, [{'t': 3, 'commands': [born]}, {'t': 5, 'commands': [brown]}]),
+        item('suspicious-stew', allium, [{'t': 3, 'commands': [grown]}, {'t': 5, 'commands': [brown]},
+                                         {'t': 40, 'commands': [bowl]},
+                                         {'t': 50, 'commands': [], 'order': 'interact'},
+                                         {'t': 60, 'commands': [], 'order': 'interact'}], ticks=90),
+    ]
+    sets = {'basic': basic, 'geometry': geometry, 'all': basic + geometry}
+    choice = 'basic' if args.items == 'slice' else args.items
+    if choice not in sets:
+        raise SystemExit(f'mooshroom --items must be one of {sorted(sets)}')
+    return sets[choice]
+
+
 def reload_items(args) -> list[dict]:
     """`knockback-reload --items spawn` (three zombies, each hit once and left
     in the world) or `--items reload` (the same zombies, loaded from the first
@@ -483,6 +803,16 @@ def reload_items(args) -> list[dict]:
         raise SystemExit("knockback-reload --items must be 'spawn' or 'reload'")
     return [{'key': f'zombie-{index}', 'mob': 'minecraft:zombie', 'at': [200.5, -60, 0.5 + 6 * index, 90],
              'from': [-2.0, 0.0], 'yaw': -90, 'phase': args.items} for index in range(3)]
+
+
+def log_since(path: Path, offset: int) -> str:
+    """The text appended to `path` after byte `offset` ('' while missing)."""
+    try:
+        with path.open('rb') as log:
+            log.seek(offset)
+            return log.read().decode('utf-8', errors='replace')
+    except FileNotFoundError:
+        return ''
 
 
 def build_job(args, out: Path) -> dict:
@@ -504,8 +834,11 @@ def build_job(args, out: Path) -> dict:
             job['gamemode'] = args.gamemode
     elif args.kind == 'scenarios':
         job['items'] = scenarios.items(args.family)
+        job['arena'] = {**ARENA, 'scenarios': ARENAS[scenarios.layout(args.family)][0]}
     elif args.kind == 'placements':
-        job['items'] = placements.items()
+        job['items'] = placements.items(args.cases)
+        if not args.no_watcher:
+            job['watcher'] = WATCHER
     elif args.kind == 'item-blocks':
         job['items'] = [{'key': name.removeprefix('minecraft:'), 'item': name}
                         for name in item_names(args.items, native.items())]
@@ -513,10 +846,42 @@ def build_job(args, out: Path) -> dict:
         job.update(furnace='furnace', lit_furnace='minecraft:lit_furnace', input='cobblestone',
                    max_ticks=args.max_ticks,
                    items=[{'key': name, 'item': name} for name in item_names(args.items, SLICE_FUELS)])
-    elif args.kind in ('knockback', 'knockback-reload'):
+    elif args.kind in ('knockback', 'knockback-reload', 'bonus'):
         # Zombies need a difficulty above peaceful and burn in daylight.
-        job['setup_commands'] = SETUP + ['difficulty easy', 'time set 18000']
-        job['items'] = knockback_items(args) if args.kind == 'knockback' else reload_items(args)
+        job['setup_commands'] = SETUP + [f'difficulty {args.difficulty}', 'time set 18000']
+        job['items'] = {'knockback': knockback_items, 'knockback-reload': reload_items,
+                        'bonus': bonus_items}[args.kind](args)
+        if args.kind == 'bonus':
+            job['kind'] = 'spawn_bonus'
+    elif args.kind == 'effects':
+        # Zombies need a difficulty above peaceful and burn in daylight.
+        job['setup_commands'] = SETUP + [f'difficulty {args.difficulty}', 'time set 18000']
+        job['items'] = effect_items(args)
+    elif args.kind in ('ranged', 'mooshroom', 'melee-effects'):
+        # The generic per-tick job of `effects`; hostile mobs need a
+        # difficulty above peaceful and skeletons burn in daylight.
+        job['kind'] = 'effects'
+        job['setup_commands'] = SETUP + [f'difficulty {args.difficulty}', 'time set 18000']
+        job['items'] = {'ranged': ranged_items, 'mooshroom': mooshroom_items,
+                        'melee-effects': melee_effect_items}[args.kind](args)
+    elif args.kind == 'entity-loot':
+        # Hostile mobs need a difficulty above peaceful.
+        job['setup_commands'] = SETUP + [f'difficulty {args.difficulty}', 'time set 18000']
+        mobs = ['wither_skeleton'] if args.items == 'slice' else args.items.split(',')
+        job['items'] = [{'key': mob, 'mob': f'minecraft:{mob}', 'at': [3.5, -60, 0.5], 'drop': [0, -58, 4],
+                         'samples': args.samples} for mob in mobs]
+    elif args.kind == 'walk':
+        if not args.observer:
+            raise SystemExit('walk needs --observer')
+        job['items'] = walk_items(args)
+    elif args.kind == 'range':
+        if not args.observer:
+            raise SystemExit('range needs --observer')
+        job['kind'] = 'send_range'
+        job['items'] = range_items(args)
+    elif args.kind == 'pvp':
+        job.update(others=PVP_OTHERS, pvp_setup=PVP_SETUP,
+                   items=pvp_items.pvp_items(args.items, args.repeats, args.entity_interactions_strict))
     if args.observer:
         job['observer'] = OBSERVER_NAME
     return job
@@ -526,13 +891,18 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('kind', choices=['drops', 'mining', 'armor-slots', 'armor-values', 'armor-wear', 'attack',
                                          'fuel', 'scenarios', 'placements', 'item-blocks', 'knockback',
-                                         'knockback-reload'])
+                                         'knockback-reload', 'range', 'bonus', 'walk', 'effects', 'entity-loot',
+                                         'ranged', 'mooshroom', 'melee-effects', 'pvp'])
     parser.add_argument('--out', type=Path)
     parser.add_argument('--blocks', default='slice', help="'slice', 'all' or comma-separated identifiers")
     parser.add_argument('--states', default='first', choices=['first', 'all'])
     parser.add_argument('--items', default='slice', help="'slice' or comma-separated identifiers")
     parser.add_argument('--samples', type=int, default=200)
     parser.add_argument('--family', default='pilot', help="scenarios: 'all' or comma-separated families")
+    parser.add_argument('--cases', default='all',
+                        help="placements: 'all' or comma-separated case groups (placements.GROUPS)")
+    parser.add_argument('--no-watcher', action='store_true',
+                        help='placements: run without the second (watching) scripted player')
     parser.add_argument('--max-ticks', type=int, default=24000, help='fuel: longest burn to wait for')
     parser.add_argument('--mine-ticks', type=int, default=600, help='mining: longest break to wait for')
     parser.add_argument('--variants', default='tools', choices=['tools', 'held', 'effects', 'capture'],
@@ -552,6 +922,12 @@ def main() -> int:
                         help=f'add a second client, {OBSERVER_NAME}, recording to <out>/observer/packets.jsonl')
     parser.add_argument('--view-distance', type=int, default=6, help='server view distance in chunks')
     parser.add_argument('--tick-distance', type=int, default=4, help='server simulation distance in chunks (4-12)')
+    parser.add_argument('--difficulty', default='easy', choices=['easy', 'normal', 'hard'],
+                        help='knockback, knockback-reload, bonus, effects, entity-loot: the difficulty set '
+                             'before the job')
+    parser.add_argument('--repeats', type=int, default=3, help='pvp: runs of each item')
+    parser.add_argument('--entity-interactions-strict', action='store_true',
+                        help='pvp: run BDS with server-authoritative-entity-interactions-strict=true')
     parser.add_argument('--keep-world', action='store_true',
                         help='copy the world to <out>/world after BDS stops (it is deleted otherwise)')
     parser.add_argument('--world-from', type=Path,
@@ -585,23 +961,43 @@ def main() -> int:
     if args.world_from:
         shutil.copytree(args.world_from, world)
     # A world with zombies in it must load above peaceful, which removes them.
-    difficulty = 'easy' if args.kind == 'knockback-reload' else 'peaceful'
+    difficulty = args.difficulty if args.kind in ('knockback-reload', 'bonus') else 'peaceful'
+    distances = {'view_distance': args.view_distance, 'tick_distance': args.tick_distance}
+    if args.kind == 'scenarios':
+        distances.update(ARENAS[scenarios.layout(args.family)][1])
     properties = bds_runtime.base_properties(
         LEVEL, level_type='FLAT', gamemode='creative', force_gamemode='true', difficulty=difficulty,
-        default_player_permission_level='operator', view_distance=args.view_distance,
-        tick_distance=args.tick_distance)
-    env = {'BDS_SWEEP_JOB': str(job_path), 'CLIENT_DIFF_CAPTURE_DIR': str(out / 'client-diff-plugin'),
+        default_player_permission_level='operator', **distances)
+    if args.kind == 'pvp':
+        # Three lockstep clients; strict entity interactions on request.
+        properties['max-players'] = 1 + len(PVP_OTHERS)
+        properties['server-authoritative-entity-interactions-strict'] = str(
+            args.entity_interactions_strict).lower()
+    env = {'BDS_SWEEP_JOB': str(job_path),
+           # One capture folder per run: the capture plugin stops BDS when its
+           # files exist, which would end every resumed run.
+           'CLIENT_DIFF_CAPTURE_DIR': str(out / 'client-diff-plugin' / stamp),
            # This checkout's plugin source wins over the shared venv's editable
            # install, so a worktree runs its own jobs without reinstalling it.
            'PYTHONPATH': os.pathsep.join(filter(None, [
                str(REPO / 'tools' / 'bds-sweep' / 'endstone-sweep' / 'src'), os.environ.get('PYTHONPATH')]))}
     started = time.monotonic()
     status = 'timeout'
+    # Earlier runs of a resumed sweep wrote to the same log.
+    log_start = (out / 'bds.log').stat().st_size if (out / 'bds.log').exists() else 0
     client_command = [str(args.client), '--addr', bds_runtime.ADDR, '--name', PLAYER]
     if args.client_capture or args.kind in ('placements', 'item-blocks'):
         # The client records both directions: BDS's answer to every click,
         # the stack descriptors BDS sends.
         client_command += ['--capture-dir', str(out / 'client-capture')]
+    if args.kind == 'pvp':
+        # One process for all three, so the plugin orders their packets.
+        for other in PVP_OTHERS:
+            client_command += ['--also', other]
+    watcher_command = None
+    if job.get('watcher'):
+        watcher_command = [str(args.client), '--addr', bds_runtime.ADDR, '--name', job['watcher'],
+                           '--capture-dir', str(out / 'watcher-capture')]
     observer_command = [str(args.client), '--addr', bds_runtime.ADDR, '--name', OBSERVER_NAME,
                         '--capture-dir', str(out / 'observer')]
     observer = None
@@ -612,6 +1008,13 @@ def main() -> int:
             with ((out / 'client.log').open('a', encoding='utf-8') as log,
                   (out / 'observer.log').open('a', encoding='utf-8') as observer_log):
                 client = subprocess.Popen(client_command, cwd=REPO, stdout=log, stderr=subprocess.STDOUT)
+                # BDS refuses a second login from the same address right after
+                # the first ("ip recently connected"): the watcher joins once
+                # the player has spawned, and retries.
+                watcher = None
+                watcher_logins = 0
+                watcher_next = 0.0
+                watcher_log = (out / 'watcher.log').open('a', encoding='utf-8') if watcher_command else None
                 logins = 1
                 try:
                     while time.monotonic() - started < args.timeout:
@@ -636,6 +1039,11 @@ def main() -> int:
                         if (out / 'error.txt').exists():
                             status = 'error'
                             break
+                        # A plugin that fails to import (a syntax error in
+                        # this checkout's jobs) leaves BDS idle forever.
+                        if "load plugin from entry point 'bds_sweep'" in log_since(out / 'bds.log', log_start):
+                            status = 'plugin failed to load (see bds.log)'
+                            break
                         # Handover: `stop.request` in the output directory stops BDS
                         # gracefully; finished items stay in results.jsonl.
                         if (out / STOP_REQUEST).exists():
@@ -652,11 +1060,24 @@ def main() -> int:
                                 continue
                             status = f'client exited {client.returncode}'
                             break
+                        if watcher_command and (watcher is None or watcher.poll() is not None):
+                            spawned = 'spawned as' in (out / 'client.log').read_text(encoding='utf-8',
+                                                                                     errors='replace')
+                            if watcher is not None and (watcher.returncode == 0 or watcher_logins >= 6):
+                                status = f'watcher exited {watcher.returncode}'
+                                break
+                            if spawned and time.monotonic() >= watcher_next:
+                                watcher_logins += 1
+                                watcher_next = time.monotonic() + 15
+                                watcher = subprocess.Popen(watcher_command, cwd=REPO, stdout=watcher_log,
+                                                           stderr=subprocess.STDOUT)
                         time.sleep(1)
                 finally:
-                    for process in (client, observer):
+                    for process in (client, observer, watcher):
                         if process is not None and process.poll() is None:
                             process.kill()
+                    if watcher_log is not None:
+                        watcher_log.close()
     finally:
         if world.exists():
             if args.keep_world:

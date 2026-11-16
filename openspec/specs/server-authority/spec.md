@@ -222,10 +222,10 @@ In survival only the server's completed progress SHALL break a block, and never 
 Evidence: crates/unastar/src/server/game/blocks.rs (`process_auth_input_block_actions`, `break_block`, tests `survival_creative_destroy_is_refused`, `breaking_actions_without_a_valid_face_are_ignored`), crates/unastar/src/server/game/blocks/breaking_tests.rs (`survival_breaking_answers_every_input_like_bds`: the abort and release scenarios)
 
 ### Requirement: Inputs that arrive together are applied together
-A player's `PlayerAuthInput`s that arrive in the same tick SHALL each advance the break, in arrival order, within that tick; the server does not hold a client to server time. A player's block actions after an input that completed a break MUST wait for the next tick, when that break has been committed. At most 64 actions MAY wait per player; more MUST be dropped.
+In the `bds` breaking mode, a player's `PlayerAuthInput`s that arrive in the same tick SHALL each advance the break, in arrival order, within that tick; the server does not hold a client to server time. A player's block actions after an input that completed a break MUST wait for the next tick, when that break has been committed. At most 64 actions MAY wait per player; more MUST be dropped.
 
 #### Scenario: A burst of inputs
-- **WHEN** a survival player breaking dirt by hand sends its 2nd to 16th inputs at once
+- **WHEN** a survival player breaking dirt by hand on a `bds` server sends its 2nd to 16th inputs at once
 - **THEN** the block breaks on the 15th input without waiting for further ticks, and the 16th input finds air
 
 Evidence: crates/unastar/src/server/game/blocks.rs (`apply_block_actions`, `MAX_WAITING_BLOCK_ACTIONS`), crates/unastar/src/server/game/blocks/breaking_tests.rs (`survival_breaking_answers_every_input_like_bds`: the burst scenario), [docs/quirks/bds.md](../../../docs/quirks/bds.md) (Blocks / mining: inputs are not held to server time)
@@ -255,3 +255,72 @@ Chunk streaming SHALL apply no per-tick count. Each player MUST have a send wind
 - **THEN** the answer is split between columns into several `SubChunk` packets
 
 Evidence: crates/unastar/src/world/ecs/streaming.rs (`SendWindow`, tests `prompt_acks_grow_the_window_by_one_each_up_to_the_max`, `late_acks_halve_the_window_once_per_interval_and_never_below_min`, `unacknowledged_columns_stop_counting_after_the_timeout`), crates/unastar/src/server/game/chunks.rs (`SUBCHUNK_ANSWER_BYTES`, test `large_answers_split_between_columns`), crates/unastar/src/server/game/mod.rs (test `the_view_streams_within_the_acknowledged_send_window`)
+
+### Requirement: Item cooldowns are kept by the server
+The server SHALL keep each player's item cooldowns by category, from the held item's `minecraft:cooldown` component, on its own tick count, and never trust the client's reported cooldown state. While an attack cooldown runs, a hit or jab with an item of that category MUST change nothing. Starting one MUST send `PlayerStartItemCooldown` with the category and its ticks. Other items MUST NOT be held back.
+
+#### Scenario: A hit inside the cooldown
+- **WHEN** a survival player hits a pig with an iron spear and hits another pig with it 18 inputs later
+- **THEN** the second pig is unhurt, and a hit 19 inputs after the first lands
+
+#### Scenario: Another item during the cooldown
+- **WHEN** a player hits with a diamond spear and then hits with an iron sword 2 inputs later
+- **THEN** the sword's hit lands
+
+#### Scenario: Several hits in one input
+- **WHEN** a player sends three spear hits on three pigs in one input
+- **THEN** only the first pig is hurt and one cooldown starts
+
+Evidence: crates/unastar/src/item/cooldown.rs (`cooldown`, `cooling`, `start`, test `spear_cooldowns_come_from_the_item_documents`), crates/unastar/src/entity/mob/combat/hit.rs (`player_attack`), crates/unastar/src/server/game/item_use/mod.rs (`attack_air`), crates/unastar/src/entity/mob/combat/hit/spear_tests.rs (`spear_hits_jabs_and_swings_answer_like_bds`, replaying `testdata/bds-spears.jsonl`), [docs/quirks/bds.md](../../../docs/quirks/bds.md) (Items / spears)
+
+### Requirement: Guarded breaking is the default
+Survival breaking SHALL follow `[gameplay] block_breaking`: `"guarded"` unless configured otherwise, or `"bds"`. In the guarded mode, since a break's progress last began from zero at most one input of progress SHALL count per server tick, counted from the tick of its first input; a new progress MUST NOT count an input in a tick where the previous one counted one. Every input is still answered as in the `bds` mode.
+
+#### Scenario: A flood of inputs
+- **WHEN** a survival player breaking dirt by hand on a guarded server sends 21 inputs in one tick and then 3 inputs in each later tick
+- **THEN** the dirt breaks in the 15th tick, not on the 15th input
+
+#### Scenario: A lagging client
+- **WHEN** a breaking player's inputs for ten ticks arrive together
+- **THEN** they count up to the ticks elapsed since the progress began, and no further
+
+Evidence: crates/unastar/src/server/config.rs (`BlockBreaking`), crates/unastar/src/config/mod.rs (`GameplayConfig`), crates/unastar/src/entity/components/player.rs (`BreakInputBudget`, `BreakingState::retarget`), crates/unastar/src/server/game/blocks.rs (`guard_input`, tests `guarded_breaking_counts_one_input_per_tick`, `guarded_breaking_lets_a_lagging_client_catch_up`, `guarded_breaking_begins_again_on_a_block_placed_over_air`, `guarded_breaking_begins_again_on_another_block`), [docs/decisions/0056-guarded-block-breaking.md](../../../docs/decisions/0056-guarded-block-breaking.md)
+
+### Requirement: Guarded breaking begins again on another block
+In the guarded mode the progress of a break MUST begin again when the block at its position is no longer the one being broken: another block, or one put there after the progress began over the air.
+
+#### Scenario: A block put on a break's air
+- **WHEN** dirt is broken by hand on a guarded server, the player keeps breaking the air for 30 inputs, and dirt is put back
+- **THEN** the new dirt's progress begins from zero, where a `bds` server breaks it on the next input
+
+Evidence: crates/unastar/src/server/config.rs (`BlockBreaking`), crates/unastar/src/config/mod.rs (`GameplayConfig`), crates/unastar/src/entity/components/player.rs (`BreakInputBudget`, `BreakingState::retarget`), crates/unastar/src/server/game/blocks.rs (`guard_input`, tests `guarded_breaking_counts_one_input_per_tick`, `guarded_breaking_lets_a_lagging_client_catch_up`, `guarded_breaking_begins_again_on_a_block_placed_over_air`, `guarded_breaking_begins_again_on_another_block`), [docs/decisions/0056-guarded-block-breaking.md](../../../docs/decisions/0056-guarded-block-breaking.md)
+
+### Requirement: Attacks on players are checked against server state
+An attack aimed at another player SHALL be applied only when the attacker is alive and not a spectator, the victim is a live player that can take damage, the `pvp` game rule is on, the transaction names the held hotbar slot and its item, its claimed position is within 6 blocks of the attacker's tracked position, and the two tracked positions are within 6.7 blocks (12 in creative). A refused attack MUST change nothing and send nothing.
+
+#### Scenario: Out of reach
+- **WHEN** a survival player attacks a player whose position is 6.8 blocks from its own
+- **THEN** the victim's health and velocity are unchanged and no packet is sent
+
+#### Scenario: Claimed position off by more than 6 blocks
+- **WHEN** the transaction's claimed position is 6.1 blocks from the attacker's tracked position
+- **THEN** the attack is refused
+
+#### Scenario: Spectator attacker
+- **WHEN** a spectator sends an attack on a survival player within reach
+- **THEN** the attack is refused
+
+Evidence: crates/unastar/src/entity/player_life/pvp.rs (`check`, `Refusal`), crates/unastar/src/entity/player_life/tests/pvp.rs (`reach_and_the_claimed_position_limit_hits_like_bds`, `game_modes_and_the_pvp_rule_decide_who_can_be_hit`, `a_spectator_cannot_hit`)
+
+### Requirement: A reported velocity is finite and bounded
+The velocity a `PlayerAuthInput` reports (`pos_delta`) MUST be finite, or the input is rejected whole, and is clamped on each axis to the per-input movement limit. The velocity a knockback keeps and the velocity it gives MUST be clamped on each axis to 3.92 blocks a tick (a living body's terminal fall speed), after every push of the tick.
+
+#### Scenario: Non-finite reported velocity
+- **WHEN** a `PlayerAuthInput` reports a NaN or infinite `pos_delta`
+- **THEN** the input is rejected whole, like a non-finite position
+
+#### Scenario: A crafted velocity before a knockback
+- **WHEN** a player whose last input reported a velocity of 64 blocks a tick on each axis is pushed eight times in one tick
+- **THEN** its velocity is at most 3.92 blocks a tick on every axis
+
+Evidence: crates/unastar/src/server/game/movement.rs (`auth_input_is_finite`, test `non_finite_positions_and_rotations_are_rejected`), crates/unastar/src/entity/player_life/hurt.rs (`bounded_knockback`, test `a_crafted_velocity_cannot_launch_a_knocked_back_player`)

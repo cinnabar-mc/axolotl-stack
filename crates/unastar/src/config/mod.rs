@@ -36,6 +36,7 @@ pub struct UnastarConfig {
     pub server: ServerConfigFile,
     pub world: WorldConfig,
     pub players: PlayerStorageConfig,
+    pub gameplay: GameplayConfig,
     #[serde(alias = "spawn")]
     pub spawn_rules: Vec<SpawnRule>,
 }
@@ -46,6 +47,7 @@ impl Default for UnastarConfig {
             server: ServerConfigFile::default(),
             world: WorldConfig::default(),
             players: PlayerStorageConfig::default(),
+            gameplay: GameplayConfig::default(),
             spawn_rules: vec![SpawnRule::default()],
         }
     }
@@ -91,7 +93,10 @@ impl UnastarConfig {
             default_gamemode: self.server.default_gamemode,
             difficulty: self.server.difficulty,
             block_network_ids: self.server.block_network_ids,
+            block_breaking: self.gameplay.block_breaking,
             operators: self.server.operators.clone(),
+            online_mode: self.server.online_mode,
+            allow_list: self.server.allow_list,
             // Use defaults for new fields not in config file yet
             simulation_distance: defaults.simulation_distance,
             chunk_unload_ticks: defaults.chunk_unload_ticks,
@@ -195,6 +200,9 @@ pub struct ServerConfigFile {
     /// join, by display name (case-insensitive) or XUID. Without
     /// `online_mode` names and XUIDs are not verified.
     pub operators: Vec<String>,
+    /// Only players in `allowlist.json` may join (BDS `allow-list`);
+    /// `/allowlist on|off` changes it while the server runs.
+    pub allow_list: bool,
 }
 
 impl Default for ServerConfigFile {
@@ -214,8 +222,19 @@ impl Default for ServerConfigFile {
             block_network_ids: crate::registry::block::BlockNetworkIds::Hashed,
             compression_level: 4,
             operators: Vec::new(),
+            allow_list: false,
         }
     }
+}
+
+/// Gameplay rules where unastar offers a choice besides BDS's behaviour.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct GameplayConfig {
+    /// Survival block breaking: "guarded" (default; at most one input of
+    /// progress per server tick, and the progress begins again when the
+    /// block changes) or "bds" (exactly BDS 1.26.51).
+    pub block_breaking: crate::server::config::BlockBreaking,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

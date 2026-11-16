@@ -99,8 +99,39 @@ impl UnastarServer {
             .resource_mut::<crate::world::ecs::ChunkManager>()
             .set_provider(provider);
 
-        // Server key for encryption
-        let server_key = SecretKey::random(&mut thread_rng());
+        // BDS keeps its server files (allowlist, permissions, identity key)
+        // next to the executable; unastar keeps them in its working directory.
+        let files = crate::command::exec::ServerFiles(std::env::current_dir().ok());
+        {
+            let world = server.ecs.world_mut();
+            world
+                .resource_mut::<crate::command::exec::OperatorList>()
+                .load_permissions(&files)?;
+            world.insert_resource(crate::command::exec::Allowlist {
+                enabled: config.server.allow_list,
+                entries: crate::command::exec::Allowlist::load(&files)?,
+            });
+            world.insert_resource(crate::command::exec::WorldFiles {
+                root: std::path::PathBuf::from("worlds"),
+                world: std::path::PathBuf::from("worlds").join("default"),
+            });
+            // `/function` files of the world's behaviour packs (BDS's layout).
+            world.insert_resource(crate::command::exec::FunctionRegistry::load(
+                &std::path::Path::new("worlds")
+                    .join("default")
+                    .join("behavior_packs"),
+            ));
+            world.insert_resource(files.clone());
+        }
+
+        // The server identity key (also the encryption key): the saved one
+        // in `keys/server_identity_key.pem` when present, as BDS does.
+        let server_key = crate::command::exec::load_identity(&files)
+            .unwrap_or_else(|| SecretKey::random(&mut thread_rng()));
+        server
+            .ecs
+            .world_mut()
+            .insert_resource(crate::command::exec::ServerIdentity(server_key.clone()));
 
         // Initialize Plugin Manager
         let mut plugin_manager = PluginManager::new()
@@ -214,6 +245,11 @@ impl UnastarServer {
         let connection_gate = Arc::new(Semaphore::new(
             self.config.server.max_players.max(1) as usize
         ));
+        // `/setmaxplayers` resizes the gate.
+        self.server
+            .ecs
+            .world_mut()
+            .insert_resource(crate::command::exec::PlayerLimit(connection_gate.clone()));
 
         // Spawn accept loop
         spawn_accept_loop(
@@ -456,6 +492,7 @@ async fn network_tick(
                 runtime_id,
                 initial_position,
                 saved_data,
+                client_data,
                 chunk_radius,
                 outbound_tx,
                 inbound_rx,
@@ -466,6 +503,7 @@ async fn network_tick(
                 inbound.register(session_id, inbound_rx);
                 let player = spawn_or_reject(
                     server,
+                    client_data,
                     PlayerSpawnData {
                         session_id,
                         display_name,
@@ -502,6 +540,10 @@ async fn network_tick(
     events_processed
 }
 
+/// Message of the `Disconnect` sent to a player the allowlist does not list
+/// (the client's `disconnectionScreen.notAllowed` text).
+const NOT_ALLOWED_MESSAGE: &str = "You're not invited to play on this server.";
+
 /// Message of the `Disconnect` sent to a player whose saved data cannot be restored.
 const UNRESTORABLE_PLAYER_MESSAGE: &str = "Unable to restore player inventory.";
 
@@ -510,6 +552,7 @@ const UNRESTORABLE_PLAYER_MESSAGE: &str = "Unable to restore player inventory.";
 /// player never enters the world, so its stored record is left untouched.
 fn spawn_or_reject(
     server: &mut GameServer,
+    client_data: Option<Box<jolyne::auth::ClientData>>,
     data: PlayerSpawnData,
 ) -> Option<bevy_ecs::entity::Entity> {
     use jolyne::valentine::{
@@ -518,7 +561,26 @@ fn spawn_or_reject(
     };
     let session_id = data.session_id;
     let reject_tx = data.outbound_tx.clone();
-    let error = match server.spawn_player(data) {
+    // The allowlist, while it is on, admits only the players it lists.
+    let admitted = server
+        .ecs
+        .world()
+        .get_resource::<crate::command::exec::Allowlist>()
+        .is_none_or(|list| list.admits(&data.display_name, data.xuid.as_deref()));
+    if !admitted {
+        warn!(session_id, name = %data.display_name, "Rejecting player not on the allowlist");
+        let _ = reject_tx.try_send(McpePacket::from(DisconnectPacket {
+            reason: EnumsConnectionDisconnectFailReason::Notallowed,
+            messages: DisconnectPacketMessagesUnion::DisconnectPacketMessages(
+                DisconnectPacketMessages {
+                    message: NOT_ALLOWED_MESSAGE.into(),
+                    filtered_message: NOT_ALLOWED_MESSAGE.into(),
+                },
+            ),
+        }));
+        return None;
+    }
+    let error = match server.spawn_player_with_login(data, client_data.as_deref()) {
         Ok(player) => return Some(player),
         Err(error) => error,
     };
@@ -608,7 +670,13 @@ fn spawn_accept_loop(mut listener: BedrockListener<RaknetListener>, state: Accep
                         )
                         .await
                         {
-                            Ok((mut play_stream, identity, initial_position, saved_data)) => {
+                            Ok((
+                                mut play_stream,
+                                identity,
+                                initial_position,
+                                saved_data,
+                                client_data,
+                            )) => {
                                 let display_name = identity.display_name().to_string();
 
                                 info!(%addr, name = %display_name, "Player joined");
@@ -644,6 +712,7 @@ fn spawn_accept_loop(mut listener: BedrockListener<RaknetListener>, state: Accep
                                         runtime_id: session_id as i64,
                                         initial_position: spawn_to_dvec3(&initial_position),
                                         saved_data: saved_data.map(Box::new),
+                                        client_data: Some(Box::new(client_data)),
                                         chunk_radius,
                                         outbound_tx: outbound_tx.clone(),
                                         inbound_rx,
@@ -762,7 +831,7 @@ mod tests {
                 };
 
                 let (data, mut rx) = join(1, "minecraft:not_a_real_item");
-                assert!(spawn_or_reject(&mut server, data).is_none());
+                assert!(spawn_or_reject(&mut server, None, data).is_none());
                 assert!(
                     server
                         .ecs
@@ -786,7 +855,7 @@ mod tests {
                 assert_eq!(messages.message, UNRESTORABLE_PLAYER_MESSAGE);
 
                 let (data, _rx) = join(2, "minecraft:stone");
-                assert!(spawn_or_reject(&mut server, data).is_some());
+                assert!(spawn_or_reject(&mut server, None, data).is_some());
             })
             .unwrap()
             .join()
@@ -890,6 +959,7 @@ mod network_tick_tests {
                 runtime_id: SESSION as i64,
                 initial_position: glam::DVec3::new(START_X, 17.0, 0.5),
                 saved_data: None,
+                client_data: None,
                 chunk_radius: 0,
                 outbound_tx,
                 inbound_rx,

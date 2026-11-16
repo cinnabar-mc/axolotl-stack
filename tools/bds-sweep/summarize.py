@@ -9,6 +9,9 @@
     python tools/bds-sweep/summarize.py compare-drops SWEEP_DIR_A SWEEP_DIR_B
     python tools/bds-sweep/summarize.py scenarios SWEEP_DIR [SWEEP_DIR ...]
     python tools/bds-sweep/summarize.py placements SWEEP_DIR
+    python tools/bds-sweep/summarize.py circuits SWEEP_DIR [SWEEP_DIR ...]
+    python tools/bds-sweep/summarize.py random-ticks SWEEP_DIR [SWEEP_DIR ...]
+    python tools/bds-sweep/summarize.py round4 SWEEP_DIR [SWEEP_DIR ...]
 
 Writes into `crates/unastar-data/data/measured/` and records every artefact
 (SHA-256, sweep parameters, sample counts, run times) in `manifest.json`
@@ -559,6 +562,81 @@ SCENARIO_HEADERS = {
                   '`placed` and `after` are [origin, above] read 2 ticks after each step, `items` the item '
                   'actors that appeared',
     },
+    'stairs_blocks': {
+        'family': 'stairs_blocks',
+        'row': '[block, centre_weirdo, centre_upside_down, side, neighbour_weirdo, neighbour_upside_down, corners]',
+        'method': 'every stair block but oak: the neighbour (the same block, minecraft:corner none) set with a block '
+                  'update on `side` of the cell origin, then the centre; `corners` is the stored minecraft:corner of '
+                  'the centre and the neighbour, read 1 tick later',
+    },
+    'connections_blocks': {
+        'family': 'connections_blocks',
+        'row': '[neighbour_block, neighbour_states, centres]',
+        'method': 'as `connections`, for every fence, pane, bars and wall block as centre and a curated set of '
+                  'neighbours (one block of each connection kind round 1 found, every fence gate and stair '
+                  'orientation measured there, every fence, pane, bars and wall); rows whose neighbour did not stay '
+                  'are left out',
+    },
+    'wall_heights_blocks': {
+        'family': 'wall_heights_blocks',
+        'row': '[wall, above_block, above_states, walls]',
+        'method': 'as `wall_above`, for every wall block (its neighbours the same block) under a curated set of '
+                  'blocks; `walls` maps each shape to the centre stored states; rows whose block above did not stay '
+                  'are left out',
+    },
+    'multiface_support': {
+        'family': 'multiface_support',
+        'row': '[block, states, order, placed_states, removals]',
+        'method': 'every state of vine, glow_lichen, sculk_vein and resin_clump set with a block update inside six '
+                  'stone neighbours set without; the neighbours are removed with block updates one at a time, 2 ticks '
+                  'apart (forward: east, west, south, north, up, down; backward the reverse); `removals` lists '
+                  '[side removed, block, states] read after each removal',
+    },
+    'rails': {
+        'family': 'rails',
+        'row': '[centre, sides, order, reads]',
+        'method': 'a rail, powered rail, detector rail or activator rail at the cell origin with, on each side '
+                  '(north, east, south, west), no rail, a rail on the floor or a rail on a stone one block up '
+                  '(`sides`); `neighbours_first` sets the neighbours (with block updates) before the centre, '
+                  '`centre_first` after it; `reads` are [block, states] of the centre and then of each neighbour '
+                  'rail in side order, 2 ticks after the last change',
+    },
+    'soils_more': {
+        'family': 'soils_more',
+        'row': '[plant, states, soils]',
+        'method': 'as `soils`, for the plants round 1 did not sweep, on the default state of every block and on '
+                  'water (source, flowing, depth 3) and lava set in the floor; `soils` lists [soil_block, '
+                  'soil_states, stays] read 2 ticks later (rows whose soil did not stay are left out)',
+    },
+    'coral_death': {
+        'family': 'coral_death',
+        'row': '[kind, cell, repeat, dead_by, last]',
+        'method': 'cells 16 blocks apart (`tools/bds-sweep/coral.py` LAYOUT, so water a cell brings reaches no '
+                  'other): a live coral block, plant, floor fan or wall fan (on a stone east of it) set with a '
+                  'block update in air, or over a water source set in the floor (`*_over_water`), read every 10 '
+                  'ticks for 300 ticks; `dead_by` is the first read (ticks) that found it dead (null: alive at '
+                  'tick 300), `last` the block read at tick 300',
+    },
+    'coral_water': {
+        'family': 'coral_water',
+        'row': '[kind, cell, repeat, before, dead_by, last]',
+        'method': 'as `coral_death`: a coral block set with a block update (`block_set`) or by `/setblock` '
+                  '(`block_setblock`), set and then a stone set east of it 40 ticks later '
+                  '(`block_then_neighbour`), set beside a walled-in water source that is removed 40 ticks later '
+                  '(`block_water_goes`) or kept while a stone is set (`block_water_stays`); a coral plant and a '
+                  'floor fan set by `/setblock`, alone or with a stone set beside them 40 ticks later; `before` '
+                  'is the block read just before that second change, `dead_by` the first read after it (or after '
+                  'the set) that found it dead',
+    },
+    'coral_timing': {
+        'family': 'coral_timing',
+        'row': '[kind, cell, repeat, trace]',
+        'method': 'one read per tick (`timeline`): a coral block set with a block update or by `/setblock` at '
+                  'tick 0, placed by a click of the scripted player at tick 0 (one click per wave), a coral block '
+                  'whose walled-in water source is removed at tick 0 (the block set 20 ticks before), and a coral '
+                  'plant set by `/setblock` with a stone set beside it at tick 0; `trace` is [tick, block] for the '
+                  'first read and each change (a read at tick t sees the world after t server ticks)',
+    },
     'support': {
         'family': 'support',
         'row': '[block, states, placed_states, forward, backward]',
@@ -585,36 +663,52 @@ def face_covered(boxes: list, x_face: float) -> bool:
 CONNECTION_FAMILIES = ('_fence', 'glass_pane', '_bars', '_wall', 'fence_gate', 'border_block')
 
 
-def connection_faces(rows: list) -> dict:
+def connection_faces(family: str, rows: list) -> dict:
     """Blocks a fence, pane, bars or wall treats differently from their
     collision face: `never` connect although the face toward the centre is
-    covered, `always` connect although it is not. Every centre and every
-    measured state of the block must agree."""
+    covered, `always` connect although it is not, over the rows just
+    summarized and the committed rows of the other connection family. Every
+    centre and every measured state of a listed block agree; a block whose
+    states differ lists the states that do not follow the rule in
+    `never_states` / `always_states`."""
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     import native
+    other = 'connections_blocks' if family == 'connections' else 'connections'
+    path = MEASURED / 'block_updates' / f'{other}.json'
+    committed = json.loads(path.read_text(encoding='utf-8'))['rows'] if path.exists() else []
     shapes = json.loads((REPO / 'crates' / 'unastar-data' / 'output' / 'shapes.json').read_text(encoding='utf-8'))
     ids = {(e['name'], json.dumps(e['states'], sort_keys=True)): rid
            for rid, e in enumerate(native.block_states(typed=True))}
     verdicts: dict[str, set] = defaultdict(set)
-    for block, states, centres in rows:
+    state_verdicts: dict[tuple[str, str], set] = defaultdict(set)
+    for block, states, centres in committed + rows:
         if any(part in block for part in CONNECTION_FAMILIES):
             continue
-        boxes = shapes['shapes'][shapes['states'][ids[(block, json.dumps(states, sort_keys=True))]][0]] or []
+        frozen = json.dumps(states, sort_keys=True)
+        boxes = shapes['shapes'][shapes['states'][ids[(block, frozen)]][0]] or []
         # The neighbour stands east of the centre: its west face (x = 0) faces it.
         covered = face_covered(boxes, 0.0)
         for centre, centre_states in centres.items():
             value = centre_states.get('wall_connection_type_east', centre_states.get('minecraft:connection_east'))
-            verdicts[block].add('match' if (value not in (False, 'none')) == covered else
-                                ('always' if not covered else 'never'))
-    mixed = {block: sorted(v) for block, v in verdicts.items() if len(v) > 1}
+            verdict = ('match' if (value not in (False, 'none')) == covered else
+                       ('always' if not covered else 'never'))
+            verdicts[block].add(verdict)
+            state_verdicts[(block, frozen)].add(verdict)
+    mixed = {key: sorted(v) for key, v in state_verdicts.items() if len(v) > 1}
     if mixed:
-        raise SystemExit(f'connection behaviour differs between states or centres: {mixed}')
+        raise SystemExit(f'connection behaviour differs between centres: {mixed}')
+    by_state = {kind: sorted([block, json.loads(frozen)] for (block, frozen), v in state_verdicts.items()
+                             if len(verdicts[block]) > 1 and v == {kind})
+                for kind in ('never', 'always')}
     return {
-        'method': 'derived from block_updates/connections.json: blocks whose observed connection differs '
-                  'from the collision-face rule (a fence, pane, bars or wall connects to a neighbour whose '
-                  'collision boxes cover the face toward it), for every centre and measured state',
+        'method': 'derived from block_updates/connections.json and connections_blocks.json: blocks whose '
+                  'observed connection differs from the collision-face rule (a fence, pane, bars or wall connects '
+                  'to a neighbour whose collision boxes cover the face toward it), for every centre and measured '
+                  'state; the *_states lists name single states of blocks whose other states follow the rule',
         'never': sorted(b for b, v in verdicts.items() if v == {'never'}),
         'always': sorted(b for b, v in verdicts.items() if v == {'always'}),
+        'never_states': by_state['never'],
+        'always_states': by_state['always'],
     }
 
 
@@ -708,6 +802,52 @@ def support_holders(rows: list) -> dict:
                   'own fall)',
         'classes': classes,
     }
+
+
+def plant_soils(family: str, rows: list) -> dict:
+    """The blocks (default state, or a liquid) each plant stays on, from
+    the rows just summarized and the committed rows of the other soil
+    family."""
+    other = 'soils_more' if family == 'soils' else 'soils'
+    path = MEASURED / 'block_updates' / f'{other}.json'
+    committed = json.loads(path.read_text(encoding='utf-8'))['rows'] if path.exists() else []
+    plants, plant_states = {}, {}
+    for plant, _, soils in committed + rows:
+        verdicts: dict[str, set] = defaultdict(set)
+        for soil, _, stays in soils:
+            verdicts[soil].add(stays)
+        plants[plant] = sorted(soil for soil, v in verdicts.items() if v == {True})
+        mixed = sorted([soil, states] for soil, states, stays in soils if stays and len(verdicts[soil]) > 1)
+        if mixed:
+            plant_states[plant] = mixed
+    return {
+        'method': 'derived from block_updates/soils.json and block_updates/soils_more.json: the blocks (default '
+                  'state, or a liquid set in the floor) each plant stays on; `plant_states` lists the states a '
+                  'plant stays on for soil blocks whose measured states differ (a water source but not flowing '
+                  'water)',
+        'plants': dict(sorted(plants.items())),
+        'plant_states': dict(sorted(plant_states.items())),
+    }
+
+
+def merge_manifest_files(family: str, entry: dict) -> dict:
+    """`entry` with the files and sweeps of the committed manifest entry of
+    `family` that this summary did not rewrite, so families summarized from
+    different sweeps keep their provenance."""
+    path = MEASURED / 'manifest.json'
+    if not path.exists():
+        return entry
+    old = json.loads(path.read_text(encoding='utf-8')).get('families', {}).get(family)
+    if not old:
+        return entry
+    written = {f['path'] for f in entry['files']}
+    files = [f for f in old.get('files', []) if f['path'] not in written] + entry['files']
+    seen = {s['dir'] for s in entry['sweeps']}
+    sweeps = [s for s in old.get('sweeps', []) if s['dir'] not in seen] + entry['sweeps']
+    harness = old.get('harness')
+    harnesses = sorted({h for h in [harness, entry['harness']] if h})
+    return {**entry, 'files': sorted(files, key=lambda f: f['path']), 'sweeps': sweeps,
+            'harness': '; '.join(harnesses)}
 
 
 def summarize_scenarios(sweeps: list[Path]) -> None:
@@ -822,29 +962,107 @@ def summarize_scenarios(sweeps: list[Path]) -> None:
                 entry = grouped.setdefault(k, [block, states, placed_states, None, None])
                 entry[3 if order == 'forward' else 4] = [popped, held, row['items']]
             out = sorted(grouped.values(), key=lambda r: json.dumps(r[:2], sort_keys=True))
+        elif family == 'stairs_blocks':
+            for row in found:
+                block, (cw, cu), side, (nw, nu) = scenario_parts(row)
+                corners = [states['minecraft:corner'] for _, states in row['reads']['after']]
+                out.append([block, cw, cu, side, nw, nu, corners])
+            out.sort(key=lambda r: json.dumps(r[:6]))
+        elif family == 'connections_blocks':
+            grouped = {}
+            for row in found:
+                centre, block, _requested = scenario_parts(row)
+                (_, centre_states), (neighbour, neighbour_states) = row['reads']['after']
+                if neighbour != block:
+                    continue
+                k = json.dumps([block, neighbour_states], sort_keys=True)
+                grouped.setdefault(k, [block, neighbour_states, {}])[2][centre] = centre_states
+            out = sorted(grouped.values(), key=lambda r: json.dumps(r[:2], sort_keys=True))
+        elif family == 'wall_heights_blocks':
+            grouped = {}
+            for row in found:
+                wall, shape, block, _requested = scenario_parts(row)
+                (_, centre_states), (above, above_states) = row['reads']['after']
+                if above != block:
+                    continue
+                k = json.dumps([wall, block, above_states], sort_keys=True)
+                grouped.setdefault(k, [wall, block, above_states, {}])[3][shape] = centre_states
+            out = sorted((r for r in grouped.values() if len(r[3]) == 3),
+                         key=lambda r: json.dumps(r[:3], sort_keys=True))
+        elif family == 'multiface_support':
+            orders = {'forward': ['east', 'west', 'south', 'north', 'up', 'down']}
+            orders['backward'] = list(reversed(orders['forward']))
+            for row in found:
+                order, block, states = scenario_parts(row)
+                (_, placed_states), = row['reads']['placed']
+                removals = []
+                for side in orders[order]:
+                    (now, now_states), = row['reads'][f'without_{side}']
+                    removals.append([side, now, now_states])
+                out.append([block, states, order, placed_states, removals])
+            out.sort(key=lambda r: json.dumps(r[:3], sort_keys=True))
+        elif family == 'rails':
+            for row in found:
+                centre, sides, order = scenario_parts(row)
+                out.append([centre, sides, order, row['reads']['after']])
+            out.sort(key=lambda r: json.dumps(r[:3]))
+        elif family in ('coral_death', 'coral_water'):
+            for row in found:
+                kind, cell, repeat = scenario_parts(row)
+                reads = row['reads']
+                dead_by = next((tick for tick in range(10, 310, 10)
+                                if reads[f't{tick}'][0][0].startswith('minecraft:dead_')), None)
+                last = reads['t300'][0][0]
+                if family == 'coral_death':
+                    out.append([kind, cell, repeat, dead_by, last])
+                else:
+                    before = reads['before'][0][0] if 'before' in reads else None
+                    out.append([kind, cell, repeat, before, dead_by, last])
+            out.sort(key=lambda r: json.dumps(r[:3]))
+        elif family == 'coral_timing':
+            for row in found:
+                kind, cell, repeat = scenario_parts(row)
+                trace = [[tick, block] for tick, _, block, _ in row['traces']['trace']]
+                out.append([kind, cell, repeat, trace])
+            out.sort(key=lambda r: json.dumps(r[:3]))
+        elif family == 'soils_more':
+            grouped = {}
+            for row in found:
+                plant, states, soil, requested = scenario_parts(row)
+                (here, _), (now, soil_states) = row['reads']['after']
+                if now != soil:
+                    continue
+                k = json.dumps([plant, states], sort_keys=True)
+                grouped.setdefault(k, [plant, states, []])[2].append([soil, soil_states, here == plant])
+            out = sorted(grouped.values(), key=lambda r: json.dumps(r[:2], sort_keys=True))
+            for entry in out:
+                entry[2].sort(key=lambda case: json.dumps(case, sort_keys=True))
         files.append(write_rows(f'block_updates/{family}.json', header, out))
-        if family == 'connections':
-            files.append(write('block_updates/connection_faces.json', connection_faces(out)))
+        if family in ('connections', 'connections_blocks'):
+            files.append(write('block_updates/connection_faces.json', connection_faces(family, out)))
         if family == 'surfaces':
             files.append(write('block_updates/support_holders.json', support_holders(out)))
-        if family == 'soils':
-            files.append(write('block_updates/plant_soils.json', {
-                'method': 'derived from block_updates/soils.json: the blocks (default state) each plant stays on',
-                'plants': {plant: sorted(soil for soil, _, stays in soils if stays) for plant, _, soils in out},
-            }))
-    update_manifest('block_updates', {
+        if family in ('soils', 'soils_more'):
+            files.append(write('block_updates/plant_soils.json', plant_soils(family, out)))
+    update_manifest('block_updates', merge_manifest_files('block_updates', {
         **provenance('scenarios', sweeps),
         'method': 'block scenarios (tools/bds-sweep/scenarios.py) run by the endstone-sweep `scenarios` job '
                   'on a superflat world with random ticks off: blocks set through the Endstone block API with '
                   'or without the block update a placement triggers, read back after the stated wait; '
                   'see each file\'s `method`',
         'files': files,
-    })
+    }))
 
 
 # ---------------------------------------------------------------- placements
 
-PLACEMENT_FIXTURE = REPO / 'crates' / 'unastar' / 'src' / 'server' / 'game' / 'testdata' / 'bds-placements.json'
+PLACEMENT_DIR = REPO / 'crates' / 'unastar' / 'src' / 'server' / 'game' / 'testdata'
+
+
+def placement_fixture(group: str) -> Path:
+    """Round 1's clicks (group `blocks`) keep their file; every later group
+    of `placements.py` has its own."""
+    return PLACEMENT_DIR / ('bds-placements.json' if group == 'blocks' else f'bds-placements-{group}.json')
 
 
 def block_hashes() -> dict[int, tuple[str, dict]]:
@@ -957,26 +1175,38 @@ PLACEMENT_NOISE = {'PlayerAuthInputPacket', 'LevelChunkPacket', 'NetworkStackLat
 # player resync BDS sends after a click: attributes, actor data, the armour,
 # UI and offhand windows) are listed by name only.
 PLACEMENT_DECODED = {'InventoryTransactionPacket', 'UpdateBlockPacket', 'UpdateSubChunkBlocksPacket',
-                     'LevelSoundEventPacket', 'BlockActorDataPacket', 'OpenSignPacket', 'PlayerHotbarPacket'}
+                     'LevelSoundEventPacket', 'BlockActorDataPacket', 'OpenSignPacket', 'PlayerHotbarPacket',
+                     'LevelEventPacket', 'BlockEventPacket', 'AnimatePacket'}
+# Groups whose cases also keep the bytes of further packets: the player's
+# attributes (hunger after eating), the primed TNT actor and what an
+# explosion sends. Their packets also keep the capture time (`t_ms`).
+PLACEMENT_GROUP_DECODED = {
+    'leftovers': frozenset({'UpdateAttributesPacket'}),
+    'tnt': frozenset({'AddActorPacket', 'SetActorDataPacket', 'SetActorMotionPacket', 'RemoveActorPacket',
+                      'AddItemActorPacket', 'LevelEventGenericPacket', 'MoveActorDeltaPacket'}),
+}
 
 
-def placement_decoded(record: dict) -> bool:
+def placement_decoded(record: dict, extra: frozenset = frozenset()) -> bool:
+    if record['name'] in extra:
+        return True
     if record['name'] == 'InventoryContentPacket':
         # Packet id 0x31, then the container id: 0 is the main inventory.
         return record['hex'][2:4] == '00'
     return record['name'] in PLACEMENT_DECODED
 
 
-def summarize_placements(sweep: Path) -> None:
-    """The `placements` sweep as a unastar test fixture: each case's setup,
-    the client's click, what BDS stored and every packet between the case's
-    marker and its end marker (noise left out), hex as recorded for the
-    packets the test decodes."""
-    rows = {row['key']: row for row in results(sweep)}
-    job = json.loads((sweep / 'job.json').read_text(encoding='utf-8'))
+def capture_by_marker(path: Path, extra: dict | None = None) -> dict[str, list]:
+    """A client capture cut at the `bds-sweep:mark <key>` / `bds-sweep:mark
+    end` chat markers: key -> the packets in between (noise left out, hex
+    kept for the packets the test decodes and, for the cases in `extra`
+    (key -> packet names), for those packets too, with their capture time)."""
+    extra = extra or {}
     packets: dict[str, list] = {}
     current = None
-    for line in (sweep / 'client-capture' / 'packets.jsonl').read_text(encoding='utf-8').splitlines():
+    if not path.exists():
+        return packets
+    for line in path.read_text(encoding='utf-8').splitlines():
         record = json.loads(line)
         if record['name'] == 'TextPacket' and record['dir'] == 's2c':
             text = bytes.fromhex(record['hex']).decode('utf-8', 'replace')
@@ -987,27 +1217,393 @@ def summarize_placements(sweep: Path) -> None:
                 if current:
                     packets[current] = []
                 continue
-        if current and record['name'] not in PLACEMENT_NOISE:
+        names = extra.get(current, frozenset())
+        if current and (record['name'] not in PLACEMENT_NOISE or record['name'] in names):
             packet = {'dir': record['dir'], 'name': record['name']}
-            if placement_decoded(record):
+            if placement_decoded(record, names):
                 packet['hex'] = record['hex']
+            if names:
+                packet['t_ms'] = record['t_ms']
             packets[current].append(packet)
-    cases = []
+    return packets
+
+
+# Case fields copied from the job item into the fixture.
+PLACEMENT_FIELDS = ('key', 'setup', 'hand', 'player', 'click', 'read', 'before', 'after', 'read_later', 'watcher',
+                    'watcher_hand')
+# What the plugin recorded per case.
+PLACEMENT_RESULTS = ('reads', 'held', 'items', 'timeline', 'read_tick', 'reads_later', 'read_later_tick',
+                     'items_later')
+
+
+def summarize_placements(sweep: Path) -> None:
+    """The `placements` sweep as unastar test fixtures, one file per case
+    group: each case's setup and steps, what BDS stored and every packet
+    between the case's marker and its end marker (noise left out, hex as
+    recorded for the packets the test decodes), for the clicking player and,
+    when the sweep had one, the watching player."""
+    rows = {row['key']: row for row in results(sweep)}
+    job = json.loads((sweep / 'job.json').read_text(encoding='utf-8'))
+    extra = {item['key']: PLACEMENT_GROUP_DECODED[item['group']] for item in job['items']
+             if item.get('group') in PLACEMENT_GROUP_DECODED}
+    clicker = capture_by_marker(sweep / 'client-capture' / 'packets.jsonl', extra)
+    watcher = capture_by_marker(sweep / 'watcher-capture' / 'packets.jsonl',
+                                {key: names for key, names in extra.items() if 'UpdateAttributesPacket' not in names})
+    arena = job['arena']['placements']
+    groups: dict[str, list] = defaultdict(list)
     for item in job['items']:
         row = rows[item['key']]
-        cases.append({**{k: item[k] for k in ('key', 'setup', 'hand', 'player', 'click', 'read')},
-                      'origin': job['arena']['placements']['origin'],
-                      'bds': {'reads': row['reads'], 'held': row['held']},
-                      'packets': packets.get(item['key'], [])})
-    fixture = {
-        'source': f'BDS {BDS_VERSION}, tools/bds-sweep placements job at {harness_revision()}, '
-                  f'sweep {sweep.name}: the scripted player (survival) clicks with the stack in hotbar slot 0; '
-                  'packets are the client capture between the case marker and its end marker',
-        'cases': cases,
-    }
-    PLACEMENT_FIXTURE.parent.mkdir(parents=True, exist_ok=True)
-    PLACEMENT_FIXTURE.write_bytes((json.dumps(fixture, indent=1) + '\n').encode('utf-8'))
-    print(f'{len(cases)} cases -> {PLACEMENT_FIXTURE}')
+        case = {k: item[k] for k in PLACEMENT_FIELDS if k in item}
+        case['origin'] = arena['origin']
+        case['bds'] = {k: row[k] for k in PLACEMENT_RESULTS if k in row}
+        case['packets'] = clicker.get(item['key'], [])
+        if job.get('watcher'):
+            case.setdefault('watcher', arena['watcher'])
+            case['watcher_packets'] = watcher.get(item['key'], [])
+        groups[item.get('group', 'blocks')].append(case)
+    for group, cases in groups.items():
+        fixture = {
+            'source': f'BDS {BDS_VERSION}, tools/bds-sweep placements job at {harness_revision()}, '
+                      f'sweep {sweep.name}, group {group}: the scripted player (survival) clicks with the stack '
+                      'in hotbar slot 0; packets are the client capture between the case marker and its end '
+                      'marker' + ('; watcher_packets are the capture of a second scripted player standing '
+                                  'outside the arena' if job.get('watcher') else ''),
+            'cases': cases,
+        }
+        path = placement_fixture(group)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes((json.dumps(fixture, indent=1) + '\n').encode('utf-8'))
+        print(f'{len(cases)} cases -> {path}')
+
+
+# ---------------------------------------------------------------- circuits
+
+CIRCUIT_METHOD = (
+    'sweep.py scenarios --family <redstone family> (tools/bds-sweep/circuits.py): each circuit is built in a '
+    'cell of its own with block updates (`build`), left `wait` ticks, then run for a `timeline` of N server '
+    'ticks in which `events` ([tick, event]) are applied at their tick and every `watch` offset is read once '
+    'per tick after them. `trace` lists [tick, watch index, block, states] for the first read and every '
+    'change. `witness` is the tick (2 or 3) at which a dust beside a redstone block set at tick 0 outside '
+    'the cells lit in the same wave: BDS works redstone every other tick, and an update shows at the reads '
+    'whose tick has the parity of `witness`. Offsets are relative to the cell origin on the superflat grass '
+    '(the floor is y=-1); `minecraft:` is left out of block names.'
+)
+CIRCUIT_ROW = '[name, witness, steps, trace]'
+
+
+def short(name: str) -> str:
+    return name.removeprefix('minecraft:')
+
+
+def short_steps(steps: list) -> list:
+    """The job's steps with `minecraft:` left out of block names."""
+    def event(e: list) -> list:
+        if e[0] == 'set':
+            return ['set', e[1], short(e[2]), e[3], e[4]]
+        if e[0] == 'build':
+            return ['build', [[o, short(b), st, ph] for o, b, st, ph in e[1]]]
+        if e[0] == 'setblock':
+            return ['setblock', e[1], short(e[2]), e[3], e[4]]
+        if e[0] == 'drop':
+            return ['drop', e[1], short(e[2]), e[3]]
+        return e
+    out = []
+    for step in steps:
+        if step[0] == 'timeline':
+            out.append(['timeline', step[1], [[t, event(e)] for t, e in step[3]], step[4]])
+        elif step[0] == 'wait':
+            out.append(step)
+        else:
+            out.append(event(step))
+    return out
+
+
+def circuit_blocks(rows_by_family: dict[str, list]) -> dict:
+    """Facts the server reads at runtime, derived from the per-block
+    families: blocks a repeater powers through (`conductors`), blocks that
+    cut dust climbing past them (`cuts`) and, per measured block state,
+    whether power climbs onto dust on top of it and comes down its far side
+    (`climb`)."""
+    conductors, cuts, climb = set(), set(), []
+    for name, witness, steps, trace in rows_by_family.get('redstone_conductors', []):
+        block = 'minecraft:' + name[1]
+        first = {k: b for t, k, b, st in trace if t == 0}
+        lit = [t for t, k, b, st in trace if k == 3 and t > 0 and b == 'lit_redstone_lamp']
+        powered = [t for t, k, b, st in trace if k == 1 and b == 'powered_repeater']
+        # The block must still be there, the lamp dark before the repeater
+        # powered it and lit in the same update (a block that reacts to the
+        # power on its own, such as a sculk sensor, lights it later).
+        if lit and powered and lit[0] == powered[0] and first.get(3) == 'redstone_lamp' \
+                and first.get(2) == short(block) and block != 'minecraft:redstone_wire':
+            conductors.add(block)
+    for name, witness, steps, trace in rows_by_family.get('redstone_dust_cut', []):
+        block = 'minecraft:' + name[1]
+        first = {k: b for t, k, b, st in trace if t == 0}
+        # Cut: the dust on the stone stays dark in the update the dust below
+        # lights (a door or plate set there may pop off later and let the
+        # power climb).
+        lit = [t for t, k, b, st in trace if k == 1 and st.get('redstone_signal', 0) > 0]
+        top_lit = [t for t, k, b, st in trace if k == 2 and st.get('redstone_signal', 0) > 0]
+        if first.get(3) == short(block) and lit and not (top_lit and top_lit[0] <= lit[0]):
+            cuts.add(block)
+    for name, witness, steps, trace in rows_by_family.get('redstone_dust_blocks', []):
+        block, states = 'minecraft:' + name[1], name[2]
+
+        # Ever lit: the dust on top may pop later, when the power it
+        # carries changes the block under it (a trapdoor opening).
+        def lit(k):
+            return any(kk == k and b == 'redstone_wire' and st.get('redstone_signal', 0) > 0
+                       for t, kk, b, st in trace)
+        climb.append([block, states, lit(3), lit(4)])
+    climb.sort(key=lambda r: (r[0], json.dumps(r[1], sort_keys=True)))
+    return {'method': 'derived from redstone_conductors.json, redstone_dust_cut.json and '
+                      'redstone_dust_blocks.json by summarize.py circuits',
+            'conductors': sorted(conductors), 'cuts': sorted(cuts),
+            'row': '[block, states, power climbs onto dust on top, power comes down the far side]',
+            'rows': climb}
+
+
+def summarize_circuits(sweeps: list[Path]) -> None:
+    """Redstone circuit families to `redstone/<family>.json` (one row per
+    line) and the derived `redstone/blocks.json`."""
+    by_family: dict[str, list] = defaultdict(list)
+    for sweep in sweeps:
+        job = json.loads((sweep / 'job.json').read_text(encoding='utf-8'))
+        items = {item['key']: item for item in job['items']}
+        for row in results(sweep):
+            family, rest = row['key'].split('|', 1)
+            if not family.startswith('redstone_'):
+                continue
+            witness = row['timing']['witness_tick']
+            if witness not in (2, 3):
+                raise SystemExit(f'{sweep}: {row["key"]}: no witness tick ({witness})')
+            trace = [[t, k, short(b), st] for t, k, b, st in row['traces']['trace']]
+            name = json.loads(rest)
+            # Block names inside a row name are shortened like the steps.
+            name = [short(p) if isinstance(p, str) else p for p in name]
+            by_family[family].append([name, witness, short_steps(items[row['key']]['steps']), trace])
+    files = []
+    for family, rows in sorted(by_family.items()):
+        rows.sort(key=lambda r: json.dumps(r[0], sort_keys=True))
+        files.append(write_rows(f'redstone/{family}.json',
+                                {'family': family, 'method': CIRCUIT_METHOD, 'row': CIRCUIT_ROW}, rows))
+    derived = circuit_blocks(by_family)
+    if derived['conductors'] or derived['rows']:
+        rows = derived.pop('rows')
+        files.append(write_rows('redstone/blocks.json', derived, rows))
+    entry = {**provenance('scenarios', sweeps), 'files': files,
+             'method': 'redstone circuits replayed tick by tick: ' + CIRCUIT_METHOD}
+    update_manifest('redstone', merge_manifest_files('redstone', entry))
+    for f in files:
+        print(f['path'], f.get('rows', ''), f['sha256'][:12])
+
+
+# ---------------------------------------------------------------- round 4 circuits
+
+ROUND4_METHOD = CIRCUIT_METHOD + (
+    ' Round 4 rows also keep `items` (the item actors that ended in the cell, [item, data, count]) and '
+    '`actors` (for timelines with an actor box: [tick, [[id, type, dx, dy, dz, vx, vy, vz, health], ...]] '
+    'whenever the actors in the cell changed; positions relative to the cell origin).'
+)
+ROUND4_ROW = '[name, witness, steps, trace, items, actors]'
+# Families of `pistons.py` and the directory their rows go to.
+ROUND4_PREFIXES = {'pistons_': 'pistons', 'tnt_': 'explosions', 'plates_': 'redstone', 'infested_': 'infested'}
+# Actor types left out of the TNT families' actor traces (items thrown by explosions).
+ROUND4_NOISE = {'minecraft:item'}
+BLAST_ROW = '[material, sample, witness, destroyed offsets, dropped items {item: count}]'
+
+
+def piston_classes(rows: list) -> dict:
+    """How a sticky piston treats each block (`pistons_blocks`): `push_pull`
+    (moved out and pulled back), `push_only` (moved, left when the piston
+    retracts), `breaks` (removed as the head comes out, dropping its items)
+    or `immovable` (the head never comes out). Blocks that were not
+    standing at x=2 when the timeline began are left out."""
+    out: dict[str, list] = defaultdict(list)
+    for name, witness, steps, trace, items, actors in rows:
+        block = name[1]
+        first = {k: b for t, k, b, st in trace if t == 0}
+        if first.get(2) != block:
+            continue
+        arm = [t for t, k, b, st in trace if k == 2 and t > 0 and b.endswith('piston_arm_collision')]
+        landed = [t for t, k, b, st in trace if k == 3 and t > 0 and b == block]
+        back = [t for t, k, b, st in trace if k == 2 and arm and t > arm[0] and b == block]
+        if not arm:
+            kind = 'immovable'
+        elif landed and back:
+            kind = 'push_pull'
+        elif landed:
+            kind = 'push_only'
+        else:
+            kind = 'breaks'
+        out[kind].append(block)
+    return {kind: sorted(blocks) for kind, blocks in out.items()}
+
+
+def move_class(classes: dict, block: str, kind: str) -> None:
+    for blocks in classes.values():
+        if block in blocks:
+            blocks.remove(block)
+    classes.setdefault(kind, []).append(block)
+    classes[kind].sort()
+
+
+def glue_moves(classes: dict, rows: list) -> None:
+    """Slime and honey stick to the floor under them in `pistons_blocks`,
+    so the floor holds them there; `pistons_slime` (raised off the floor)
+    shows them pushed and pulled."""
+    for name, witness, steps, trace, items, actors in rows:
+        if name[1:] != ['stuck', 'sticky_piston']:
+            continue
+        glue = name[0]
+        if any(k == 3 and b == glue and t > 0 for t, k, b, st in trace) and                 any(k == 2 and b == glue and t > 20 for t, k, b, st in trace):
+            move_class(classes, glue, 'push_pull')
+
+
+def held_by_heads(classes: dict, rows: list) -> None:
+    """A piston head holds a push (`pistons_chains` "push_head": the piston
+    pushing into another piston's head never extends)."""
+    for name, witness, steps, trace, items, actors in rows:
+        if name[0] != 'push_head':
+            continue
+        if not any(t > 0 and b.endswith('piston_arm_collision') and k == 2 for t, k, b, st in trace):
+            for head in ('piston_arm_collision', 'sticky_piston_arm_collision'):
+                move_class(classes, head, 'immovable')
+
+
+BLAST_METHOD = (
+    'sweep.py scenarios --family tnt_blast_<material> (tools/bds-sweep/tnt.py): a 9 x 9 x 9 cube of the '
+    'material filled from (-4,-3,-4) to (4,5,4) around a TNT block at (0,1,0) (the superflat floor is y=-1, '
+    'bedrock y=-4), primed by a redstone block set at (1,1,0); 110 ticks later every cube position is read '
+    'and the item actors in the cell counted. `destroyed` lists the cube offsets that were air afterwards '
+    '(the TNT and redstone block positions included); `dropped` sums the items by identifier.'
+)
+
+
+def blast_row(family: str, rest: str, row: dict, item: dict) -> list:
+    material = family.removeprefix('tnt_blast_')
+    watch = next(step for step in item['steps'] if step[0] == 'read')[2]
+    destroyed = [offset for offset, (block, states) in zip(watch, row['reads']['after']) if block == 'minecraft:air']
+    dropped = Counter()
+    for item_id, data, count in row.get('items', []):
+        dropped[short(item_id)] += count
+    return [material, json.loads(rest), row['timing']['witness_tick'], destroyed, dict(sorted(dropped.items()))]
+
+
+def actor_trace(row: dict, noise: set) -> list:
+    """The actor trace without the actor types in `noise` (the items an
+    explosion throws), recorded when what is left changes."""
+    out, last = [], None
+    for t, seen in row.get('actor_traces', []):
+        kept = [[a[0], short(a[1]), *a[2:]] for a in seen if a[1] not in noise]
+        if kept != last:
+            out.append([t, kept])
+            last = kept
+    return out
+
+
+def summarize_round4(sweeps: list[Path]) -> None:
+    """Round 4 families (`pistons.py`, `tnt.py`) to `<dir>/<family>.json`,
+    the blast samples to `explosions/tnt_blast.json` and the derived
+    `pistons/blocks.json`."""
+    by_family: dict[str, list] = defaultdict(list)
+    for sweep in sweeps:
+        job = json.loads((sweep / 'job.json').read_text(encoding='utf-8'))
+        items = {item['key']: item for item in job['items']}
+        for row in results(sweep):
+            family, rest = row['key'].split('|', 1)
+            if not any(family.startswith(prefix) for prefix in ROUND4_PREFIXES) or family.endswith('_pilot'):
+                continue
+            witness = row['timing']['witness_tick']
+            if witness not in (2, 3):
+                raise SystemExit(f'{sweep}: {row["key"]}: no witness tick ({witness})')
+            if family.startswith('tnt_blast_'):
+                by_family['tnt_blast'].append(blast_row(family, rest, row, items[row['key']]))
+                continue
+            trace = [[t, k, short(b), st] for t, k, b, st in row['traces']['trace']]
+            name = [short(p) if isinstance(p, str) else p for p in json.loads(rest)]
+            stacks = [[short(i), d, n] for i, d, n in row.get('items', [])]
+            actors = actor_trace(row, ROUND4_NOISE if family.startswith('tnt_') else set())
+            by_family[family].append([name, witness, short_steps(items[row['key']]['steps']), trace, stacks,
+                                      actors])
+    files = []
+    for family, rows in sorted(by_family.items()):
+        rows.sort(key=lambda r: json.dumps(r[0], sort_keys=True) if family != 'tnt_blast' else json.dumps(r[:2]))
+        directory = next(d for prefix, d in ROUND4_PREFIXES.items() if family.startswith(prefix))
+        header = ({'family': family, 'method': BLAST_METHOD, 'row': BLAST_ROW} if family == 'tnt_blast'
+                  else {'family': family, 'method': ROUND4_METHOD, 'row': ROUND4_ROW})
+        files.append(write_rows(f'{directory}/{family}.json', header, rows))
+    if 'pistons_blocks' in by_family:
+        classes = piston_classes(by_family['pistons_blocks'])
+        glue_moves(classes, by_family.get('pistons_slime', []))
+        held_by_heads(classes, by_family.get('pistons_chains', []))
+        rows = [[block, kind] for kind, blocks in sorted(classes.items()) for block in blocks]
+        rows.sort()
+        files.append(write_rows('pistons/blocks.json', {
+            'method': 'derived from pistons_blocks.json by summarize.py round4: the default state of each block in '
+                      'front of a sticky piston powered for 20 ticks; push_pull = moved and pulled back, '
+                      'push_only = moved and left, breaks = removed as the head came out, immovable = the head '
+                      'never came out. Slime and honey blocks stick to the floor under them there, so their class '
+                      'comes from pistons_slime.json (raised off the floor); the class of the heads from '
+                      'pistons_chains.json (a piston pushing into a head never extends)',
+            'row': '[block, push_pull | push_only | breaks | immovable]'}, rows))
+    for directory in sorted(set(ROUND4_PREFIXES.values())):
+        mine = [f for f in files if f['path'].startswith(directory + '/')]
+        if not mine:
+            continue
+        entry = {**provenance('scenarios', sweeps), 'files': mine,
+                 'method': 'circuits replayed tick by tick: ' + ROUND4_METHOD}
+        update_manifest(directory, merge_manifest_files(directory, entry))
+    for f in files:
+        print(f['path'], f.get('rows', ''), f['sha256'][:12])
+
+
+# ---------------------------------------------------------------- random ticks
+
+RANDOM_METHOD = (
+    'sweep.py scenarios --family <random family> (tools/bds-sweep/random_ticks.py): a 16 x 16 field of '
+    'identical cells is laid out on the superflat floor without block updates (`build`, offsets from the '
+    'field origin, the floor at y=-1), `randomtickspeed` is set to `speed`, and every `watch` position is '
+    'read every `read_every` ticks; `reads` holds, per read, how many watched positions held each '
+    '[block, states] (`minecraft:` left out). The replay test lays out the same field in unastar with a '
+    'seeded random source and compares the histograms with a chi-square test.'
+)
+RANDOM_ROW = '[name, speed, read_every, build, watch, reads]'
+
+
+def summarize_random_ticks(sweeps: list[Path]) -> None:
+    """Random tick fields to `random_ticks/<family>.json` (one row per
+    line)."""
+    by_family: dict[str, list] = defaultdict(list)
+    for sweep in sweeps:
+        job = json.loads((sweep / 'job.json').read_text(encoding='utf-8'))
+        items = {item['key']: item for item in job['items']}
+        for row in results(sweep):
+            family, rest = row['key'].split('|', 1)
+            if not family.startswith('random_'):
+                continue
+            steps = items[row['key']]['steps']
+            build = [[o, short(b), st] for o, b, st, physics in steps[0][1]]
+            speed = int(steps[1][1].split()[-1])
+            waits = [s[1] for s in steps if s[0] == 'wait']
+            watch = next(s[2] for s in steps if s[0] == 'read')
+            reads = []
+            for index in range(1, len(waits) + 1):
+                counts = Counter(json.dumps([short(b), st], sort_keys=True)
+                                 for b, st in row['reads'][f'r{index}'])
+                reads.append([[json.loads(label), n] for label, n in sorted(counts.items())])
+            name = [short(p) if isinstance(p, str) else p for p in json.loads(rest)]
+            by_family[family].append([name, speed, waits[0], build, watch, reads])
+    files = []
+    for family, rows in sorted(by_family.items()):
+        rows.sort(key=lambda r: json.dumps(r[0], sort_keys=True))
+        files.append(write_rows(f'random_ticks/{family}.json',
+                                {'family': family, 'method': RANDOM_METHOD, 'row': RANDOM_ROW}, rows))
+    entry = {**provenance('scenarios', sweeps), 'files': files,
+             'method': 'random tick fields compared by distribution: ' + RANDOM_METHOD}
+    update_manifest('random_ticks', merge_manifest_files('random_ticks', entry))
+    for f in files:
+        print(f['path'], f.get('rows', ''), f['sha256'][:12])
 
 
 def main() -> int:
@@ -1035,6 +1631,12 @@ def main() -> int:
         summarize_attack(dirs)
     elif kind == 'scenarios':
         summarize_scenarios(dirs)
+    elif kind == 'circuits':
+        summarize_circuits(dirs)
+    elif kind == 'round4':
+        summarize_round4(dirs)
+    elif kind == 'random-ticks':
+        summarize_random_ticks(dirs)
     elif kind == 'item-blocks':
         summarize_item_blocks(dirs[0])
     elif kind == 'placements':
