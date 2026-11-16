@@ -450,8 +450,8 @@ fn a_survival_client_cannot_fly() {
 }
 
 /// A sprint the copy picks up after trusted inputs keeps its speed: a
-/// client that starts sprinting beside a block the copy trusts (bubble
-/// columns) goes on sprinting once the blocks are gone, and the copy
+/// client that starts sprinting beside a block the copy trusts (powder
+/// snow) goes on sprinting once the blocks are gone, and the copy
 /// follows it exactly, without a correction.
 #[test]
 fn a_sprint_goes_on_after_trusted_inputs() {
@@ -462,7 +462,7 @@ fn a_sprint_goes_on_after_trusted_inputs() {
         .world()
         .resource::<crate::server::game::types::BlockRegistryResource>()
         .0
-        .default_state_id_by_name("minecraft:bubble_column")
+        .default_state_id_by_name("minecraft:powder_snow")
         .unwrap();
     let beside: Vec<IVec3> = (0..4)
         .map(|z| start.floor().as_ivec3() + IVec3::new(1, 0, z))
@@ -684,9 +684,10 @@ fn a_riptide_spin_is_trusted_for_twenty_inputs() {
 /// Inputs the simulation does not reproduce are trusted, each for its
 /// reason, and only where it applies: swift sneak sneaking, depth strider
 /// next to water, soul speed on soul soil, a riptide trident's spin started
-/// in water, a block at eye height (a crawl space), a bubble column. What
+/// in water, a block at eye height (a crawl space), powder snow. What
 /// the movement differential verified is judged: speed, slowness,
-/// levitation, jump boost, ice, ladders, honey, scaffolding, lava.
+/// levitation, jump boost, ice, ladders, honey, scaffolding, lava, bubble
+/// columns.
 #[test]
 fn situations_the_simulation_does_not_cover_are_trusted() {
     use crate::entity::components::{
@@ -863,13 +864,13 @@ fn situations_the_simulation_does_not_cover_are_trusted() {
             None,
         ),
         (
-            "a bubble column beside",
+            "a bubble column beside (judged: the simulation matches BDS)",
             |h| {
                 let column = block_named(h, "minecraft:bubble_column");
                 h.set_block(HOME.floor().as_ivec3() + IVec3::X, column);
                 Vec::new()
             },
-            Some(Trust::Block),
+            None,
         ),
         (
             "ice underfoot (judged: the simulation matches BDS)",

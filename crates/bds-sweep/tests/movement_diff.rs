@@ -48,8 +48,6 @@ const KNOWN_GAPS: &[(&str, u32, &str)] = &[
         16,
         "a bed's bounce is not BDS's (measured from five heights, unfitted)",
     ),
-    ("bubble_column_down", 1, "bubble columns are not simulated"),
-    ("bubble_column_up", 1, "bubble columns are not simulated"),
     (
         "elytra_glide_yaw",
         22,

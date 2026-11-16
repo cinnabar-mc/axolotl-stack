@@ -720,6 +720,7 @@ impl PlayerMotion {
             // The first input after a teleport: the copy stays at rest at
             // the destination, whatever the input says.
             let verdict = self.authority.judge_rest(self.body.feet, claim);
+            sim::rest(&mut self.body, terrain);
             let correction = (verdict == Verdict::Correct).then(|| {
                 self.corrections += 1;
                 correction_packet(&self.body, [0.0; 3], tick)

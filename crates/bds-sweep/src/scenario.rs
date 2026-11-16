@@ -803,6 +803,8 @@ pub struct ScenarioRun {
 pub fn simulate(scenario: &Scenario) -> Result<ScenarioTrace> {
     let world = scenario.world()?;
     let mut body = scenario.start_body();
+    // The input BDS rests after the start teleport.
+    physics::rest(&mut body, &world);
     let mut trace = ScenarioTrace::default();
     for (tick, input) in (1u32..).zip(scenario.tick_inputs()) {
         if let Some(velocity) = scenario.velocity_after(tick - 1) {

@@ -90,6 +90,14 @@ const SPRINT_WALL_ANGLE: f32 = std::f32::consts::FRAC_PI_4;
 /// a sprint (BDS 1.26.51, `dt_gap_*`: 5 idle inputs between the presses
 /// sprint, 6 do not).
 const SPRINT_TAP: u8 = 7;
+/// Bubble columns' pushes and their limits ([`bubble_columns`]).
+const BUBBLE_UP: f32 = 0.06;
+const BUBBLE_UP_MAX: f32 = 0.7;
+const BUBBLE_UP_TOP: f32 = 0.1;
+const BUBBLE_UP_TOP_MAX: f32 = 1.8;
+const BUBBLE_DOWN: f32 = 0.03;
+const BUBBLE_DOWN_MAX: f32 = 0.3;
+const BUBBLE_DOWN_TOP_MAX: f32 = 0.9;
 /// A body standing up into blocks less deep than this on x or z is pushed
 /// out of them ([`room_to_stand`]).
 const STAND_PUSH: f32 = 0.01;
@@ -391,12 +399,9 @@ impl BlockKind {
     /// Whether BDS runs confirmed how this family moves a player, bit for
     /// bit (the movement differential's scenarios, `tools/movement-diff`):
     /// beds (the bounce) and powder snow (the freezing slowdown) are
-    /// simulated but not yet BDS's, bubble columns are not simulated.
+    /// simulated but not yet BDS's.
     pub fn confirmed(self) -> bool {
-        !matches!(
-            self,
-            Self::Bed | Self::PowderSnow | Self::BubbleColumn { .. }
-        )
+        !matches!(self, Self::Bed | Self::PowderSnow)
     }
 }
 
@@ -861,6 +866,7 @@ pub fn step(body: &mut Body, controls: &Controls, terrain: &impl Terrain) -> Cha
             body.velocity[axis] = 0.0;
         }
     }
+    bubble_columns(body, terrain);
     if !controls.jump {
         body.jump_delay = 0;
     } else if body.jump_delay > 0 {
@@ -868,6 +874,44 @@ pub fn step(body: &mut Body, controls: &Controls, terrain: &impl Terrain) -> Cha
     }
     finish(body, &changes);
     changes
+}
+
+/// The input after a teleport: the body stays where it was put, at rest,
+/// but what pushes it at the end of a tick still does (BDS 1.26.51,
+/// `bubble_down_2`: a body put in a downward column moves 0.06 down on the
+/// first input after the resting one).
+pub fn rest(body: &mut Body, terrain: &impl Terrain) {
+    body.velocity = [0.0; 3];
+    bubble_columns(body, terrain);
+}
+
+/// Bubble columns push the velocity at the end of the tick, once for each
+/// column block the box touches, from the lowest: an upward column's block
+/// by 0.06 up to at most 0.7, its top block (air above) by 0.1 up to 1.8; a
+/// downward column's block by 0.03 down to at most 0.3, its top block to
+/// 0.9 (BDS 1.26.51, `bubble_up_*`, `bubble_down_*`: a body touching three
+/// blocks of an upward column gains 0.18 a tick after the water's drag and
+/// sink, 0.22 with the top one; a sinking one falls 0.3 a tick, and lies on
+/// the bottom at -0.065, the water's -0.005 and two blocks' 0.03).
+fn bubble_columns(body: &mut Body, terrain: &impl Terrain) {
+    let (min, max) = body.aabb().block_range();
+    for x in min[0]..=max[0] {
+        for y in min[1]..=max[1] {
+            for z in min[2]..=max[2] {
+                let BlockKind::BubbleColumn { down } = terrain.block([x, y, z]).kind else {
+                    continue;
+                };
+                let top = terrain.block([x, y + 1, z]).kind == BlockKind::Air;
+                let v = &mut body.velocity[1];
+                *v = match (down, top) {
+                    (false, false) => (*v + BUBBLE_UP).min(BUBBLE_UP_MAX),
+                    (false, true) => (*v + BUBBLE_UP_TOP).min(BUBBLE_UP_TOP_MAX),
+                    (true, false) => (*v - BUBBLE_DOWN).max(-BUBBLE_DOWN_MAX),
+                    (true, true) => (*v - BUBBLE_DOWN).max(-BUBBLE_DOWN_TOP_MAX),
+                };
+            }
+        }
+    }
 }
 
 /// After the move: end a stopping swim.
