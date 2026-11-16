@@ -2121,11 +2121,15 @@ mod tests {
         let held = held_item(&world, player).unwrap();
         assert_eq!(durability_damage(&held), 1);
 
+        // Damage 250 of 250 still works; the next block breaks it (BDS).
         give(&mut world, player, with_durability_damage(&held, 249));
+        wear_held_tool(&mut world, player, *blocks::STONE);
+        let held = held_item(&world, player).unwrap();
+        assert_eq!(durability_damage(&held), 250);
         wear_held_tool(&mut world, player, *blocks::STONE);
         assert!(
             held_item(&world, player).is_none(),
-            "iron pickaxe has 250 uses"
+            "iron pickaxe has 251 uses"
         );
     }
 

@@ -423,10 +423,25 @@ class UnbreakingTable(unittest.TestCase):
                 '10 /say unbreaking armour 1', '11 /damage @s 8 entity_attack', '22 /damage @s 8 entity_attack',
                 '30 /say unbreaking use 2', '31 use-on 2 -60 0 1',
                 '40 /say unbreaking use 2', '41 use-on 2 -60 0 1', '43 use-on 2 -60 0 1',
+                '50 /say unbreaking attack 3', '51 attack-named p1', '60 attack-named p2',
+                '70 /say unbreaking elytra 3', '71 /tp @s 0.5 300 0.5 -90 0', '75 /tp @s 0.5 -60 0.5 -90 0',
+                '80 /say unbreaking threshold mining 2030', '81 mine 1 -59 0 4 0',
             ]), encoding='utf-8')
-            hits, uses = unbreaking_table.script_counts(script)
+            hits, uses, events = unbreaking_table.script_counts(script)
         self.assertEqual(hits, {'1': 2})
         self.assertEqual(uses, {'2': [1, 2]})
+        self.assertEqual(events, {'elytra': {'3': 1}})
+
+    def test_events_count_each_rise_of_the_damage_as_one_event(self):
+        events = unbreaking_table.Events(5)
+        for value in (2, 2, 4, 0, 2):
+            events.saw(value)
+        # The drop to 0 is a fresh item, not wear.
+        self.assertEqual(events.row(), {'events': 5, 'worn': [2, 0, 3]})
+
+    def test_broken_reads_an_empty_slot(self):
+        self.assertTrue(unbreaking_table.broken('item: CerealizerNetworkItemStackDescriptorSerializedData { id: 0, '))
+        self.assertFalse(unbreaking_table.broken('item: CerealizerNetworkItemStackDescriptorSerializedData { id: 7, '))
 
 
 class PairCaptureTest(unittest.TestCase):
