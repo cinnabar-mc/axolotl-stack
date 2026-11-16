@@ -752,6 +752,18 @@ LAYOUTS = ({name: 'circuits' for name in ROUND_THREE | ROUND_FOUR | INFESTED} | 
            | {name: 'coral' for name in CORAL} | {'coral_death': 'coral'} | {name: 'blast' for name in TNT})
 
 
+# ------------------------------------------------------------------ liquids
+
+def _liquid_families() -> tuple[dict, dict]:
+    import liquids
+    return liquids.FAMILIES, liquids.LAYOUTS
+
+
+LIQUIDS, LIQUID_LAYOUTS = _liquid_families()
+FAMILIES.update(LIQUIDS)
+LAYOUTS.update(LIQUID_LAYOUTS)
+
+
 def layout(families: str) -> str:
     names = list(FAMILIES) if families == 'all' else families.split(',')
     found = {LAYOUTS.get(name, 'cells') for name in names}

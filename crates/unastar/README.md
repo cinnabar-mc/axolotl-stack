@@ -942,6 +942,19 @@ break and hurt actors by distance and exposure, compared with BDS by distributio
 the circuit update; the primed TNT (`minecraft:explode`, `entity/mob/combat/explode.rs`)
 explodes 81 ticks later a sixteenth of its height above its feet.
 
+Liquids (`server/game/liquids/`) flow like BDS 1.26.51, tick by tick (`liquids/tests.rs`
+replays the cells of `crates/unastar-data/data/measured/liquids/`; decision
+[0051](../../docs/decisions/0051-tick-liquids-per-chunk-in-a-random-chunk-order.md)). A liquid is
+still until a block beside it changes or a bucket places it (`liquids::place_source`,
+`liquids::take_source`); water then ticks every 5 game ticks, lava every 30 (10 in the
+nether). Flow, falling, the drop search, sources between two sources, obsidian, cobblestone,
+stone and basalt follow the measured rules; per block, a liquid breaks it, fills its liquid
+layer or stays out (`unastar_data::liquids`). A block that holds water keeps the water it is set
+into, and air set over it leaves the water as a source. Ticks crossing into another chunk land
+early by BDS's random chunk order; changes are sent once per tick, batched per subchunk. Not
+modelled: BDS's order for ticks due in the same game tick, lava fire spread, nether water
+evaporation, bubble columns and sponges.
+
 Random block ticks (`server/game/random_ticks.rs`) follow BDS 1.26.51 by distribution
 (`random_ticks/tests.rs` compares measured fields of
 `crates/unastar-data/data/measured/random_ticks/` by chi-square): each sub-chunk of a ticking
