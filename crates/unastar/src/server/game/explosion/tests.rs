@@ -10,7 +10,9 @@ use rand::SeedableRng;
 use rand::rngs::StdRng;
 use serde_json::Value;
 
-use super::{blast_centre, blasted_blocks, damage, distance, exposure, impact};
+use super::{
+    ExplosionBlocks, blast_centre, blasted_blocks, damage, distance, exposure, impact,
+};
 use crate::entity::systems::BlockSource;
 use crate::registry::BlockRegistry;
 use crate::registry::collision::Aabb;
@@ -133,6 +135,7 @@ fn tnt_breaks_blocks_like_bds_by_distribution() {
         let destroyed = row[3].as_array().unwrap().iter().map(offset).collect();
         by_material.entry(material).or_default().push(destroyed);
     }
+    let ids = ExplosionBlocks::resolve(registry()).unwrap();
     let mut failures = Vec::new();
     for (material, bds) in &by_material {
         let cell = blast_cell(material);
@@ -141,6 +144,7 @@ fn tnt_breaks_blocks_like_bds_by_distribution() {
             .map(|_| {
                 let mut blasted = blasted_blocks(
                     &cell,
+                    &ids,
                     blast_centre(BLAST_FEET, TNT_HEIGHT),
                     TNT_POWER,
                     f32::MAX,
@@ -381,6 +385,7 @@ fn powered_tnt_primes_and_explodes_81_ticks_later_like_bds() {
     {
         let world = server.ecs.world_mut();
         world.insert_resource(crate::entity::EntityRandom::seeded(9));
+        world.insert_resource(super::ExplosionRandom::seeded(9));
         // A creative watcher far enough away not to be hurt.
         let watcher = world
             .spawn((

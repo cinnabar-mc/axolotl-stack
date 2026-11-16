@@ -19,8 +19,10 @@
 
 use bevy_ecs::prelude::*;
 use glam::{DVec3, IVec3};
-use rand::Rng;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use unastar_data::actor_components::body::ActorDamageCause;
+use unastar_data::actor_identifiers::ActorType;
 
 use super::block_drops::{pop_resource, popped_drops};
 use crate::entity::components::{GameMode, PhysicsBody, Player, Position, Velocity};
@@ -31,7 +33,8 @@ use crate::entity::mob::components::KnockbackPower;
 use crate::entity::mob::constants::{PLAYER_BOX_HEIGHT, PLAYER_BOX_WIDTH};
 use crate::entity::mob::state::Dead;
 use crate::entity::systems::BlockSource;
-use crate::entity::{EntityRandom, PLAYER_EYE_HEIGHT};
+use crate::entity::PLAYER_EYE_HEIGHT;
+use crate::registry::BlockRegistry;
 use crate::registry::collision::Aabb;
 
 mod viewers;
@@ -54,6 +57,62 @@ const RESISTANCE_FACTOR: f32 = 0.3;
 /// Damage of an impact of 1 per block of radius, before the constant 1.
 const DAMAGE_FACTOR: f64 = 7.0;
 
+/// The random source of explosions (ray strengths, the sampled block
+/// particles, a primed TNT's direction), its own: drawing them from
+/// [`crate::entity::EntityRandom`] moved every later entity roll whenever
+/// something exploded. Seeded from entropy.
+#[derive(Resource)]
+pub(crate) struct ExplosionRandom(pub(crate) StdRng);
+
+impl Default for ExplosionRandom {
+    fn default() -> Self {
+        Self(StdRng::from_entropy())
+    }
+}
+
+#[cfg(test)]
+impl ExplosionRandom {
+    pub(crate) fn seeded(seed: u64) -> Self {
+        Self(StdRng::seed_from_u64(seed))
+    }
+}
+
+/// The blocks explosions test, resolved against the block registry once
+/// ([`Self::of`] caches them in the world).
+#[derive(Resource, Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct ExplosionBlocks {
+    air: u32,
+    /// TNT's block states (first, last): primed instead of dropped.
+    tnt: Option<(u32, u32)>,
+}
+
+impl ExplosionBlocks {
+    /// The blocks in `registry`; `None` when it has no air.
+    pub(crate) fn resolve(registry: &BlockRegistry) -> Option<Self> {
+        Some(Self {
+            air: registry.default_state_id_by_name("minecraft:air")?,
+            tnt: registry
+                .get_by_name("minecraft:tnt")
+                .map(|entry| (entry.min_state_id, entry.max_state_id)),
+        })
+    }
+
+    /// The blocks of the world's registry, resolved on first use.
+    fn of(world: &mut World) -> Option<Self> {
+        if let Some(blocks) = world.get_resource::<Self>() {
+            return Some(*blocks);
+        }
+        let blocks = Self::resolve(world.registry())?;
+        world.insert_resource(blocks);
+        Some(blocks)
+    }
+
+    fn is_tnt(&self, state: u32) -> bool {
+        self.tnt
+            .is_some_and(|(first, last)| (first..=last).contains(&state))
+    }
+}
+
 /// The directions of the rays: from the centre through every cell on the
 /// grid's outer shell.
 fn ray_directions() -> impl Iterator<Item = glam::Vec3> {
@@ -75,13 +134,14 @@ fn ray_directions() -> impl Iterator<Item = glam::Vec3> {
 /// rays reach them (each once).
 pub(crate) fn blasted_blocks(
     blocks: &impl BlockSource,
+    ids: &ExplosionBlocks,
     centre: DVec3,
     power: f32,
     max_resistance: f32,
     rng: &mut impl Rng,
 ) -> Vec<IVec3> {
     let registry = blocks.registry();
-    let air = registry.default_state_id_by_name("minecraft:air");
+    let air = Some(ids.air);
     let start = centre.as_vec3();
     let mut seen = std::collections::HashSet::new();
     let mut out = Vec::new();
@@ -246,23 +306,32 @@ pub(crate) fn explode(world: &mut World, blast: &Blast) {
     if blast.power <= 0.0 {
         return;
     }
-    let blocks = if blast.breaks_blocks {
-        let mut rng = world.get_resource_or_init::<EntityRandom>().0.clone();
-        let blocks = blasted_blocks(
-            &*world,
-            blast.centre,
-            blast.power,
-            blast.max_resistance,
-            &mut rng,
-        );
-        world.resource_mut::<EntityRandom>().0 = rng;
-        blocks
+    let ids = if blast.breaks_blocks {
+        ExplosionBlocks::of(world)
     } else {
-        Vec::new()
+        None
+    };
+    let blocks = match &ids {
+        Some(ids) => {
+            world.init_resource::<ExplosionRandom>();
+            world.resource_scope(|world, mut rng: Mut<ExplosionRandom>| {
+                blasted_blocks(
+                    &*world,
+                    ids,
+                    blast.centre,
+                    blast.power,
+                    blast.max_resistance,
+                    &mut rng.0,
+                )
+            })
+        }
+        None => Vec::new(),
     };
     hurt_actors(world, blast);
     viewers::explosion(world, blast, &blocks);
-    break_blocks(world, &blocks);
+    if let Some(ids) = ids {
+        break_blocks(world, &ids, &blocks);
+    }
 }
 
 /// The damage an actor `distance` from the blast, seeing `seen` of it,
@@ -318,20 +387,14 @@ fn hurt_actors(world: &mut World, blast: &Blast) {
 /// Break the blasted blocks: TNT is primed (with its short fuse), every
 /// other block drops what it drops by hand and becomes air; then the block
 /// updates of every change run.
-fn break_blocks(world: &mut World, blocks: &[IVec3]) {
-    let Some(air) = world.registry().default_state_id_by_name("minecraft:air") else {
-        return;
-    };
+fn break_blocks(world: &mut World, ids: &ExplosionBlocks, blocks: &[IVec3]) {
     let mut changed = Vec::new();
     for &pos in blocks {
-        let Some(state) = world.block_at(pos).filter(|state| *state != air) else {
+        let Some(state) = world.block_at(pos).filter(|state| *state != ids.air) else {
             continue;
         };
-        let tnt = world
-            .registry()
-            .get_by_runtime_id(state)
-            .is_some_and(|entry| entry.string_id == "minecraft:tnt");
-        crate::server::game::blocks::write_block(world, pos, air, false);
+        let tnt = ids.is_tnt(state);
+        crate::server::game::blocks::write_block(world, pos, ids.air, false);
         if tnt {
             prime_tnt(world, pos, Some(FROM_EXPLOSION));
         } else {
@@ -347,7 +410,7 @@ fn break_blocks(world: &mut World, blocks: &[IVec3]) {
 }
 
 /// The primed TNT actor.
-const PRIMED_TNT: &str = "minecraft:tnt";
+const PRIMED_TNT: ActorType = ActorType::Tnt;
 /// The event that gives a TNT primed by an explosion its short fuse.
 const FROM_EXPLOSION: &str = "from_explosion";
 /// A newly primed TNT moves off at this horizontal speed in a random
@@ -369,7 +432,7 @@ pub(crate) fn prime_tnt(world: &mut World, pos: IVec3, event: Option<&str>) -> O
     let handle = event.and_then(|name| {
         world
             .get_resource::<MobRegistry>()
-            .and_then(|registry| registry.get(PRIMED_TNT))
+            .and_then(|registry| registry.get(PRIMED_TNT.name()))
             .and_then(|archetype| archetype.events.event(name))
     });
     let cause = if handle.is_some() {
@@ -380,7 +443,7 @@ pub(crate) fn prime_tnt(world: &mut World, pos: IVec3, event: Option<&str>) -> O
     if handle.is_none() {
         viewers::fuse(world, feet);
     }
-    let tnt = match spawn_mob(world, PRIMED_TNT, feet, 0.0, cause) {
+    let tnt = match spawn_mob(world, PRIMED_TNT.name(), feet, 0.0, cause) {
         Ok(tnt) => tnt,
         Err(error) => {
             tracing::warn!(%error, "primed TNT could not spawn");
@@ -394,7 +457,7 @@ pub(crate) fn prime_tnt(world: &mut World, pos: IVec3, event: Option<&str>) -> O
         crate::entity::definition::apply_pending_definitions(world);
     }
     let angle = world
-        .get_resource_or_init::<EntityRandom>()
+        .get_resource_or_init::<ExplosionRandom>()
         .0
         .r#gen::<f64>()
         * std::f64::consts::TAU;

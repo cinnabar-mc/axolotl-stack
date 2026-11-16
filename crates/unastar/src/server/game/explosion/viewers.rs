@@ -15,8 +15,7 @@ use jolyne::valentine::{
 use rand::Rng;
 use valentine::bedrock::codec::NbtCompoundBody;
 
-use super::Blast;
-use crate::entity::EntityRandom;
+use super::{Blast, ExplosionRandom};
 use crate::entity::components::{PlayerSession, RuntimeEntityId};
 use crate::server::game::block_actors;
 
@@ -38,7 +37,7 @@ fn wire(v: DVec3) -> Vec3 {
 /// The packets of `blast` breaking `blocks`, to the viewers of its chunk.
 pub(super) fn explosion(world: &mut World, blast: &Blast, blocks: &[IVec3]) {
     let sampled: Vec<IVec3> = {
-        let mut rng = world.get_resource_or_init::<EntityRandom>();
+        let mut rng = world.get_resource_or_init::<ExplosionRandom>();
         blocks
             .iter()
             .copied()
