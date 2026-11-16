@@ -644,13 +644,10 @@ fn empty_bucket(world: &mut World, ctx: &Use) -> bool {
             return false;
         };
         let place = crate::server::game::liquids::place_source;
-        let pos = if place(world, ctx.clicked, kind) {
-            ctx.clicked
-        } else if place(world, ctx.target(), kind) {
-            ctx.target()
-        } else {
+        // The clicked block takes the liquid (waterlogging) before the face.
+        if !place(world, ctx.clicked, kind) && !place(world, ctx.target(), kind) {
             return false;
-        };
+        }
         sound(world, ctx.player, feet(world, ctx.player), sound_name, -1);
         if world.get::<GameMode>(ctx.player) != Some(&GameMode::Creative) {
             set_slot(world, ctx.player, ctx.slot, empty);

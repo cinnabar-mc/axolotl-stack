@@ -20,7 +20,7 @@ Each domain's first line is its headline: the rows its family table, gap list an
 | [Commands](#commands) | 82 | 8 | 35 | 2 | 36 | 1 | 46.9% |
 | [Protocol](#protocol) | 231 | 125 | 28 | 42 | 21 | 15 | 29.2% |
 | [World generation](#world-generation) | 1275 | 87 | 430 | 642 | 9 | 107 | 55.7% |
-| [Gameplay systems](#gameplay-systems) | 72 | 31 | 37 | 4 | 0 | 0 | 5.6% |
+| [Gameplay systems](#gameplay-systems) | 72 | 30 | 38 | 4 | 0 | 0 | 5.6% |
 
 ## Where to help
 
@@ -45,12 +45,12 @@ Add a `[[claim]]` to [claims.toml](claims.toml) in your first pull request for t
 |---|---|---|---:|
 | Mobs: hostile, tameable and aquatic (with dolphins, turtles, axolotls and bats) | lane ENT | 2026-10-29 | 52 |
 
-**Blocks**: 238 open rows free, 170 claimed.
+**Blocks**: 240 open rows free, 168 claimed.
 
 | Free family | Open | Missing | Partial |
 |---|---:|---:|---:|
 | functional (part claimed) | 57 | 0 | 57 |
-| surface_dynamic (part claimed) | 45 | 0 | 45 |
+| surface_dynamic (part claimed) | 47 | 0 | 47 |
 | candles | 34 | 0 | 34 |
 | building_blocks | 27 | 0 | 27 |
 | coral | 20 | 0 | 20 |
@@ -62,7 +62,7 @@ Add a `[[claim]]` to [claims.toml](claims.toml) in your first pull request for t
 | Claimed area | Claimed by | Since | Open |
 |---|---|---|---:|
 | Block behaviour families, gravity, fire, redstone and random ticks | lane BLOCKS | 2026-10-29 | 153 |
-| Liquids: water and lava flow, waterlogging, sponges | a contributor | 2026-10-29 | 7 |
+| Liquids: water and lava flow, mixing, the liquid layer | lane LIQUIDS | 2026-11-11 | 5 |
 | Workstation blocks | lane ITEMS | 2026-10-29 | 10 |
 
 **Items**: 0 open rows free, 931 claimed.
@@ -108,7 +108,7 @@ Nothing in this domain is claimed.
 | Claimed area | Claimed by | Since | Open |
 |---|---|---|---:|
 | Gravity, fire, redstone, block updates and random ticks | lane BLOCKS | 2026-10-29 | 6 |
-| Liquids: water and lava flow, waterlogging, sponges | a contributor | 2026-10-29 | 1 |
+| Liquids: water and lava flow, mixing, the liquid layer | lane LIQUIDS | 2026-11-11 | 1 |
 | Workstations: crafting, smelting, anvil, grindstone, smithing, brewing, enchanting | lane ITEMS | 2026-10-29 | 8 |
 | Survival block breaking | lane ITEMS | 2026-11-10 | 1 |
 | Generation speed | lane PERF | 2026-10-29 | 1 |
@@ -327,8 +327,11 @@ One row per vanilla block: it can exist in the world, be placed and broken with 
 
 **liquids**
 
-- `minecraft:flowing_lava`, `minecraft:flowing_water`, `minecraft:lava`, `minecraft:water`: no flow or source spreading
 - `minecraft:bubble_column`: not formed above soul sand or magma; does not push entities
+- `minecraft:flowing_lava`: BDS never places it (flowing lava is lava with liquid_depth); the engine ticks it like lava when a world holds it, untested
+- `minecraft:flowing_water`: BDS never places it in the block layer (flowing water is water with liquid_depth) but shows it in the liquid layer of seagrass, kelp and coral fans; unastar stores water there
+- `minecraft:lava`: lava does not set fire to blocks beside it; ticks due in the same game tick run in the order scheduled, not in BDS's (see world.liquids)
+- `minecraft:water`: ticks due in the same game tick run in the order scheduled, not in BDS's (see world.liquids); water placed in the nether does not evaporate
 
 **ores**
 
@@ -475,7 +478,7 @@ Sub-rows by facet, most incomplete first (25 of 25):
 **buckets**
 
 - `minecraft:bucket/bucket`: cannot catch fish, axolotls or tadpoles; lava and powder snow pickup are not covered by a test
-- `minecraft:water_bucket/bucket`: does not waterlog blocks (BDS 1.26.51 waterlogs a slab clicked with it, on block layer 1); water placed in the Nether does not evaporate
+- `minecraft:water_bucket/bucket`: water placed in the Nether does not evaporate
 - missing: `minecraft:axolotl_bucket/bucket`, `minecraft:sulfur_cube_bucket/bucket`, `minecraft:tadpole_bucket/bucket`
 
 **entity_placers**
@@ -730,7 +733,7 @@ Cross-cutting gameplay systems with no data source to enumerate them from; this 
 | performance | 2 | 0 | 2 | 0 | 0 | 0 | 0.0% |
 | platform | 6 | 0 | 3 | 3 | 0 | 0 | 50.0% |
 | player | 17 | 5 | 11 | 1 | 0 | 0 | 5.9% |
-| world | 19 | 6 | 13 | 0 | 0 | 0 | 0.0% |
+| world | 19 | 5 | 14 | 0 | 0 | 0 | 0.0% |
 
 ### Gameplay systems gaps
 
@@ -782,6 +785,6 @@ Cross-cutting gameplay systems with no data source to enumerate them from; this 
 - `world.day_cycle`: clock, daylight cycle and moon phase work; no sleeping skip and time is not persisted
 - `world.difficulty`: mob damage scaling, peaceful monsters, regional difficulty and hard-only door breaking; no hunger effects (starvation floors, peaceful regeneration) and effects of unimplemented mobs
 - `world.explosions`: the blast pattern, block resistance, drops (every block by hand), damage with exposure and the TNT fuse follow BDS; knockback is not measured (applied along the line from the centre with the impact); fire from explosions, underwater explosions, the max_resistance of other sources, creepers and other exploding mobs (their components are not implemented) and beds and respawn anchors are missing; block changes are sent at once, not with the next tick
-- 8 more partial rows with other gaps (see [systems.toml](systems.toml))
-- missing: `world.dimensions`, `world.fire`, `world.liquids`, `world.structure_blocks`, `world.structures_hardcoded`, `world.world_border`
+- 9 more partial rows with other gaps (see [systems.toml](systems.toml))
+- missing: `world.dimensions`, `world.fire`, `world.structure_blocks`, `world.structures_hardcoded`, `world.world_border`
 
