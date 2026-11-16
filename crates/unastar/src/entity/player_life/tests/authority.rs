@@ -936,7 +936,7 @@ fn situations_the_simulation_does_not_cover_are_trusted() {
 /// and flowing lava are not supported (a current pushes), sources of water
 /// and lava are (the movement differential's `lava_*` scenarios).
 #[test]
-fn waterlogged_blocks_are_water_and_flowing_water_is_trusted() {
+fn waterlogged_blocks_are_water_and_falling_water_is_trusted() {
     use crate::entity::player_life::authority::{MotionTable, WorldTerrain};
     use crate::server::game::types::BlockRegistryResource;
     use unastar_rules::movement::Terrain;
@@ -946,13 +946,16 @@ fn waterlogged_blocks_are_water_and_flowing_water_is_trusted() {
         .default_state_id_by_name("minecraft:seagrass")
         .unwrap();
     let water = registry.get_by_name("minecraft:water").unwrap();
-    let flowing = (water.min_state_id..=water.max_state_id)
-        .find(|&id| {
-            registry
-                .liquid_state(id)
-                .is_some_and(|liquid| liquid.depth != 0)
-        })
-        .unwrap();
+    let water_at = |depth: std::ops::RangeInclusive<u8>| {
+        (water.min_state_id..=water.max_state_id)
+            .find(|&id| {
+                registry
+                    .liquid_state(id)
+                    .is_some_and(|liquid| depth.contains(&liquid.depth))
+            })
+            .unwrap()
+    };
+    let (flowing, falling) = (water_at(1..=7), water_at(8..=15));
     let lava = registry.default_state_id_by_name("minecraft:lava").unwrap();
     let flowing_lava = registry
         .get_by_name("minecraft:flowing_lava")
@@ -987,7 +990,8 @@ fn waterlogged_blocks_are_water_and_flowing_water_is_trusted() {
     );
     assert!(!terrain.block((pos + IVec3::X).to_array()).water(), "air");
     assert!(table.reproduces(*blocks::WATER), "still water");
-    assert!(!table.reproduces(flowing), "flowing water");
+    assert!(table.reproduces(flowing), "flowing water");
+    assert!(!table.reproduces(falling), "falling water");
     assert!(table.reproduces(lava), "a lava source");
     assert!(!table.reproduces(flowing_lava), "flowing lava");
     assert!(table.reproduces(*blocks::STONE), "stone");

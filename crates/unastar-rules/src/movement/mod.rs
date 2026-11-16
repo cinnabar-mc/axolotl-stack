@@ -90,6 +90,8 @@ const SPRINT_WALL_ANGLE: f32 = std::f32::consts::FRAC_PI_4;
 /// a sprint (BDS 1.26.51, `dt_gap_*`: 5 idle inputs between the presses
 /// sprint, 6 do not).
 const SPRINT_TAP: u8 = 7;
+/// A current's push a tick ([`push_by_current`]).
+const CURRENT: f32 = 0.014;
 /// Bubble columns' pushes and their limits ([`bubble_columns`]).
 const BUBBLE_UP: f32 = 0.06;
 const BUBBLE_UP_MAX: f32 = 0.7;
@@ -331,11 +333,15 @@ impl Block {
 
     /// Whether BDS runs confirmed how this block moves a player, bit for bit
     /// (the movement differential, `tools/movement-diff`): its family
-    /// ([`BlockKind::confirmed`]) and its liquid: sources of water and lava.
-    /// A current (a liquid that is not a source) pushes, which the
-    /// simulation does not do yet.
+    /// ([`BlockKind::confirmed`]) and its liquid: sources of water and lava,
+    /// and flowing water ([`push_by_current`]). Falling water and flowing
+    /// lava push in ways no BDS run has measured yet.
     pub fn confirmed(&self) -> bool {
-        self.kind.confirmed() && self.liquid.is_none_or(|liquid| liquid.depth == 0)
+        self.kind.confirmed()
+            && self.liquid.is_none_or(|liquid| match liquid.kind {
+                LiquidKind::Water => liquid.depth < 8,
+                LiquidKind::Lava => liquid.depth == 0,
+            })
     }
 }
 
@@ -843,6 +849,7 @@ pub fn step(body: &mut Body, controls: &Controls, terrain: &impl Terrain) -> Cha
         changes.stopped_gliding = true;
     }
     let y = body.feet[1];
+    push_by_current(body, terrain);
     if body.in_water {
         let swim = Swim {
             steering: body.swimming && !changes.stopped_swimming,
@@ -877,12 +884,99 @@ pub fn step(body: &mut Body, controls: &Controls, terrain: &impl Terrain) -> Cha
 }
 
 /// The input after a teleport: the body stays where it was put, at rest,
-/// but what pushes it at the end of a tick still does (BDS 1.26.51,
-/// `bubble_down_2`: a body put in a downward column moves 0.06 down on the
-/// first input after the resting one).
+/// but what pushes it still does (BDS 1.26.51, `bubble_down_2`: a body put
+/// in a downward column moves 0.06 down on the first input after the
+/// resting one; `current_stand`: one in a current moves 0.028, two pushes).
 pub fn rest(body: &mut Body, terrain: &impl Terrain) {
     body.velocity = [0.0; 3];
+    push_by_current(body, terrain);
     bubble_columns(body, terrain);
+}
+
+/// The height of a liquid's surface in its block: a source's and a falling
+/// liquid's 8/9, a flowing one's `(8 - depth) / 9`.
+fn liquid_height(liquid: LiquidState) -> f32 {
+    let amount = if liquid.depth >= 8 {
+        8
+    } else {
+        8 - liquid.depth
+    };
+    f32::from(amount) / 9.0
+}
+
+/// The direction water flows in at `pos`: towards the lower neighbours,
+/// each weighted by how much lower it is (a neighbour without water that
+/// does not stop a body counts by the water under it), normalised.
+fn water_flow(terrain: &impl Terrain, pos: [i32; 3], own: LiquidState) -> [f32; 2] {
+    let height = liquid_height(own);
+    let (mut x, mut z) = (0.0f32, 0.0f32);
+    for (dx, dz) in [(0, -1), (1, 0), (0, 1), (-1, 0)] {
+        let side = [pos[0] + dx, pos[1], pos[2] + dz];
+        let neighbour = terrain.block(side);
+        let step = match neighbour.liquid {
+            Some(liquid) if liquid.kind == LiquidKind::Water => height - liquid_height(liquid),
+            Some(_) => continue,
+            None => {
+                let cell = Aabb {
+                    min: side.map(|v| v as f32),
+                    max: side.map(|v| v as f32 + 1.0),
+                };
+                let below = terrain.block([side[0], side[1] - 1, side[2]]).liquid;
+                match below {
+                    Some(liquid)
+                        if liquid.kind == LiquidKind::Water && !collides(terrain, &cell) =>
+                    {
+                        height - (liquid_height(liquid) - 8.0 / 9.0)
+                    }
+                    _ => 0.0,
+                }
+            }
+        };
+        x += dx as f32 * step;
+        z += dz as f32 * step;
+    }
+    let length = (x * x + z * z).sqrt();
+    if length < 1.0e-4 {
+        [0.0, 0.0]
+    } else {
+        [x / length, z / length]
+    }
+}
+
+/// A current pushes the velocity 0.014 along the sum of the flows of the
+/// water blocks the box is in, before the move (BDS 1.26.51,
+/// `current_stand`, `current_walk_up`, `current_source_edge`: 0.014 a tick
+/// along a channel, on its source too; `current_diamond_four`: 0.014
+/// diagonally across four blocks whose flows differ).
+fn push_by_current(body: &mut Body, terrain: &impl Terrain) {
+    let bb = body.aabb().inflate([-0.001; 3]);
+    let (min, max) = bb.block_range();
+    let mut flow = [0.0f32; 2];
+    for x in min[0]..=max[0] {
+        for y in min[1]..=max[1] {
+            for z in min[2]..=max[2] {
+                let Some(liquid) = terrain.block([x, y, z]).liquid else {
+                    continue;
+                };
+                if liquid.kind != LiquidKind::Water {
+                    continue;
+                }
+                let above = terrain.block([x, y + 1, z]).water();
+                let top = y as f32 + if above { 1.0 } else { liquid_height(liquid) };
+                if top >= bb.min[1] {
+                    let [fx, fz] = water_flow(terrain, [x, y, z], liquid);
+                    flow[0] += fx;
+                    flow[1] += fz;
+                }
+            }
+        }
+    }
+    let length = (flow[0] * flow[0] + flow[1] * flow[1]).sqrt();
+    if length < 1.0e-4 {
+        return;
+    }
+    body.velocity[0] += flow[0] / length * CURRENT;
+    body.velocity[2] += flow[1] / length * CURRENT;
 }
 
 /// Bubble columns push the velocity at the end of the tick, once for each
@@ -894,7 +988,10 @@ pub fn rest(body: &mut Body, terrain: &impl Terrain) {
 /// sink, 0.22 with the top one; a sinking one falls 0.3 a tick, and lies on
 /// the bottom at -0.065, the water's -0.005 and two blocks' 0.03).
 fn bubble_columns(body: &mut Body, terrain: &impl Terrain) {
-    let (min, max) = body.aabb().block_range();
+    // Blocks the box overlaps, not those it only touches
+    // (`bubble_up_from_104_2`: a box ending on a block's bottom is not
+    // pushed by it).
+    let (min, max) = body.aabb().inner_block_range();
     for x in min[0]..=max[0] {
         for y in min[1]..=max[1] {
             for z in min[2]..=max[2] {
