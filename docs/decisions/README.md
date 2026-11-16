@@ -61,5 +61,6 @@ documents and still appear in code comments and research docs; the table maps th
 | [0056](0056-guarded-block-breaking.md) | Guard survival block breaking by default, keep BDS's breaking as an option | 2026-11-12 | accepted | |
 | [0060](0060-validate-the-movement-harness-against-bds-itself.md) | Validate the movement harness against BDS itself | 2026-11-12 | proposed | |
 | [0063](0063-move-actors-with-measured-piston-pushes.md) | Move actors with measured piston pushes, not moving-block collision | 2026-11-12 | proposed | |
+| [0067](0067-find-movement-rules-from-random-seeds-and-probes.md) | Find movement rules from random seeds and targeted probes, and lay the fixtures out a tick a line | 2026-11-12 | proposed | |
 
 Proposed records await the owner's approval; their work is an open OpenSpec change anyone can pick up.
