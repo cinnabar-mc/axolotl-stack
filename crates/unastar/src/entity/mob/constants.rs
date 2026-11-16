@@ -872,18 +872,18 @@ pub const SHOT_DAMAGE_PER_DIFFICULTY: f32 = 0.05;
 /// / normal / hard, uniform width 0.45; a gaussian of sd 0.13 fits 1.5 log
 /// units worse, so the shape of the draw is provisional).
 pub const SHOT_DAMAGE_SPREAD: f32 = 0.225;
-/// Tipped arrows mobs shoot, by aux value (potion id + 1): the effect a hit
-/// gives, level 0, for an eighth of the potion's duration (measured: BDS
-/// 1.26.51 stray, bogged and parched hits on the sweep player sent these
-/// `MobEffect` adds on every difficulty).
-pub const TIPPED_ARROW_EFFECTS: [(u8, crate::entity::components::EffectType, u32); 3] = [
-    // Long slowness (stray).
-    (19, crate::entity::components::EffectType::SLOWNESS, 600),
-    // Poison (bogged).
-    (26, crate::entity::components::EffectType::POISON, 112),
-    // Weakness (parched).
-    (35, crate::entity::components::EffectType::WEAKNESS, 225),
-];
+/// The tipped arrows mobs shoot whose hit was measured, by aux value
+/// (potion data value + 1): long slowness (stray), poison (bogged) and
+/// weakness (parched). Their effects are the potion's
+/// ([`potion_effects`](crate::server::game::item_use::food::potion_effects))
+/// for a [`TIPPED_ARROW_DURATION_DIVISOR`]th of its duration; a shooter
+/// with any other aux is refused.
+pub const MEASURED_TIPPED_ARROWS: [u8; 3] = [19, 26, 35];
+/// A tipped arrow's hit lasts this fraction of its potion's duration
+/// (measured: BDS 1.26.51 stray, bogged and parched hits on the sweep
+/// player sent `MobEffect` adds of 600, 112 and 225 ticks on every
+/// difficulty: 4800, 900 and 1800 divided by 8, rounded down).
+pub const TIPPED_ARROW_DURATION_DIVISOR: u32 = 8;
 /// A shot plays this unnamed sound (no actor) at the centre of the
 /// shooter's box, before the shooter's own `sound` (measured: BDS 1.26.51
 /// sends `undefined` with an empty actor identifier on every shot).

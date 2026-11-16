@@ -17,7 +17,7 @@ use crate::entity::mob::combat::{Hit, hurt_mob, knockback_power_of};
 use crate::entity::mob::constants::{
     DEFAULT_POTION_COLOUR_ARGB, ICONCRACK_ITEM_SHIFT, POTION_SPLASH_LEVEL_EVENT,
     PROJECTILE_PARTICLE_LEVEL_EVENT, SHOT_DAMAGE_PER_DIFFICULTY, SHOT_DAMAGE_SPREAD,
-    TIPPED_ARROW_EFFECTS,
+    TIPPED_ARROW_DURATION_DIVISOR,
 };
 use crate::entity::mob::events::{MobFacts, fire_event};
 use crate::entity::mob::net::sound::{level_event, queue_synced_sound};
@@ -95,7 +95,7 @@ pub(super) fn on_hit(
 }
 
 /// `arrow_effect`: a tipped arrow gives the actor it hit its potion's
-/// effect (the measured table [`TIPPED_ARROW_EFFECTS`]), hurt or not
+/// effect (its potion's, for an eighth of the time: [`TIPPED_ARROW_DURATION_DIVISOR`]), hurt or not
 /// (BDS 1.26.51: a player under Resistance V got it from 0-damage hits).
 fn arrow_effect(world: &mut World, potion: super::ArrowPotion, actor: Entity) {
     if world
@@ -104,18 +104,28 @@ fn arrow_effect(world: &mut World, potion: super::ArrowPotion, actor: Entity) {
     {
         return;
     }
-    let Some(&(_, effect, ticks)) = TIPPED_ARROW_EFFECTS
-        .iter()
-        .find(|(aux, _, _)| *aux == potion.0)
-    else {
-        return;
-    };
-    crate::entity::effects::give(
-        world,
-        actor,
-        effect,
-        crate::entity::components::ActiveEffect::new(0, ticks),
-    );
+    for &(effect, amplifier, duration) in tipped_arrow_effects(potion) {
+        crate::entity::effects::give(
+            world,
+            actor,
+            effect,
+            crate::entity::components::ActiveEffect::new(
+                amplifier,
+                duration / TIPPED_ARROW_DURATION_DIVISOR,
+            ),
+        );
+    }
+}
+
+/// The potion effects of a tipped arrow: its aux value is the potion's
+/// data value plus one; aux 0 (a plain arrow) has none.
+fn tipped_arrow_effects(
+    potion: super::ArrowPotion,
+) -> &'static [(crate::entity::components::EffectType, u8, u32)] {
+    match potion.0.checked_sub(1) {
+        Some(data) => crate::server::game::item_use::food::potion_effects(i16::from(data)),
+        None => &[],
+    }
 }
 
 /// `grant_xp`: the potion-splash level event in the default potion colour

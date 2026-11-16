@@ -155,9 +155,7 @@ fn compile_shooter(b: body::Shooter) -> Result<ShooterConfig, RangedError> {
     }
     let aux = u8::try_from(b.aux_val).ok();
     if let Some(aux) = aux
-        && !crate::entity::mob::constants::TIPPED_ARROW_EFFECTS
-            .iter()
-            .any(|(known, _, _)| *known == aux)
+        && !crate::entity::mob::constants::MEASURED_TIPPED_ARROWS.contains(&aux)
     {
         return Err(RangedError::TippedArrow(aux));
     }
