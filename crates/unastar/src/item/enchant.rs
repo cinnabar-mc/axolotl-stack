@@ -212,6 +212,14 @@ pub fn durability_damage(stack: &ItemStack) -> i32 {
         .unwrap_or(0)
 }
 
+/// Whether `stack`'s tag marks it `Unbreakable` (a nonzero byte): it
+/// never wears.
+pub fn is_unbreakable(stack: &ItemStack) -> bool {
+    item_tag(stack).is_some_and(
+        |tag| matches!(tag.0.get("Unbreakable"), Some(NBTTag::Byte(flag)) if flag.0 != 0),
+    )
+}
+
 /// `stack` with its `Damage` set to `damage`.
 pub fn with_durability_damage(stack: &ItemStack, damage: i32) -> ItemStack {
     let mut compound = item_tag(stack).unwrap_or_default();
