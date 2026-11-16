@@ -36,6 +36,7 @@ import subchunk_fixture  # noqa: E402
 import subchunk_roundtrip  # noqa: E402
 import summarize  # noqa: E402
 import sweep  # noqa: E402
+import unbreaking_table  # noqa: E402
 
 
 class LootTableFit(unittest.TestCase):
@@ -409,6 +410,41 @@ class RuntimeSlotTest(unittest.TestCase):
         self.assertEqual(properties['server-portv6'], bds_runtime.PORT + 1)
         self.assertEqual(properties['enable-lan-visibility'], 'false')
         self.assertEqual(bds_runtime.ADDR, f'127.0.0.1:{bds_runtime.PORT}')
+
+
+class UnbreakingTable(unittest.TestCase):
+    def test_damage_reads_the_first_stack_that_has_one(self):
+        body = ('InventoryContentPacket { container_id: 0, slots: [{ id: 0, user_data_buffer: b"" }, '
+                r'{ id: 301, user_data_buffer: b"\xff\xff\x01\n\0\0\x03\x06\0Damage\x05\0\0\0\0" }] }')
+        self.assertEqual(unbreaking_table.damage(body), 5)
+        self.assertEqual(unbreaking_table.damage('no stacks'), 0)
+
+    def test_script_counts_hits_and_uses_per_marker(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            script = Path(tmp) / 'unbreaking.txt'
+            script.write_text('\n'.join([
+                '10 /say unbreaking armour 1', '11 /damage @s 8 entity_attack', '22 /damage @s 8 entity_attack',
+                '30 /say unbreaking use 2', '31 use-on 2 -60 0 1',
+                '40 /say unbreaking use 2', '41 use-on 2 -60 0 1', '43 use-on 2 -60 0 1',
+                '50 /say unbreaking attack 3', '51 attack-named p1', '60 attack-named p2',
+                '70 /say unbreaking elytra 3', '71 /tp @s 0.5 300 0.5 -90 0', '75 /tp @s 0.5 -60 0.5 -90 0',
+                '80 /say unbreaking threshold mining 2030', '81 mine 1 -59 0 4 0',
+            ]), encoding='utf-8')
+            hits, uses, events = unbreaking_table.script_counts(script)
+        self.assertEqual(hits, {'1': 2})
+        self.assertEqual(uses, {'2': [1, 2]})
+        self.assertEqual(events, {'elytra': {'3': 1}})
+
+    def test_events_count_each_rise_of_the_damage_as_one_event(self):
+        events = unbreaking_table.Events(5)
+        for value in (2, 2, 4, 0, 2):
+            events.saw(value)
+        # The drop to 0 is a fresh item, not wear.
+        self.assertEqual(events.row(), {'events': 5, 'worn': [2, 0, 3]})
+
+    def test_broken_reads_an_empty_slot(self):
+        self.assertTrue(unbreaking_table.broken('item: CerealizerNetworkItemStackDescriptorSerializedData { id: 0, '))
+        self.assertFalse(unbreaking_table.broken('item: CerealizerNetworkItemStackDescriptorSerializedData { id: 7, '))
 
 
 class PairCaptureTest(unittest.TestCase):

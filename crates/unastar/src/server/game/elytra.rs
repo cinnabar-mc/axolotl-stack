@@ -20,7 +20,7 @@ use bevy_ecs::prelude::*;
 
 use crate::entity::components::{ArmourInventory, GameMode, PlayerState};
 use crate::item::ItemStack;
-use crate::server::game::durability::{WearKind, max_durability, wear};
+use crate::server::game::durability::{max_durability, wear};
 
 const ELYTRA: &str = "minecraft:elytra";
 /// Gliding ticks per point of wear.
@@ -83,7 +83,6 @@ pub fn tick_gliding(world: &mut World, players: &mut QueryState<(Entity, &Player
         let worn = wear(
             &chest,
             1,
-            WearKind::Armour,
             &mut world
                 .get_resource_or_init::<crate::entity::EntityRandom>()
                 .0,
