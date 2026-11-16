@@ -25,6 +25,7 @@ use unastar_data::actor_components::body::ActorDamageCause;
 use unastar_data::actor_identifiers::ActorType;
 
 use super::block_drops::{pop_resource, popped_drops};
+use crate::entity::PLAYER_EYE_HEIGHT;
 use crate::entity::components::{GameMode, PhysicsBody, Player, Position, Velocity};
 use crate::entity::mob::MobKind;
 use crate::entity::mob::ai::sensing::can_see;
@@ -33,7 +34,6 @@ use crate::entity::mob::components::KnockbackPower;
 use crate::entity::mob::constants::{PLAYER_BOX_HEIGHT, PLAYER_BOX_WIDTH};
 use crate::entity::mob::state::Dead;
 use crate::entity::systems::BlockSource;
-use crate::entity::PLAYER_EYE_HEIGHT;
 use crate::registry::BlockRegistry;
 use crate::registry::collision::Aabb;
 
