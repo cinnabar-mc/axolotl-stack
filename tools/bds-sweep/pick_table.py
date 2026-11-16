@@ -25,6 +25,7 @@ import hashlib
 import json
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
@@ -41,9 +42,11 @@ def item_names() -> dict[int, str]:
 
 def records(packets: Path) -> list[dict]:
     extractor = REPO / 'target' / 'debug' / 'bds-extractor.exe'
-    out = subprocess.run([str(extractor), '--dump', str(packets), '--packets', ','.join(PACKETS)],
-                         capture_output=True, text=True, check=True).stdout
-    return [json.loads(line) for line in out.splitlines()]
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / 'decoded.jsonl'
+        subprocess.run([str(extractor), '--decode', str(packets), '--only', ','.join(PACKETS),
+                        '--output', str(out)], check=True)
+        return [json.loads(line) for line in out.read_text(encoding='utf-8').splitlines() if line]
 
 
 def summons(rows: list[dict]) -> list[dict]:

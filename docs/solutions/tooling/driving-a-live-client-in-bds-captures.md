@@ -26,8 +26,8 @@ looked like the missing piece; it was not the only one.
   `!equip SLOT` and `!use-item SLOT` actions now send them, built from the inventory the server
   last sent (`Actors::follow`).
 - So when BDS ignores a client packet, check what a real client sends *before* it: a recording of
-  a real client is the quickest source. `bds-extractor --dump packets.jsonl --packets A,B` prints
-  any recording (extractor captures or client-diff recordings) decoded as JSON lines.
+  a real client is the quickest source. `bds-extractor --decode packets.jsonl --only A,B --output out.jsonl`
+  writes any recording (extractor captures or client-diff recordings) decoded as JSON lines.
 - `protocol_probe.single` runs one session per script on one server; a run without
   `BDS_RUNTIME`/`BDS_PORT` falls back to the shared `orca/bds-runtime` on port 19132. Always set
   both, even when calling the probe functions from Python directly.

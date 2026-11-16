@@ -918,27 +918,27 @@ pub fn decode_record(bytes: &[u8]) -> Result<McpePacketData> {
     Ok(data)
 }
 
-/// Prints the records of `path` (a `packets.jsonl`) decoded, one JSON
-/// object per line, keeping only the packets named in `only` when it is not
-/// empty.
-pub fn dump(path: &Path, only: &[String]) -> Result<()> {
-    use std::io::Write;
-    let mut out = std::io::stdout().lock();
-    for record in read_records(path)? {
-        if !only.is_empty() && !only.contains(&record.name) {
-            continue;
-        }
-        let packet = decode_record(&hex::decode(&record.hex)?)
-            .with_context(|| format!("seq {} ({})", record.seq, record.name))?;
-        let line = json!({
-            "seq": record.seq,
-            "dir": record.dir,
-            "name": record.name,
-            "packet": packet_json(&packet)?,
-        });
-        writeln!(out, "{line}")?;
-    }
-    Ok(())
+/// Every record of a recorded `packets.jsonl` whose packet name is in
+/// `only` (all of them when it is empty), decoded, as one JSON line each:
+/// `{seq, t_ms, dir, name, packet}`.
+pub fn decode_capture(path: &Path, only: &[String]) -> Result<Vec<String>> {
+    read_records(path)?
+        .iter()
+        .filter(|record| only.is_empty() || only.contains(&record.name))
+        .map(|record| {
+            let bytes = hex::decode(&record.hex)?;
+            let data = decode_record(&bytes)
+                .with_context(|| format!("packet seq {} ({})", record.seq, record.name))?;
+            let line = json!({
+                "seq": record.seq,
+                "t_ms": record.t_ms,
+                "dir": record.dir,
+                "name": record.name,
+                "packet": packet_json(&data)?,
+            });
+            Ok(serde_json::to_string(&line)?)
+        })
+        .collect()
 }
 
 /// The normalised JSON of a decoded packet, without the outer

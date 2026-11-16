@@ -44,14 +44,6 @@ struct Args {
     #[arg(long)]
     fixture: Option<PathBuf>,
 
-    /// Print the packets of a capture's `packets.jsonl` decoded, one JSON
-    /// object per line (`seq`, `dir`, `name`, `packet`), instead of connecting
-    #[arg(long, conflicts_with_all = ["fixture", "capture_dir"])]
-    dump: Option<PathBuf>,
-
-    /// Dump mode: only these packets (names as in `packets.jsonl`, comma-separated)
-    #[arg(long, value_delimiter = ',', requires = "dump")]
-    packets: Vec<String>,
 
     /// Derive the outputs of an existing capture directory again from its
     /// packets.jsonl (a session that stopped before writing them), without
@@ -105,6 +97,17 @@ struct Args {
     #[arg(long, requires = "capture_dir")]
     input: bool,
 
+    /// Decode a recorded `packets.jsonl` (from `--capture-dir` or
+    /// `bds-sweep-client --capture-dir`) instead of connecting: one JSON line
+    /// per record `{seq, t_ms, dir, name, packet}` to `--output`
+    #[arg(long, conflicts_with_all = ["fixture", "capture_dir"])]
+    decode: Option<PathBuf>,
+
+    /// Decode mode: only records whose packet name is in this comma-separated
+    /// list (`MobEffectPacket,SetActorDataPacket`); all records without it
+    #[arg(long, requires = "decode", value_delimiter = ',')]
+    only: Vec<String>,
+
     /// Log level filter
     #[arg(long, default_value = "info")]
     log: String,
@@ -153,8 +156,18 @@ async fn run(args: Args) -> Result<()> {
         return Ok(());
     }
 
-    if let Some(path) = args.dump.as_ref() {
-        return capture::dump(path, &args.packets);
+    if let Some(capture) = args.decode.as_ref() {
+        let lines = capture::decode_capture(capture, &args.only)?;
+        let mut text = lines.join("\n");
+        text.push('\n');
+        std::fs::write(&args.output, text)
+            .with_context(|| format!("writing {}", args.output.display()))?;
+        info!(
+            records = lines.len(),
+            "decoded to {}",
+            args.output.display()
+        );
+        return Ok(());
     }
 
     let addr: SocketAddr = args.addr.parse().context("Invalid server address format")?;

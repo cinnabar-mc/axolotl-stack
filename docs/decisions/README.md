@@ -49,6 +49,7 @@ documents and still appear in code comments and research docs; the table maps th
 | [0036](0036-run-a-command-before-its-players-later-inputs.md) | Run a command before the inputs its player sent after it | 2026-11-10 | accepted | |
 | [0039](0039-fail-the-column-on-damaged-sub-chunks.md) | Fail the column load on damaged sub-chunk data | 2026-11-10 | proposed | |
 | [0041](0041-run-redstone-as-a-two-tick-circuit-update.md) | Run redstone as one circuit update every other tick, in BDS's phases | 2026-11-10 | accepted | |
+| [0042](0042-one-effect-system-for-mobs-and-players.md) | One status effect system for mobs and players | 2026-11-11 | accepted | |
 | [0044](0044-send-pre-start-game-roster-packets-before-start-game.md) | Send the roster packets BDS sends before StartGame before it | 2026-11-11 | accepted | |
 | [0046](0046-resolve-a-pvp-hit-with-the-attacker-state-passed-in.md) | Resolve a PvP hit with the attacker's state passed in, from before its first input of the tick | 2026-11-11 | proposed | |
 | [0048](0048-write-item-nbt-in-bds-key-order.md) | Write item NBT in BDS's key order | 2026-11-12 | proposed | |
