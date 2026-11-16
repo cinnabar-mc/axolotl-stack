@@ -414,7 +414,7 @@ fn powered_tnt_primes_and_explodes_81_ticks_later_like_bds() {
         assert!(
             world
                 .resource::<crate::entity::mob::MobRegistry>()
-                .unsupported("minecraft:tnt")
+                .unsupported(super::PRIMED_TNT.name())
                 .is_none(),
             "primed TNT is spawnable"
         );
@@ -440,7 +440,7 @@ fn powered_tnt_primes_and_explodes_81_ticks_later_like_bds() {
         world
             .query::<(bevy_ecs::entity::Entity, &MobKind)>()
             .iter(world)
-            .find(|(_, kind)| kind.0.identifier.as_ref() == "minecraft:tnt")
+            .find(|(_, kind)| kind.0.actor_type == super::PRIMED_TNT)
             .map(|(entity, _)| entity)
     };
     let mut lit = None;
