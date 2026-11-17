@@ -42,7 +42,7 @@ documents and still appear in code comments and research docs; the table maps th
 | [0029](0029-statistical-decoration-first.md) | Statistical decoration first | 2026-10-24 | accepted | WD4 |
 | [0030](0030-use-26x-world-clocks.md) | Sync time with 26.x world clocks | 2026-10-24 | accepted | WD5 |
 | [0031](0031-parallel-chunk-generation-is-allowed.md) | Parallel chunk generation is allowed | 2026-10-24 | accepted | world §1.3 |
-| [0032](0032-two-worldgen-numeric-backends.md) | Two worldgen numeric backends | 2026-10-27 | accepted | |
+| [0032](0032-two-worldgen-numeric-backends.md) | Two worldgen numeric backends | 2026-10-27 | superseded by 0053 | |
 | [0033](0033-persist-block-states-by-name.md) | Save block states on disk by name and states | 2026-11-04 | accepted | |
 | [0034](0034-bound-the-java-native-session.md) | Bound the Java-style native session without changing its output | 2026-11-05 | proposed | |
 | [0035](0035-disable-a-plugin-after-it-traps.md) | Disable a plugin after it traps | 2026-11-05 | accepted | |
@@ -56,7 +56,7 @@ documents and still appear in code comments and research docs; the table maps th
 | [0050](0050-move-pistons-from-the-circuit-update.md) | Move pistons from the circuit update, with measured per-block movement | 2026-11-11 | proposed | |
 | [0051](0051-tick-liquids-per-chunk-in-a-random-chunk-order.md) | Tick liquids per chunk in a random chunk order | 2026-11-11 | proposed | |
 | [0052](0052-generate-one-enchantment-type.md) | Generate one canonical Enchantment type from source-attributed data | 2026-11-12 | accepted | |
-| [0053](0053-bedrock-terrain-uses-java-exact-noise.md) | Bedrock-style terrain uses the Java-exact noise backend | 2026-11-12 | proposed | |
+| [0053](0053-bedrock-terrain-uses-java-exact-noise.md) | Bedrock-style terrain uses the Java-exact noise backend | 2026-11-12 | accepted | |
 | [0054](0054-measure-bds-movement-through-a-far-reporting-client.md) | Measure BDS's own movement with a client that reports a far position | 2026-11-12 | proposed | |
 | [0056](0056-guarded-block-breaking.md) | Guard survival block breaking by default, keep BDS's breaking as an option | 2026-11-12 | accepted | |
 | [0060](0060-validate-the-movement-harness-against-bds-itself.md) | Validate the movement harness against BDS itself | 2026-11-12 | proposed | |

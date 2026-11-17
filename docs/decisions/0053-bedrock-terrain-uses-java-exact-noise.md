@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 date: 2026-11-12
 decision-makers: [project owner]
 supersedes: 0032
@@ -18,7 +18,7 @@ Measured against the seed-12345 BDS 1.26.51 fixture, the Java-exact arithmetic i
 than the calibrated arithmetic. That holds for noise-stage heights, full-pipeline terrain and
 underground open cells. So the question is which backend the Bedrock-style terrain core should
 use. Work: PR #71 commit `848eb542`, ported in the change
-[bedrock-terrain-java-exact-noise](../../openspec/changes/bedrock-terrain-java-exact-noise/proposal.md).
+[bedrock-terrain-java-exact-noise](../../openspec/changes/archive/2026-11-17-bedrock-terrain-java-exact-noise/proposal.md).
 
 ## Considered Options
 
@@ -62,6 +62,6 @@ native-correctness rule (`crates/unastar_bedrock_codegen/README.md`, "Java-exact
 
 ## More Information
 
-When accepted, decision 0032 becomes `superseded by 0053`, and the `worldgen-pipeline`
-requirement "Two numeric backends selected per generator" changes as the change's delta spec
-describes.
+Accepted by the owner on 2026-11-17: decision 0032 is `superseded by 0053`, and the
+`worldgen-pipeline` requirement "Two numeric backends selected per generator" changed as the
+change's delta spec describes.

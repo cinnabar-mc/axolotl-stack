@@ -209,14 +209,14 @@ Evidence: crates/unastar/examples/worldgen_bench.rs, tools/worldgen-perf/ratchet
 Verified by: `tools/worldgen-perf`
 
 ### Requirement: Two numeric backends selected per generator
-The noise layer SHALL keep two numeric backends: the calibrated backend (`NoiseRegistry::new`), used by the Bedrock-style generator's shared terrain, and the native Java-exact backend (`NoiseRegistry::with_router_settings`, returning `NativeNoiseRegistry`), used by the Java-style generator. Selecting one MUST NOT change the arithmetic of the other (decision 0032).
+The noise layer SHALL keep two numeric backends: the calibrated backend (`NoiseRegistry::new`) and the native Java-exact backend (`NoiseRegistry::with_router_settings`). The Java-style generator and the Bedrock-style shared terrain MUST both use the native backend; the Bedrock-style core skips Java's structure starts and beardifier and keeps its own biome lookup. Selecting one backend MUST NOT change the other's arithmetic (decision 0053, superseding 0032).
 
 #### Scenario: Native backend matches captured Java bits
 - **WHEN** the native registry samples legacy climate, blended noise or modern octave sums at the pinned seeds and positions
 - **THEN** scalar and SIMD results equal the captured Java 1.21.11 bit patterns
 
 #### Scenario: Backend per generator
-- **WHEN** a `JavaGenerator` is built with `JavaGenerator::new(seed)`
-- **THEN** it uses the native backend and decorates in order, while the Bedrock-style generator's terrain uses the calibrated `NoiseRegistry::new(seed)`
+- **WHEN** a `JavaGenerator` is built with `JavaGenerator::new(seed)` or `JavaGenerator::for_bedrock_shared_terrain(seed)`
+- **THEN** both use the native backend from `NoiseRegistry::with_router_settings`; the first decorates in order, the second generates no Java structure starts
 
-Evidence: crates/unastar/src/world/generator/density/types.rs (`NoiseRegistry::new`, `with_router_settings`, `NativeNoiseRegistry`, `legacy_java_climate_matches_native_scalar_and_simd_bits`, `java_blended_simd_preserves_scalar_bits_across_smear_and_height_boundaries`, `native_modern_router_uses_exact_octave_persistence`), crates/unastar/src/world/generator/terrain.rs (`TerrainBackend`), crates/unastar_noise/src/native_density.rs (`native_float_spline_segments_preserve_measured_bits`), docs/decisions/0032-two-worldgen-numeric-backends.md
+Evidence: crates/unastar/src/world/generator/density/types.rs (`NoiseRegistry::new`, `with_router_settings`, `NativeNoiseRegistry`, `legacy_java_climate_matches_native_scalar_and_simd_bits`, `java_blended_simd_preserves_scalar_bits_across_smear_and_height_boundaries`, `native_modern_router_uses_exact_octave_persistence`), crates/unastar/src/world/generator/terrain.rs (`TerrainBackend`, `for_bedrock_shared_terrain`), crates/unastar/src/world/generator/terrain/native.rs (`overworld_native_cells`), crates/unastar_noise/src/native_density.rs (`native_float_spline_segments_preserve_measured_bits`), docs/decisions/0053-bedrock-terrain-uses-java-exact-noise.md

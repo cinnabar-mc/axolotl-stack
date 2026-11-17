@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0053
 date: 2026-10-27
 decision-makers: [project owner]
 ---
@@ -33,3 +33,5 @@ kept by one numeric path.
 
 `crates/unastar_noise/README.md`. Lesson: `docs/solutions/worldgen/spline-polynomial-lowering-is-not-java-bit-exact.md`.
 Recorded on 2026-11-04 from commits of 2026-10-27; no earlier written decision exists.
+Superseded on 2026-11-17 by [0053](0053-bedrock-terrain-uses-java-exact-noise.md): the Bedrock-style
+terrain also uses the Java-exact backend, because it is closer to BDS.
