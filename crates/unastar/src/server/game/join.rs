@@ -4,6 +4,7 @@
 
 use super::GameServer;
 use super::roster;
+use crate::command::exec::PermissionLevel;
 use crate::entity::components::{
     ArmourInventory, Experience, GameMode, Health, HeldSlot, Hunger, MainInventory, OffhandSlot,
     PlayerSession, PlayerUi, RuntimeEntityId,
@@ -14,9 +15,8 @@ use crate::world::clock;
 use crate::world::rules::{Difficulty, GameRules, WorldTime};
 use bevy_ecs::prelude::{Entity, World};
 use jolyne::valentine::types::{
-    ActorRuntimeId, CerealizerNetworkItemStackDescriptorSerializedData,
-    EnumsCommandPermissionLevel, EnumsGameType, EnumsPlayerPermissionLevel, PropertySyncData,
-    SerializedAbilitiesData, SerializedAbilitiesDataSerializedLayer,
+    ActorRuntimeId, CerealizerNetworkItemStackDescriptorSerializedData, EnumsGameType,
+    PropertySyncData, SerializedAbilitiesData, SerializedAbilitiesDataSerializedLayer,
     SynchedActorDataCopyableDataList,
 };
 use jolyne::valentine::types::{BlockPos, DimensionType, EnumsSpawnPositionType};
@@ -102,16 +102,8 @@ pub(crate) fn abilities_packet(
     UpdateAbilitiesPacket {
         data: SerializedAbilitiesData {
             target_player_raw_id: runtime_id,
-            player_permissions: if operator {
-                EnumsPlayerPermissionLevel::Operator
-            } else {
-                EnumsPlayerPermissionLevel::Member
-            },
-            command_permissions: if operator {
-                EnumsCommandPermissionLevel::Gamedirectors
-            } else {
-                EnumsCommandPermissionLevel::Any
-            },
+            player_permissions: PermissionLevel::from_operator(operator).into(),
+            command_permissions: PermissionLevel::from_operator(operator).into(),
             layers: vec![layer],
         },
     }

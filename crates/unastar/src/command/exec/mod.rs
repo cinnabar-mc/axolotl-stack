@@ -63,7 +63,7 @@ pub use camera::{CameraState, join_packets as camera_join_packets};
 pub use function::{FunctionRegistry, run_due as run_scheduled_functions};
 pub use gamemode::set_game_mode;
 pub use kick::Kicked;
-pub use op::OperatorList;
+pub use op::{OperatorList, PermissionLevel, UnknownPermissionLevel};
 pub use recipe::{UnlockedRecipes, join_packet as recipes_join_packet};
 pub(crate) use setblock::box_loaded;
 pub use stop::StopRequested;

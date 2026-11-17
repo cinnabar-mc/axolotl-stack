@@ -20,10 +20,11 @@ use crate::entity::components::{GameMode, Player, PlayerSession, RuntimeEntityId
 use crate::server::game::join::abilities_packet;
 use bevy_ecs::prelude::Resource;
 
-/// One `permissions.json` entry, in BDS's field order.
+/// One `permissions.json` entry, in BDS's field order. A level other than
+/// `visitor`, `member` or `operator` fails the file's load.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct PermissionEntry {
-    pub permission: String,
+    pub permission: PermissionLevel,
     pub xuid: String,
 }
 
@@ -66,19 +67,19 @@ impl OperatorList {
     }
 
     /// The level `permissions.json` stores for an XUID.
-    fn stored(&self, xuid: Option<&str>) -> Option<&str> {
+    fn stored(&self, xuid: Option<&str>) -> Option<PermissionLevel> {
         let xuid = xuid?;
         self.permissions
             .iter()
             .find(|entry| entry.xuid == xuid)
-            .map(|entry| entry.permission.as_str())
+            .map(|entry| entry.permission)
     }
 
     /// Stores a level for an XUID (replacing an earlier one).
-    fn store(&mut self, xuid: &str, level: &str) {
+    fn store(&mut self, xuid: &str, level: PermissionLevel) {
         self.permissions.retain(|entry| entry.xuid != xuid);
         self.permissions.push(PermissionEntry {
-            permission: level.to_owned(),
+            permission: level,
             xuid: xuid.to_owned(),
         });
     }
@@ -87,7 +88,7 @@ impl OperatorList {
     /// `permissions.json` lists it, else whether an entry names it.
     pub fn grants(&self, name: &str, xuid: Option<&str>) -> bool {
         match self.stored(xuid) {
-            Some(level) => level == "operator",
+            Some(level) => level == PermissionLevel::Operator,
             None => self.entries.iter().any(|entry| matches(entry, name, xuid)),
         }
     }
@@ -169,7 +170,7 @@ fn set_level(ctx: &mut CommandContext<'_>, player: Entity, operator: bool) {
     let mut list = ctx.world.get_resource_or_insert_with(OperatorList::default);
     match &xuid {
         Some(xuid) => {
-            list.store(xuid, if operator { "operator" } else { "member" });
+            list.store(xuid, PermissionLevel::from_operator(operator));
             list.save_permissions(&files);
         }
         None => {
@@ -201,11 +202,85 @@ arg_enum! {
 }
 
 arg_enum! {
-    /// Captured `PermissionLevel`.
+    /// A player's permission level: the captured `PermissionLevel` of
+    /// `/permission set`, and the level `permissions.json` stores.
     pub enum PermissionLevel in "PermissionLevel" {
         Visitor = "visitor",
         Member = "member",
         Operator = "operator",
+    }
+}
+
+impl PermissionLevel {
+    /// The level `/op` (`true`) or `/deop` (`false`) leaves a player at.
+    pub fn from_operator(operator: bool) -> Self {
+        if operator {
+            Self::Operator
+        } else {
+            Self::Member
+        }
+    }
+}
+
+impl std::fmt::Display for PermissionLevel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.spelling())
+    }
+}
+
+/// A spelling that is not a permission level.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[error("unknown permission level `{0}`")]
+pub struct UnknownPermissionLevel(String);
+
+impl std::str::FromStr for PermissionLevel {
+    type Err = UnknownPermissionLevel;
+
+    fn from_str(text: &str) -> Result<Self, Self::Err> {
+        <Self as ArgEnum>::from_value(text).ok_or_else(|| UnknownPermissionLevel(text.to_owned()))
+    }
+}
+
+impl serde::Serialize for PermissionLevel {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(self.spelling())
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for PermissionLevel {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let text = <std::borrow::Cow<'de, str>>::deserialize(deserializer)?;
+        text.parse().map_err(serde::de::Error::custom)
+    }
+}
+
+/// The command level a player at this level runs: operators run
+/// `gamedirectors` commands, everyone else `any`.
+impl From<PermissionLevel> for unastar_data::commands::CommandPermission {
+    fn from(level: PermissionLevel) -> Self {
+        match level {
+            PermissionLevel::Operator => Self::GameDirectors,
+            PermissionLevel::Visitor | PermissionLevel::Member => Self::Any,
+        }
+    }
+}
+
+impl From<PermissionLevel> for jolyne::valentine::types::EnumsCommandPermissionLevel {
+    fn from(level: PermissionLevel) -> Self {
+        match unastar_data::commands::CommandPermission::from(level) {
+            unastar_data::commands::CommandPermission::GameDirectors => Self::Gamedirectors,
+            _ => Self::Any,
+        }
+    }
+}
+
+impl From<PermissionLevel> for jolyne::valentine::types::EnumsPlayerPermissionLevel {
+    fn from(level: PermissionLevel) -> Self {
+        match level {
+            PermissionLevel::Visitor => Self::Visitor,
+            PermissionLevel::Member => Self::Member,
+            PermissionLevel::Operator => Self::Operator,
+        }
     }
 }
 
@@ -269,7 +344,7 @@ pub fn run_permission(ctx: &mut CommandContext<'_>, args: PermissionArgs) -> Com
                     .world
                     .resource::<OperatorList>()
                     .stored(xuid.as_deref())
-                    .map(|level| level == "operator");
+                    .map(|level| level == PermissionLevel::Operator);
                 let operator =
                     stored.unwrap_or_else(|| ctx.world.get::<Operator>(player).is_some());
                 if operator {
@@ -466,7 +541,7 @@ mod tests {
         assert_eq!(
             stored,
             [PermissionEntry {
-                permission: "operator".into(),
+                permission: PermissionLevel::Operator,
                 xuid: "2535400000000001".into()
             }]
         );
