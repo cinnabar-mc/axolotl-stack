@@ -16,7 +16,7 @@ use crate::command::parser::StateLiteral;
 use crate::command::prelude::*;
 use crate::registry::BlockRegistry;
 use crate::registry::block::{BlockEntry, StateValue};
-use crate::server::game::blocks::{block_at, destroy_block, set_block};
+use crate::server::game::blocks::{block_at, destroy_block, set_block, set_block_by_command};
 use crate::world::chunk::blocks::AIR;
 
 arg_enum! {
@@ -78,7 +78,7 @@ pub fn run(ctx: &mut CommandContext<'_>, args: SetBlockArgs) -> CommandResult {
         destroy_block(ctx.world, pos);
     }
     if block_at(ctx.world, (pos.x, pos.y, pos.z)) != Some(block) {
-        set_block(ctx.world, pos, block, false);
+        set_block_by_command(ctx.world, pos, block);
     }
     success!("commands.setblock.success")
 }
@@ -460,6 +460,56 @@ pub(super) mod tests {
         );
         assert_eq!(block(&mut h, 5, 64, 5), state("minecraft:stone"));
         assert_eq!(drops(&mut h), [("minecraft:oak_planks".to_owned(), 1)]);
+    }
+
+    /// A command writing a block that keeps water into a water source, or
+    /// air over a waterlogged block, is sent as the block layer only: BDS
+    /// 1.26.51 sends no liquid-layer update for either (the client keeps
+    /// the water itself; `tools/bds-sweep/scripts/liquid-layer-writes.txt`,
+    /// quirk "World / liquids").
+    #[test]
+    fn writes_into_water_send_the_block_layer_only_like_bds() {
+        use bevy_ecs::system::RunSystemOnce;
+        use jolyne::valentine::McpePacketData;
+        let mut h = Harness::new();
+        let player = h.player("Alice", true);
+        let chunk = h
+            .world()
+            .resource::<crate::world::ecs::ChunkManager>()
+            .get_by_coords(0, 0)
+            .unwrap();
+        let mut viewers = crate::world::ecs::ChunkViewers::default();
+        viewers.insert(player);
+        h.world().entity_mut(chunk).insert(viewers);
+        let flush = |h: &mut Harness| {
+            h.world()
+                .run_system_once(crate::server::broadcast::broadcast_block_updates)
+                .unwrap();
+            h.sent(player)
+                .into_iter()
+                .filter_map(|packet| match packet {
+                    McpePacketData::UpdateBlockPacket(update) => {
+                        Some((update.block_runtime_id, update.layer))
+                    }
+                    _ => None,
+                })
+                .collect::<Vec<_>>()
+        };
+        place(&mut h, 1, 63, 1, "minecraft:water");
+        flush(&mut h);
+        assert!(h.run(player, "/setblock 1 63 1 oak_slab").is_success());
+        let slab_layers = flush(&mut h);
+        assert!(!slab_layers.is_empty());
+        assert!(slab_layers.iter().all(|(_, layer)| *layer == 0));
+        assert_eq!(
+            crate::server::game::blocks::layer_at(h.world(), IVec3::new(1, 63, 1)),
+            Some(state("minecraft:water")),
+            "the slab keeps the water"
+        );
+        assert!(h.run(player, "/setblock 1 63 1 air").is_success());
+        let air_layers = flush(&mut h);
+        assert!(!air_layers.is_empty());
+        assert!(air_layers.iter().all(|(_, layer)| *layer == 0));
     }
 }
 

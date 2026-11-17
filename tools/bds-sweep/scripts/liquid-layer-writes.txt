@@ -1,0 +1,39 @@
+# Which block layers BDS sends when a command writes a block that holds
+# water into water, or replaces a waterlogged block, against BDS:
+# `python tools/bds-sweep/script.py tools/bds-sweep/scripts/liquid-layer-writes.txt --out DIR`.
+# Every cell is a one-block hole in the stone floor (y=-61), so its water
+# cannot flow. Read the UpdateBlock (layer 0 and 1) and UpdateSubChunkBlocks
+# the player gets after each command.
+20 /gamerule sendcommandfeedback false
+21 /gamerule domobspawning false
+22 /gamerule dodaylightcycle false
+23 /gamerule randomtickspeed 0
+24 /time set 6000
+25 /fill -6 -61 -6 6 -61 6 stone
+26 /fill -6 -60 -6 6 -55 6 air
+27 /gamemode creative @s
+28 /tp @s 0.5 -60 0.5 -90 0
+
+# A. a fence set into a water source
+40 /setblock 2 -61 0 water
+50 /setblock 2 -61 0 oak_fence
+
+# B. a slab filled into a water source
+60 /setblock 3 -61 0 water
+70 /fill 3 -61 0 3 -61 0 oak_slab
+
+# C. stone over the waterlogged fence
+80 /setblock 2 -61 0 stone
+
+# D. air over the waterlogged slab
+90 /setblock 3 -61 0 air
+
+# E. a fence set into a water source, then a slab over the waterlogged fence
+100 /setblock 4 -61 0 water
+110 /setblock 4 -61 0 oak_fence
+120 /setblock 4 -61 0 oak_slab
+
+# F. a fence set over a flowing water block (depth 1)
+130 /setblock 5 -61 0 flowing_water ["liquid_depth"=1]
+135 /setblock 5 -61 0 oak_fence
+150 exit

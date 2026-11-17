@@ -1466,6 +1466,23 @@ pub(crate) fn set_block(world: &mut World, pos: IVec3, block_runtime_id: u32, pl
     super::block_update::world_changed(world, pos, true);
 }
 
+/// [`set_block`] as a command writes a block (`/setblock`): only the block
+/// layer is sent, even when the liquid layer changed. BDS 1.26.51 sends no
+/// liquid-layer update when a command sets a block that keeps water into
+/// water, or air over a waterlogged block (the client keeps or drops the
+/// water itself; `tools/bds-sweep/scripts/liquid-layer-writes.txt`).
+pub(crate) fn set_block_by_command(world: &mut World, pos: IVec3, block_runtime_id: u32) {
+    let Some(stored) = store_block(world, pos, block_runtime_id, true) else {
+        return;
+    };
+    let block_layer = Stored {
+        layer: None,
+        ..stored
+    };
+    send_block(world, &block_layer, pos, false);
+    super::block_update::world_changed(world, pos, true);
+}
+
 /// [`set_block`] without block updates: store the block, broadcast it and
 /// schedule gravity checks.
 pub(crate) fn write_block(world: &mut World, pos: IVec3, block_runtime_id: u32, place_sound: bool) {
