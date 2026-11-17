@@ -26,6 +26,7 @@ use super::types::BlockRegistryResource;
 use crate::entity::components::PhysicsBody;
 use crate::entity::{EntityRandom, spawn_item_drop};
 use crate::item::ItemStack;
+use crate::registry::block::BlockId;
 use crate::registry::block::StateValue;
 use unastar_rules::loot::{LootDrop, roll};
 
@@ -250,7 +251,7 @@ pub(crate) fn drop_block_experience(
         let rng = &mut world
             .get_resource_or_init::<crate::entity::EntityRandom>()
             .0;
-        if block.string_id == "minecraft:mob_spawner" {
+        if block.block_id() == BlockId::MOB_SPAWNER {
             experience.min + rng.gen_range(0..=14) + rng.gen_range(0..=14)
         } else {
             rng.gen_range(experience.min..=experience.max)

@@ -44,6 +44,7 @@ use crate::entity::PLAYER_EYE_HEIGHT;
 use crate::entity::components::{DroppedItem, PhysicsBody, Player, Position};
 use crate::entity::systems::BlockSource;
 use crate::registry::BlockRegistry;
+use crate::registry::block::BlockId;
 use crate::registry::block::{BlockEntry, StateValue};
 use crate::registry::collision::{Aabb, block_collision_boxes};
 use crate::server::game::block_update::support::{Face, face_covered};
@@ -180,7 +181,7 @@ pub fn with_random_state(world: &mut World, mut placement: Placement) -> Placeme
     else {
         return placement;
     };
-    if entry.string_id == "minecraft:cave_vines" {
+    if entry.block_id() == BlockId::CAVE_VINES {
         let age = cave_vine_age(
             &mut world
                 .get_resource_or_init::<crate::entity::EntityRandom>()
@@ -283,7 +284,7 @@ pub fn places_as(held: &BlockEntry, placed: &BlockEntry) -> bool {
 /// The wall variant of a block placed on a side face: wall signs, wall
 /// banners and coral wall fans.
 fn wall_variant<'a>(registry: &'a BlockRegistry, held: &BlockEntry) -> Option<&'a BlockEntry> {
-    if held.string_id == "minecraft:standing_banner" {
+    if held.block_id() == BlockId::STANDING_BANNER {
         return registry.get_by_name("minecraft:wall_banner");
     }
     if let Some(prefix) = held.string_id.strip_suffix("_coral_fan") {
@@ -430,7 +431,7 @@ fn placed_state(block: &BlockEntry, input: &PlacementInput) -> Option<u32> {
         } else if id.ends_with("anvil") {
             looking.clockwise().opposite()
         } else if id.ends_with("campfire")
-            || id == "minecraft:calibrated_sculk_sensor"
+            || block.block_id() == BlockId::CALIBRATED_SCULK_SENSOR
             || block.state_value(state, "head_piece_bit").is_some()
         {
             looking
@@ -504,7 +505,7 @@ fn placed_state(block: &BlockEntry, input: &PlacementInput) -> Option<u32> {
             StateValue::Int(i32::from(input.face)),
         );
     }
-    if block.string_id == "minecraft:end_rod" {
+    if block.block_id() == BlockId::END_ROD {
         let facing = match input.face {
             0 | 1 => i32::from(input.face),
             face => opposite_facing(i32::from(face)),
@@ -557,7 +558,7 @@ fn placed_state(block: &BlockEntry, input: &PlacementInput) -> Option<u32> {
         );
     }
     // A crafter faces the player with its top up, whatever the pitch.
-    if block.string_id == "minecraft:crafter" {
+    if block.block_id() == BlockId::CRAFTER {
         let orientation = match looking.opposite() {
             Horizontal::South => "south_up",
             Horizontal::West => "west_up",
@@ -569,7 +570,7 @@ fn placed_state(block: &BlockEntry, input: &PlacementInput) -> Option<u32> {
             .unwrap_or(state);
     }
     // A shelf mushroom only goes on a side face and faces out of it.
-    if block.string_id == "minecraft:shelf_mushroom" {
+    if block.block_id() == BlockId::SHELF_MUSHROOM {
         let side = horizontal_of_face(input.face)?;
         state = set(
             block,
@@ -623,7 +624,7 @@ fn placed_state(block: &BlockEntry, input: &PlacementInput) -> Option<u32> {
         return None;
     }
     // A mushroom stem is placed with its item's faces (all stem).
-    if block.string_id == "minecraft:mushroom_stem" {
+    if block.block_id() == BlockId::MUSHROOM_STEM {
         state = set(block, state, "huge_mushroom_bits", StateValue::Int(15));
     }
     // Leaves placed by a player never decay.
@@ -632,7 +633,7 @@ fn placed_state(block: &BlockEntry, input: &PlacementInput) -> Option<u32> {
     }
     // A standing banner faces the player in sixteenths of a turn like a sign,
     // a wall banner out of its wall; neither goes under a block.
-    if block.string_id == "minecraft:standing_banner" {
+    if block.block_id() == BlockId::STANDING_BANNER {
         if input.face == 0 {
             return None;
         }
@@ -643,7 +644,7 @@ fn placed_state(block: &BlockEntry, input: &PlacementInput) -> Option<u32> {
             StateValue::Int(sign_direction(input.yaw)),
         );
     }
-    if block.string_id == "minecraft:wall_banner" {
+    if block.block_id() == BlockId::WALL_BANNER {
         state = set(
             block,
             state,
@@ -661,11 +662,11 @@ fn placed_state(block: &BlockEntry, input: &PlacementInput) -> Option<u32> {
         state = set(block, state, property, StateValue::Int(bit));
     }
     // Cocoa only goes on a side face; `direction` points at the log.
-    if block.string_id == "minecraft:cocoa" {
+    if block.block_id() == BlockId::COCOA {
         let toward = horizontal_of_face(input.face)?.opposite();
         state = set(block, state, "direction", StateValue::Int(toward.legacy()));
     }
-    if block.string_id == "minecraft:observer" {
+    if block.block_id() == BlockId::OBSERVER {
         let facing = match look_facing(input.yaw, input.pitch) {
             0 => "down",
             1 => "up",
@@ -986,7 +987,7 @@ fn stack(
         })
     };
     // A candle onto a cake nobody has eaten from.
-    if held.string_id.ends_with("candle") && clicked.string_id == "minecraft:cake" {
+    if held.string_id.ends_with("candle") && clicked.block_id() == BlockId::CAKE {
         if !matches!(
             clicked.state_value(clicked_state, "bite_counter"),
             Some(StateValue::Int(0))
@@ -1078,11 +1079,11 @@ pub fn resolve_placement(
     };
     let mut state = placed_state(held, input)?;
     // A sea pickle out of water is placed dead.
-    if held.string_id == "minecraft:sea_pickle" && !is_water(registry, target, target_state) {
+    if held.block_id() == BlockId::SEA_PICKLE && !is_water(registry, target, target_state) {
         state = set(held, state, "dead_bit", StateValue::Byte(1));
     }
     // A bell on a wall with a block on its other side hangs between them.
-    if held.string_id == "minecraft:bell" && input.face >= 2 {
+    if held.block_id() == BlockId::BELL && input.face >= 2 {
         let beyond = position + face_offset(input.face)?;
         let solid = blocks.block_at(beyond).is_some_and(|id| {
             registry
@@ -1135,7 +1136,7 @@ pub fn resolve_placement(
     // A tripwire is placed linked to the tripwire beside it (the place sound
     // carries these links; the placed-block update then sets `suspended_bit`,
     // `block_update::shape::placed_tripwire`).
-    if held.string_id == "minecraft:trip_wire" {
+    if held.block_id() == BlockId::TRIP_WIRE {
         state =
             crate::server::game::block_update::shape::tripwire_links(blocks, position, held, state);
     }
@@ -1172,7 +1173,7 @@ pub fn second_block(
         entry.state_value(state, "head_piece_bit"),
     ) {
         // A pitcher pod plants only the lower half (BDS 1.26.51).
-        (Some(StateValue::Byte(0)), _) if entry.string_id == "minecraft:pitcher_crop" => Some(None),
+        (Some(StateValue::Byte(0)), _) if entry.block_id() == BlockId::PITCHER_CROP => Some(None),
         (Some(StateValue::Byte(0)), _) => {
             let above = position + IVec3::Y;
             let mut upper = set(entry, state, "upper_block_bit", StateValue::Byte(1));

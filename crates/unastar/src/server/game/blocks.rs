@@ -11,6 +11,7 @@ use tracing::{debug, trace};
 use super::packet_queues::{BlockAction, BlockPacketQueue};
 use crate::ecs::events::{EventBuffer, ServerEvent};
 use crate::entity::components::{BreakingState, PlayerSession, PlayerUuid};
+use crate::registry::block::BlockId;
 use crate::world::chunk::blocks;
 use crate::world::ecs::{BlockBroadcastEvent, BlockChanged, ChunkManager, ChunkViewers};
 use crate::world::ecs::{world_to_chunk_coords, world_to_local_coords};
@@ -592,7 +593,7 @@ fn block_use(world: &World, entity: Entity, clicked: (i32, i32, i32)) -> Option<
             .get_resource::<super::types::BlockRegistryResource>()?
             .0
             .get_by_runtime_id(runtime_id)?;
-        if entry.string_id == "minecraft:crafting_table" {
+        if entry.block_id() == BlockId::CRAFTING_TABLE {
             Some(BlockUse::Workbench)
         } else {
             crate::block_entity::ContainerKind::from_block(&entry.string_id)
@@ -838,7 +839,7 @@ fn sound_at_corner(world: &World, placed: u32) -> bool {
             block.state_value(placed, "door_hinge_bit").is_some()
                 || block.state_value(placed, "head_piece_bit").is_some()
                 || block.string_id.ends_with("_sign")
-                || block.string_id == "minecraft:redstone_wire"
+                || block.block_id() == BlockId::REDSTONE_WIRE
         })
 }
 
@@ -1434,7 +1435,7 @@ fn placement_upper(
     let grows = (super::placement::stacks(placed)
         && current.string_id == placed.string_id
         && current_state != state)
-        || (current.string_id == "minecraft:cake" && placed.string_id.ends_with("candle_cake"));
+        || (current.block_id() == BlockId::CAKE && placed.string_id.ends_with("candle_cake"));
     let fills_free_space = super::placement::places_as(held, placed)
         && (is_replaceable(current, current_state) || grows);
     if !(merging_slab || fills_free_space) {

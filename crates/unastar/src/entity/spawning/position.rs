@@ -12,6 +12,7 @@ use crate::entity::mob::constants::{
 };
 use crate::entity::systems::physics::BlockSource;
 use crate::registry::BlockRegistry;
+use crate::registry::block::BlockId;
 use crate::world::chunk::MIN_Y;
 use crate::world::ecs::systems::world_to_chunk_coords;
 use crate::world::ecs::{ChunkManager, ChunkStateFlags};
@@ -134,7 +135,7 @@ pub(super) fn spawn_position_ok(
             }
             let is_air = blocks
                 .get_by_runtime_id(id)
-                .is_some_and(|entry| entry.string_id == "minecraft:air");
+                .is_some_and(|entry| entry.block_id() == BlockId::AIR);
             if data.material != MATERIAL_WATER && !is_air {
                 break;
             }

@@ -29,6 +29,7 @@ use crate::entity::navigation::{
 };
 use crate::entity::systems::physics::{BlockSource, collect_block_boxes, collides_with_blocks};
 use crate::registry::BlockRegistry;
+use crate::registry::block::BlockId;
 use crate::registry::block::{LiquidKind, StateValue};
 use crate::registry::collision::Aabb;
 
@@ -58,7 +59,7 @@ impl PathBlockTable {
         for entry in registry.iter() {
             let base = if PATH_DAMAGING_BLOCKS.contains(&entry.string_id.as_str()) {
                 DAMAGING
-            } else if entry.string_id == "minecraft:grass_block" {
+            } else if entry.block_id() == BlockId::GRASS_BLOCK {
                 GRASS
             } else if entry
                 .state_value(entry.min_state_id, DOOR_HINGE_STATE)

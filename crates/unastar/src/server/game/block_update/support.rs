@@ -22,6 +22,7 @@ use glam::IVec3;
 use unastar_data::block_updates::{HolderRule, plant_soil_states, plant_soils, support_holders};
 
 use crate::entity::systems::BlockSource;
+use crate::registry::block::BlockId;
 use crate::registry::block::{BlockEntry, StateValue};
 use crate::registry::collision::block_collision_aabbs;
 
@@ -319,10 +320,10 @@ pub(crate) fn needs(entry: &BlockEntry, state: u32) -> Needs {
             )
         });
     }
-    let wall_class = match id {
-        "minecraft:ladder" => Some("minecraft:ladder/east"),
-        "minecraft:frame" | "minecraft:glow_frame" => Some("minecraft:frame/east"),
-        "minecraft:wall_banner" => Some("minecraft:wall_banner/east"),
+    let wall_class = match entry.block_id() {
+        BlockId::LADDER => Some("minecraft:ladder/east"),
+        BlockId::FRAME | BlockId::GLOW_FRAME => Some("minecraft:frame/east"),
+        BlockId::WALL_BANNER => Some("minecraft:wall_banner/east"),
         _ if id.ends_with("wall_sign") => Some("minecraft:wall_sign/east"),
         _ => None,
     };
@@ -369,7 +370,7 @@ pub(crate) fn needs(entry: &BlockEntry, state: u32) -> Needs {
             )
         });
     }
-    if id == "minecraft:tripwire_hook" {
+    if entry.block_id() == BlockId::TRIPWIRE_HOOK {
         let face = [Face::North, Face::East, Face::South, Face::West]
             .get(
                 usize::try_from(int(entry, state, "direction").unwrap_or(-1)).unwrap_or(usize::MAX),
@@ -395,27 +396,27 @@ pub(crate) fn needs(entry: &BlockEntry, state: u32) -> Needs {
             Needs::Nothing
         };
     }
-    if id == "minecraft:bell" {
+    if entry.block_id() == BlockId::BELL {
         return match text(entry, state, "attachment") {
             Some("standing") => class_on(Face::Down, Some("minecraft:bell/down"), None, None),
             Some("hanging") => class_on(Face::Up, None, None, None),
             _ => Needs::Nothing,
         };
     }
-    let floor_class = match id {
-        "minecraft:moss_carpet" => Some("minecraft:white_carpet/down"),
-        "minecraft:redstone_wire" => Some("minecraft:redstone_wire/down"),
-        "minecraft:unpowered_repeater"
-        | "minecraft:powered_repeater"
-        | "minecraft:unpowered_comparator"
-        | "minecraft:powered_comparator" => Some("minecraft:unpowered_repeater/down"),
-        "minecraft:standing_banner" => Some("minecraft:standing_banner/down"),
-        "minecraft:cake" => Some("minecraft:cake/down"),
-        "minecraft:flower_pot" => Some("minecraft:flower_pot/down"),
-        "minecraft:sea_pickle" => Some("minecraft:sea_pickle/down"),
-        "minecraft:leaf_litter" => Some("minecraft:leaf_litter/down"),
+    let floor_class = match entry.block_id() {
+        BlockId::MOSS_CARPET => Some("minecraft:white_carpet/down"),
+        BlockId::REDSTONE_WIRE => Some("minecraft:redstone_wire/down"),
+        BlockId::UNPOWERED_REPEATER
+        | BlockId::POWERED_REPEATER
+        | BlockId::UNPOWERED_COMPARATOR
+        | BlockId::POWERED_COMPARATOR => Some("minecraft:unpowered_repeater/down"),
+        BlockId::STANDING_BANNER => Some("minecraft:standing_banner/down"),
+        BlockId::CAKE => Some("minecraft:cake/down"),
+        BlockId::FLOWER_POT => Some("minecraft:flower_pot/down"),
+        BlockId::SEA_PICKLE => Some("minecraft:sea_pickle/down"),
+        BlockId::LEAF_LITTER => Some("minecraft:leaf_litter/down"),
 
-        _ if id.ends_with("_carpet") && id != "minecraft:pale_moss_carpet" => {
+        _ if id.ends_with("_carpet") && entry.block_id() != BlockId::PALE_MOSS_CARPET => {
             Some("minecraft:white_carpet/down")
         }
         _ if id.ends_with("_pressure_plate") => Some("minecraft:stone_pressure_plate/down"),
@@ -440,18 +441,18 @@ pub(crate) fn needs(entry: &BlockEntry, state: u32) -> Needs {
     if let Some(class) = floor_class {
         return class_on(Face::Down, Some(class), None, None);
     }
-    match id {
-        "minecraft:hanging_roots" => {
+    match entry.block_id() {
+        BlockId::HANGING_ROOTS => {
             return class_on(Face::Up, None, None, Some("minecraft:hanging_roots/up"));
         }
-        "minecraft:spore_blossom" => {
+        BlockId::SPORE_BLOSSOM => {
             return class_on(Face::Up, None, None, Some("minecraft:spore_blossom/up"));
         }
-        "minecraft:cave_vines"
-        | "minecraft:cave_vines_body_with_berries"
-        | "minecraft:cave_vines_head_with_berries"
-        | "minecraft:weeping_vines"
-        | "minecraft:pale_hanging_moss" => return class_on(Face::Up, None, None, None),
+        BlockId::CAVE_VINES
+        | BlockId::CAVE_VINES_BODY_WITH_BERRIES
+        | BlockId::CAVE_VINES_HEAD_WITH_BERRIES
+        | BlockId::WEEPING_VINES
+        | BlockId::PALE_HANGING_MOSS => return class_on(Face::Up, None, None, None),
         _ if id.starts_with("minecraft:dead_") && id.ends_with("_coral") => {
             return class_on(Face::Down, None, None, None);
         }
@@ -552,12 +553,12 @@ pub(crate) fn stays_after(
 fn kept_when_placed(entry: &BlockEntry) -> bool {
     let id = entry.string_id.as_str();
     matches!(
-        id,
-        "minecraft:redstone_wire"
-            | "minecraft:unpowered_repeater"
-            | "minecraft:powered_repeater"
-            | "minecraft:unpowered_comparator"
-            | "minecraft:powered_comparator"
+        entry.block_id(),
+        BlockId::REDSTONE_WIRE
+            | BlockId::UNPOWERED_REPEATER
+            | BlockId::POWERED_REPEATER
+            | BlockId::UNPOWERED_COMPARATOR
+            | BlockId::POWERED_COMPARATOR
     ) || id.ends_with("_pressure_plate")
 }
 
@@ -622,7 +623,7 @@ fn is_air(blocks: &impl BlockSource, state: u32) -> bool {
     blocks
         .registry()
         .get_by_runtime_id(state)
-        .is_none_or(|entry| entry.string_id == "minecraft:air")
+        .is_none_or(|entry| entry.block_id() == BlockId::AIR)
 }
 
 /// Whether `holder` holds an attached block of `class` fixed to its `face`.
@@ -637,7 +638,7 @@ pub(crate) fn holds(
     };
     let id = entry.string_id.as_str();
     let Some(class) = class.and_then(|key| support_holders().classes.get(key)) else {
-        return id != "minecraft:air";
+        return entry.block_id() != BlockId::AIR;
     };
     if class.never.contains(id) {
         return false;
@@ -656,7 +657,7 @@ pub(crate) fn holds(
         return true;
     }
     match class.rule {
-        HolderRule::Present => id != "minecraft:air",
+        HolderRule::Present => entry.block_id() != BlockId::AIR,
         HolderRule::Collision => block_collision_aabbs(holder).next().is_some(),
         HolderRule::FaceFull => face_covered(holder, face, [0.0, 1.0, 0.0, 1.0]),
         HolderRule::FaceCentre => face_covered(

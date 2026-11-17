@@ -29,6 +29,7 @@ use super::block_actors;
 use super::placement::Horizontal;
 use super::types::BlockRegistryResource;
 use crate::entity::components::Rotation;
+use crate::registry::block::BlockId;
 use crate::registry::block::{BlockEntry, StateValue};
 
 /// Block changes waiting for their tick (of [`ScheduledBlocks::now`]):
@@ -213,7 +214,7 @@ fn eat_cake(world: &mut World, player: Entity, pos: IVec3, entry: &BlockEntry, s
     };
     super::blocks::set_block(world, pos, next, false);
     if let Some(candle) = entry.string_id.strip_suffix("_cake")
-        && entry.string_id != "minecraft:cake"
+        && entry.block_id() != BlockId::CAKE
         && let Some(stack) = world
             .get_resource::<super::types::ItemRegistryResource>()
             .and_then(|items| items.0.stack(candle, 1))
@@ -293,7 +294,10 @@ pub(crate) fn used(world: &mut World, player: Entity, pos: IVec3) -> Option<bool
         sound(world, pos, name, lower_state);
         return Some(false);
     }
-    if entry.has_tag("trapdoors") || id.ends_with("_trapdoor") || id == "minecraft:trapdoor" {
+    if entry.has_tag("trapdoors")
+        || id.ends_with("_trapdoor")
+        || entry.block_id() == BlockId::TRAPDOOR
+    {
         if is_iron(&entry) {
             return None;
         }
@@ -389,7 +393,7 @@ pub(crate) fn used(world: &mut World, player: Entity, pos: IVec3) -> Option<bool
     }
     // A cake loses a slice to any click but a candle onto a whole cake
     // (which the placement turns into a candle cake), if the player may eat.
-    if id == "minecraft:cake" || id.ends_with("candle_cake") {
+    if entry.block_id() == BlockId::CAKE || id.ends_with("candle_cake") {
         let whole = entry.state_value(state, "bite_counter") == Some(StateValue::Int(0));
         if whole && held_id(world, player).is_some_and(|held| held.ends_with("candle")) {
             return None;
@@ -399,7 +403,7 @@ pub(crate) fn used(world: &mut World, player: Entity, pos: IVec3) -> Option<bool
         }
         return Some(false);
     }
-    if id == "minecraft:lever" {
+    if entry.block_id() == BlockId::LEVER {
         let on = byte(&entry, state, "open_bit") == Some(true);
         let next = with_byte(&entry, state, "open_bit", !on);
         super::blocks::set_block(world, pos, next, false);

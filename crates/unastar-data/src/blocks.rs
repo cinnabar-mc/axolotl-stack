@@ -137,6 +137,2982 @@ impl BlockData {
         })
     }
 }
+/// A block type, by its registry id (the first canonical runtime state
+/// of its range). Code that asks "is this block X" compares these, not
+/// identifiers.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct BlockId(pub u32);
+impl BlockId {
+    /// `minecraft:cyan_terracotta`.
+    pub const CYAN_TERRACOTTA: Self = Self(0u32);
+    /// `minecraft:hard_pink_stained_glass`.
+    pub const HARD_PINK_STAINED_GLASS: Self = Self(1u32);
+    /// `minecraft:blue_candle`.
+    pub const BLUE_CANDLE: Self = Self(2u32);
+    /// `minecraft:dark_oak_wood`.
+    pub const DARK_OAK_WOOD: Self = Self(10u32);
+    /// `minecraft:birch_standing_sign`.
+    pub const BIRCH_STANDING_SIGN: Self = Self(13u32);
+    /// `minecraft:polished_basalt`.
+    pub const POLISHED_BASALT: Self = Self(29u32);
+    /// `minecraft:nether_gold_ore`.
+    pub const NETHER_GOLD_ORE: Self = Self(32u32);
+    /// `minecraft:zombie_head`.
+    pub const ZOMBIE_HEAD: Self = Self(33u32);
+    /// `minecraft:waxed_weathered_copper_chain`.
+    pub const WAXED_WEATHERED_COPPER_CHAIN: Self = Self(39u32);
+    /// `minecraft:waxed_weathered_copper_chest`.
+    pub const WAXED_WEATHERED_COPPER_CHEST: Self = Self(42u32);
+    /// `minecraft:leaf_litter`.
+    pub const LEAF_LITTER: Self = Self(46u32);
+    /// `minecraft:warped_door`.
+    pub const WARPED_DOOR: Self = Self(78u32);
+    /// `minecraft:light_blue_concrete_powder`.
+    pub const LIGHT_BLUE_CONCRETE_POWDER: Self = Self(110u32);
+    /// `minecraft:bamboo_block`.
+    pub const BAMBOO_BLOCK: Self = Self(111u32);
+    /// `minecraft:piston_arm_collision`.
+    pub const PISTON_ARM_COLLISION: Self = Self(114u32);
+    /// `minecraft:waxed_oxidized_chiseled_copper`.
+    pub const WAXED_OXIDIZED_CHISELED_COPPER: Self = Self(120u32);
+    /// `minecraft:wet_sponge`.
+    pub const WET_SPONGE: Self = Self(121u32);
+    /// `minecraft:end_stone_brick_wall`.
+    pub const END_STONE_BRICK_WALL: Self = Self(122u32);
+    /// `minecraft:granite`.
+    pub const GRANITE: Self = Self(284u32);
+    /// `minecraft:cyan_wool_double_slab`.
+    pub const CYAN_WOOL_DOUBLE_SLAB: Self = Self(285u32);
+    /// `minecraft:blue_stained_glass_pane`.
+    pub const BLUE_STAINED_GLASS_PANE: Self = Self(287u32);
+    /// `minecraft:fence_gate`.
+    pub const FENCE_GATE: Self = Self(303u32);
+    /// `minecraft:birch_shelf`.
+    pub const BIRCH_SHELF: Self = Self(319u32);
+    /// `minecraft:powder_snow`.
+    pub const POWDER_SNOW: Self = Self(351u32);
+    /// `minecraft:dark_oak_button`.
+    pub const DARK_OAK_BUTTON: Self = Self(352u32);
+    /// `minecraft:deepslate_copper_ore`.
+    pub const DEEPSLATE_COPPER_ORE: Self = Self(364u32);
+    /// `minecraft:chiseled_stone_bricks`.
+    pub const CHISELED_STONE_BRICKS: Self = Self(365u32);
+    /// `minecraft:light_blue_wool_double_slab`.
+    pub const LIGHT_BLUE_WOOL_DOUBLE_SLAB: Self = Self(366u32);
+    /// `minecraft:nether_brick_stairs`.
+    pub const NETHER_BRICK_STAIRS: Self = Self(368u32);
+    /// `minecraft:yellow_shulker_box`.
+    pub const YELLOW_SHULKER_BOX: Self = Self(408u32);
+    /// `minecraft:blackstone_double_slab`.
+    pub const BLACKSTONE_DOUBLE_SLAB: Self = Self(409u32);
+    /// `minecraft:lime_stained_glass`.
+    pub const LIME_STAINED_GLASS: Self = Self(411u32);
+    /// `minecraft:red_wool`.
+    pub const RED_WOOL: Self = Self(412u32);
+    /// `minecraft:poplar_button`.
+    pub const POPLAR_BUTTON: Self = Self(413u32);
+    /// `minecraft:jungle_button`.
+    pub const JUNGLE_BUTTON: Self = Self(425u32);
+    /// `minecraft:spruce_stairs`.
+    pub const SPRUCE_STAIRS: Self = Self(437u32);
+    /// `minecraft:hard_green_stained_glass_pane`.
+    pub const HARD_GREEN_STAINED_GLASS_PANE: Self = Self(477u32);
+    /// `minecraft:acacia_shelf`.
+    pub const ACACIA_SHELF: Self = Self(493u32);
+    /// `minecraft:diorite`.
+    pub const DIORITE: Self = Self(525u32);
+    /// `minecraft:pale_oak_fence_gate`.
+    pub const PALE_OAK_FENCE_GATE: Self = Self(526u32);
+    /// `minecraft:gray_candle_cake`.
+    pub const GRAY_CANDLE_CAKE: Self = Self(542u32);
+    /// `minecraft:polished_tuff_slab`.
+    pub const POLISHED_TUFF_SLAB: Self = Self(544u32);
+    /// `minecraft:white_wool_double_slab`.
+    pub const WHITE_WOOL_DOUBLE_SLAB: Self = Self(546u32);
+    /// `minecraft:cherry_pressure_plate`.
+    pub const CHERRY_PRESSURE_PLATE: Self = Self(548u32);
+    /// `minecraft:cherry_hanging_sign`.
+    pub const CHERRY_HANGING_SIGN: Self = Self(564u32);
+    /// `minecraft:yellow_wool`.
+    pub const YELLOW_WOOL: Self = Self(948u32);
+    /// `minecraft:crimson_wall_sign`.
+    pub const CRIMSON_WALL_SIGN: Self = Self(949u32);
+    /// `minecraft:yellow_stained_glass_pane`.
+    pub const YELLOW_STAINED_GLASS_PANE: Self = Self(955u32);
+    /// `minecraft:end_gateway`.
+    pub const END_GATEWAY: Self = Self(971u32);
+    /// `minecraft:azure_bluet`.
+    pub const AZURE_BLUET: Self = Self(972u32);
+    /// `minecraft:beacon`.
+    pub const BEACON: Self = Self(973u32);
+    /// `minecraft:red_nether_brick`.
+    pub const RED_NETHER_BRICK: Self = Self(974u32);
+    /// `minecraft:brick_wall`.
+    pub const BRICK_WALL: Self = Self(975u32);
+    /// `minecraft:polished_sulfur`.
+    pub const POLISHED_SULFUR: Self = Self(1137u32);
+    /// `minecraft:cobbled_deepslate_stairs`.
+    pub const COBBLED_DEEPSLATE_STAIRS: Self = Self(1138u32);
+    /// `minecraft:smooth_sandstone`.
+    pub const SMOOTH_SANDSTONE: Self = Self(1178u32);
+    /// `minecraft:snow_layer`.
+    pub const SNOW_LAYER: Self = Self(1179u32);
+    /// `minecraft:brick_double_slab`.
+    pub const BRICK_DOUBLE_SLAB: Self = Self(1195u32);
+    /// `minecraft:black_candle`.
+    pub const BLACK_CANDLE: Self = Self(1197u32);
+    /// `minecraft:black_concrete_slab`.
+    pub const BLACK_CONCRETE_SLAB: Self = Self(1205u32);
+    /// `minecraft:blue_carpet`.
+    pub const BLUE_CARPET: Self = Self(1207u32);
+    /// `minecraft:glow_frame`.
+    pub const GLOW_FRAME: Self = Self(1208u32);
+    /// `minecraft:mud_brick_double_slab`.
+    pub const MUD_BRICK_DOUBLE_SLAB: Self = Self(1232u32);
+    /// `minecraft:gray_concrete_slab`.
+    pub const GRAY_CONCRETE_SLAB: Self = Self(1234u32);
+    /// `minecraft:hanging_roots`.
+    pub const HANGING_ROOTS: Self = Self(1236u32);
+    /// `minecraft:red_sandstone_wall`.
+    pub const RED_SANDSTONE_WALL: Self = Self(1237u32);
+    /// `minecraft:prismarine_bricks_stairs`.
+    pub const PRISMARINE_BRICKS_STAIRS: Self = Self(1399u32);
+    /// `minecraft:waxed_oxidized_cut_copper`.
+    pub const WAXED_OXIDIZED_CUT_COPPER: Self = Self(1439u32);
+    /// `minecraft:waxed_exposed_copper_chain`.
+    pub const WAXED_EXPOSED_COPPER_CHAIN: Self = Self(1440u32);
+    /// `minecraft:waxed_exposed_copper_chest`.
+    pub const WAXED_EXPOSED_COPPER_CHEST: Self = Self(1443u32);
+    /// `minecraft:calcite`.
+    pub const CALCITE: Self = Self(1447u32);
+    /// `minecraft:diorite_slab`.
+    pub const DIORITE_SLAB: Self = Self(1448u32);
+    /// `minecraft:lime_wool_stairs`.
+    pub const LIME_WOOL_STAIRS: Self = Self(1450u32);
+    /// `minecraft:stripped_dark_oak_log`.
+    pub const STRIPPED_DARK_OAK_LOG: Self = Self(1490u32);
+    /// `minecraft:hard_orange_stained_glass_pane`.
+    pub const HARD_ORANGE_STAINED_GLASS_PANE: Self = Self(1493u32);
+    /// `minecraft:dead_bubble_coral_fan`.
+    pub const DEAD_BUBBLE_CORAL_FAN: Self = Self(1509u32);
+    /// `minecraft:jungle_log`.
+    pub const JUNGLE_LOG: Self = Self(1511u32);
+    /// `minecraft:bubble_coral_fan`.
+    pub const BUBBLE_CORAL_FAN: Self = Self(1514u32);
+    /// `minecraft:hard_brown_stained_glass`.
+    pub const HARD_BROWN_STAINED_GLASS: Self = Self(1516u32);
+    /// `minecraft:sculk_shrieker`.
+    pub const SCULK_SHRIEKER: Self = Self(1517u32);
+    /// `minecraft:gray_wool`.
+    pub const GRAY_WOOL: Self = Self(1521u32);
+    /// `minecraft:orange_stained_glass_pane`.
+    pub const ORANGE_STAINED_GLASS_PANE: Self = Self(1522u32);
+    /// `minecraft:hard_black_stained_glass_pane`.
+    pub const HARD_BLACK_STAINED_GLASS_PANE: Self = Self(1538u32);
+    /// `minecraft:gray_carpet`.
+    pub const GRAY_CARPET: Self = Self(1554u32);
+    /// `minecraft:lily_of_the_valley`.
+    pub const LILY_OF_THE_VALLEY: Self = Self(1555u32);
+    /// `minecraft:lime_glazed_terracotta`.
+    pub const LIME_GLAZED_TERRACOTTA: Self = Self(1556u32);
+    /// `minecraft:trapdoor`.
+    pub const TRAPDOOR: Self = Self(1562u32);
+    /// `minecraft:cactus_flower`.
+    pub const CACTUS_FLOWER: Self = Self(1578u32);
+    /// `minecraft:purple_concrete_stairs`.
+    pub const PURPLE_CONCRETE_STAIRS: Self = Self(1579u32);
+    /// `minecraft:blue_concrete_double_slab`.
+    pub const BLUE_CONCRETE_DOUBLE_SLAB: Self = Self(1619u32);
+    /// `minecraft:dead_brain_coral_fan`.
+    pub const DEAD_BRAIN_CORAL_FAN: Self = Self(1621u32);
+    /// `minecraft:info_update`.
+    pub const INFO_UPDATE: Self = Self(1623u32);
+    /// `minecraft:seagrass`.
+    pub const SEAGRASS: Self = Self(1624u32);
+    /// `minecraft:tube_coral_fan`.
+    pub const TUBE_CORAL_FAN: Self = Self(1627u32);
+    /// `minecraft:waxed_exposed_cut_copper_slab`.
+    pub const WAXED_EXPOSED_CUT_COPPER_SLAB: Self = Self(1629u32);
+    /// `minecraft:redstone_lamp`.
+    pub const REDSTONE_LAMP: Self = Self(1631u32);
+    /// `minecraft:mossy_cobblestone`.
+    pub const MOSSY_COBBLESTONE: Self = Self(1632u32);
+    /// `minecraft:deepslate`.
+    pub const DEEPSLATE: Self = Self(1633u32);
+    /// `minecraft:poplar_trapdoor`.
+    pub const POPLAR_TRAPDOOR: Self = Self(1636u32);
+    /// `minecraft:magenta_carpet`.
+    pub const MAGENTA_CARPET: Self = Self(1652u32);
+    /// `minecraft:pitcher_crop`.
+    pub const PITCHER_CROP: Self = Self(1653u32);
+    /// `minecraft:brown_wool`.
+    pub const BROWN_WOOL: Self = Self(1669u32);
+    /// `minecraft:waxed_exposed_chiseled_copper`.
+    pub const WAXED_EXPOSED_CHISELED_COPPER: Self = Self(1670u32);
+    /// `minecraft:tuff_slab`.
+    pub const TUFF_SLAB: Self = Self(1671u32);
+    /// `minecraft:cinnabar_wall`.
+    pub const CINNABAR_WALL: Self = Self(1673u32);
+    /// `minecraft:warped_pressure_plate`.
+    pub const WARPED_PRESSURE_PLATE: Self = Self(1835u32);
+    /// `minecraft:stripped_acacia_wood`.
+    pub const STRIPPED_ACACIA_WOOD: Self = Self(1851u32);
+    /// `minecraft:firefly_bush`.
+    pub const FIREFLY_BUSH: Self = Self(1854u32);
+    /// `minecraft:diamond_block`.
+    pub const DIAMOND_BLOCK: Self = Self(1855u32);
+    /// `minecraft:dark_prismarine_double_slab`.
+    pub const DARK_PRISMARINE_DOUBLE_SLAB: Self = Self(1856u32);
+    /// `minecraft:oak_stairs`.
+    pub const OAK_STAIRS: Self = Self(1858u32);
+    /// `minecraft:hard_gray_stained_glass`.
+    pub const HARD_GRAY_STAINED_GLASS: Self = Self(1898u32);
+    /// `minecraft:oak_log`.
+    pub const OAK_LOG: Self = Self(1899u32);
+    /// `minecraft:brown_stained_glass_pane`.
+    pub const BROWN_STAINED_GLASS_PANE: Self = Self(1902u32);
+    /// `minecraft:sulfur_spike`.
+    pub const SULFUR_SPIKE: Self = Self(1918u32);
+    /// `minecraft:end_bricks`.
+    pub const END_BRICKS: Self = Self(1928u32);
+    /// `minecraft:magenta_shulker_box`.
+    pub const MAGENTA_SHULKER_BOX: Self = Self(1929u32);
+    /// `minecraft:magenta_concrete_slab`.
+    pub const MAGENTA_CONCRETE_SLAB: Self = Self(1930u32);
+    /// `minecraft:packed_ice`.
+    pub const PACKED_ICE: Self = Self(1932u32);
+    /// `minecraft:packed_mud`.
+    pub const PACKED_MUD: Self = Self(1933u32);
+    /// `minecraft:light_blue_candle_cake`.
+    pub const LIGHT_BLUE_CANDLE_CAKE: Self = Self(1934u32);
+    /// `minecraft:moss_carpet`.
+    pub const MOSS_CARPET: Self = Self(1936u32);
+    /// `minecraft:warped_fungus`.
+    pub const WARPED_FUNGUS: Self = Self(1937u32);
+    /// `minecraft:oxidized_lightning_rod`.
+    pub const OXIDIZED_LIGHTNING_ROD: Self = Self(1938u32);
+    /// `minecraft:polished_deepslate_slab`.
+    pub const POLISHED_DEEPSLATE_SLAB: Self = Self(1950u32);
+    /// `minecraft:bamboo_door`.
+    pub const BAMBOO_DOOR: Self = Self(1952u32);
+    /// `minecraft:amethyst_block`.
+    pub const AMETHYST_BLOCK: Self = Self(1984u32);
+    /// `minecraft:dead_bubble_coral_wall_fan`.
+    pub const DEAD_BUBBLE_CORAL_WALL_FAN: Self = Self(1985u32);
+    /// `minecraft:gold_block`.
+    pub const GOLD_BLOCK: Self = Self(1989u32);
+    /// `minecraft:flower_pot`.
+    pub const FLOWER_POT: Self = Self(1990u32);
+    /// `minecraft:chiseled_bookshelf`.
+    pub const CHISELED_BOOKSHELF: Self = Self(1992u32);
+    /// `minecraft:polished_deepslate_stairs`.
+    pub const POLISHED_DEEPSLATE_STAIRS: Self = Self(2248u32);
+    /// `minecraft:lime_shulker_box`.
+    pub const LIME_SHULKER_BOX: Self = Self(2288u32);
+    /// `minecraft:weathered_chiseled_copper`.
+    pub const WEATHERED_CHISELED_COPPER: Self = Self(2289u32);
+    /// `minecraft:small_amethyst_bud`.
+    pub const SMALL_AMETHYST_BUD: Self = Self(2290u32);
+    /// `minecraft:golden_dandelion`.
+    pub const GOLDEN_DANDELION: Self = Self(2296u32);
+    /// `minecraft:activator_rail`.
+    pub const ACTIVATOR_RAIL: Self = Self(2297u32);
+    /// `minecraft:iron_trapdoor`.
+    pub const IRON_TRAPDOOR: Self = Self(2309u32);
+    /// `minecraft:potatoes`.
+    pub const POTATOES: Self = Self(2325u32);
+    /// `minecraft:purple_concrete_double_slab`.
+    pub const PURPLE_CONCRETE_DOUBLE_SLAB: Self = Self(2333u32);
+    /// `minecraft:muddy_mangrove_roots`.
+    pub const MUDDY_MANGROVE_ROOTS: Self = Self(2335u32);
+    /// `minecraft:pale_oak_pressure_plate`.
+    pub const PALE_OAK_PRESSURE_PLATE: Self = Self(2338u32);
+    /// `minecraft:green_wool_double_slab`.
+    pub const GREEN_WOOL_DOUBLE_SLAB: Self = Self(2354u32);
+    /// `minecraft:stripped_jungle_wood`.
+    pub const STRIPPED_JUNGLE_WOOD: Self = Self(2356u32);
+    /// `minecraft:noteblock`.
+    pub const NOTEBLOCK: Self = Self(2359u32);
+    /// `minecraft:tuff`.
+    pub const TUFF: Self = Self(2360u32);
+    /// `minecraft:mangrove_log`.
+    pub const MANGROVE_LOG: Self = Self(2361u32);
+    /// `minecraft:oxidized_cut_copper_stairs`.
+    pub const OXIDIZED_CUT_COPPER_STAIRS: Self = Self(2364u32);
+    /// `minecraft:pale_oak_fence`.
+    pub const PALE_OAK_FENCE: Self = Self(2404u32);
+    /// `minecraft:pale_oak_leaves`.
+    pub const PALE_OAK_LEAVES: Self = Self(2420u32);
+    /// `minecraft:deepslate_tile_double_slab`.
+    pub const DEEPSLATE_TILE_DOUBLE_SLAB: Self = Self(2424u32);
+    /// `minecraft:sandstone_slab`.
+    pub const SANDSTONE_SLAB: Self = Self(2426u32);
+    /// `minecraft:mossy_stone_brick_slab`.
+    pub const MOSSY_STONE_BRICK_SLAB: Self = Self(2428u32);
+    /// `minecraft:raw_gold_block`.
+    pub const RAW_GOLD_BLOCK: Self = Self(2430u32);
+    /// `minecraft:allium`.
+    pub const ALLIUM: Self = Self(2431u32);
+    /// `minecraft:white_shulker_box`.
+    pub const WHITE_SHULKER_BOX: Self = Self(2432u32);
+    /// `minecraft:copper_grate`.
+    pub const COPPER_GRATE: Self = Self(2433u32);
+    /// `minecraft:black_wool`.
+    pub const BLACK_WOOL: Self = Self(2434u32);
+    /// `minecraft:orange_candle`.
+    pub const ORANGE_CANDLE: Self = Self(2435u32);
+    /// `minecraft:powered_comparator`.
+    pub const POWERED_COMPARATOR: Self = Self(2443u32);
+    /// `minecraft:jungle_fence`.
+    pub const JUNGLE_FENCE: Self = Self(2459u32);
+    /// `minecraft:cut_sandstone_double_slab`.
+    pub const CUT_SANDSTONE_DOUBLE_SLAB: Self = Self(2475u32);
+    /// `minecraft:warped_wall_sign`.
+    pub const WARPED_WALL_SIGN: Self = Self(2477u32);
+    /// `minecraft:spruce_fence`.
+    pub const SPRUCE_FENCE: Self = Self(2483u32);
+    /// `minecraft:dark_oak_sapling`.
+    pub const DARK_OAK_SAPLING: Self = Self(2499u32);
+    /// `minecraft:melon_block`.
+    pub const MELON_BLOCK: Self = Self(2501u32);
+    /// `minecraft:black_concrete_powder`.
+    pub const BLACK_CONCRETE_POWDER: Self = Self(2502u32);
+    /// `minecraft:sandstone_double_slab`.
+    pub const SANDSTONE_DOUBLE_SLAB: Self = Self(2503u32);
+    /// `minecraft:waxed_cut_copper_stairs`.
+    pub const WAXED_CUT_COPPER_STAIRS: Self = Self(2505u32);
+    /// `minecraft:open_eyeblossom`.
+    pub const OPEN_EYEBLOSSOM: Self = Self(2545u32);
+    /// `minecraft:mob_spawner`.
+    pub const MOB_SPAWNER: Self = Self(2546u32);
+    /// `minecraft:pale_oak_sapling`.
+    pub const PALE_OAK_SAPLING: Self = Self(2547u32);
+    /// `minecraft:polished_granite`.
+    pub const POLISHED_GRANITE: Self = Self(2549u32);
+    /// `minecraft:pale_oak_wall_sign`.
+    pub const PALE_OAK_WALL_SIGN: Self = Self(2550u32);
+    /// `minecraft:poplar_slab`.
+    pub const POPLAR_SLAB: Self = Self(2556u32);
+    /// `minecraft:soul_fire`.
+    pub const SOUL_FIRE: Self = Self(2558u32);
+    /// `minecraft:magenta_candle`.
+    pub const MAGENTA_CANDLE: Self = Self(2574u32);
+    /// `minecraft:mangrove_double_slab`.
+    pub const MANGROVE_DOUBLE_SLAB: Self = Self(2582u32);
+    /// `minecraft:smooth_quartz_double_slab`.
+    pub const SMOOTH_QUARTZ_DOUBLE_SLAB: Self = Self(2584u32);
+    /// `minecraft:light_gray_stained_glass`.
+    pub const LIGHT_GRAY_STAINED_GLASS: Self = Self(2586u32);
+    /// `minecraft:obsidian`.
+    pub const OBSIDIAN: Self = Self(2587u32);
+    /// `minecraft:light_gray_stained_glass_pane`.
+    pub const LIGHT_GRAY_STAINED_GLASS_PANE: Self = Self(2588u32);
+    /// `minecraft:dark_oak_slab`.
+    pub const DARK_OAK_SLAB: Self = Self(2604u32);
+    /// `minecraft:deepslate_brick_wall`.
+    pub const DEEPSLATE_BRICK_WALL: Self = Self(2606u32);
+    /// `minecraft:waxed_exposed_copper_grate`.
+    pub const WAXED_EXPOSED_COPPER_GRATE: Self = Self(2768u32);
+    /// `minecraft:oxidized_double_cut_copper_slab`.
+    pub const OXIDIZED_DOUBLE_CUT_COPPER_SLAB: Self = Self(2769u32);
+    /// `minecraft:exposed_copper`.
+    pub const EXPOSED_COPPER: Self = Self(2771u32);
+    /// `minecraft:polished_deepslate_double_slab`.
+    pub const POLISHED_DEEPSLATE_DOUBLE_SLAB: Self = Self(2772u32);
+    /// `minecraft:waxed_copper_bars`.
+    pub const WAXED_COPPER_BARS: Self = Self(2774u32);
+    /// `minecraft:stone_button`.
+    pub const STONE_BUTTON: Self = Self(2790u32);
+    /// `minecraft:red_nether_brick_double_slab`.
+    pub const RED_NETHER_BRICK_DOUBLE_SLAB: Self = Self(2802u32);
+    /// `minecraft:waxed_copper_bulb`.
+    pub const WAXED_COPPER_BULB: Self = Self(2804u32);
+    /// `minecraft:sponge`.
+    pub const SPONGE: Self = Self(2808u32);
+    /// `minecraft:exposed_double_cut_copper_slab`.
+    pub const EXPOSED_DOUBLE_CUT_COPPER_SLAB: Self = Self(2809u32);
+    /// `minecraft:bamboo_fence`.
+    pub const BAMBOO_FENCE: Self = Self(2811u32);
+    /// `minecraft:normal_stone_stairs`.
+    pub const NORMAL_STONE_STAIRS: Self = Self(2827u32);
+    /// `minecraft:diorite_double_slab`.
+    pub const DIORITE_DOUBLE_SLAB: Self = Self(2867u32);
+    /// `minecraft:end_stone_brick_slab`.
+    pub const END_STONE_BRICK_SLAB: Self = Self(2869u32);
+    /// `minecraft:hardened_clay`.
+    pub const HARDENED_CLAY: Self = Self(2871u32);
+    /// `minecraft:birch_hanging_sign`.
+    pub const BIRCH_HANGING_SIGN: Self = Self(2872u32);
+    /// `minecraft:stripped_jungle_log`.
+    pub const STRIPPED_JUNGLE_LOG: Self = Self(3256u32);
+    /// `minecraft:oxidized_copper_golem_statue`.
+    pub const OXIDIZED_COPPER_GOLEM_STATUE: Self = Self(3259u32);
+    /// `minecraft:light_block_9`.
+    pub const LIGHT_BLOCK_9: Self = Self(3263u32);
+    /// `minecraft:light_block_8`.
+    pub const LIGHT_BLOCK_8: Self = Self(3264u32);
+    /// `minecraft:light_block_7`.
+    pub const LIGHT_BLOCK_7: Self = Self(3265u32);
+    /// `minecraft:light_block_6`.
+    pub const LIGHT_BLOCK_6: Self = Self(3266u32);
+    /// `minecraft:light_block_5`.
+    pub const LIGHT_BLOCK_5: Self = Self(3267u32);
+    /// `minecraft:light_block_4`.
+    pub const LIGHT_BLOCK_4: Self = Self(3268u32);
+    /// `minecraft:light_block_3`.
+    pub const LIGHT_BLOCK_3: Self = Self(3269u32);
+    /// `minecraft:light_block_2`.
+    pub const LIGHT_BLOCK_2: Self = Self(3270u32);
+    /// `minecraft:light_block_1`.
+    pub const LIGHT_BLOCK_1: Self = Self(3271u32);
+    /// `minecraft:light_block_0`.
+    pub const LIGHT_BLOCK_0: Self = Self(3272u32);
+    /// `minecraft:pale_oak_door`.
+    pub const PALE_OAK_DOOR: Self = Self(3273u32);
+    /// `minecraft:oak_sapling`.
+    pub const OAK_SAPLING: Self = Self(3305u32);
+    /// `minecraft:polished_blackstone_double_slab`.
+    pub const POLISHED_BLACKSTONE_DOUBLE_SLAB: Self = Self(3307u32);
+    /// `minecraft:light_gray_terracotta`.
+    pub const LIGHT_GRAY_TERRACOTTA: Self = Self(3309u32);
+    /// `minecraft:smoker`.
+    pub const SMOKER: Self = Self(3310u32);
+    /// `minecraft:brown_stained_glass`.
+    pub const BROWN_STAINED_GLASS: Self = Self(3314u32);
+    /// `minecraft:andesite`.
+    pub const ANDESITE: Self = Self(3315u32);
+    /// `minecraft:fire_coral`.
+    pub const FIRE_CORAL: Self = Self(3316u32);
+    /// `minecraft:stone`.
+    pub const STONE: Self = Self(3317u32);
+    /// `minecraft:smooth_sandstone_slab`.
+    pub const SMOOTH_SANDSTONE_SLAB: Self = Self(3318u32);
+    /// `minecraft:birch_log`.
+    pub const BIRCH_LOG: Self = Self(3320u32);
+    /// `minecraft:hard_glass_pane`.
+    pub const HARD_GLASS_PANE: Self = Self(3323u32);
+    /// `minecraft:tuff_brick_wall`.
+    pub const TUFF_BRICK_WALL: Self = Self(3339u32);
+    /// `minecraft:purpur_slab`.
+    pub const PURPUR_SLAB: Self = Self(3501u32);
+    /// `minecraft:brain_coral`.
+    pub const BRAIN_CORAL: Self = Self(3503u32);
+    /// `minecraft:stripped_spruce_wood`.
+    pub const STRIPPED_SPRUCE_WOOD: Self = Self(3504u32);
+    /// `minecraft:orange_wool`.
+    pub const ORANGE_WOOL: Self = Self(3507u32);
+    /// `minecraft:black_wool_double_slab`.
+    pub const BLACK_WOOL_DOUBLE_SLAB: Self = Self(3508u32);
+    /// `minecraft:polished_blackstone_brick_double_slab`.
+    pub const POLISHED_BLACKSTONE_BRICK_DOUBLE_SLAB: Self = Self(3510u32);
+    /// `minecraft:purple_wool_slab`.
+    pub const PURPLE_WOOL_SLAB: Self = Self(3512u32);
+    /// `minecraft:crimson_double_slab`.
+    pub const CRIMSON_DOUBLE_SLAB: Self = Self(3514u32);
+    /// `minecraft:respawn_anchor`.
+    pub const RESPAWN_ANCHOR: Self = Self(3516u32);
+    /// `minecraft:light_gray_concrete`.
+    pub const LIGHT_GRAY_CONCRETE: Self = Self(3521u32);
+    /// `minecraft:green_candle`.
+    pub const GREEN_CANDLE: Self = Self(3522u32);
+    /// `minecraft:waxed_exposed_copper`.
+    pub const WAXED_EXPOSED_COPPER: Self = Self(3530u32);
+    /// `minecraft:red_sandstone_double_slab`.
+    pub const RED_SANDSTONE_DOUBLE_SLAB: Self = Self(3531u32);
+    /// `minecraft:birch_wood`.
+    pub const BIRCH_WOOD: Self = Self(3533u32);
+    /// `minecraft:red_sand`.
+    pub const RED_SAND: Self = Self(3536u32);
+    /// `minecraft:hay_block`.
+    pub const HAY_BLOCK: Self = Self(3537u32);
+    /// `minecraft:gray_concrete_stairs`.
+    pub const GRAY_CONCRETE_STAIRS: Self = Self(3549u32);
+    /// `minecraft:jungle_wood`.
+    pub const JUNGLE_WOOD: Self = Self(3589u32);
+    /// `minecraft:waxed_weathered_copper`.
+    pub const WAXED_WEATHERED_COPPER: Self = Self(3592u32);
+    /// `minecraft:infested_cracked_stone_bricks`.
+    pub const INFESTED_CRACKED_STONE_BRICKS: Self = Self(3593u32);
+    /// `minecraft:waxed_oxidized_cut_copper_slab`.
+    pub const WAXED_OXIDIZED_CUT_COPPER_SLAB: Self = Self(3594u32);
+    /// `minecraft:oak_leaves`.
+    pub const OAK_LEAVES: Self = Self(3596u32);
+    /// `minecraft:resin_clump`.
+    pub const RESIN_CLUMP: Self = Self(3600u32);
+    /// `minecraft:brain_coral_fan`.
+    pub const BRAIN_CORAL_FAN: Self = Self(3664u32);
+    /// `minecraft:cyan_candle_cake`.
+    pub const CYAN_CANDLE_CAKE: Self = Self(3666u32);
+    /// `minecraft:polished_tuff_wall`.
+    pub const POLISHED_TUFF_WALL: Self = Self(3668u32);
+    /// `minecraft:bamboo_stairs`.
+    pub const BAMBOO_STAIRS: Self = Self(3830u32);
+    /// `minecraft:infested_mossy_stone_bricks`.
+    pub const INFESTED_MOSSY_STONE_BRICKS: Self = Self(3870u32);
+    /// `minecraft:torch`.
+    pub const TORCH: Self = Self(3871u32);
+    /// `minecraft:sulfur_bricks`.
+    pub const SULFUR_BRICKS: Self = Self(3877u32);
+    /// `minecraft:mud_brick_wall`.
+    pub const MUD_BRICK_WALL: Self = Self(3878u32);
+    /// `minecraft:yellow_concrete_slab`.
+    pub const YELLOW_CONCRETE_SLAB: Self = Self(4040u32);
+    /// `minecraft:honey_block`.
+    pub const HONEY_BLOCK: Self = Self(4042u32);
+    /// `minecraft:underwater_tnt`.
+    pub const UNDERWATER_TNT: Self = Self(4043u32);
+    /// `minecraft:dripstone_block`.
+    pub const DRIPSTONE_BLOCK: Self = Self(4045u32);
+    /// `minecraft:vine`.
+    pub const VINE: Self = Self(4046u32);
+    /// `minecraft:white_wool_slab`.
+    pub const WHITE_WOOL_SLAB: Self = Self(4062u32);
+    /// `minecraft:red_sandstone_slab`.
+    pub const RED_SANDSTONE_SLAB: Self = Self(4064u32);
+    /// `minecraft:cherry_trapdoor`.
+    pub const CHERRY_TRAPDOOR: Self = Self(4066u32);
+    /// `minecraft:blackstone_slab`.
+    pub const BLACKSTONE_SLAB: Self = Self(4082u32);
+    /// `minecraft:gold_ore`.
+    pub const GOLD_ORE: Self = Self(4084u32);
+    /// `minecraft:yellow_glazed_terracotta`.
+    pub const YELLOW_GLAZED_TERRACOTTA: Self = Self(4085u32);
+    /// `minecraft:white_concrete_double_slab`.
+    pub const WHITE_CONCRETE_DOUBLE_SLAB: Self = Self(4091u32);
+    /// `minecraft:stonecutter`.
+    pub const STONECUTTER: Self = Self(4093u32);
+    /// `minecraft:poplar_standing_sign`.
+    pub const POPLAR_STANDING_SIGN: Self = Self(4094u32);
+    /// `minecraft:dried_ghast`.
+    pub const DRIED_GHAST: Self = Self(4110u32);
+    /// `minecraft:warped_planks`.
+    pub const WARPED_PLANKS: Self = Self(4126u32);
+    /// `minecraft:piston`.
+    pub const PISTON: Self = Self(4127u32);
+    /// `minecraft:brown_carpet`.
+    pub const BROWN_CARPET: Self = Self(4133u32);
+    /// `minecraft:stone_brick_stairs`.
+    pub const STONE_BRICK_STAIRS: Self = Self(4134u32);
+    /// `minecraft:dead_bubble_coral_block`.
+    pub const DEAD_BUBBLE_CORAL_BLOCK: Self = Self(4174u32);
+    /// `minecraft:gray_candle`.
+    pub const GRAY_CANDLE: Self = Self(4175u32);
+    /// `minecraft:cherry_fence`.
+    pub const CHERRY_FENCE: Self = Self(4183u32);
+    /// `minecraft:pink_wool_slab`.
+    pub const PINK_WOOL_SLAB: Self = Self(4199u32);
+    /// `minecraft:mangrove_planks`.
+    pub const MANGROVE_PLANKS: Self = Self(4201u32);
+    /// `minecraft:invisible_bedrock`.
+    pub const INVISIBLE_BEDROCK: Self = Self(4202u32);
+    /// `minecraft:red_terracotta`.
+    pub const RED_TERRACOTTA: Self = Self(4203u32);
+    /// `minecraft:diorite_wall`.
+    pub const DIORITE_WALL: Self = Self(4204u32);
+    /// `minecraft:lime_concrete_stairs`.
+    pub const LIME_CONCRETE_STAIRS: Self = Self(4366u32);
+    /// `minecraft:dead_fire_coral_block`.
+    pub const DEAD_FIRE_CORAL_BLOCK: Self = Self(4406u32);
+    /// `minecraft:light_blue_concrete_double_slab`.
+    pub const LIGHT_BLUE_CONCRETE_DOUBLE_SLAB: Self = Self(4407u32);
+    /// `minecraft:oxidized_copper_bulb`.
+    pub const OXIDIZED_COPPER_BULB: Self = Self(4409u32);
+    /// `minecraft:magenta_wool`.
+    pub const MAGENTA_WOOL: Self = Self(4413u32);
+    /// `minecraft:oxidized_copper_bars`.
+    pub const OXIDIZED_COPPER_BARS: Self = Self(4414u32);
+    /// `minecraft:magenta_glazed_terracotta`.
+    pub const MAGENTA_GLAZED_TERRACOTTA: Self = Self(4430u32);
+    /// `minecraft:quartz_double_slab`.
+    pub const QUARTZ_DOUBLE_SLAB: Self = Self(4436u32);
+    /// `minecraft:polished_blackstone_brick_wall`.
+    pub const POLISHED_BLACKSTONE_BRICK_WALL: Self = Self(4438u32);
+    /// `minecraft:mangrove_slab`.
+    pub const MANGROVE_SLAB: Self = Self(4600u32);
+    /// `minecraft:orange_glazed_terracotta`.
+    pub const ORANGE_GLAZED_TERRACOTTA: Self = Self(4602u32);
+    /// `minecraft:hard_brown_stained_glass_pane`.
+    pub const HARD_BROWN_STAINED_GLASS_PANE: Self = Self(4608u32);
+    /// `minecraft:smooth_basalt`.
+    pub const SMOOTH_BASALT: Self = Self(4624u32);
+    /// `minecraft:waterlily`.
+    pub const WATERLILY: Self = Self(4625u32);
+    /// `minecraft:orange_wool_double_slab`.
+    pub const ORANGE_WOOL_DOUBLE_SLAB: Self = Self(4626u32);
+    /// `minecraft:stripped_pale_oak_wood`.
+    pub const STRIPPED_PALE_OAK_WOOD: Self = Self(4628u32);
+    /// `minecraft:hard_light_blue_stained_glass`.
+    pub const HARD_LIGHT_BLUE_STAINED_GLASS: Self = Self(4631u32);
+    /// `minecraft:emerald_block`.
+    pub const EMERALD_BLOCK: Self = Self(4632u32);
+    /// `minecraft:suspicious_sand`.
+    pub const SUSPICIOUS_SAND: Self = Self(4633u32);
+    /// `minecraft:mossy_cobblestone_wall`.
+    pub const MOSSY_COBBLESTONE_WALL: Self = Self(4641u32);
+    /// `minecraft:heavy_weighted_pressure_plate`.
+    pub const HEAVY_WEIGHTED_PRESSURE_PLATE: Self = Self(4803u32);
+    /// `minecraft:black_wool_stairs`.
+    pub const BLACK_WOOL_STAIRS: Self = Self(4819u32);
+    /// `minecraft:poplar_hanging_sign`.
+    pub const POPLAR_HANGING_SIGN: Self = Self(4859u32);
+    /// `minecraft:purple_stained_glass`.
+    pub const PURPLE_STAINED_GLASS: Self = Self(5243u32);
+    /// `minecraft:lightning_rod`.
+    pub const LIGHTNING_ROD: Self = Self(5244u32);
+    /// `minecraft:acacia_leaves`.
+    pub const ACACIA_LEAVES: Self = Self(5256u32);
+    /// `minecraft:black_stained_glass_pane`.
+    pub const BLACK_STAINED_GLASS_PANE: Self = Self(5260u32);
+    /// `minecraft:cobblestone_wall`.
+    pub const COBBLESTONE_WALL: Self = Self(5276u32);
+    /// `minecraft:green_wool_stairs`.
+    pub const GREEN_WOOL_STAIRS: Self = Self(5438u32);
+    /// `minecraft:underwater_torch`.
+    pub const UNDERWATER_TORCH: Self = Self(5478u32);
+    /// `minecraft:deepslate_brick_double_slab`.
+    pub const DEEPSLATE_BRICK_DOUBLE_SLAB: Self = Self(5484u32);
+    /// `minecraft:spruce_double_slab`.
+    pub const SPRUCE_DOUBLE_SLAB: Self = Self(5486u32);
+    /// `minecraft:bamboo_mosaic_slab`.
+    pub const BAMBOO_MOSAIC_SLAB: Self = Self(5488u32);
+    /// `minecraft:dark_oak_log`.
+    pub const DARK_OAK_LOG: Self = Self(5490u32);
+    /// `minecraft:acacia_hanging_sign`.
+    pub const ACACIA_HANGING_SIGN: Self = Self(5493u32);
+    /// `minecraft:ochre_froglight`.
+    pub const OCHRE_FROGLIGHT: Self = Self(5877u32);
+    /// `minecraft:tuff_wall`.
+    pub const TUFF_WALL: Self = Self(5880u32);
+    /// `minecraft:observer`.
+    pub const OBSERVER: Self = Self(6042u32);
+    /// `minecraft:redstone_torch`.
+    pub const REDSTONE_TORCH: Self = Self(6054u32);
+    /// `minecraft:silver_glazed_terracotta`.
+    pub const SILVER_GLAZED_TERRACOTTA: Self = Self(6060u32);
+    /// `minecraft:granite_stairs`.
+    pub const GRANITE_STAIRS: Self = Self(6066u32);
+    /// `minecraft:pink_concrete`.
+    pub const PINK_CONCRETE: Self = Self(6106u32);
+    /// `minecraft:dark_oak_hanging_sign`.
+    pub const DARK_OAK_HANGING_SIGN: Self = Self(6107u32);
+    /// `minecraft:glowingobsidian`.
+    pub const GLOWINGOBSIDIAN: Self = Self(6491u32);
+    /// `minecraft:brown_mushroom`.
+    pub const BROWN_MUSHROOM: Self = Self(6492u32);
+    /// `minecraft:cyan_concrete_powder`.
+    pub const CYAN_CONCRETE_POWDER: Self = Self(6493u32);
+    /// `minecraft:dead_fire_coral_wall_fan`.
+    pub const DEAD_FIRE_CORAL_WALL_FAN: Self = Self(6494u32);
+    /// `minecraft:brown_glazed_terracotta`.
+    pub const BROWN_GLAZED_TERRACOTTA: Self = Self(6498u32);
+    /// `minecraft:waxed_copper_trapdoor`.
+    pub const WAXED_COPPER_TRAPDOOR: Self = Self(6504u32);
+    /// `minecraft:spruce_shelf`.
+    pub const SPRUCE_SHELF: Self = Self(6520u32);
+    /// `minecraft:resin_brick_double_slab`.
+    pub const RESIN_BRICK_DOUBLE_SLAB: Self = Self(6552u32);
+    /// `minecraft:magenta_concrete_double_slab`.
+    pub const MAGENTA_CONCRETE_DOUBLE_SLAB: Self = Self(6554u32);
+    /// `minecraft:oxidized_copper`.
+    pub const OXIDIZED_COPPER: Self = Self(6556u32);
+    /// `minecraft:copper_ore`.
+    pub const COPPER_ORE: Self = Self(6557u32);
+    /// `minecraft:dark_oak_planks`.
+    pub const DARK_OAK_PLANKS: Self = Self(6558u32);
+    /// `minecraft:sulfur_brick_double_slab`.
+    pub const SULFUR_BRICK_DOUBLE_SLAB: Self = Self(6559u32);
+    /// `minecraft:pink_concrete_stairs`.
+    pub const PINK_CONCRETE_STAIRS: Self = Self(6561u32);
+    /// `minecraft:birch_pressure_plate`.
+    pub const BIRCH_PRESSURE_PLATE: Self = Self(6601u32);
+    /// `minecraft:scaffolding`.
+    pub const SCAFFOLDING: Self = Self(6617u32);
+    /// `minecraft:sandstone_stairs`.
+    pub const SANDSTONE_STAIRS: Self = Self(6633u32);
+    /// `minecraft:green_candle_cake`.
+    pub const GREEN_CANDLE_CAKE: Self = Self(6673u32);
+    /// `minecraft:stripped_bamboo_block`.
+    pub const STRIPPED_BAMBOO_BLOCK: Self = Self(6675u32);
+    /// `minecraft:brown_wool_stairs`.
+    pub const BROWN_WOOL_STAIRS: Self = Self(6678u32);
+    /// `minecraft:red_mushroom_block`.
+    pub const RED_MUSHROOM_BLOCK: Self = Self(6718u32);
+    /// `minecraft:light_gray_wool_stairs`.
+    pub const LIGHT_GRAY_WOOL_STAIRS: Self = Self(6734u32);
+    /// `minecraft:cracked_stone_bricks`.
+    pub const CRACKED_STONE_BRICKS: Self = Self(6774u32);
+    /// `minecraft:sculk_catalyst`.
+    pub const SCULK_CATALYST: Self = Self(6775u32);
+    /// `minecraft:cobblestone`.
+    pub const COBBLESTONE: Self = Self(6777u32);
+    /// `minecraft:waxed_lightning_rod`.
+    pub const WAXED_LIGHTNING_ROD: Self = Self(6778u32);
+    /// `minecraft:horn_coral`.
+    pub const HORN_CORAL: Self = Self(6790u32);
+    /// `minecraft:yellow_concrete`.
+    pub const YELLOW_CONCRETE: Self = Self(6791u32);
+    /// `minecraft:mangrove_shelf`.
+    pub const MANGROVE_SHELF: Self = Self(6792u32);
+    /// `minecraft:cyan_carpet`.
+    pub const CYAN_CARPET: Self = Self(6824u32);
+    /// `minecraft:warped_shelf`.
+    pub const WARPED_SHELF: Self = Self(6825u32);
+    /// `minecraft:oak_double_slab`.
+    pub const OAK_DOUBLE_SLAB: Self = Self(6857u32);
+    /// `minecraft:smooth_sandstone_stairs`.
+    pub const SMOOTH_SANDSTONE_STAIRS: Self = Self(6859u32);
+    /// `minecraft:jungle_pressure_plate`.
+    pub const JUNGLE_PRESSURE_PLATE: Self = Self(6899u32);
+    /// `minecraft:double_cut_copper_slab`.
+    pub const DOUBLE_CUT_COPPER_SLAB: Self = Self(6915u32);
+    /// `minecraft:chalkboard`.
+    pub const CHALKBOARD: Self = Self(6917u32);
+    /// `minecraft:blue_terracotta`.
+    pub const BLUE_TERRACOTTA: Self = Self(6933u32);
+    /// `minecraft:light_blue_concrete_stairs`.
+    pub const LIGHT_BLUE_CONCRETE_STAIRS: Self = Self(6934u32);
+    /// `minecraft:sandstone`.
+    pub const SANDSTONE: Self = Self(6974u32);
+    /// `minecraft:brown_candle_cake`.
+    pub const BROWN_CANDLE_CAKE: Self = Self(6975u32);
+    /// `minecraft:acacia_wall_sign`.
+    pub const ACACIA_WALL_SIGN: Self = Self(6977u32);
+    /// `minecraft:magenta_wool_stairs`.
+    pub const MAGENTA_WOOL_STAIRS: Self = Self(6983u32);
+    /// `minecraft:light_weighted_pressure_plate`.
+    pub const LIGHT_WEIGHTED_PRESSURE_PLATE: Self = Self(7023u32);
+    /// `minecraft:undyed_shulker_box`.
+    pub const UNDYED_SHULKER_BOX: Self = Self(7039u32);
+    /// `minecraft:polished_blackstone`.
+    pub const POLISHED_BLACKSTONE: Self = Self(7040u32);
+    /// `minecraft:mycelium`.
+    pub const MYCELIUM: Self = Self(7041u32);
+    /// `minecraft:exposed_lightning_rod`.
+    pub const EXPOSED_LIGHTNING_ROD: Self = Self(7042u32);
+    /// `minecraft:bamboo`.
+    pub const BAMBOO: Self = Self(7054u32);
+    /// `minecraft:quartz_block`.
+    pub const QUARTZ_BLOCK: Self = Self(7066u32);
+    /// `minecraft:pale_oak_planks`.
+    pub const PALE_OAK_PLANKS: Self = Self(7069u32);
+    /// `minecraft:stone_stairs`.
+    pub const STONE_STAIRS: Self = Self(7070u32);
+    /// `minecraft:waxed_weathered_chiseled_copper`.
+    pub const WAXED_WEATHERED_CHISELED_COPPER: Self = Self(7110u32);
+    /// `minecraft:gray_stained_glass`.
+    pub const GRAY_STAINED_GLASS: Self = Self(7111u32);
+    /// `minecraft:green_terracotta`.
+    pub const GREEN_TERRACOTTA: Self = Self(7112u32);
+    /// `minecraft:deepslate_brick_slab`.
+    pub const DEEPSLATE_BRICK_SLAB: Self = Self(7113u32);
+    /// `minecraft:warped_stairs`.
+    pub const WARPED_STAIRS: Self = Self(7115u32);
+    /// `minecraft:yellow_wool_stairs`.
+    pub const YELLOW_WOOL_STAIRS: Self = Self(7155u32);
+    /// `minecraft:gray_wool_stairs`.
+    pub const GRAY_WOOL_STAIRS: Self = Self(7195u32);
+    /// `minecraft:smithing_table`.
+    pub const SMITHING_TABLE: Self = Self(7235u32);
+    /// `minecraft:magenta_concrete_stairs`.
+    pub const MAGENTA_CONCRETE_STAIRS: Self = Self(7236u32);
+    /// `minecraft:player_head`.
+    pub const PLAYER_HEAD: Self = Self(7276u32);
+    /// `minecraft:weathered_copper_grate`.
+    pub const WEATHERED_COPPER_GRATE: Self = Self(7282u32);
+    /// `minecraft:poppy`.
+    pub const POPPY: Self = Self(7283u32);
+    /// `minecraft:red_wool_stairs`.
+    pub const RED_WOOL_STAIRS: Self = Self(7284u32);
+    /// `minecraft:sulfur_slab`.
+    pub const SULFUR_SLAB: Self = Self(7324u32);
+    /// `minecraft:tuff_brick_slab`.
+    pub const TUFF_BRICK_SLAB: Self = Self(7326u32);
+    /// `minecraft:copper_chain`.
+    pub const COPPER_CHAIN: Self = Self(7328u32);
+    /// `minecraft:copper_chest`.
+    pub const COPPER_CHEST: Self = Self(7331u32);
+    /// `minecraft:mossy_stone_bricks`.
+    pub const MOSSY_STONE_BRICKS: Self = Self(7335u32);
+    /// `minecraft:brown_concrete_stairs`.
+    pub const BROWN_CONCRETE_STAIRS: Self = Self(7336u32);
+    /// `minecraft:green_wool`.
+    pub const GREEN_WOOL: Self = Self(7376u32);
+    /// `minecraft:green_carpet`.
+    pub const GREEN_CARPET: Self = Self(7377u32);
+    /// `minecraft:prismarine_brick_slab`.
+    pub const PRISMARINE_BRICK_SLAB: Self = Self(7378u32);
+    /// `minecraft:wooden_door`.
+    pub const WOODEN_DOOR: Self = Self(7380u32);
+    /// `minecraft:pitcher_plant`.
+    pub const PITCHER_PLANT: Self = Self(7412u32);
+    /// `minecraft:compound_creator`.
+    pub const COMPOUND_CREATOR: Self = Self(7414u32);
+    /// `minecraft:spruce_pressure_plate`.
+    pub const SPRUCE_PRESSURE_PLATE: Self = Self(7418u32);
+    /// `minecraft:netherite_block`.
+    pub const NETHERITE_BLOCK: Self = Self(7434u32);
+    /// `minecraft:pink_wool`.
+    pub const PINK_WOOL: Self = Self(7435u32);
+    /// `minecraft:redstone_block`.
+    pub const REDSTONE_BLOCK: Self = Self(7436u32);
+    /// `minecraft:birch_fence_gate`.
+    pub const BIRCH_FENCE_GATE: Self = Self(7437u32);
+    /// `minecraft:redstone_wire`.
+    pub const REDSTONE_WIRE: Self = Self(7453u32);
+    /// `minecraft:quartz_pillar`.
+    pub const QUARTZ_PILLAR: Self = Self(7469u32);
+    /// `minecraft:waxed_exposed_cut_copper`.
+    pub const WAXED_EXPOSED_CUT_COPPER: Self = Self(7472u32);
+    /// `minecraft:lava`.
+    pub const LAVA: Self = Self(7473u32);
+    /// `minecraft:jungle_hanging_sign`.
+    pub const JUNGLE_HANGING_SIGN: Self = Self(7489u32);
+    /// `minecraft:birch_slab`.
+    pub const BIRCH_SLAB: Self = Self(7873u32);
+    /// `minecraft:loom`.
+    pub const LOOM: Self = Self(7875u32);
+    /// `minecraft:waxed_weathered_copper_lantern`.
+    pub const WAXED_WEATHERED_COPPER_LANTERN: Self = Self(7879u32);
+    /// `minecraft:yellow_wool_slab`.
+    pub const YELLOW_WOOL_SLAB: Self = Self(7881u32);
+    /// `minecraft:dead_tube_coral_block`.
+    pub const DEAD_TUBE_CORAL_BLOCK: Self = Self(7883u32);
+    /// `minecraft:end_stone`.
+    pub const END_STONE: Self = Self(7884u32);
+    /// `minecraft:polished_tuff_double_slab`.
+    pub const POLISHED_TUFF_DOUBLE_SLAB: Self = Self(7885u32);
+    /// `minecraft:crimson_door`.
+    pub const CRIMSON_DOOR: Self = Self(7887u32);
+    /// `minecraft:mangrove_pressure_plate`.
+    pub const MANGROVE_PRESSURE_PLATE: Self = Self(7919u32);
+    /// `minecraft:jungle_shelf`.
+    pub const JUNGLE_SHELF: Self = Self(7935u32);
+    /// `minecraft:jungle_slab`.
+    pub const JUNGLE_SLAB: Self = Self(7967u32);
+    /// `minecraft:light_blue_stained_glass_pane`.
+    pub const LIGHT_BLUE_STAINED_GLASS_PANE: Self = Self(7969u32);
+    /// `minecraft:brown_wool_slab`.
+    pub const BROWN_WOOL_SLAB: Self = Self(7985u32);
+    /// `minecraft:glowstone`.
+    pub const GLOWSTONE: Self = Self(7987u32);
+    /// `minecraft:stone_pressure_plate`.
+    pub const STONE_PRESSURE_PLATE: Self = Self(7988u32);
+    /// `minecraft:waxed_exposed_cut_copper_stairs`.
+    pub const WAXED_EXPOSED_CUT_COPPER_STAIRS: Self = Self(8004u32);
+    /// `minecraft:hard_white_stained_glass`.
+    pub const HARD_WHITE_STAINED_GLASS: Self = Self(8044u32);
+    /// `minecraft:mud_brick_slab`.
+    pub const MUD_BRICK_SLAB: Self = Self(8045u32);
+    /// `minecraft:waxed_exposed_lightning_rod`.
+    pub const WAXED_EXPOSED_LIGHTNING_ROD: Self = Self(8047u32);
+    /// `minecraft:exposed_copper_lantern`.
+    pub const EXPOSED_COPPER_LANTERN: Self = Self(8059u32);
+    /// `minecraft:farmland`.
+    pub const FARMLAND: Self = Self(8061u32);
+    /// `minecraft:dead_brain_coral_wall_fan`.
+    pub const DEAD_BRAIN_CORAL_WALL_FAN: Self = Self(8069u32);
+    /// `minecraft:pink_wool_double_slab`.
+    pub const PINK_WOOL_DOUBLE_SLAB: Self = Self(8073u32);
+    /// `minecraft:cut_red_sandstone`.
+    pub const CUT_RED_SANDSTONE: Self = Self(8075u32);
+    /// `minecraft:rail`.
+    pub const RAIL: Self = Self(8076u32);
+    /// `minecraft:blackstone_wall`.
+    pub const BLACKSTONE_WALL: Self = Self(8086u32);
+    /// `minecraft:stone_bricks`.
+    pub const STONE_BRICKS: Self = Self(8248u32);
+    /// `minecraft:mossy_cobblestone_stairs`.
+    pub const MOSSY_COBBLESTONE_STAIRS: Self = Self(8249u32);
+    /// `minecraft:hard_magenta_stained_glass`.
+    pub const HARD_MAGENTA_STAINED_GLASS: Self = Self(8289u32);
+    /// `minecraft:detector_rail`.
+    pub const DETECTOR_RAIL: Self = Self(8290u32);
+    /// `minecraft:blue_orchid`.
+    pub const BLUE_ORCHID: Self = Self(8302u32);
+    /// `minecraft:green_stained_glass_pane`.
+    pub const GREEN_STAINED_GLASS_PANE: Self = Self(8303u32);
+    /// `minecraft:polished_granite_stairs`.
+    pub const POLISHED_GRANITE_STAIRS: Self = Self(8319u32);
+    /// `minecraft:birch_leaves`.
+    pub const BIRCH_LEAVES: Self = Self(8359u32);
+    /// `minecraft:pink_terracotta`.
+    pub const PINK_TERRACOTTA: Self = Self(8363u32);
+    /// `minecraft:dark_oak_double_slab`.
+    pub const DARK_OAK_DOUBLE_SLAB: Self = Self(8364u32);
+    /// `minecraft:infested_cobblestone`.
+    pub const INFESTED_COBBLESTONE: Self = Self(8366u32);
+    /// `minecraft:pink_candle_cake`.
+    pub const PINK_CANDLE_CAKE: Self = Self(8367u32);
+    /// `minecraft:magenta_wool_slab`.
+    pub const MAGENTA_WOOL_SLAB: Self = Self(8369u32);
+    /// `minecraft:cracked_deepslate_tiles`.
+    pub const CRACKED_DEEPSLATE_TILES: Self = Self(8371u32);
+    /// `minecraft:brain_coral_wall_fan`.
+    pub const BRAIN_CORAL_WALL_FAN: Self = Self(8372u32);
+    /// `minecraft:mangrove_wood`.
+    pub const MANGROVE_WOOD: Self = Self(8376u32);
+    /// `minecraft:waxed_exposed_copper_golem_statue`.
+    pub const WAXED_EXPOSED_COPPER_GOLEM_STATUE: Self = Self(8379u32);
+    /// `minecraft:red_glazed_terracotta`.
+    pub const RED_GLAZED_TERRACOTTA: Self = Self(8383u32);
+    /// `minecraft:waxed_oxidized_copper_chest`.
+    pub const WAXED_OXIDIZED_COPPER_CHEST: Self = Self(8389u32);
+    /// `minecraft:waxed_oxidized_copper_chain`.
+    pub const WAXED_OXIDIZED_COPPER_CHAIN: Self = Self(8393u32);
+    /// `minecraft:dark_oak_fence_gate`.
+    pub const DARK_OAK_FENCE_GATE: Self = Self(8396u32);
+    /// `minecraft:mossy_cobblestone_slab`.
+    pub const MOSSY_COBBLESTONE_SLAB: Self = Self(8412u32);
+    /// `minecraft:bamboo_mosaic_double_slab`.
+    pub const BAMBOO_MOSAIC_DOUBLE_SLAB: Self = Self(8414u32);
+    /// `minecraft:cobblestone_slab`.
+    pub const COBBLESTONE_SLAB: Self = Self(8416u32);
+    /// `minecraft:crimson_nylium`.
+    pub const CRIMSON_NYLIUM: Self = Self(8418u32);
+    /// `minecraft:structure_void`.
+    pub const STRUCTURE_VOID: Self = Self(8419u32);
+    /// `minecraft:waxed_exposed_copper_bars`.
+    pub const WAXED_EXPOSED_COPPER_BARS: Self = Self(8420u32);
+    /// `minecraft:purple_concrete`.
+    pub const PURPLE_CONCRETE: Self = Self(8436u32);
+    /// `minecraft:waxed_exposed_copper_bulb`.
+    pub const WAXED_EXPOSED_COPPER_BULB: Self = Self(8437u32);
+    /// `minecraft:purple_concrete_slab`.
+    pub const PURPLE_CONCRETE_SLAB: Self = Self(8441u32);
+    /// `minecraft:polished_blackstone_brick_slab`.
+    pub const POLISHED_BLACKSTONE_BRICK_SLAB: Self = Self(8443u32);
+    /// `minecraft:normal_stone_slab`.
+    pub const NORMAL_STONE_SLAB: Self = Self(8445u32);
+    /// `minecraft:sulfur_stairs`.
+    pub const SULFUR_STAIRS: Self = Self(8447u32);
+    /// `minecraft:hard_yellow_stained_glass_pane`.
+    pub const HARD_YELLOW_STAINED_GLASS_PANE: Self = Self(8487u32);
+    /// `minecraft:spruce_sapling`.
+    pub const SPRUCE_SAPLING: Self = Self(8503u32);
+    /// `minecraft:yellow_terracotta`.
+    pub const YELLOW_TERRACOTTA: Self = Self(8505u32);
+    /// `minecraft:snow`.
+    pub const SNOW: Self = Self(8506u32);
+    /// `minecraft:sand`.
+    pub const SAND: Self = Self(8507u32);
+    /// `minecraft:daylight_detector`.
+    pub const DAYLIGHT_DETECTOR: Self = Self(8508u32);
+    /// `minecraft:mangrove_standing_sign`.
+    pub const MANGROVE_STANDING_SIGN: Self = Self(8524u32);
+    /// `minecraft:stripped_mangrove_wood`.
+    pub const STRIPPED_MANGROVE_WOOD: Self = Self(8540u32);
+    /// `minecraft:conduit`.
+    pub const CONDUIT: Self = Self(8543u32);
+    /// `minecraft:slime`.
+    pub const SLIME: Self = Self(8544u32);
+    /// `minecraft:copper_torch`.
+    pub const COPPER_TORCH: Self = Self(8545u32);
+    /// `minecraft:bone_block`.
+    pub const BONE_BLOCK: Self = Self(8551u32);
+    /// `minecraft:frame`.
+    pub const FRAME: Self = Self(8563u32);
+    /// `minecraft:spruce_log`.
+    pub const SPRUCE_LOG: Self = Self(8587u32);
+    /// `minecraft:lapis_block`.
+    pub const LAPIS_BLOCK: Self = Self(8590u32);
+    /// `minecraft:coal_ore`.
+    pub const COAL_ORE: Self = Self(8591u32);
+    /// `minecraft:cinnabar_double_slab`.
+    pub const CINNABAR_DOUBLE_SLAB: Self = Self(8592u32);
+    /// `minecraft:mossy_stone_brick_double_slab`.
+    pub const MOSSY_STONE_BRICK_DOUBLE_SLAB: Self = Self(8594u32);
+    /// `minecraft:cut_red_sandstone_double_slab`.
+    pub const CUT_RED_SANDSTONE_DOUBLE_SLAB: Self = Self(8596u32);
+    /// `minecraft:client_request_placeholder_block`.
+    pub const CLIENT_REQUEST_PLACEHOLDER_BLOCK: Self = Self(8598u32);
+    /// `minecraft:bamboo_shelf`.
+    pub const BAMBOO_SHELF: Self = Self(8599u32);
+    /// `minecraft:redstone_ore`.
+    pub const REDSTONE_ORE: Self = Self(8631u32);
+    /// `minecraft:lime_wool_slab`.
+    pub const LIME_WOOL_SLAB: Self = Self(8632u32);
+    /// `minecraft:bamboo_double_slab`.
+    pub const BAMBOO_DOUBLE_SLAB: Self = Self(8634u32);
+    /// `minecraft:waxed_copper_chest`.
+    pub const WAXED_COPPER_CHEST: Self = Self(8636u32);
+    /// `minecraft:green_stained_glass`.
+    pub const GREEN_STAINED_GLASS: Self = Self(8640u32);
+    /// `minecraft:waxed_copper_chain`.
+    pub const WAXED_COPPER_CHAIN: Self = Self(8641u32);
+    /// `minecraft:bubble_coral_block`.
+    pub const BUBBLE_CORAL_BLOCK: Self = Self(8644u32);
+    /// `minecraft:infested_chiseled_stone_bricks`.
+    pub const INFESTED_CHISELED_STONE_BRICKS: Self = Self(8645u32);
+    /// `minecraft:polished_cinnabar_wall`.
+    pub const POLISHED_CINNABAR_WALL: Self = Self(8646u32);
+    /// `minecraft:nether_brick_fence`.
+    pub const NETHER_BRICK_FENCE: Self = Self(8808u32);
+    /// `minecraft:blue_wool_stairs`.
+    pub const BLUE_WOOL_STAIRS: Self = Self(8824u32);
+    /// `minecraft:pink_tulip`.
+    pub const PINK_TULIP: Self = Self(8864u32);
+    /// `minecraft:oak_slab`.
+    pub const OAK_SLAB: Self = Self(8865u32);
+    /// `minecraft:stripped_pale_oak_log`.
+    pub const STRIPPED_PALE_OAK_LOG: Self = Self(8867u32);
+    /// `minecraft:deepslate_tile_slab`.
+    pub const DEEPSLATE_TILE_SLAB: Self = Self(8870u32);
+    /// `minecraft:pink_concrete_powder`.
+    pub const PINK_CONCRETE_POWDER: Self = Self(8872u32);
+    /// `minecraft:pale_oak_slab`.
+    pub const PALE_OAK_SLAB: Self = Self(8873u32);
+    /// `minecraft:red_wool_slab`.
+    pub const RED_WOOL_SLAB: Self = Self(8875u32);
+    /// `minecraft:dead_tube_coral`.
+    pub const DEAD_TUBE_CORAL: Self = Self(8877u32);
+    /// `minecraft:nether_wart_block`.
+    pub const NETHER_WART_BLOCK: Self = Self(8878u32);
+    /// `minecraft:prismarine_slab`.
+    pub const PRISMARINE_SLAB: Self = Self(8879u32);
+    /// `minecraft:prismarine_double_slab`.
+    pub const PRISMARINE_DOUBLE_SLAB: Self = Self(8881u32);
+    /// `minecraft:cherry_door`.
+    pub const CHERRY_DOOR: Self = Self(8883u32);
+    /// `minecraft:colored_torch_blue`.
+    pub const COLORED_TORCH_BLUE: Self = Self(8915u32);
+    /// `minecraft:crimson_hyphae`.
+    pub const CRIMSON_HYPHAE: Self = Self(8921u32);
+    /// `minecraft:polished_blackstone_stairs`.
+    pub const POLISHED_BLACKSTONE_STAIRS: Self = Self(8924u32);
+    /// `minecraft:weathered_cut_copper_stairs`.
+    pub const WEATHERED_CUT_COPPER_STAIRS: Self = Self(8964u32);
+    /// `minecraft:small_dripleaf_block`.
+    pub const SMALL_DRIPLEAF_BLOCK: Self = Self(9004u32);
+    /// `minecraft:polished_sulfur_stairs`.
+    pub const POLISHED_SULFUR_STAIRS: Self = Self(9012u32);
+    /// `minecraft:pink_stained_glass`.
+    pub const PINK_STAINED_GLASS: Self = Self(9052u32);
+    /// `minecraft:waxed_weathered_copper_grate`.
+    pub const WAXED_WEATHERED_COPPER_GRATE: Self = Self(9053u32);
+    /// `minecraft:spruce_button`.
+    pub const SPRUCE_BUTTON: Self = Self(9054u32);
+    /// `minecraft:acacia_log`.
+    pub const ACACIA_LOG: Self = Self(9066u32);
+    /// `minecraft:crimson_trapdoor`.
+    pub const CRIMSON_TRAPDOOR: Self = Self(9069u32);
+    /// `minecraft:basalt`.
+    pub const BASALT: Self = Self(9085u32);
+    /// `minecraft:hard_cyan_stained_glass`.
+    pub const HARD_CYAN_STAINED_GLASS: Self = Self(9088u32);
+    /// `minecraft:light_gray_concrete_stairs`.
+    pub const LIGHT_GRAY_CONCRETE_STAIRS: Self = Self(9089u32);
+    /// `minecraft:normal_stone_double_slab`.
+    pub const NORMAL_STONE_DOUBLE_SLAB: Self = Self(9129u32);
+    /// `minecraft:light_gray_wool_slab`.
+    pub const LIGHT_GRAY_WOOL_SLAB: Self = Self(9131u32);
+    /// `minecraft:stone_brick_double_slab`.
+    pub const STONE_BRICK_DOUBLE_SLAB: Self = Self(9133u32);
+    /// `minecraft:light_blue_terracotta`.
+    pub const LIGHT_BLUE_TERRACOTTA: Self = Self(9135u32);
+    /// `minecraft:green_concrete_stairs`.
+    pub const GREEN_CONCRETE_STAIRS: Self = Self(9136u32);
+    /// `minecraft:lit_redstone_lamp`.
+    pub const LIT_REDSTONE_LAMP: Self = Self(9176u32);
+    /// `minecraft:copper_golem_statue`.
+    pub const COPPER_GOLEM_STATUE: Self = Self(9177u32);
+    /// `minecraft:hard_blue_stained_glass`.
+    pub const HARD_BLUE_STAINED_GLASS: Self = Self(9181u32);
+    /// `minecraft:hard_purple_stained_glass`.
+    pub const HARD_PURPLE_STAINED_GLASS: Self = Self(9182u32);
+    /// `minecraft:diamond_ore`.
+    pub const DIAMOND_ORE: Self = Self(9183u32);
+    /// `minecraft:warped_roots`.
+    pub const WARPED_ROOTS: Self = Self(9184u32);
+    /// `minecraft:magenta_concrete`.
+    pub const MAGENTA_CONCRETE: Self = Self(9185u32);
+    /// `minecraft:dark_prismarine`.
+    pub const DARK_PRISMARINE: Self = Self(9186u32);
+    /// `minecraft:sticky_piston`.
+    pub const STICKY_PISTON: Self = Self(9187u32);
+    /// `minecraft:ender_chest`.
+    pub const ENDER_CHEST: Self = Self(9193u32);
+    /// `minecraft:medium_amethyst_bud`.
+    pub const MEDIUM_AMETHYST_BUD: Self = Self(9197u32);
+    /// `minecraft:pink_shulker_box`.
+    pub const PINK_SHULKER_BOX: Self = Self(9203u32);
+    /// `minecraft:warped_double_slab`.
+    pub const WARPED_DOUBLE_SLAB: Self = Self(9204u32);
+    /// `minecraft:jungle_wall_sign`.
+    pub const JUNGLE_WALL_SIGN: Self = Self(9206u32);
+    /// `minecraft:sculk_sensor`.
+    pub const SCULK_SENSOR: Self = Self(9212u32);
+    /// `minecraft:copper_bulb`.
+    pub const COPPER_BULB: Self = Self(9215u32);
+    /// `minecraft:copper_bars`.
+    pub const COPPER_BARS: Self = Self(9219u32);
+    /// `minecraft:oak_shelf`.
+    pub const OAK_SHELF: Self = Self(9235u32);
+    /// `minecraft:diorite_stairs`.
+    pub const DIORITE_STAIRS: Self = Self(9267u32);
+    /// `minecraft:spruce_leaves`.
+    pub const SPRUCE_LEAVES: Self = Self(9307u32);
+    /// `minecraft:frog_spawn`.
+    pub const FROG_SPAWN: Self = Self(9311u32);
+    /// `minecraft:acacia_door`.
+    pub const ACACIA_DOOR: Self = Self(9312u32);
+    /// `minecraft:smooth_sandstone_double_slab`.
+    pub const SMOOTH_SANDSTONE_DOUBLE_SLAB: Self = Self(9344u32);
+    /// `minecraft:red_shulker_box`.
+    pub const RED_SHULKER_BOX: Self = Self(9346u32);
+    /// `minecraft:stripped_cherry_log`.
+    pub const STRIPPED_CHERRY_LOG: Self = Self(9347u32);
+    /// `minecraft:crimson_button`.
+    pub const CRIMSON_BUTTON: Self = Self(9350u32);
+    /// `minecraft:acacia_planks`.
+    pub const ACACIA_PLANKS: Self = Self(9362u32);
+    /// `minecraft:fire_coral_block`.
+    pub const FIRE_CORAL_BLOCK: Self = Self(9363u32);
+    /// `minecraft:magenta_concrete_powder`.
+    pub const MAGENTA_CONCRETE_POWDER: Self = Self(9364u32);
+    /// `minecraft:iron_door`.
+    pub const IRON_DOOR: Self = Self(9365u32);
+    /// `minecraft:honeycomb_block`.
+    pub const HONEYCOMB_BLOCK: Self = Self(9397u32);
+    /// `minecraft:polished_blackstone_brick_stairs`.
+    pub const POLISHED_BLACKSTONE_BRICK_STAIRS: Self = Self(9398u32);
+    /// `minecraft:mangrove_trapdoor`.
+    pub const MANGROVE_TRAPDOOR: Self = Self(9438u32);
+    /// `minecraft:quartz_ore`.
+    pub const QUARTZ_ORE: Self = Self(9454u32);
+    /// `minecraft:daylight_detector_inverted`.
+    pub const DAYLIGHT_DETECTOR_INVERTED: Self = Self(9455u32);
+    /// `minecraft:barrel`.
+    pub const BARREL: Self = Self(9471u32);
+    /// `minecraft:smooth_quartz`.
+    pub const SMOOTH_QUARTZ: Self = Self(9483u32);
+    /// `minecraft:coarse_dirt`.
+    pub const COARSE_DIRT: Self = Self(9486u32);
+    /// `minecraft:chorus_flower`.
+    pub const CHORUS_FLOWER: Self = Self(9487u32);
+    /// `minecraft:orange_stained_glass`.
+    pub const ORANGE_STAINED_GLASS: Self = Self(9493u32);
+    /// `minecraft:white_stained_glass_pane`.
+    pub const WHITE_STAINED_GLASS_PANE: Self = Self(9494u32);
+    /// `minecraft:cinnabar_brick_double_slab`.
+    pub const CINNABAR_BRICK_DOUBLE_SLAB: Self = Self(9510u32);
+    /// `minecraft:polished_cinnabar_double_slab`.
+    pub const POLISHED_CINNABAR_DOUBLE_SLAB: Self = Self(9512u32);
+    /// `minecraft:sulfur_wall`.
+    pub const SULFUR_WALL: Self = Self(9514u32);
+    /// `minecraft:sulfur_brick_stairs`.
+    pub const SULFUR_BRICK_STAIRS: Self = Self(9676u32);
+    /// `minecraft:stripped_birch_wood`.
+    pub const STRIPPED_BIRCH_WOOD: Self = Self(9716u32);
+    /// `minecraft:cracked_nether_bricks`.
+    pub const CRACKED_NETHER_BRICKS: Self = Self(9719u32);
+    /// `minecraft:powered_repeater`.
+    pub const POWERED_REPEATER: Self = Self(9720u32);
+    /// `minecraft:light_blue_candle`.
+    pub const LIGHT_BLUE_CANDLE: Self = Self(9736u32);
+    /// `minecraft:hard_lime_stained_glass_pane`.
+    pub const HARD_LIME_STAINED_GLASS_PANE: Self = Self(9744u32);
+    /// `minecraft:pumpkin`.
+    pub const PUMPKIN: Self = Self(9760u32);
+    /// `minecraft:element_constructor`.
+    pub const ELEMENT_CONSTRUCTOR: Self = Self(9764u32);
+    /// `minecraft:deepslate_tiles`.
+    pub const DEEPSLATE_TILES: Self = Self(9768u32);
+    /// `minecraft:smooth_stone`.
+    pub const SMOOTH_STONE: Self = Self(9769u32);
+    /// `minecraft:hard_light_gray_stained_glass_pane`.
+    pub const HARD_LIGHT_GRAY_STAINED_GLASS_PANE: Self = Self(9770u32);
+    /// `minecraft:gray_terracotta`.
+    pub const GRAY_TERRACOTTA: Self = Self(9786u32);
+    /// `minecraft:oxidized_copper_trapdoor`.
+    pub const OXIDIZED_COPPER_TRAPDOOR: Self = Self(9787u32);
+    /// `minecraft:granite_slab`.
+    pub const GRANITE_SLAB: Self = Self(9803u32);
+    /// `minecraft:white_tulip`.
+    pub const WHITE_TULIP: Self = Self(9805u32);
+    /// `minecraft:lime_concrete`.
+    pub const LIME_CONCRETE: Self = Self(9806u32);
+    /// `minecraft:black_candle_cake`.
+    pub const BLACK_CANDLE_CAKE: Self = Self(9807u32);
+    /// `minecraft:lime_concrete_slab`.
+    pub const LIME_CONCRETE_SLAB: Self = Self(9809u32);
+    /// `minecraft:red_mushroom`.
+    pub const RED_MUSHROOM: Self = Self(9811u32);
+    /// `minecraft:gilded_blackstone`.
+    pub const GILDED_BLACKSTONE: Self = Self(9812u32);
+    /// `minecraft:hard_yellow_stained_glass`.
+    pub const HARD_YELLOW_STAINED_GLASS: Self = Self(9813u32);
+    /// `minecraft:magenta_terracotta`.
+    pub const MAGENTA_TERRACOTTA: Self = Self(9814u32);
+    /// `minecraft:exposed_cut_copper_stairs`.
+    pub const EXPOSED_CUT_COPPER_STAIRS: Self = Self(9815u32);
+    /// `minecraft:mangrove_stairs`.
+    pub const MANGROVE_STAIRS: Self = Self(9855u32);
+    /// `minecraft:polished_diorite_slab`.
+    pub const POLISHED_DIORITE_SLAB: Self = Self(9895u32);
+    /// `minecraft:reserved6`.
+    pub const RESERVED6: Self = Self(9897u32);
+    /// `minecraft:cut_copper_stairs`.
+    pub const CUT_COPPER_STAIRS: Self = Self(9898u32);
+    /// `minecraft:unknown`.
+    pub const UNKNOWN: Self = Self(9938u32);
+    /// `minecraft:lab_table`.
+    pub const LAB_TABLE: Self = Self(9939u32);
+    /// `minecraft:waxed_oxidized_copper_lantern`.
+    pub const WAXED_OXIDIZED_COPPER_LANTERN: Self = Self(9943u32);
+    /// `minecraft:cherry_button`.
+    pub const CHERRY_BUTTON: Self = Self(9945u32);
+    /// `minecraft:yellow_candle_cake`.
+    pub const YELLOW_CANDLE_CAKE: Self = Self(9957u32);
+    /// `minecraft:mangrove_fence_gate`.
+    pub const MANGROVE_FENCE_GATE: Self = Self(9959u32);
+    /// `minecraft:sunflower`.
+    pub const SUNFLOWER: Self = Self(9975u32);
+    /// `minecraft:pink_petals`.
+    pub const PINK_PETALS: Self = Self(9977u32);
+    /// `minecraft:blue_concrete_slab`.
+    pub const BLUE_CONCRETE_SLAB: Self = Self(10009u32);
+    /// `minecraft:white_concrete_slab`.
+    pub const WHITE_CONCRETE_SLAB: Self = Self(10011u32);
+    /// `minecraft:bamboo_hanging_sign`.
+    pub const BAMBOO_HANGING_SIGN: Self = Self(10013u32);
+    /// `minecraft:infested_deepslate`.
+    pub const INFESTED_DEEPSLATE: Self = Self(10397u32);
+    /// `minecraft:soul_torch`.
+    pub const SOUL_TORCH: Self = Self(10400u32);
+    /// `minecraft:podzol`.
+    pub const PODZOL: Self = Self(10406u32);
+    /// `minecraft:copper_block`.
+    pub const COPPER_BLOCK: Self = Self(10407u32);
+    /// `minecraft:lit_redstone_ore`.
+    pub const LIT_REDSTONE_ORE: Self = Self(10408u32);
+    /// `minecraft:deepslate_tile_stairs`.
+    pub const DEEPSLATE_TILE_STAIRS: Self = Self(10409u32);
+    /// `minecraft:crimson_fence_gate`.
+    pub const CRIMSON_FENCE_GATE: Self = Self(10449u32);
+    /// `minecraft:deadbush`.
+    pub const DEADBUSH: Self = Self(10465u32);
+    /// `minecraft:green_concrete_double_slab`.
+    pub const GREEN_CONCRETE_DOUBLE_SLAB: Self = Self(10466u32);
+    /// `minecraft:light_blue_wool_slab`.
+    pub const LIGHT_BLUE_WOOL_SLAB: Self = Self(10468u32);
+    /// `minecraft:waxed_weathered_double_cut_copper_slab`.
+    pub const WAXED_WEATHERED_DOUBLE_CUT_COPPER_SLAB: Self = Self(10470u32);
+    /// `minecraft:polished_blackstone_bricks`.
+    pub const POLISHED_BLACKSTONE_BRICKS: Self = Self(10472u32);
+    /// `minecraft:red_candle`.
+    pub const RED_CANDLE: Self = Self(10473u32);
+    /// `minecraft:purple_wool_double_slab`.
+    pub const PURPLE_WOOL_DOUBLE_SLAB: Self = Self(10481u32);
+    /// `minecraft:cut_copper`.
+    pub const CUT_COPPER: Self = Self(10483u32);
+    /// `minecraft:waxed_weathered_copper_golem_statue`.
+    pub const WAXED_WEATHERED_COPPER_GOLEM_STATUE: Self = Self(10484u32);
+    /// `minecraft:iron_ore`.
+    pub const IRON_ORE: Self = Self(10488u32);
+    /// `minecraft:red_wool_double_slab`.
+    pub const RED_WOOL_DOUBLE_SLAB: Self = Self(10489u32);
+    /// `minecraft:spruce_door`.
+    pub const SPRUCE_DOOR: Self = Self(10491u32);
+    /// `minecraft:frosted_ice`.
+    pub const FROSTED_ICE: Self = Self(10523u32);
+    /// `minecraft:chipped_anvil`.
+    pub const CHIPPED_ANVIL: Self = Self(10527u32);
+    /// `minecraft:large_amethyst_bud`.
+    pub const LARGE_AMETHYST_BUD: Self = Self(10531u32);
+    /// `minecraft:exposed_copper_door`.
+    pub const EXPOSED_COPPER_DOOR: Self = Self(10537u32);
+    /// `minecraft:suspicious_gravel`.
+    pub const SUSPICIOUS_GRAVEL: Self = Self(10569u32);
+    /// `minecraft:warped_trapdoor`.
+    pub const WARPED_TRAPDOOR: Self = Self(10577u32);
+    /// `minecraft:flowing_water`.
+    pub const FLOWING_WATER: Self = Self(10593u32);
+    /// `minecraft:brick_block`.
+    pub const BRICK_BLOCK: Self = Self(10609u32);
+    /// `minecraft:hard_glass`.
+    pub const HARD_GLASS: Self = Self(10610u32);
+    /// `minecraft:waxed_weathered_copper_trapdoor`.
+    pub const WAXED_WEATHERED_COPPER_TRAPDOOR: Self = Self(10611u32);
+    /// `minecraft:orange_wool_slab`.
+    pub const ORANGE_WOOL_SLAB: Self = Self(10627u32);
+    /// `minecraft:black_concrete_stairs`.
+    pub const BLACK_CONCRETE_STAIRS: Self = Self(10629u32);
+    /// `minecraft:quartz_stairs`.
+    pub const QUARTZ_STAIRS: Self = Self(10669u32);
+    /// `minecraft:cave_vines`.
+    pub const CAVE_VINES: Self = Self(10709u32);
+    /// `minecraft:magenta_stained_glass_pane`.
+    pub const MAGENTA_STAINED_GLASS_PANE: Self = Self(10735u32);
+    /// `minecraft:iron_bars`.
+    pub const IRON_BARS: Self = Self(10751u32);
+    /// `minecraft:white_terracotta`.
+    pub const WHITE_TERRACOTTA: Self = Self(10767u32);
+    /// `minecraft:stripped_oak_wood`.
+    pub const STRIPPED_OAK_WOOD: Self = Self(10768u32);
+    /// `minecraft:light_blue_carpet`.
+    pub const LIGHT_BLUE_CARPET: Self = Self(10771u32);
+    /// `minecraft:oak_hanging_sign`.
+    pub const OAK_HANGING_SIGN: Self = Self(10772u32);
+    /// `minecraft:white_concrete_powder`.
+    pub const WHITE_CONCRETE_POWDER: Self = Self(11156u32);
+    /// `minecraft:melon_stem`.
+    pub const MELON_STEM: Self = Self(11157u32);
+    /// `minecraft:crimson_planks`.
+    pub const CRIMSON_PLANKS: Self = Self(11205u32);
+    /// `minecraft:stripped_dark_oak_wood`.
+    pub const STRIPPED_DARK_OAK_WOOD: Self = Self(11206u32);
+    /// `minecraft:waxed_weathered_cut_copper`.
+    pub const WAXED_WEATHERED_CUT_COPPER: Self = Self(11209u32);
+    /// `minecraft:white_stained_glass`.
+    pub const WHITE_STAINED_GLASS: Self = Self(11210u32);
+    /// `minecraft:horn_coral_wall_fan`.
+    pub const HORN_CORAL_WALL_FAN: Self = Self(11211u32);
+    /// `minecraft:oak_wood`.
+    pub const OAK_WOOD: Self = Self(11215u32);
+    /// `minecraft:purple_stained_glass_pane`.
+    pub const PURPLE_STAINED_GLASS_PANE: Self = Self(11218u32);
+    /// `minecraft:waxed_oxidized_copper_trapdoor`.
+    pub const WAXED_OXIDIZED_COPPER_TRAPDOOR: Self = Self(11234u32);
+    /// `minecraft:red_concrete_slab`.
+    pub const RED_CONCRETE_SLAB: Self = Self(11250u32);
+    /// `minecraft:wall_sign`.
+    pub const WALL_SIGN: Self = Self(11252u32);
+    /// `minecraft:jukebox`.
+    pub const JUKEBOX: Self = Self(11258u32);
+    /// `minecraft:stripped_cherry_wood`.
+    pub const STRIPPED_CHERRY_WOOD: Self = Self(11259u32);
+    /// `minecraft:jigsaw`.
+    pub const JIGSAW: Self = Self(11262u32);
+    /// `minecraft:waxed_oxidized_copper_golem_statue`.
+    pub const WAXED_OXIDIZED_COPPER_GOLEM_STATUE: Self = Self(11286u32);
+    /// `minecraft:chiseled_sulfur`.
+    pub const CHISELED_SULFUR: Self = Self(11290u32);
+    /// `minecraft:black_concrete_double_slab`.
+    pub const BLACK_CONCRETE_DOUBLE_SLAB: Self = Self(11291u32);
+    /// `minecraft:polished_cinnabar_slab`.
+    pub const POLISHED_CINNABAR_SLAB: Self = Self(11293u32);
+    /// `minecraft:prismarine_wall`.
+    pub const PRISMARINE_WALL: Self = Self(11295u32);
+    /// `minecraft:border_block`.
+    pub const BORDER_BLOCK: Self = Self(11457u32);
+    /// `minecraft:shroomlight`.
+    pub const SHROOMLIGHT: Self = Self(11619u32);
+    /// `minecraft:bamboo_fence_gate`.
+    pub const BAMBOO_FENCE_GATE: Self = Self(11620u32);
+    /// `minecraft:cornflower`.
+    pub const CORNFLOWER: Self = Self(11636u32);
+    /// `minecraft:chiseled_polished_blackstone`.
+    pub const CHISELED_POLISHED_BLACKSTONE: Self = Self(11637u32);
+    /// `minecraft:dark_oak_stairs`.
+    pub const DARK_OAK_STAIRS: Self = Self(11638u32);
+    /// `minecraft:deepslate_tile_wall`.
+    pub const DEEPSLATE_TILE_WALL: Self = Self(11678u32);
+    /// `minecraft:glass_pane`.
+    pub const GLASS_PANE: Self = Self(11840u32);
+    /// `minecraft:chiseled_deepslate`.
+    pub const CHISELED_DEEPSLATE: Self = Self(11856u32);
+    /// `minecraft:cut_copper_slab`.
+    pub const CUT_COPPER_SLAB: Self = Self(11857u32);
+    /// `minecraft:gray_wool_double_slab`.
+    pub const GRAY_WOOL_DOUBLE_SLAB: Self = Self(11859u32);
+    /// `minecraft:polished_sulfur_double_slab`.
+    pub const POLISHED_SULFUR_DOUBLE_SLAB: Self = Self(11861u32);
+    /// `minecraft:red_stained_glass`.
+    pub const RED_STAINED_GLASS: Self = Self(11863u32);
+    /// `minecraft:pale_oak_wood`.
+    pub const PALE_OAK_WOOD: Self = Self(11864u32);
+    /// `minecraft:infested_stone_bricks`.
+    pub const INFESTED_STONE_BRICKS: Self = Self(11867u32);
+    /// `minecraft:acacia_pressure_plate`.
+    pub const ACACIA_PRESSURE_PLATE: Self = Self(11868u32);
+    /// `minecraft:weathered_lightning_rod`.
+    pub const WEATHERED_LIGHTNING_ROD: Self = Self(11884u32);
+    /// `minecraft:bamboo_trapdoor`.
+    pub const BAMBOO_TRAPDOOR: Self = Self(11896u32);
+    /// `minecraft:oxidized_chiseled_copper`.
+    pub const OXIDIZED_CHISELED_COPPER: Self = Self(11912u32);
+    /// `minecraft:mangrove_wall_sign`.
+    pub const MANGROVE_WALL_SIGN: Self = Self(11913u32);
+    /// `minecraft:raw_copper_block`.
+    pub const RAW_COPPER_BLOCK: Self = Self(11919u32);
+    /// `minecraft:tall_dry_grass`.
+    pub const TALL_DRY_GRASS: Self = Self(11920u32);
+    /// `minecraft:oxidized_cut_copper_slab`.
+    pub const OXIDIZED_CUT_COPPER_SLAB: Self = Self(11921u32);
+    /// `minecraft:horn_coral_block`.
+    pub const HORN_CORAL_BLOCK: Self = Self(11923u32);
+    /// `minecraft:dark_oak_shelf`.
+    pub const DARK_OAK_SHELF: Self = Self(11924u32);
+    /// `minecraft:beetroot`.
+    pub const BEETROOT: Self = Self(11956u32);
+    /// `minecraft:light_gray_candle_cake`.
+    pub const LIGHT_GRAY_CANDLE_CAKE: Self = Self(11964u32);
+    /// `minecraft:white_candle`.
+    pub const WHITE_CANDLE: Self = Self(11966u32);
+    /// `minecraft:andesite_stairs`.
+    pub const ANDESITE_STAIRS: Self = Self(11974u32);
+    /// `minecraft:birch_planks`.
+    pub const BIRCH_PLANKS: Self = Self(12014u32);
+    /// `minecraft:golden_rail`.
+    pub const GOLDEN_RAIL: Self = Self(12015u32);
+    /// `minecraft:cyan_wool`.
+    pub const CYAN_WOOL: Self = Self(12027u32);
+    /// `minecraft:petrified_oak_double_slab`.
+    pub const PETRIFIED_OAK_DOUBLE_SLAB: Self = Self(12028u32);
+    /// `minecraft:deprecated_anvil`.
+    pub const DEPRECATED_ANVIL: Self = Self(12030u32);
+    /// `minecraft:red_shrub`.
+    pub const RED_SHRUB: Self = Self(12034u32);
+    /// `minecraft:darkoak_wall_sign`.
+    pub const DARKOAK_WALL_SIGN: Self = Self(12035u32);
+    /// `minecraft:jungle_leaves`.
+    pub const JUNGLE_LEAVES: Self = Self(12041u32);
+    /// `minecraft:gray_shulker_box`.
+    pub const GRAY_SHULKER_BOX: Self = Self(12045u32);
+    /// `minecraft:red_sandstone_stairs`.
+    pub const RED_SANDSTONE_STAIRS: Self = Self(12046u32);
+    /// `minecraft:cyan_glazed_terracotta`.
+    pub const CYAN_GLAZED_TERRACOTTA: Self = Self(12086u32);
+    /// `minecraft:cracked_deepslate_bricks`.
+    pub const CRACKED_DEEPSLATE_BRICKS: Self = Self(12092u32);
+    /// `minecraft:fire_coral_wall_fan`.
+    pub const FIRE_CORAL_WALL_FAN: Self = Self(12093u32);
+    /// `minecraft:jungle_fence_gate`.
+    pub const JUNGLE_FENCE_GATE: Self = Self(12097u32);
+    /// `minecraft:exposed_copper_grate`.
+    pub const EXPOSED_COPPER_GRATE: Self = Self(12113u32);
+    /// `minecraft:waxed_copper_grate`.
+    pub const WAXED_COPPER_GRATE: Self = Self(12114u32);
+    /// `minecraft:hard_light_blue_stained_glass_pane`.
+    pub const HARD_LIGHT_BLUE_STAINED_GLASS_PANE: Self = Self(12115u32);
+    /// `minecraft:jungle_trapdoor`.
+    pub const JUNGLE_TRAPDOOR: Self = Self(12131u32);
+    /// `minecraft:dirt_with_roots`.
+    pub const DIRT_WITH_ROOTS: Self = Self(12147u32);
+    /// `minecraft:coal_block`.
+    pub const COAL_BLOCK: Self = Self(12148u32);
+    /// `minecraft:white_wool`.
+    pub const WHITE_WOOL: Self = Self(12149u32);
+    /// `minecraft:warped_fence_gate`.
+    pub const WARPED_FENCE_GATE: Self = Self(12150u32);
+    /// `minecraft:cut_sandstone_slab`.
+    pub const CUT_SANDSTONE_SLAB: Self = Self(12166u32);
+    /// `minecraft:skeleton_skull`.
+    pub const SKELETON_SKULL: Self = Self(12168u32);
+    /// `minecraft:exposed_copper_chest`.
+    pub const EXPOSED_COPPER_CHEST: Self = Self(12174u32);
+    /// `minecraft:exposed_copper_chain`.
+    pub const EXPOSED_COPPER_CHAIN: Self = Self(12178u32);
+    /// `minecraft:white_concrete_stairs`.
+    pub const WHITE_CONCRETE_STAIRS: Self = Self(12181u32);
+    /// `minecraft:composter`.
+    pub const COMPOSTER: Self = Self(12221u32);
+    /// `minecraft:waxed_double_cut_copper_slab`.
+    pub const WAXED_DOUBLE_CUT_COPPER_SLAB: Self = Self(12230u32);
+    /// `minecraft:kelp`.
+    pub const KELP: Self = Self(12232u32);
+    /// `minecraft:sulfur_double_slab`.
+    pub const SULFUR_DOUBLE_SLAB: Self = Self(12258u32);
+    /// `minecraft:waxed_exposed_copper_door`.
+    pub const WAXED_EXPOSED_COPPER_DOOR: Self = Self(12260u32);
+    /// `minecraft:deepslate_bricks`.
+    pub const DEEPSLATE_BRICKS: Self = Self(12292u32);
+    /// `minecraft:blue_glazed_terracotta`.
+    pub const BLUE_GLAZED_TERRACOTTA: Self = Self(12293u32);
+    /// `minecraft:light_blue_glazed_terracotta`.
+    pub const LIGHT_BLUE_GLAZED_TERRACOTTA: Self = Self(12299u32);
+    /// `minecraft:rose_bush`.
+    pub const ROSE_BUSH: Self = Self(12305u32);
+    /// `minecraft:flowering_azalea`.
+    pub const FLOWERING_AZALEA: Self = Self(12307u32);
+    /// `minecraft:oxidized_cut_copper`.
+    pub const OXIDIZED_CUT_COPPER: Self = Self(12308u32);
+    /// `minecraft:poplar_shelf`.
+    pub const POPLAR_SHELF: Self = Self(12309u32);
+    /// `minecraft:blue_wool`.
+    pub const BLUE_WOOL: Self = Self(12341u32);
+    /// `minecraft:pale_oak_hanging_sign`.
+    pub const PALE_OAK_HANGING_SIGN: Self = Self(12342u32);
+    /// `minecraft:weeping_vines`.
+    pub const WEEPING_VINES: Self = Self(12726u32);
+    /// `minecraft:chorus_plant`.
+    pub const CHORUS_PLANT: Self = Self(12752u32);
+    /// `minecraft:water`.
+    pub const WATER: Self = Self(12753u32);
+    /// `minecraft:mud_brick_stairs`.
+    pub const MUD_BRICK_STAIRS: Self = Self(12769u32);
+    /// `minecraft:unpowered_repeater`.
+    pub const UNPOWERED_REPEATER: Self = Self(12809u32);
+    /// `minecraft:stone_brick_wall`.
+    pub const STONE_BRICK_WALL: Self = Self(12825u32);
+    /// `minecraft:smooth_red_sandstone_stairs`.
+    pub const SMOOTH_RED_SANDSTONE_STAIRS: Self = Self(12987u32);
+    /// `minecraft:element_100`.
+    pub const ELEMENT_100: Self = Self(13027u32);
+    /// `minecraft:element_101`.
+    pub const ELEMENT_101: Self = Self(13028u32);
+    /// `minecraft:element_102`.
+    pub const ELEMENT_102: Self = Self(13029u32);
+    /// `minecraft:element_103`.
+    pub const ELEMENT_103: Self = Self(13030u32);
+    /// `minecraft:element_104`.
+    pub const ELEMENT_104: Self = Self(13031u32);
+    /// `minecraft:element_105`.
+    pub const ELEMENT_105: Self = Self(13032u32);
+    /// `minecraft:element_106`.
+    pub const ELEMENT_106: Self = Self(13033u32);
+    /// `minecraft:element_107`.
+    pub const ELEMENT_107: Self = Self(13034u32);
+    /// `minecraft:element_108`.
+    pub const ELEMENT_108: Self = Self(13035u32);
+    /// `minecraft:element_109`.
+    pub const ELEMENT_109: Self = Self(13036u32);
+    /// `minecraft:element_113`.
+    pub const ELEMENT_113: Self = Self(13037u32);
+    /// `minecraft:element_112`.
+    pub const ELEMENT_112: Self = Self(13038u32);
+    /// `minecraft:element_111`.
+    pub const ELEMENT_111: Self = Self(13039u32);
+    /// `minecraft:element_110`.
+    pub const ELEMENT_110: Self = Self(13040u32);
+    /// `minecraft:element_117`.
+    pub const ELEMENT_117: Self = Self(13041u32);
+    /// `minecraft:element_116`.
+    pub const ELEMENT_116: Self = Self(13042u32);
+    /// `minecraft:element_115`.
+    pub const ELEMENT_115: Self = Self(13043u32);
+    /// `minecraft:element_114`.
+    pub const ELEMENT_114: Self = Self(13044u32);
+    /// `minecraft:element_118`.
+    pub const ELEMENT_118: Self = Self(13045u32);
+    /// `minecraft:andesite_wall`.
+    pub const ANDESITE_WALL: Self = Self(13046u32);
+    /// `minecraft:white_glazed_terracotta`.
+    pub const WHITE_GLAZED_TERRACOTTA: Self = Self(13208u32);
+    /// `minecraft:stripped_warped_hyphae`.
+    pub const STRIPPED_WARPED_HYPHAE: Self = Self(13214u32);
+    /// `minecraft:moving_block`.
+    pub const MOVING_BLOCK: Self = Self(13217u32);
+    /// `minecraft:red_concrete_stairs`.
+    pub const RED_CONCRETE_STAIRS: Self = Self(13218u32);
+    /// `minecraft:trapped_chest`.
+    pub const TRAPPED_CHEST: Self = Self(13258u32);
+    /// `minecraft:acacia_trapdoor`.
+    pub const ACACIA_TRAPDOOR: Self = Self(13262u32);
+    /// `minecraft:weathered_copper_chest`.
+    pub const WEATHERED_COPPER_CHEST: Self = Self(13278u32);
+    /// `minecraft:brain_coral_block`.
+    pub const BRAIN_CORAL_BLOCK: Self = Self(13282u32);
+    /// `minecraft:weathered_copper_chain`.
+    pub const WEATHERED_COPPER_CHAIN: Self = Self(13283u32);
+    /// `minecraft:standing_sign`.
+    pub const STANDING_SIGN: Self = Self(13286u32);
+    /// `minecraft:bamboo_planks`.
+    pub const BAMBOO_PLANKS: Self = Self(13302u32);
+    /// `minecraft:glow_lichen`.
+    pub const GLOW_LICHEN: Self = Self(13303u32);
+    /// `minecraft:purpur_pillar`.
+    pub const PURPUR_PILLAR: Self = Self(13367u32);
+    /// `minecraft:wall_banner`.
+    pub const WALL_BANNER: Self = Self(13370u32);
+    /// `minecraft:twisting_vines`.
+    pub const TWISTING_VINES: Self = Self(13376u32);
+    /// `minecraft:chiseled_copper`.
+    pub const CHISELED_COPPER: Self = Self(13402u32);
+    /// `minecraft:acacia_double_slab`.
+    pub const ACACIA_DOUBLE_SLAB: Self = Self(13403u32);
+    /// `minecraft:dark_oak_door`.
+    pub const DARK_OAK_DOOR: Self = Self(13405u32);
+    /// `minecraft:oak_fence`.
+    pub const OAK_FENCE: Self = Self(13437u32);
+    /// `minecraft:pale_moss_block`.
+    pub const PALE_MOSS_BLOCK: Self = Self(13453u32);
+    /// `minecraft:soul_lantern`.
+    pub const SOUL_LANTERN: Self = Self(13454u32);
+    /// `minecraft:dirt`.
+    pub const DIRT: Self = Self(13456u32);
+    /// `minecraft:blue_stained_glass`.
+    pub const BLUE_STAINED_GLASS: Self = Self(13457u32);
+    /// `minecraft:deny`.
+    pub const DENY: Self = Self(13458u32);
+    /// `minecraft:bee_nest`.
+    pub const BEE_NEST: Self = Self(13459u32);
+    /// `minecraft:shelf_mushroom`.
+    pub const SHELF_MUSHROOM: Self = Self(13483u32);
+    /// `minecraft:bubble_column`.
+    pub const BUBBLE_COLUMN: Self = Self(13491u32);
+    /// `minecraft:campfire`.
+    pub const CAMPFIRE: Self = Self(13493u32);
+    /// `minecraft:smooth_stone_double_slab`.
+    pub const SMOOTH_STONE_DOUBLE_SLAB: Self = Self(13501u32);
+    /// `minecraft:light_blue_stained_glass`.
+    pub const LIGHT_BLUE_STAINED_GLASS: Self = Self(13503u32);
+    /// `minecraft:soul_soil`.
+    pub const SOUL_SOIL: Self = Self(13504u32);
+    /// `minecraft:soul_sand`.
+    pub const SOUL_SAND: Self = Self(13505u32);
+    /// `minecraft:granite_wall`.
+    pub const GRANITE_WALL: Self = Self(13506u32);
+    /// `minecraft:spruce_hanging_sign`.
+    pub const SPRUCE_HANGING_SIGN: Self = Self(13668u32);
+    /// `minecraft:polished_diorite`.
+    pub const POLISHED_DIORITE: Self = Self(14052u32);
+    /// `minecraft:reinforced_deepslate`.
+    pub const REINFORCED_DEEPSLATE: Self = Self(14053u32);
+    /// `minecraft:fletching_table`.
+    pub const FLETCHING_TABLE: Self = Self(14054u32);
+    /// `minecraft:cherry_leaves`.
+    pub const CHERRY_LEAVES: Self = Self(14055u32);
+    /// `minecraft:creeper_head`.
+    pub const CREEPER_HEAD: Self = Self(14059u32);
+    /// `minecraft:black_glazed_terracotta`.
+    pub const BLACK_GLAZED_TERRACOTTA: Self = Self(14065u32);
+    /// `minecraft:waxed_oxidized_cut_copper_stairs`.
+    pub const WAXED_OXIDIZED_CUT_COPPER_STAIRS: Self = Self(14071u32);
+    /// `minecraft:waxed_weathered_copper_bulb`.
+    pub const WAXED_WEATHERED_COPPER_BULB: Self = Self(14111u32);
+    /// `minecraft:dragon_head`.
+    pub const DRAGON_HEAD: Self = Self(14115u32);
+    /// `minecraft:waxed_weathered_copper_bars`.
+    pub const WAXED_WEATHERED_COPPER_BARS: Self = Self(14121u32);
+    /// `minecraft:calibrated_sculk_sensor`.
+    pub const CALIBRATED_SCULK_SENSOR: Self = Self(14137u32);
+    /// `minecraft:dark_prismarine_slab`.
+    pub const DARK_PRISMARINE_SLAB: Self = Self(14149u32);
+    /// `minecraft:copper_trapdoor`.
+    pub const COPPER_TRAPDOOR: Self = Self(14151u32);
+    /// `minecraft:stripped_acacia_log`.
+    pub const STRIPPED_ACACIA_LOG: Self = Self(14167u32);
+    /// `minecraft:cinnabar_bricks`.
+    pub const CINNABAR_BRICKS: Self = Self(14170u32);
+    /// `minecraft:cobbled_deepslate_double_slab`.
+    pub const COBBLED_DEEPSLATE_DOUBLE_SLAB: Self = Self(14171u32);
+    /// `minecraft:warped_fence`.
+    pub const WARPED_FENCE: Self = Self(14173u32);
+    /// `minecraft:crafting_table`.
+    pub const CRAFTING_TABLE: Self = Self(14189u32);
+    /// `minecraft:sea_pickle`.
+    pub const SEA_PICKLE: Self = Self(14190u32);
+    /// `minecraft:cherry_standing_sign`.
+    pub const CHERRY_STANDING_SIGN: Self = Self(14198u32);
+    /// `minecraft:pale_oak_shelf`.
+    pub const PALE_OAK_SHELF: Self = Self(14214u32);
+    /// `minecraft:potent_sulfur`.
+    pub const POTENT_SULFUR: Self = Self(14246u32);
+    /// `minecraft:brown_concrete_powder`.
+    pub const BROWN_CONCRETE_POWDER: Self = Self(14251u32);
+    /// `minecraft:mangrove_hanging_sign`.
+    pub const MANGROVE_HANGING_SIGN: Self = Self(14252u32);
+    /// `minecraft:brown_concrete_double_slab`.
+    pub const BROWN_CONCRETE_DOUBLE_SLAB: Self = Self(14636u32);
+    /// `minecraft:waxed_exposed_copper_trapdoor`.
+    pub const WAXED_EXPOSED_COPPER_TRAPDOOR: Self = Self(14638u32);
+    /// `minecraft:brown_candle`.
+    pub const BROWN_CANDLE: Self = Self(14654u32);
+    /// `minecraft:blue_concrete_stairs`.
+    pub const BLUE_CONCRETE_STAIRS: Self = Self(14662u32);
+    /// `minecraft:mossy_stone_brick_stairs`.
+    pub const MOSSY_STONE_BRICK_STAIRS: Self = Self(14702u32);
+    /// `minecraft:end_rod`.
+    pub const END_ROD: Self = Self(14742u32);
+    /// `minecraft:crimson_stem`.
+    pub const CRIMSON_STEM: Self = Self(14748u32);
+    /// `minecraft:green_concrete`.
+    pub const GREEN_CONCRETE: Self = Self(14751u32);
+    /// `minecraft:tuff_brick_double_slab`.
+    pub const TUFF_BRICK_DOUBLE_SLAB: Self = Self(14752u32);
+    /// `minecraft:crimson_slab`.
+    pub const CRIMSON_SLAB: Self = Self(14754u32);
+    /// `minecraft:warped_hyphae`.
+    pub const WARPED_HYPHAE: Self = Self(14756u32);
+    /// `minecraft:cyan_wool_stairs`.
+    pub const CYAN_WOOL_STAIRS: Self = Self(14759u32);
+    /// `minecraft:warped_wart_block`.
+    pub const WARPED_WART_BLOCK: Self = Self(14799u32);
+    /// `minecraft:poplar_pressure_plate`.
+    pub const POPLAR_PRESSURE_PLATE: Self = Self(14800u32);
+    /// `minecraft:light_gray_shulker_box`.
+    pub const LIGHT_GRAY_SHULKER_BOX: Self = Self(14816u32);
+    /// `minecraft:resin_bricks`.
+    pub const RESIN_BRICKS: Self = Self(14817u32);
+    /// `minecraft:carrots`.
+    pub const CARROTS: Self = Self(14818u32);
+    /// `minecraft:tuff_stairs`.
+    pub const TUFF_STAIRS: Self = Self(14826u32);
+    /// `minecraft:yellow_carpet`.
+    pub const YELLOW_CARPET: Self = Self(14866u32);
+    /// `minecraft:cyan_stained_glass`.
+    pub const CYAN_STAINED_GLASS: Self = Self(14867u32);
+    /// `minecraft:black_stained_glass`.
+    pub const BLACK_STAINED_GLASS: Self = Self(14868u32);
+    /// `minecraft:waxed_oxidized_copper_door`.
+    pub const WAXED_OXIDIZED_COPPER_DOOR: Self = Self(14869u32);
+    /// `minecraft:purple_wool_stairs`.
+    pub const PURPLE_WOOL_STAIRS: Self = Self(14901u32);
+    /// `minecraft:dead_horn_coral`.
+    pub const DEAD_HORN_CORAL: Self = Self(14941u32);
+    /// `minecraft:andesite_double_slab`.
+    pub const ANDESITE_DOUBLE_SLAB: Self = Self(14942u32);
+    /// `minecraft:grass_block`.
+    pub const GRASS_BLOCK: Self = Self(14944u32);
+    /// `minecraft:tripwire_hook`.
+    pub const TRIPWIRE_HOOK: Self = Self(14945u32);
+    /// `minecraft:cave_vines_body_with_berries`.
+    pub const CAVE_VINES_BODY_WITH_BERRIES: Self = Self(14961u32);
+    /// `minecraft:dark_oak_pressure_plate`.
+    pub const DARK_OAK_PRESSURE_PLATE: Self = Self(14987u32);
+    /// `minecraft:copper_door`.
+    pub const COPPER_DOOR: Self = Self(15003u32);
+    /// `minecraft:hard_black_stained_glass`.
+    pub const HARD_BLACK_STAINED_GLASS: Self = Self(15035u32);
+    /// `minecraft:stripped_birch_log`.
+    pub const STRIPPED_BIRCH_LOG: Self = Self(15036u32);
+    /// `minecraft:tinted_glass`.
+    pub const TINTED_GLASS: Self = Self(15039u32);
+    /// `minecraft:big_dripleaf`.
+    pub const BIG_DRIPLEAF: Self = Self(15040u32);
+    /// `minecraft:cut_sandstone`.
+    pub const CUT_SANDSTONE: Self = Self(15072u32);
+    /// `minecraft:warped_hanging_sign`.
+    pub const WARPED_HANGING_SIGN: Self = Self(15073u32);
+    /// `minecraft:lime_wool`.
+    pub const LIME_WOOL: Self = Self(15457u32);
+    /// `minecraft:blue_candle_cake`.
+    pub const BLUE_CANDLE_CAKE: Self = Self(15458u32);
+    /// `minecraft:sweet_berry_bush`.
+    pub const SWEET_BERRY_BUSH: Self = Self(15460u32);
+    /// `minecraft:polished_blackstone_slab`.
+    pub const POLISHED_BLACKSTONE_SLAB: Self = Self(15468u32);
+    /// `minecraft:reeds`.
+    pub const REEDS: Self = Self(15470u32);
+    /// `minecraft:black_shulker_box`.
+    pub const BLACK_SHULKER_BOX: Self = Self(15486u32);
+    /// `minecraft:weathered_copper_golem_statue`.
+    pub const WEATHERED_COPPER_GOLEM_STATUE: Self = Self(15487u32);
+    /// `minecraft:light_blue_wool_stairs`.
+    pub const LIGHT_BLUE_WOOL_STAIRS: Self = Self(15491u32);
+    /// `minecraft:jungle_sapling`.
+    pub const JUNGLE_SAPLING: Self = Self(15531u32);
+    /// `minecraft:chiseled_sandstone`.
+    pub const CHISELED_SANDSTONE: Self = Self(15533u32);
+    /// `minecraft:barrier`.
+    pub const BARRIER: Self = Self(15534u32);
+    /// `minecraft:torchflower_crop`.
+    pub const TORCHFLOWER_CROP: Self = Self(15535u32);
+    /// `minecraft:black_carpet`.
+    pub const BLACK_CARPET: Self = Self(15543u32);
+    /// `minecraft:pale_oak_log`.
+    pub const PALE_OAK_LOG: Self = Self(15544u32);
+    /// `minecraft:jungle_standing_sign`.
+    pub const JUNGLE_STANDING_SIGN: Self = Self(15547u32);
+    /// `minecraft:cherry_double_slab`.
+    pub const CHERRY_DOUBLE_SLAB: Self = Self(15563u32);
+    /// `minecraft:weathered_cut_copper_slab`.
+    pub const WEATHERED_CUT_COPPER_SLAB: Self = Self(15565u32);
+    /// `minecraft:poplar_door`.
+    pub const POPLAR_DOOR: Self = Self(15567u32);
+    /// `minecraft:oxidized_copper_lantern`.
+    pub const OXIDIZED_COPPER_LANTERN: Self = Self(15599u32);
+    /// `minecraft:yellow_wool_double_slab`.
+    pub const YELLOW_WOOL_DOUBLE_SLAB: Self = Self(15601u32);
+    /// `minecraft:dark_oak_leaves`.
+    pub const DARK_OAK_LEAVES: Self = Self(15603u32);
+    /// `minecraft:nether_brick_slab`.
+    pub const NETHER_BRICK_SLAB: Self = Self(15607u32);
+    /// `minecraft:fire`.
+    pub const FIRE: Self = Self(15609u32);
+    /// `minecraft:gray_concrete_double_slab`.
+    pub const GRAY_CONCRETE_DOUBLE_SLAB: Self = Self(15625u32);
+    /// `minecraft:fern`.
+    pub const FERN: Self = Self(15627u32);
+    /// `minecraft:purpur_double_slab`.
+    pub const PURPUR_DOUBLE_SLAB: Self = Self(15628u32);
+    /// `minecraft:torchflower`.
+    pub const TORCHFLOWER: Self = Self(15630u32);
+    /// `minecraft:short_dry_grass`.
+    pub const SHORT_DRY_GRASS: Self = Self(15631u32);
+    /// `minecraft:infested_stone`.
+    pub const INFESTED_STONE: Self = Self(15632u32);
+    /// `minecraft:pale_hanging_moss`.
+    pub const PALE_HANGING_MOSS: Self = Self(15633u32);
+    /// `minecraft:pale_moss_carpet`.
+    pub const PALE_MOSS_CARPET: Self = Self(15635u32);
+    /// `minecraft:end_portal_frame`.
+    pub const END_PORTAL_FRAME: Self = Self(15797u32);
+    /// `minecraft:bamboo_pressure_plate`.
+    pub const BAMBOO_PRESSURE_PLATE: Self = Self(15805u32);
+    /// `minecraft:prismarine`.
+    pub const PRISMARINE: Self = Self(15821u32);
+    /// `minecraft:magenta_candle_cake`.
+    pub const MAGENTA_CANDLE_CAKE: Self = Self(15822u32);
+    /// `minecraft:exposed_copper_trapdoor`.
+    pub const EXPOSED_COPPER_TRAPDOOR: Self = Self(15824u32);
+    /// `minecraft:mushroom_stem`.
+    pub const MUSHROOM_STEM: Self = Self(15840u32);
+    /// `minecraft:black_terracotta`.
+    pub const BLACK_TERRACOTTA: Self = Self(15856u32);
+    /// `minecraft:resin_brick_stairs`.
+    pub const RESIN_BRICK_STAIRS: Self = Self(15857u32);
+    /// `minecraft:cinnabar_brick_stairs`.
+    pub const CINNABAR_BRICK_STAIRS: Self = Self(15897u32);
+    /// `minecraft:deepslate_gold_ore`.
+    pub const DEEPSLATE_GOLD_ORE: Self = Self(15937u32);
+    /// `minecraft:ancient_debris`.
+    pub const ANCIENT_DEBRIS: Self = Self(15938u32);
+    /// `minecraft:vault`.
+    pub const VAULT: Self = Self(15939u32);
+    /// `minecraft:beehive`.
+    pub const BEEHIVE: Self = Self(15971u32);
+    /// `minecraft:stripped_poplar_log`.
+    pub const STRIPPED_POPLAR_LOG: Self = Self(15995u32);
+    /// `minecraft:hard_orange_stained_glass`.
+    pub const HARD_ORANGE_STAINED_GLASS: Self = Self(15998u32);
+    /// `minecraft:jungle_door`.
+    pub const JUNGLE_DOOR: Self = Self(15999u32);
+    /// `minecraft:glass`.
+    pub const GLASS: Self = Self(16031u32);
+    /// `minecraft:wither_rose`.
+    pub const WITHER_ROSE: Self = Self(16032u32);
+    /// `minecraft:nether_brick_double_slab`.
+    pub const NETHER_BRICK_DOUBLE_SLAB: Self = Self(16033u32);
+    /// `minecraft:stripped_poplar_wood`.
+    pub const STRIPPED_POPLAR_WOOD: Self = Self(16035u32);
+    /// `minecraft:exposed_cut_copper`.
+    pub const EXPOSED_CUT_COPPER: Self = Self(16038u32);
+    /// `minecraft:waxed_weathered_cut_copper_stairs`.
+    pub const WAXED_WEATHERED_CUT_COPPER_STAIRS: Self = Self(16039u32);
+    /// `minecraft:mangrove_roots`.
+    pub const MANGROVE_ROOTS: Self = Self(16079u32);
+    /// `minecraft:cyan_concrete_double_slab`.
+    pub const CYAN_CONCRETE_DOUBLE_SLAB: Self = Self(16080u32);
+    /// `minecraft:yellow_candle`.
+    pub const YELLOW_CANDLE: Self = Self(16082u32);
+    /// `minecraft:acacia_stairs`.
+    pub const ACACIA_STAIRS: Self = Self(16090u32);
+    /// `minecraft:bamboo_mosaic_stairs`.
+    pub const BAMBOO_MOSAIC_STAIRS: Self = Self(16130u32);
+    /// `minecraft:brown_concrete`.
+    pub const BROWN_CONCRETE: Self = Self(16170u32);
+    /// `minecraft:cherry_slab`.
+    pub const CHERRY_SLAB: Self = Self(16171u32);
+    /// `minecraft:chiseled_resin_bricks`.
+    pub const CHISELED_RESIN_BRICKS: Self = Self(16173u32);
+    /// `minecraft:bubble_coral`.
+    pub const BUBBLE_CORAL: Self = Self(16174u32);
+    /// `minecraft:orange_shulker_box`.
+    pub const ORANGE_SHULKER_BOX: Self = Self(16175u32);
+    /// `minecraft:light_gray_candle`.
+    pub const LIGHT_GRAY_CANDLE: Self = Self(16176u32);
+    /// `minecraft:polished_blackstone_pressure_plate`.
+    pub const POLISHED_BLACKSTONE_PRESSURE_PLATE: Self = Self(16184u32);
+    /// `minecraft:acacia_standing_sign`.
+    pub const ACACIA_STANDING_SIGN: Self = Self(16200u32);
+    /// `minecraft:polished_granite_slab`.
+    pub const POLISHED_GRANITE_SLAB: Self = Self(16216u32);
+    /// `minecraft:cinnabar`.
+    pub const CINNABAR: Self = Self(16218u32);
+    /// `minecraft:smooth_red_sandstone_double_slab`.
+    pub const SMOOTH_RED_SANDSTONE_DOUBLE_SLAB: Self = Self(16219u32);
+    /// `minecraft:tuff_brick_stairs`.
+    pub const TUFF_BRICK_STAIRS: Self = Self(16221u32);
+    /// `minecraft:blue_shulker_box`.
+    pub const BLUE_SHULKER_BOX: Self = Self(16261u32);
+    /// `minecraft:exposed_copper_bulb`.
+    pub const EXPOSED_COPPER_BULB: Self = Self(16262u32);
+    /// `minecraft:exposed_copper_bars`.
+    pub const EXPOSED_COPPER_BARS: Self = Self(16266u32);
+    /// `minecraft:dead_fire_coral`.
+    pub const DEAD_FIRE_CORAL: Self = Self(16282u32);
+    /// `minecraft:stone_brick_slab`.
+    pub const STONE_BRICK_SLAB: Self = Self(16283u32);
+    /// `minecraft:light_blue_concrete_slab`.
+    pub const LIGHT_BLUE_CONCRETE_SLAB: Self = Self(16285u32);
+    /// `minecraft:crimson_stairs`.
+    pub const CRIMSON_STAIRS: Self = Self(16287u32);
+    /// `minecraft:waxed_oxidized_copper_bars`.
+    pub const WAXED_OXIDIZED_COPPER_BARS: Self = Self(16327u32);
+    /// `minecraft:stripped_spruce_log`.
+    pub const STRIPPED_SPRUCE_LOG: Self = Self(16343u32);
+    /// `minecraft:waxed_oxidized_copper_bulb`.
+    pub const WAXED_OXIDIZED_COPPER_BULB: Self = Self(16346u32);
+    /// `minecraft:poplar_planks`.
+    pub const POPLAR_PLANKS: Self = Self(16350u32);
+    /// `minecraft:pumpkin_stem`.
+    pub const PUMPKIN_STEM: Self = Self(16351u32);
+    /// `minecraft:azalea_leaves_flowered`.
+    pub const AZALEA_LEAVES_FLOWERED: Self = Self(16399u32);
+    /// `minecraft:light_gray_concrete_double_slab`.
+    pub const LIGHT_GRAY_CONCRETE_DOUBLE_SLAB: Self = Self(16403u32);
+    /// `minecraft:hard_magenta_stained_glass_pane`.
+    pub const HARD_MAGENTA_STAINED_GLASS_PANE: Self = Self(16405u32);
+    /// `minecraft:sticky_piston_arm_collision`.
+    pub const STICKY_PISTON_ARM_COLLISION: Self = Self(16421u32);
+    /// `minecraft:chiseled_cinnabar`.
+    pub const CHISELED_CINNABAR: Self = Self(16427u32);
+    /// `minecraft:warped_nylium`.
+    pub const WARPED_NYLIUM: Self = Self(16428u32);
+    /// `minecraft:deepslate_emerald_ore`.
+    pub const DEEPSLATE_EMERALD_ORE: Self = Self(16429u32);
+    /// `minecraft:cyan_concrete_stairs`.
+    pub const CYAN_CONCRETE_STAIRS: Self = Self(16430u32);
+    /// `minecraft:acacia_sapling`.
+    pub const ACACIA_SAPLING: Self = Self(16470u32);
+    /// `minecraft:quartz_bricks`.
+    pub const QUARTZ_BRICKS: Self = Self(16472u32);
+    /// `minecraft:black_wool_slab`.
+    pub const BLACK_WOOL_SLAB: Self = Self(16473u32);
+    /// `minecraft:andesite_slab`.
+    pub const ANDESITE_SLAB: Self = Self(16475u32);
+    /// `minecraft:unpowered_comparator`.
+    pub const UNPOWERED_COMPARATOR: Self = Self(16477u32);
+    /// `minecraft:lime_candle`.
+    pub const LIME_CANDLE: Self = Self(16493u32);
+    /// `minecraft:structure_block`.
+    pub const STRUCTURE_BLOCK: Self = Self(16501u32);
+    /// `minecraft:end_brick_stairs`.
+    pub const END_BRICK_STAIRS: Self = Self(16507u32);
+    /// `minecraft:purple_terracotta`.
+    pub const PURPLE_TERRACOTTA: Self = Self(16547u32);
+    /// `minecraft:target`.
+    pub const TARGET: Self = Self(16548u32);
+    /// `minecraft:wooden_button`.
+    pub const WOODEN_BUTTON: Self = Self(16549u32);
+    /// `minecraft:mangrove_door`.
+    pub const MANGROVE_DOOR: Self = Self(16561u32);
+    /// `minecraft:orange_concrete_slab`.
+    pub const ORANGE_CONCRETE_SLAB: Self = Self(16593u32);
+    /// `minecraft:lime_wool_double_slab`.
+    pub const LIME_WOOL_DOUBLE_SLAB: Self = Self(16595u32);
+    /// `minecraft:end_stone_brick_double_slab`.
+    pub const END_STONE_BRICK_DOUBLE_SLAB: Self = Self(16597u32);
+    /// `minecraft:hard_lime_stained_glass`.
+    pub const HARD_LIME_STAINED_GLASS: Self = Self(16599u32);
+    /// `minecraft:weathered_copper_door`.
+    pub const WEATHERED_COPPER_DOOR: Self = Self(16600u32);
+    /// `minecraft:pearlescent_froglight`.
+    pub const PEARLESCENT_FROGLIGHT: Self = Self(16632u32);
+    /// `minecraft:bamboo_button`.
+    pub const BAMBOO_BUTTON: Self = Self(16635u32);
+    /// `minecraft:tall_grass`.
+    pub const TALL_GRASS: Self = Self(16647u32);
+    /// `minecraft:weathered_copper_lantern`.
+    pub const WEATHERED_COPPER_LANTERN: Self = Self(16649u32);
+    /// `minecraft:light_block_12`.
+    pub const LIGHT_BLOCK_12: Self = Self(16651u32);
+    /// `minecraft:light_block_13`.
+    pub const LIGHT_BLOCK_13: Self = Self(16652u32);
+    /// `minecraft:light_block_10`.
+    pub const LIGHT_BLOCK_10: Self = Self(16653u32);
+    /// `minecraft:light_block_11`.
+    pub const LIGHT_BLOCK_11: Self = Self(16654u32);
+    /// `minecraft:light_block_14`.
+    pub const LIGHT_BLOCK_14: Self = Self(16655u32);
+    /// `minecraft:light_block_15`.
+    pub const LIGHT_BLOCK_15: Self = Self(16656u32);
+    /// `minecraft:nether_sprouts`.
+    pub const NETHER_SPROUTS: Self = Self(16657u32);
+    /// `minecraft:cyan_stained_glass_pane`.
+    pub const CYAN_STAINED_GLASS_PANE: Self = Self(16658u32);
+    /// `minecraft:dead_horn_coral_block`.
+    pub const DEAD_HORN_CORAL_BLOCK: Self = Self(16674u32);
+    /// `minecraft:verdant_froglight`.
+    pub const VERDANT_FROGLIGHT: Self = Self(16675u32);
+    /// `minecraft:hard_gray_stained_glass_pane`.
+    pub const HARD_GRAY_STAINED_GLASS_PANE: Self = Self(16678u32);
+    /// `minecraft:resin_block`.
+    pub const RESIN_BLOCK: Self = Self(16694u32);
+    /// `minecraft:warped_slab`.
+    pub const WARPED_SLAB: Self = Self(16695u32);
+    /// `minecraft:warped_stem`.
+    pub const WARPED_STEM: Self = Self(16697u32);
+    /// `minecraft:horn_coral_fan`.
+    pub const HORN_CORAL_FAN: Self = Self(16700u32);
+    /// `minecraft:green_shulker_box`.
+    pub const GREEN_SHULKER_BOX: Self = Self(16702u32);
+    /// `minecraft:large_fern`.
+    pub const LARGE_FERN: Self = Self(16703u32);
+    /// `minecraft:stripped_crimson_hyphae`.
+    pub const STRIPPED_CRIMSON_HYPHAE: Self = Self(16705u32);
+    /// `minecraft:cocoa`.
+    pub const COCOA: Self = Self(16708u32);
+    /// `minecraft:lever`.
+    pub const LEVER: Self = Self(16720u32);
+    /// `minecraft:cinnabar_stairs`.
+    pub const CINNABAR_STAIRS: Self = Self(16736u32);
+    /// `minecraft:bamboo_slab`.
+    pub const BAMBOO_SLAB: Self = Self(16776u32);
+    /// `minecraft:hard_green_stained_glass`.
+    pub const HARD_GREEN_STAINED_GLASS: Self = Self(16778u32);
+    /// `minecraft:brick_stairs`.
+    pub const BRICK_STAIRS: Self = Self(16779u32);
+    /// `minecraft:colored_torch_green`.
+    pub const COLORED_TORCH_GREEN: Self = Self(16819u32);
+    /// `minecraft:weathered_copper_trapdoor`.
+    pub const WEATHERED_COPPER_TRAPDOOR: Self = Self(16825u32);
+    /// `minecraft:smooth_red_sandstone_slab`.
+    pub const SMOOTH_RED_SANDSTONE_SLAB: Self = Self(16841u32);
+    /// `minecraft:moss_block`.
+    pub const MOSS_BLOCK: Self = Self(16843u32);
+    /// `minecraft:purple_concrete_powder`.
+    pub const PURPLE_CONCRETE_POWDER: Self = Self(16844u32);
+    /// `minecraft:pink_glazed_terracotta`.
+    pub const PINK_GLAZED_TERRACOTTA: Self = Self(16845u32);
+    /// `minecraft:short_grass`.
+    pub const SHORT_GRASS: Self = Self(16851u32);
+    /// `minecraft:waxed_weathered_cut_copper_slab`.
+    pub const WAXED_WEATHERED_CUT_COPPER_SLAB: Self = Self(16852u32);
+    /// `minecraft:fire_coral_fan`.
+    pub const FIRE_CORAL_FAN: Self = Self(16854u32);
+    /// `minecraft:spruce_trapdoor`.
+    pub const SPRUCE_TRAPDOOR: Self = Self(16856u32);
+    /// `minecraft:chain_command_block`.
+    pub const CHAIN_COMMAND_BLOCK: Self = Self(16872u32);
+    /// `minecraft:red_sandstone`.
+    pub const RED_SANDSTONE: Self = Self(16884u32);
+    /// `minecraft:red_nether_brick_slab`.
+    pub const RED_NETHER_BRICK_SLAB: Self = Self(16885u32);
+    /// `minecraft:exposed_chiseled_copper`.
+    pub const EXPOSED_CHISELED_COPPER: Self = Self(16887u32);
+    /// `minecraft:spruce_fence_gate`.
+    pub const SPRUCE_FENCE_GATE: Self = Self(16888u32);
+    /// `minecraft:exposed_cut_copper_slab`.
+    pub const EXPOSED_CUT_COPPER_SLAB: Self = Self(16904u32);
+    /// `minecraft:red_nether_brick_stairs`.
+    pub const RED_NETHER_BRICK_STAIRS: Self = Self(16906u32);
+    /// `minecraft:green_glazed_terracotta`.
+    pub const GREEN_GLAZED_TERRACOTTA: Self = Self(16946u32);
+    /// `minecraft:jungle_planks`.
+    pub const JUNGLE_PLANKS: Self = Self(16952u32);
+    /// `minecraft:deepslate_redstone_ore`.
+    pub const DEEPSLATE_REDSTONE_ORE: Self = Self(16953u32);
+    /// `minecraft:dead_brain_coral_block`.
+    pub const DEAD_BRAIN_CORAL_BLOCK: Self = Self(16954u32);
+    /// `minecraft:mangrove_fence`.
+    pub const MANGROVE_FENCE: Self = Self(16955u32);
+    /// `minecraft:oxidized_copper_grate`.
+    pub const OXIDIZED_COPPER_GRATE: Self = Self(16971u32);
+    /// `minecraft:anvil`.
+    pub const ANVIL: Self = Self(16972u32);
+    /// `minecraft:birch_trapdoor`.
+    pub const BIRCH_TRAPDOOR: Self = Self(16976u32);
+    /// `minecraft:tuff_bricks`.
+    pub const TUFF_BRICKS: Self = Self(16992u32);
+    /// `minecraft:mangrove_leaves`.
+    pub const MANGROVE_LEAVES: Self = Self(16993u32);
+    /// `minecraft:straw_bed`.
+    pub const STRAW_BED: Self = Self(16997u32);
+    /// `minecraft:cobbled_deepslate`.
+    pub const COBBLED_DEEPSLATE: Self = Self(17013u32);
+    /// `minecraft:poplar_double_slab`.
+    pub const POPLAR_DOUBLE_SLAB: Self = Self(17014u32);
+    /// `minecraft:quartz_slab`.
+    pub const QUARTZ_SLAB: Self = Self(17016u32);
+    /// `minecraft:bookshelf`.
+    pub const BOOKSHELF: Self = Self(17018u32);
+    /// `minecraft:mud`.
+    pub const MUD: Self = Self(17019u32);
+    /// `minecraft:lit_pumpkin`.
+    pub const LIT_PUMPKIN: Self = Self(17020u32);
+    /// `minecraft:ice`.
+    pub const ICE: Self = Self(17024u32);
+    /// `minecraft:air`.
+    pub const AIR: Self = Self(17025u32);
+    /// `minecraft:bed`.
+    pub const BED: Self = Self(17026u32);
+    /// `minecraft:black_concrete`.
+    pub const BLACK_CONCRETE: Self = Self(17042u32);
+    /// `minecraft:tnt`.
+    pub const TNT: Self = Self(17043u32);
+    /// `minecraft:purple_candle_cake`.
+    pub const PURPLE_CANDLE_CAKE: Self = Self(17045u32);
+    /// `minecraft:web`.
+    pub const WEB: Self = Self(17047u32);
+    /// `minecraft:dead_tube_coral_fan`.
+    pub const DEAD_TUBE_CORAL_FAN: Self = Self(17048u32);
+    /// `minecraft:oxidized_copper_chest`.
+    pub const OXIDIZED_COPPER_CHEST: Self = Self(17050u32);
+    /// `minecraft:oxidized_copper_chain`.
+    pub const OXIDIZED_COPPER_CHAIN: Self = Self(17054u32);
+    /// `minecraft:pale_oak_standing_sign`.
+    pub const PALE_OAK_STANDING_SIGN: Self = Self(17057u32);
+    /// `minecraft:polished_diorite_stairs`.
+    pub const POLISHED_DIORITE_STAIRS: Self = Self(17073u32);
+    /// `minecraft:blue_concrete_powder`.
+    pub const BLUE_CONCRETE_POWDER: Self = Self(17113u32);
+    /// `minecraft:orange_concrete`.
+    pub const ORANGE_CONCRETE: Self = Self(17114u32);
+    /// `minecraft:orange_concrete_double_slab`.
+    pub const ORANGE_CONCRETE_DOUBLE_SLAB: Self = Self(17115u32);
+    /// `minecraft:crying_obsidian`.
+    pub const CRYING_OBSIDIAN: Self = Self(17117u32);
+    /// `minecraft:lime_carpet`.
+    pub const LIME_CARPET: Self = Self(17118u32);
+    /// `minecraft:closed_eyeblossom`.
+    pub const CLOSED_EYEBLOSSOM: Self = Self(17119u32);
+    /// `minecraft:dead_fire_coral_fan`.
+    pub const DEAD_FIRE_CORAL_FAN: Self = Self(17120u32);
+    /// `minecraft:decorated_pot`.
+    pub const DECORATED_POT: Self = Self(17122u32);
+    /// `minecraft:granite_double_slab`.
+    pub const GRANITE_DOUBLE_SLAB: Self = Self(17126u32);
+    /// `minecraft:enchanting_table`.
+    pub const ENCHANTING_TABLE: Self = Self(17128u32);
+    /// `minecraft:polished_blackstone_wall`.
+    pub const POLISHED_BLACKSTONE_WALL: Self = Self(17129u32);
+    /// `minecraft:waxed_exposed_double_cut_copper_slab`.
+    pub const WAXED_EXPOSED_DOUBLE_CUT_COPPER_SLAB: Self = Self(17291u32);
+    /// `minecraft:bubble_coral_wall_fan`.
+    pub const BUBBLE_CORAL_WALL_FAN: Self = Self(17293u32);
+    /// `minecraft:orange_tulip`.
+    pub const ORANGE_TULIP: Self = Self(17297u32);
+    /// `minecraft:brown_shulker_box`.
+    pub const BROWN_SHULKER_BOX: Self = Self(17298u32);
+    /// `minecraft:light_gray_wool_double_slab`.
+    pub const LIGHT_GRAY_WOOL_DOUBLE_SLAB: Self = Self(17299u32);
+    /// `minecraft:poplar_stairs`.
+    pub const POPLAR_STAIRS: Self = Self(17301u32);
+    /// `minecraft:azalea`.
+    pub const AZALEA: Self = Self(17341u32);
+    /// `minecraft:gray_wool_slab`.
+    pub const GRAY_WOOL_SLAB: Self = Self(17342u32);
+    /// `minecraft:mud_bricks`.
+    pub const MUD_BRICKS: Self = Self(17344u32);
+    /// `minecraft:birch_wall_sign`.
+    pub const BIRCH_WALL_SIGN: Self = Self(17345u32);
+    /// `minecraft:bamboo_wall_sign`.
+    pub const BAMBOO_WALL_SIGN: Self = Self(17351u32);
+    /// `minecraft:green_concrete_slab`.
+    pub const GREEN_CONCRETE_SLAB: Self = Self(17357u32);
+    /// `minecraft:acacia_wood`.
+    pub const ACACIA_WOOD: Self = Self(17359u32);
+    /// `minecraft:brown_wool_double_slab`.
+    pub const BROWN_WOOL_DOUBLE_SLAB: Self = Self(17362u32);
+    /// `minecraft:sulfur_brick_wall`.
+    pub const SULFUR_BRICK_WALL: Self = Self(17364u32);
+    /// `minecraft:gray_stained_glass_pane`.
+    pub const GRAY_STAINED_GLASS_PANE: Self = Self(17526u32);
+    /// `minecraft:hopper`.
+    pub const HOPPER: Self = Self(17542u32);
+    /// `minecraft:hard_red_stained_glass`.
+    pub const HARD_RED_STAINED_GLASS: Self = Self(17554u32);
+    /// `minecraft:bell`.
+    pub const BELL: Self = Self(17555u32);
+    /// `minecraft:lectern`.
+    pub const LECTERN: Self = Self(17587u32);
+    /// `minecraft:bush`.
+    pub const BUSH: Self = Self(17595u32);
+    /// `minecraft:stripped_crimson_stem`.
+    pub const STRIPPED_CRIMSON_STEM: Self = Self(17596u32);
+    /// `minecraft:cyan_wool_slab`.
+    pub const CYAN_WOOL_SLAB: Self = Self(17599u32);
+    /// `minecraft:standing_banner`.
+    pub const STANDING_BANNER: Self = Self(17601u32);
+    /// `minecraft:light_blue_shulker_box`.
+    pub const LIGHT_BLUE_SHULKER_BOX: Self = Self(17617u32);
+    /// `minecraft:magenta_wool_double_slab`.
+    pub const MAGENTA_WOOL_DOUBLE_SLAB: Self = Self(17618u32);
+    /// `minecraft:jungle_stairs`.
+    pub const JUNGLE_STAIRS: Self = Self(17620u32);
+    /// `minecraft:mangrove_propagule`.
+    pub const MANGROVE_PROPAGULE: Self = Self(17660u32);
+    /// `minecraft:cactus`.
+    pub const CACTUS: Self = Self(17670u32);
+    /// `minecraft:budding_amethyst`.
+    pub const BUDDING_AMETHYST: Self = Self(17686u32);
+    /// `minecraft:sniffer_egg`.
+    pub const SNIFFER_EGG: Self = Self(17687u32);
+    /// `minecraft:polished_diorite_double_slab`.
+    pub const POLISHED_DIORITE_DOUBLE_SLAB: Self = Self(17690u32);
+    /// `minecraft:birch_stairs`.
+    pub const BIRCH_STAIRS: Self = Self(17692u32);
+    /// `minecraft:nether_brick_wall`.
+    pub const NETHER_BRICK_WALL: Self = Self(17732u32);
+    /// `minecraft:purple_glazed_terracotta`.
+    pub const PURPLE_GLAZED_TERRACOTTA: Self = Self(17894u32);
+    /// `minecraft:green_concrete_powder`.
+    pub const GREEN_CONCRETE_POWDER: Self = Self(17900u32);
+    /// `minecraft:bedrock`.
+    pub const BEDROCK: Self = Self(17901u32);
+    /// `minecraft:yellow_concrete_stairs`.
+    pub const YELLOW_CONCRETE_STAIRS: Self = Self(17903u32);
+    /// `minecraft:spruce_slab`.
+    pub const SPRUCE_SLAB: Self = Self(17943u32);
+    /// `minecraft:blackstone_stairs`.
+    pub const BLACKSTONE_STAIRS: Self = Self(17945u32);
+    /// `minecraft:blue_ice`.
+    pub const BLUE_ICE: Self = Self(17985u32);
+    /// `minecraft:cyan_shulker_box`.
+    pub const CYAN_SHULKER_BOX: Self = Self(17986u32);
+    /// `minecraft:hard_red_stained_glass_pane`.
+    pub const HARD_RED_STAINED_GLASS_PANE: Self = Self(17987u32);
+    /// `minecraft:polished_andesite_stairs`.
+    pub const POLISHED_ANDESITE_STAIRS: Self = Self(18003u32);
+    /// `minecraft:dead_horn_coral_wall_fan`.
+    pub const DEAD_HORN_CORAL_WALL_FAN: Self = Self(18043u32);
+    /// `minecraft:piglin_head`.
+    pub const PIGLIN_HEAD: Self = Self(18047u32);
+    /// `minecraft:sculk`.
+    pub const SCULK: Self = Self(18053u32);
+    /// `minecraft:hard_purple_stained_glass_pane`.
+    pub const HARD_PURPLE_STAINED_GLASS_PANE: Self = Self(18054u32);
+    /// `minecraft:netherrack`.
+    pub const NETHERRACK: Self = Self(18070u32);
+    /// `minecraft:purple_candle`.
+    pub const PURPLE_CANDLE: Self = Self(18071u32);
+    /// `minecraft:spruce_standing_sign`.
+    pub const SPRUCE_STANDING_SIGN: Self = Self(18079u32);
+    /// `minecraft:mangrove_button`.
+    pub const MANGROVE_BUTTON: Self = Self(18095u32);
+    /// `minecraft:orange_carpet`.
+    pub const ORANGE_CARPET: Self = Self(18107u32);
+    /// `minecraft:dead_horn_coral_fan`.
+    pub const DEAD_HORN_CORAL_FAN: Self = Self(18108u32);
+    /// `minecraft:lantern`.
+    pub const LANTERN: Self = Self(18110u32);
+    /// `minecraft:crimson_shelf`.
+    pub const CRIMSON_SHELF: Self = Self(18112u32);
+    /// `minecraft:waxed_weathered_copper_door`.
+    pub const WAXED_WEATHERED_COPPER_DOOR: Self = Self(18144u32);
+    /// `minecraft:red_stained_glass_pane`.
+    pub const RED_STAINED_GLASS_PANE: Self = Self(18176u32);
+    /// `minecraft:lit_blast_furnace`.
+    pub const LIT_BLAST_FURNACE: Self = Self(18192u32);
+    /// `minecraft:waxed_oxidized_lightning_rod`.
+    pub const WAXED_OXIDIZED_LIGHTNING_ROD: Self = Self(18196u32);
+    /// `minecraft:cinnabar_brick_slab`.
+    pub const CINNABAR_BRICK_SLAB: Self = Self(18208u32);
+    /// `minecraft:pink_stained_glass_pane`.
+    pub const PINK_STAINED_GLASS_PANE: Self = Self(18210u32);
+    /// `minecraft:light_blue_wool`.
+    pub const LIGHT_BLUE_WOOL: Self = Self(18226u32);
+    /// `minecraft:allow`.
+    pub const ALLOW: Self = Self(18227u32);
+    /// `minecraft:dark_oak_fence`.
+    pub const DARK_OAK_FENCE: Self = Self(18228u32);
+    /// `minecraft:deprecated_purpur_block_2`.
+    pub const DEPRECATED_PURPUR_BLOCK_2: Self = Self(18244u32);
+    /// `minecraft:deprecated_purpur_block_1`.
+    pub const DEPRECATED_PURPUR_BLOCK_1: Self = Self(18247u32);
+    /// `minecraft:birch_door`.
+    pub const BIRCH_DOOR: Self = Self(18250u32);
+    /// `minecraft:cherry_shelf`.
+    pub const CHERRY_SHELF: Self = Self(18282u32);
+    /// `minecraft:chest`.
+    pub const CHEST: Self = Self(18314u32);
+    /// `minecraft:cherry_wood`.
+    pub const CHERRY_WOOD: Self = Self(18318u32);
+    /// `minecraft:clay`.
+    pub const CLAY: Self = Self(18321u32);
+    /// `minecraft:cherry_stairs`.
+    pub const CHERRY_STAIRS: Self = Self(18322u32);
+    /// `minecraft:cake`.
+    pub const CAKE: Self = Self(18362u32);
+    /// `minecraft:crimson_hanging_sign`.
+    pub const CRIMSON_HANGING_SIGN: Self = Self(18369u32);
+    /// `minecraft:sculk_vein`.
+    pub const SCULK_VEIN: Self = Self(18753u32);
+    /// `minecraft:dead_brain_coral`.
+    pub const DEAD_BRAIN_CORAL: Self = Self(18817u32);
+    /// `minecraft:deepslate_coal_ore`.
+    pub const DEEPSLATE_COAL_ORE: Self = Self(18818u32);
+    /// `minecraft:pink_concrete_double_slab`.
+    pub const PINK_CONCRETE_DOUBLE_SLAB: Self = Self(18819u32);
+    /// `minecraft:weathered_cut_copper`.
+    pub const WEATHERED_CUT_COPPER: Self = Self(18821u32);
+    /// `minecraft:warped_standing_sign`.
+    pub const WARPED_STANDING_SIGN: Self = Self(18822u32);
+    /// `minecraft:polished_andesite_double_slab`.
+    pub const POLISHED_ANDESITE_DOUBLE_SLAB: Self = Self(18838u32);
+    /// `minecraft:polished_cinnabar`.
+    pub const POLISHED_CINNABAR: Self = Self(18840u32);
+    /// `minecraft:cracked_polished_blackstone_bricks`.
+    pub const CRACKED_POLISHED_BLACKSTONE_BRICKS: Self = Self(18841u32);
+    /// `minecraft:bamboo_standing_sign`.
+    pub const BAMBOO_STANDING_SIGN: Self = Self(18842u32);
+    /// `minecraft:flowing_lava`.
+    pub const FLOWING_LAVA: Self = Self(18858u32);
+    /// `minecraft:green_wool_slab`.
+    pub const GREEN_WOOL_SLAB: Self = Self(18874u32);
+    /// `minecraft:wither_skeleton_skull`.
+    pub const WITHER_SKELETON_SKULL: Self = Self(18876u32);
+    /// `minecraft:polished_tuff`.
+    pub const POLISHED_TUFF: Self = Self(18882u32);
+    /// `minecraft:magenta_stained_glass`.
+    pub const MAGENTA_STAINED_GLASS: Self = Self(18883u32);
+    /// `minecraft:hard_white_stained_glass_pane`.
+    pub const HARD_WHITE_STAINED_GLASS_PANE: Self = Self(18884u32);
+    /// `minecraft:acacia_button`.
+    pub const ACACIA_BUTTON: Self = Self(18900u32);
+    /// `minecraft:cyan_concrete_slab`.
+    pub const CYAN_CONCRETE_SLAB: Self = Self(18912u32);
+    /// `minecraft:hard_cyan_stained_glass_pane`.
+    pub const HARD_CYAN_STAINED_GLASS_PANE: Self = Self(18914u32);
+    /// `minecraft:lit_furnace`.
+    pub const LIT_FURNACE: Self = Self(18930u32);
+    /// `minecraft:chiseled_nether_bricks`.
+    pub const CHISELED_NETHER_BRICKS: Self = Self(18934u32);
+    /// `minecraft:warped_button`.
+    pub const WARPED_BUTTON: Self = Self(18935u32);
+    /// `minecraft:red_concrete_powder`.
+    pub const RED_CONCRETE_POWDER: Self = Self(18947u32);
+    /// `minecraft:light_gray_concrete_powder`.
+    pub const LIGHT_GRAY_CONCRETE_POWDER: Self = Self(18948u32);
+    /// `minecraft:deepslate_lapis_ore`.
+    pub const DEEPSLATE_LAPIS_ORE: Self = Self(18949u32);
+    /// `minecraft:dead_bubble_coral`.
+    pub const DEAD_BUBBLE_CORAL: Self = Self(18950u32);
+    /// `minecraft:cherry_sapling`.
+    pub const CHERRY_SAPLING: Self = Self(18951u32);
+    /// `minecraft:cherry_log`.
+    pub const CHERRY_LOG: Self = Self(18953u32);
+    /// `minecraft:prismarine_stairs`.
+    pub const PRISMARINE_STAIRS: Self = Self(18956u32);
+    /// `minecraft:white_carpet`.
+    pub const WHITE_CARPET: Self = Self(18996u32);
+    /// `minecraft:polished_sulfur_slab`.
+    pub const POLISHED_SULFUR_SLAB: Self = Self(18997u32);
+    /// `minecraft:cyan_concrete`.
+    pub const CYAN_CONCRETE: Self = Self(18999u32);
+    /// `minecraft:polished_tuff_stairs`.
+    pub const POLISHED_TUFF_STAIRS: Self = Self(19000u32);
+    /// `minecraft:dragon_egg`.
+    pub const DRAGON_EGG: Self = Self(19040u32);
+    /// `minecraft:blue_concrete`.
+    pub const BLUE_CONCRETE: Self = Self(19041u32);
+    /// `minecraft:nether_brick`.
+    pub const NETHER_BRICK: Self = Self(19042u32);
+    /// `minecraft:deepslate_iron_ore`.
+    pub const DEEPSLATE_IRON_ORE: Self = Self(19043u32);
+    /// `minecraft:element_1`.
+    pub const ELEMENT_1: Self = Self(19044u32);
+    /// `minecraft:element_0`.
+    pub const ELEMENT_0: Self = Self(19045u32);
+    /// `minecraft:element_3`.
+    pub const ELEMENT_3: Self = Self(19046u32);
+    /// `minecraft:element_2`.
+    pub const ELEMENT_2: Self = Self(19047u32);
+    /// `minecraft:element_5`.
+    pub const ELEMENT_5: Self = Self(19048u32);
+    /// `minecraft:element_4`.
+    pub const ELEMENT_4: Self = Self(19049u32);
+    /// `minecraft:element_7`.
+    pub const ELEMENT_7: Self = Self(19050u32);
+    /// `minecraft:element_6`.
+    pub const ELEMENT_6: Self = Self(19051u32);
+    /// `minecraft:element_9`.
+    pub const ELEMENT_9: Self = Self(19052u32);
+    /// `minecraft:element_8`.
+    pub const ELEMENT_8: Self = Self(19053u32);
+    /// `minecraft:oxeye_daisy`.
+    pub const OXEYE_DAISY: Self = Self(19054u32);
+    /// `minecraft:camera`.
+    pub const CAMERA: Self = Self(19055u32);
+    /// `minecraft:wheat`.
+    pub const WHEAT: Self = Self(19056u32);
+    /// `minecraft:waxed_cut_copper`.
+    pub const WAXED_CUT_COPPER: Self = Self(19064u32);
+    /// `minecraft:sulfur`.
+    pub const SULFUR: Self = Self(19065u32);
+    /// `minecraft:iron_chain`.
+    pub const IRON_CHAIN: Self = Self(19066u32);
+    /// `minecraft:resin_brick_slab`.
+    pub const RESIN_BRICK_SLAB: Self = Self(19069u32);
+    /// `minecraft:heavy_core`.
+    pub const HEAVY_CORE: Self = Self(19071u32);
+    /// `minecraft:cobbled_deepslate_slab`.
+    pub const COBBLED_DEEPSLATE_SLAB: Self = Self(19072u32);
+    /// `minecraft:lilac`.
+    pub const LILAC: Self = Self(19074u32);
+    /// `minecraft:pale_oak_trapdoor`.
+    pub const PALE_OAK_TRAPDOOR: Self = Self(19076u32);
+    /// `minecraft:chiseled_quartz_block`.
+    pub const CHISELED_QUARTZ_BLOCK: Self = Self(19092u32);
+    /// `minecraft:spore_blossom`.
+    pub const SPORE_BLOSSOM: Self = Self(19095u32);
+    /// `minecraft:waxed_exposed_copper_lantern`.
+    pub const WAXED_EXPOSED_COPPER_LANTERN: Self = Self(19096u32);
+    /// `minecraft:crimson_standing_sign`.
+    pub const CRIMSON_STANDING_SIGN: Self = Self(19098u32);
+    /// `minecraft:darkoak_standing_sign`.
+    pub const DARKOAK_STANDING_SIGN: Self = Self(19114u32);
+    /// `minecraft:weathered_double_cut_copper_slab`.
+    pub const WEATHERED_DOUBLE_CUT_COPPER_SLAB: Self = Self(19130u32);
+    /// `minecraft:pale_oak_stairs`.
+    pub const PALE_OAK_STAIRS: Self = Self(19132u32);
+    /// `minecraft:emerald_ore`.
+    pub const EMERALD_ORE: Self = Self(19172u32);
+    /// `minecraft:light_gray_concrete_slab`.
+    pub const LIGHT_GRAY_CONCRETE_SLAB: Self = Self(19173u32);
+    /// `minecraft:pink_wool_stairs`.
+    pub const PINK_WOOL_STAIRS: Self = Self(19175u32);
+    /// `minecraft:brown_mushroom_block`.
+    pub const BROWN_MUSHROOM_BLOCK: Self = Self(19215u32);
+    /// `minecraft:gray_concrete_powder`.
+    pub const GRAY_CONCRETE_POWDER: Self = Self(19231u32);
+    /// `minecraft:petrified_oak_slab`.
+    pub const PETRIFIED_OAK_SLAB: Self = Self(19232u32);
+    /// `minecraft:gray_concrete`.
+    pub const GRAY_CONCRETE: Self = Self(19234u32);
+    /// `minecraft:pink_candle`.
+    pub const PINK_CANDLE: Self = Self(19235u32);
+    /// `minecraft:red_nether_brick_wall`.
+    pub const RED_NETHER_BRICK_WALL: Self = Self(19243u32);
+    /// `minecraft:purple_shulker_box`.
+    pub const PURPLE_SHULKER_BOX: Self = Self(19405u32);
+    /// `minecraft:carved_pumpkin`.
+    pub const CARVED_PUMPKIN: Self = Self(19406u32);
+    /// `minecraft:dropper`.
+    pub const DROPPER: Self = Self(19410u32);
+    /// `minecraft:blue_wool_slab`.
+    pub const BLUE_WOOL_SLAB: Self = Self(19422u32);
+    /// `minecraft:orange_wool_stairs`.
+    pub const ORANGE_WOOL_STAIRS: Self = Self(19424u32);
+    /// `minecraft:spruce_wall_sign`.
+    pub const SPRUCE_WALL_SIGN: Self = Self(19464u32);
+    /// `minecraft:stripped_warped_stem`.
+    pub const STRIPPED_WARPED_STEM: Self = Self(19470u32);
+    /// `minecraft:candle`.
+    pub const CANDLE: Self = Self(19473u32);
+    /// `minecraft:polished_andesite_slab`.
+    pub const POLISHED_ANDESITE_SLAB: Self = Self(19481u32);
+    /// `minecraft:lime_concrete_double_slab`.
+    pub const LIME_CONCRETE_DOUBLE_SLAB: Self = Self(19483u32);
+    /// `minecraft:pointed_dripstone`.
+    pub const POINTED_DRIPSTONE: Self = Self(19485u32);
+    /// `minecraft:red_carpet`.
+    pub const RED_CARPET: Self = Self(19495u32);
+    /// `minecraft:netherreactor`.
+    pub const NETHERREACTOR: Self = Self(19496u32);
+    /// `minecraft:cut_red_sandstone_slab`.
+    pub const CUT_RED_SANDSTONE_SLAB: Self = Self(19497u32);
+    /// `minecraft:deepslate_brick_stairs`.
+    pub const DEEPSLATE_BRICK_STAIRS: Self = Self(19499u32);
+    /// `minecraft:poplar_fence`.
+    pub const POPLAR_FENCE: Self = Self(19539u32);
+    /// `minecraft:dark_prismarine_stairs`.
+    pub const DARK_PRISMARINE_STAIRS: Self = Self(19555u32);
+    /// `minecraft:creaking_heart`.
+    pub const CREAKING_HEART: Self = Self(19595u32);
+    /// `minecraft:brown_concrete_slab`.
+    pub const BROWN_CONCRETE_SLAB: Self = Self(19613u32);
+    /// `minecraft:pale_oak_button`.
+    pub const PALE_OAK_BUTTON: Self = Self(19615u32);
+    /// `minecraft:chiseled_tuff_bricks`.
+    pub const CHISELED_TUFF_BRICKS: Self = Self(19627u32);
+    /// `minecraft:light_blue_concrete`.
+    pub const LIGHT_BLUE_CONCRETE: Self = Self(19628u32);
+    /// `minecraft:exposed_copper_golem_statue`.
+    pub const EXPOSED_COPPER_GOLEM_STATUE: Self = Self(19629u32);
+    /// `minecraft:orange_poplar_leaves`.
+    pub const ORANGE_POPLAR_LEAVES: Self = Self(19633u32);
+    /// `minecraft:red_tulip`.
+    pub const RED_TULIP: Self = Self(19637u32);
+    /// `minecraft:chemical_heat`.
+    pub const CHEMICAL_HEAT: Self = Self(19638u32);
+    /// `minecraft:trip_wire`.
+    pub const TRIP_WIRE: Self = Self(19639u32);
+    /// `minecraft:pink_concrete_slab`.
+    pub const PINK_CONCRETE_SLAB: Self = Self(19895u32);
+    /// `minecraft:poplar_sapling`.
+    pub const POPLAR_SAPLING: Self = Self(19897u32);
+    /// `minecraft:cauldron`.
+    pub const CAULDRON: Self = Self(19899u32);
+    /// `minecraft:cave_vines_head_with_berries`.
+    pub const CAVE_VINES_HEAD_WITH_BERRIES: Self = Self(19920u32);
+    /// `minecraft:tube_coral_block`.
+    pub const TUBE_CORAL_BLOCK: Self = Self(19946u32);
+    /// `minecraft:chiseled_red_sandstone`.
+    pub const CHISELED_RED_SANDSTONE: Self = Self(19947u32);
+    /// `minecraft:dead_tube_coral_wall_fan`.
+    pub const DEAD_TUBE_CORAL_WALL_FAN: Self = Self(19948u32);
+    /// `minecraft:birch_sapling`.
+    pub const BIRCH_SAPLING: Self = Self(19952u32);
+    /// `minecraft:dark_oak_trapdoor`.
+    pub const DARK_OAK_TRAPDOOR: Self = Self(19954u32);
+    /// `minecraft:hard_pink_stained_glass_pane`.
+    pub const HARD_PINK_STAINED_GLASS_PANE: Self = Self(19970u32);
+    /// `minecraft:orange_terracotta`.
+    pub const ORANGE_TERRACOTTA: Self = Self(19986u32);
+    /// `minecraft:brick_slab`.
+    pub const BRICK_SLAB: Self = Self(19987u32);
+    /// `minecraft:white_wool_stairs`.
+    pub const WHITE_WOOL_STAIRS: Self = Self(19989u32);
+    /// `minecraft:waxed_oxidized_copper`.
+    pub const WAXED_OXIDIZED_COPPER: Self = Self(20029u32);
+    /// `minecraft:oak_planks`.
+    pub const OAK_PLANKS: Self = Self(20030u32);
+    /// `minecraft:stripped_oak_log`.
+    pub const STRIPPED_OAK_LOG: Self = Self(20031u32);
+    /// `minecraft:smooth_stone_slab`.
+    pub const SMOOTH_STONE_SLAB: Self = Self(20034u32);
+    /// `minecraft:polished_andesite`.
+    pub const POLISHED_ANDESITE: Self = Self(20036u32);
+    /// `minecraft:sea_lantern`.
+    pub const SEA_LANTERN: Self = Self(20037u32);
+    /// `minecraft:brewing_stand`.
+    pub const BREWING_STAND: Self = Self(20038u32);
+    /// `minecraft:bamboo_sapling`.
+    pub const BAMBOO_SAPLING: Self = Self(20046u32);
+    /// `minecraft:weathered_copper_bulb`.
+    pub const WEATHERED_COPPER_BULB: Self = Self(20048u32);
+    /// `minecraft:weathered_copper_bars`.
+    pub const WEATHERED_COPPER_BARS: Self = Self(20052u32);
+    /// `minecraft:blast_furnace`.
+    pub const BLAST_FURNACE: Self = Self(20068u32);
+    /// `minecraft:crimson_roots`.
+    pub const CRIMSON_ROOTS: Self = Self(20072u32);
+    /// `minecraft:acacia_slab`.
+    pub const ACACIA_SLAB: Self = Self(20073u32);
+    /// `minecraft:stonecutter_block`.
+    pub const STONECUTTER_BLOCK: Self = Self(20075u32);
+    /// `minecraft:poplar_wall_sign`.
+    pub const POPLAR_WALL_SIGN: Self = Self(20079u32);
+    /// `minecraft:smooth_quartz_slab`.
+    pub const SMOOTH_QUARTZ_SLAB: Self = Self(20085u32);
+    /// `minecraft:sulfur_brick_slab`.
+    pub const SULFUR_BRICK_SLAB: Self = Self(20087u32);
+    /// `minecraft:yellow_concrete_powder`.
+    pub const YELLOW_CONCRETE_POWDER: Self = Self(20089u32);
+    /// `minecraft:white_candle_cake`.
+    pub const WHITE_CANDLE_CAKE: Self = Self(20090u32);
+    /// `minecraft:candle_cake`.
+    pub const CANDLE_CAKE: Self = Self(20092u32);
+    /// `minecraft:lime_stained_glass_pane`.
+    pub const LIME_STAINED_GLASS_PANE: Self = Self(20094u32);
+    /// `minecraft:end_portal`.
+    pub const END_PORTAL: Self = Self(20110u32);
+    /// `minecraft:yellow_stained_glass`.
+    pub const YELLOW_STAINED_GLASS: Self = Self(20111u32);
+    /// `minecraft:yellow_concrete_double_slab`.
+    pub const YELLOW_CONCRETE_DOUBLE_SLAB: Self = Self(20112u32);
+    /// `minecraft:polished_cinnabar_stairs`.
+    pub const POLISHED_CINNABAR_STAIRS: Self = Self(20114u32);
+    /// `minecraft:jungle_double_slab`.
+    pub const JUNGLE_DOUBLE_SLAB: Self = Self(20154u32);
+    /// `minecraft:polished_granite_double_slab`.
+    pub const POLISHED_GRANITE_DOUBLE_SLAB: Self = Self(20156u32);
+    /// `minecraft:spruce_wood`.
+    pub const SPRUCE_WOOD: Self = Self(20158u32);
+    /// `minecraft:blackstone`.
+    pub const BLACKSTONE: Self = Self(20161u32);
+    /// `minecraft:acacia_fence_gate`.
+    pub const ACACIA_FENCE_GATE: Self = Self(20162u32);
+    /// `minecraft:lit_deepslate_redstone_ore`.
+    pub const LIT_DEEPSLATE_REDSTONE_ORE: Self = Self(20178u32);
+    /// `minecraft:wildflowers`.
+    pub const WILDFLOWERS: Self = Self(20179u32);
+    /// `minecraft:element_10`.
+    pub const ELEMENT_10: Self = Self(20211u32);
+    /// `minecraft:element_11`.
+    pub const ELEMENT_11: Self = Self(20212u32);
+    /// `minecraft:element_12`.
+    pub const ELEMENT_12: Self = Self(20213u32);
+    /// `minecraft:element_13`.
+    pub const ELEMENT_13: Self = Self(20214u32);
+    /// `minecraft:element_14`.
+    pub const ELEMENT_14: Self = Self(20215u32);
+    /// `minecraft:element_15`.
+    pub const ELEMENT_15: Self = Self(20216u32);
+    /// `minecraft:element_16`.
+    pub const ELEMENT_16: Self = Self(20217u32);
+    /// `minecraft:element_17`.
+    pub const ELEMENT_17: Self = Self(20218u32);
+    /// `minecraft:element_18`.
+    pub const ELEMENT_18: Self = Self(20219u32);
+    /// `minecraft:element_19`.
+    pub const ELEMENT_19: Self = Self(20220u32);
+    /// `minecraft:element_36`.
+    pub const ELEMENT_36: Self = Self(20221u32);
+    /// `minecraft:element_37`.
+    pub const ELEMENT_37: Self = Self(20222u32);
+    /// `minecraft:element_34`.
+    pub const ELEMENT_34: Self = Self(20223u32);
+    /// `minecraft:element_35`.
+    pub const ELEMENT_35: Self = Self(20224u32);
+    /// `minecraft:element_32`.
+    pub const ELEMENT_32: Self = Self(20225u32);
+    /// `minecraft:element_33`.
+    pub const ELEMENT_33: Self = Self(20226u32);
+    /// `minecraft:element_30`.
+    pub const ELEMENT_30: Self = Self(20227u32);
+    /// `minecraft:element_31`.
+    pub const ELEMENT_31: Self = Self(20228u32);
+    /// `minecraft:element_38`.
+    pub const ELEMENT_38: Self = Self(20229u32);
+    /// `minecraft:element_39`.
+    pub const ELEMENT_39: Self = Self(20230u32);
+    /// `minecraft:element_29`.
+    pub const ELEMENT_29: Self = Self(20231u32);
+    /// `minecraft:element_28`.
+    pub const ELEMENT_28: Self = Self(20232u32);
+    /// `minecraft:element_21`.
+    pub const ELEMENT_21: Self = Self(20233u32);
+    /// `minecraft:element_20`.
+    pub const ELEMENT_20: Self = Self(20234u32);
+    /// `minecraft:element_23`.
+    pub const ELEMENT_23: Self = Self(20235u32);
+    /// `minecraft:element_22`.
+    pub const ELEMENT_22: Self = Self(20236u32);
+    /// `minecraft:element_25`.
+    pub const ELEMENT_25: Self = Self(20237u32);
+    /// `minecraft:element_24`.
+    pub const ELEMENT_24: Self = Self(20238u32);
+    /// `minecraft:element_27`.
+    pub const ELEMENT_27: Self = Self(20239u32);
+    /// `minecraft:element_26`.
+    pub const ELEMENT_26: Self = Self(20240u32);
+    /// `minecraft:element_58`.
+    pub const ELEMENT_58: Self = Self(20241u32);
+    /// `minecraft:element_59`.
+    pub const ELEMENT_59: Self = Self(20242u32);
+    /// `minecraft:element_54`.
+    pub const ELEMENT_54: Self = Self(20243u32);
+    /// `minecraft:element_55`.
+    pub const ELEMENT_55: Self = Self(20244u32);
+    /// `minecraft:element_56`.
+    pub const ELEMENT_56: Self = Self(20245u32);
+    /// `minecraft:element_57`.
+    pub const ELEMENT_57: Self = Self(20246u32);
+    /// `minecraft:element_50`.
+    pub const ELEMENT_50: Self = Self(20247u32);
+    /// `minecraft:element_51`.
+    pub const ELEMENT_51: Self = Self(20248u32);
+    /// `minecraft:element_52`.
+    pub const ELEMENT_52: Self = Self(20249u32);
+    /// `minecraft:element_53`.
+    pub const ELEMENT_53: Self = Self(20250u32);
+    /// `minecraft:element_49`.
+    pub const ELEMENT_49: Self = Self(20251u32);
+    /// `minecraft:element_48`.
+    pub const ELEMENT_48: Self = Self(20252u32);
+    /// `minecraft:element_47`.
+    pub const ELEMENT_47: Self = Self(20253u32);
+    /// `minecraft:element_46`.
+    pub const ELEMENT_46: Self = Self(20254u32);
+    /// `minecraft:element_45`.
+    pub const ELEMENT_45: Self = Self(20255u32);
+    /// `minecraft:element_44`.
+    pub const ELEMENT_44: Self = Self(20256u32);
+    /// `minecraft:element_43`.
+    pub const ELEMENT_43: Self = Self(20257u32);
+    /// `minecraft:element_42`.
+    pub const ELEMENT_42: Self = Self(20258u32);
+    /// `minecraft:element_41`.
+    pub const ELEMENT_41: Self = Self(20259u32);
+    /// `minecraft:element_40`.
+    pub const ELEMENT_40: Self = Self(20260u32);
+    /// `minecraft:element_72`.
+    pub const ELEMENT_72: Self = Self(20261u32);
+    /// `minecraft:element_73`.
+    pub const ELEMENT_73: Self = Self(20262u32);
+    /// `minecraft:element_70`.
+    pub const ELEMENT_70: Self = Self(20263u32);
+    /// `minecraft:element_71`.
+    pub const ELEMENT_71: Self = Self(20264u32);
+    /// `minecraft:element_76`.
+    pub const ELEMENT_76: Self = Self(20265u32);
+    /// `minecraft:element_77`.
+    pub const ELEMENT_77: Self = Self(20266u32);
+    /// `minecraft:element_74`.
+    pub const ELEMENT_74: Self = Self(20267u32);
+    /// `minecraft:element_75`.
+    pub const ELEMENT_75: Self = Self(20268u32);
+    /// `minecraft:element_78`.
+    pub const ELEMENT_78: Self = Self(20269u32);
+    /// `minecraft:element_79`.
+    pub const ELEMENT_79: Self = Self(20270u32);
+    /// `minecraft:element_65`.
+    pub const ELEMENT_65: Self = Self(20271u32);
+    /// `minecraft:element_64`.
+    pub const ELEMENT_64: Self = Self(20272u32);
+    /// `minecraft:element_67`.
+    pub const ELEMENT_67: Self = Self(20273u32);
+    /// `minecraft:element_66`.
+    pub const ELEMENT_66: Self = Self(20274u32);
+    /// `minecraft:element_61`.
+    pub const ELEMENT_61: Self = Self(20275u32);
+    /// `minecraft:element_60`.
+    pub const ELEMENT_60: Self = Self(20276u32);
+    /// `minecraft:element_63`.
+    pub const ELEMENT_63: Self = Self(20277u32);
+    /// `minecraft:element_62`.
+    pub const ELEMENT_62: Self = Self(20278u32);
+    /// `minecraft:element_69`.
+    pub const ELEMENT_69: Self = Self(20279u32);
+    /// `minecraft:element_68`.
+    pub const ELEMENT_68: Self = Self(20280u32);
+    /// `minecraft:element_98`.
+    pub const ELEMENT_98: Self = Self(20281u32);
+    /// `minecraft:element_99`.
+    pub const ELEMENT_99: Self = Self(20282u32);
+    /// `minecraft:element_90`.
+    pub const ELEMENT_90: Self = Self(20283u32);
+    /// `minecraft:element_91`.
+    pub const ELEMENT_91: Self = Self(20284u32);
+    /// `minecraft:element_92`.
+    pub const ELEMENT_92: Self = Self(20285u32);
+    /// `minecraft:element_93`.
+    pub const ELEMENT_93: Self = Self(20286u32);
+    /// `minecraft:element_94`.
+    pub const ELEMENT_94: Self = Self(20287u32);
+    /// `minecraft:element_95`.
+    pub const ELEMENT_95: Self = Self(20288u32);
+    /// `minecraft:element_96`.
+    pub const ELEMENT_96: Self = Self(20289u32);
+    /// `minecraft:element_97`.
+    pub const ELEMENT_97: Self = Self(20290u32);
+    /// `minecraft:element_89`.
+    pub const ELEMENT_89: Self = Self(20291u32);
+    /// `minecraft:element_88`.
+    pub const ELEMENT_88: Self = Self(20292u32);
+    /// `minecraft:element_83`.
+    pub const ELEMENT_83: Self = Self(20293u32);
+    /// `minecraft:element_82`.
+    pub const ELEMENT_82: Self = Self(20294u32);
+    /// `minecraft:element_81`.
+    pub const ELEMENT_81: Self = Self(20295u32);
+    /// `minecraft:element_80`.
+    pub const ELEMENT_80: Self = Self(20296u32);
+    /// `minecraft:element_87`.
+    pub const ELEMENT_87: Self = Self(20297u32);
+    /// `minecraft:element_86`.
+    pub const ELEMENT_86: Self = Self(20298u32);
+    /// `minecraft:element_85`.
+    pub const ELEMENT_85: Self = Self(20299u32);
+    /// `minecraft:element_84`.
+    pub const ELEMENT_84: Self = Self(20300u32);
+    /// `minecraft:lit_smoker`.
+    pub const LIT_SMOKER: Self = Self(20301u32);
+    /// `minecraft:lapis_ore`.
+    pub const LAPIS_ORE: Self = Self(20305u32);
+    /// `minecraft:red_concrete`.
+    pub const RED_CONCRETE: Self = Self(20306u32);
+    /// `minecraft:pink_carpet`.
+    pub const PINK_CARPET: Self = Self(20307u32);
+    /// `minecraft:smooth_quartz_stairs`.
+    pub const SMOOTH_QUARTZ_STAIRS: Self = Self(20308u32);
+    /// `minecraft:red_candle_cake`.
+    pub const RED_CANDLE_CAKE: Self = Self(20348u32);
+    /// `minecraft:blue_wool_double_slab`.
+    pub const BLUE_WOOL_DOUBLE_SLAB: Self = Self(20350u32);
+    /// `minecraft:waxed_copper_lantern`.
+    pub const WAXED_COPPER_LANTERN: Self = Self(20352u32);
+    /// `minecraft:azalea_leaves`.
+    pub const AZALEA_LEAVES: Self = Self(20354u32);
+    /// `minecraft:purpur_block`.
+    pub const PURPUR_BLOCK: Self = Self(20358u32);
+    /// `minecraft:cherry_wall_sign`.
+    pub const CHERRY_WALL_SIGN: Self = Self(20361u32);
+    /// `minecraft:cyan_candle`.
+    pub const CYAN_CANDLE: Self = Self(20367u32);
+    /// `minecraft:waxed_copper`.
+    pub const WAXED_COPPER: Self = Self(20375u32);
+    /// `minecraft:repeating_command_block`.
+    pub const REPEATING_COMMAND_BLOCK: Self = Self(20376u32);
+    /// `minecraft:colored_torch_purple`.
+    pub const COLORED_TORCH_PURPLE: Self = Self(20388u32);
+    /// `minecraft:nether_wart`.
+    pub const NETHER_WART: Self = Self(20394u32);
+    /// `minecraft:yellow_poplar_leaves`.
+    pub const YELLOW_POPLAR_LEAVES: Self = Self(20398u32);
+    /// `minecraft:purple_carpet`.
+    pub const PURPLE_CARPET: Self = Self(20402u32);
+    /// `minecraft:red_poplar_leaves`.
+    pub const RED_POPLAR_LEAVES: Self = Self(20403u32);
+    /// `minecraft:waxed_oxidized_double_cut_copper_slab`.
+    pub const WAXED_OXIDIZED_DOUBLE_CUT_COPPER_SLAB: Self = Self(20407u32);
+    /// `minecraft:crimson_fungus`.
+    pub const CRIMSON_FUNGUS: Self = Self(20409u32);
+    /// `minecraft:cherry_planks`.
+    pub const CHERRY_PLANKS: Self = Self(20410u32);
+    /// `minecraft:polished_deepslate`.
+    pub const POLISHED_DEEPSLATE: Self = Self(20411u32);
+    /// `minecraft:tuff_double_slab`.
+    pub const TUFF_DOUBLE_SLAB: Self = Self(20412u32);
+    /// `minecraft:smooth_red_sandstone`.
+    pub const SMOOTH_RED_SANDSTONE: Self = Self(20414u32);
+    /// `minecraft:purpur_stairs`.
+    pub const PURPUR_STAIRS: Self = Self(20415u32);
+    /// `minecraft:tube_coral`.
+    pub const TUBE_CORAL: Self = Self(20455u32);
+    /// `minecraft:waxed_copper_door`.
+    pub const WAXED_COPPER_DOOR: Self = Self(20456u32);
+    /// `minecraft:portal`.
+    pub const PORTAL: Self = Self(20488u32);
+    /// `minecraft:cinnabar_brick_wall`.
+    pub const CINNABAR_BRICK_WALL: Self = Self(20491u32);
+    /// `minecraft:birch_button`.
+    pub const BIRCH_BUTTON: Self = Self(20653u32);
+    /// `minecraft:peony`.
+    pub const PEONY: Self = Self(20665u32);
+    /// `minecraft:command_block`.
+    pub const COMMAND_BLOCK: Self = Self(20667u32);
+    /// `minecraft:polished_blackstone_button`.
+    pub const POLISHED_BLACKSTONE_BUTTON: Self = Self(20679u32);
+    /// `minecraft:crafter`.
+    pub const CRAFTER: Self = Self(20691u32);
+    /// `minecraft:spruce_planks`.
+    pub const SPRUCE_PLANKS: Self = Self(20739u32);
+    /// `minecraft:mossy_cobblestone_double_slab`.
+    pub const MOSSY_COBBLESTONE_DOUBLE_SLAB: Self = Self(20740u32);
+    /// `minecraft:furnace`.
+    pub const FURNACE: Self = Self(20742u32);
+    /// `minecraft:info_update2`.
+    pub const INFO_UPDATE2: Self = Self(20746u32);
+    /// `minecraft:amethyst_cluster`.
+    pub const AMETHYST_CLUSTER: Self = Self(20747u32);
+    /// `minecraft:waxed_chiseled_copper`.
+    pub const WAXED_CHISELED_COPPER: Self = Self(20753u32);
+    /// `minecraft:waxed_cut_copper_slab`.
+    pub const WAXED_CUT_COPPER_SLAB: Self = Self(20754u32);
+    /// `minecraft:polished_deepslate_wall`.
+    pub const POLISHED_DEEPSLATE_WALL: Self = Self(20756u32);
+    /// `minecraft:prismarine_brick_double_slab`.
+    pub const PRISMARINE_BRICK_DOUBLE_SLAB: Self = Self(20918u32);
+    /// `minecraft:dried_kelp_block`.
+    pub const DRIED_KELP_BLOCK: Self = Self(20920u32);
+    /// `minecraft:poplar_log`.
+    pub const POPLAR_LOG: Self = Self(20921u32);
+    /// `minecraft:hard_light_gray_stained_glass`.
+    pub const HARD_LIGHT_GRAY_STAINED_GLASS: Self = Self(20924u32);
+    /// `minecraft:crimson_fence`.
+    pub const CRIMSON_FENCE: Self = Self(20925u32);
+    /// `minecraft:cinnabar_slab`.
+    pub const CINNABAR_SLAB: Self = Self(20941u32);
+    /// `minecraft:chiseled_tuff`.
+    pub const CHISELED_TUFF: Self = Self(20943u32);
+    /// `minecraft:lime_concrete_powder`.
+    pub const LIME_CONCRETE_POWDER: Self = Self(20944u32);
+    /// `minecraft:turtle_egg`.
+    pub const TURTLE_EGG: Self = Self(20945u32);
+    /// `minecraft:magma`.
+    pub const MAGMA: Self = Self(20957u32);
+    /// `minecraft:dispenser`.
+    pub const DISPENSER: Self = Self(20958u32);
+    /// `minecraft:brown_terracotta`.
+    pub const BROWN_TERRACOTTA: Self = Self(20970u32);
+    /// `minecraft:cobblestone_double_slab`.
+    pub const COBBLESTONE_DOUBLE_SLAB: Self = Self(20971u32);
+    /// `minecraft:deepslate_diamond_ore`.
+    pub const DEEPSLATE_DIAMOND_ORE: Self = Self(20973u32);
+    /// `minecraft:grindstone`.
+    pub const GRINDSTONE: Self = Self(20974u32);
+    /// `minecraft:waxed_copper_golem_statue`.
+    pub const WAXED_COPPER_GOLEM_STATUE: Self = Self(20990u32);
+    /// `minecraft:light_gray_wool`.
+    pub const LIGHT_GRAY_WOOL: Self = Self(20994u32);
+    /// `minecraft:soul_campfire`.
+    pub const SOUL_CAMPFIRE: Self = Self(20995u32);
+    /// `minecraft:prismarine_bricks`.
+    pub const PRISMARINE_BRICKS: Self = Self(21003u32);
+    /// `minecraft:poplar_fence_gate`.
+    pub const POPLAR_FENCE_GATE: Self = Self(21004u32);
+    /// `minecraft:wooden_pressure_plate`.
+    pub const WOODEN_PRESSURE_PLATE: Self = Self(21020u32);
+    /// `minecraft:sandstone_wall`.
+    pub const SANDSTONE_WALL: Self = Self(21036u32);
+    /// `minecraft:birch_fence`.
+    pub const BIRCH_FENCE: Self = Self(21198u32);
+    /// `minecraft:lime_candle_cake`.
+    pub const LIME_CANDLE_CAKE: Self = Self(21214u32);
+    /// `minecraft:waxed_oxidized_copper_grate`.
+    pub const WAXED_OXIDIZED_COPPER_GRATE: Self = Self(21216u32);
+    /// `minecraft:damaged_anvil`.
+    pub const DAMAGED_ANVIL: Self = Self(21217u32);
+    /// `minecraft:birch_double_slab`.
+    pub const BIRCH_DOUBLE_SLAB: Self = Self(21221u32);
+    /// `minecraft:white_concrete`.
+    pub const WHITE_CONCRETE: Self = Self(21223u32);
+    /// `minecraft:material_reducer`.
+    pub const MATERIAL_REDUCER: Self = Self(21224u32);
+    /// `minecraft:trial_spawner`.
+    pub const TRIAL_SPAWNER: Self = Self(21228u32);
+    /// `minecraft:orange_concrete_stairs`.
+    pub const ORANGE_CONCRETE_STAIRS: Self = Self(21240u32);
+    /// `minecraft:acacia_fence`.
+    pub const ACACIA_FENCE: Self = Self(21280u32);
+    /// `minecraft:grass_path`.
+    pub const GRASS_PATH: Self = Self(21296u32);
+    /// `minecraft:resin_brick_wall`.
+    pub const RESIN_BRICK_WALL: Self = Self(21297u32);
+    /// `minecraft:cobbled_deepslate_wall`.
+    pub const COBBLED_DEEPSLATE_WALL: Self = Self(21459u32);
+    /// `minecraft:waxed_weathered_lightning_rod`.
+    pub const WAXED_WEATHERED_LIGHTNING_ROD: Self = Self(21621u32);
+    /// `minecraft:orange_concrete_powder`.
+    pub const ORANGE_CONCRETE_POWDER: Self = Self(21633u32);
+    /// `minecraft:orange_candle_cake`.
+    pub const ORANGE_CANDLE_CAKE: Self = Self(21634u32);
+    /// `minecraft:weathered_copper`.
+    pub const WEATHERED_COPPER: Self = Self(21636u32);
+    /// `minecraft:mossy_stone_brick_wall`.
+    pub const MOSSY_STONE_BRICK_WALL: Self = Self(21637u32);
+    /// `minecraft:unlit_redstone_torch`.
+    pub const UNLIT_REDSTONE_TORCH: Self = Self(21799u32);
+    /// `minecraft:polished_sulfur_wall`.
+    pub const POLISHED_SULFUR_WALL: Self = Self(21805u32);
+    /// `minecraft:pale_oak_double_slab`.
+    pub const PALE_OAK_DOUBLE_SLAB: Self = Self(21967u32);
+    /// `minecraft:lime_terracotta`.
+    pub const LIME_TERRACOTTA: Self = Self(21969u32);
+    /// `minecraft:cherry_fence_gate`.
+    pub const CHERRY_FENCE_GATE: Self = Self(21970u32);
+    /// `minecraft:gray_glazed_terracotta`.
+    pub const GRAY_GLAZED_TERRACOTTA: Self = Self(21986u32);
+    /// `minecraft:colored_torch_red`.
+    pub const COLORED_TORCH_RED: Self = Self(21992u32);
+    /// `minecraft:lodestone`.
+    pub const LODESTONE: Self = Self(21998u32);
+    /// `minecraft:bamboo_mosaic`.
+    pub const BAMBOO_MOSAIC: Self = Self(21999u32);
+    /// `minecraft:hard_blue_stained_glass_pane`.
+    pub const HARD_BLUE_STAINED_GLASS_PANE: Self = Self(22000u32);
+    /// `minecraft:raw_iron_block`.
+    pub const RAW_IRON_BLOCK: Self = Self(22016u32);
+    /// `minecraft:poplar_wood`.
+    pub const POPLAR_WOOD: Self = Self(22017u32);
+    /// `minecraft:light_gray_carpet`.
+    pub const LIGHT_GRAY_CARPET: Self = Self(22020u32);
+    /// `minecraft:purple_wool`.
+    pub const PURPLE_WOOL: Self = Self(22021u32);
+    /// `minecraft:iron_block`.
+    pub const IRON_BLOCK: Self = Self(22022u32);
+    /// `minecraft:ladder`.
+    pub const LADDER: Self = Self(22023u32);
+    /// `minecraft:crimson_pressure_plate`.
+    pub const CRIMSON_PRESSURE_PLATE: Self = Self(22029u32);
+    /// `minecraft:stripped_mangrove_log`.
+    pub const STRIPPED_MANGROVE_LOG: Self = Self(22045u32);
+    /// `minecraft:copper_lantern`.
+    pub const COPPER_LANTERN: Self = Self(22048u32);
+    /// `minecraft:gravel`.
+    pub const GRAVEL: Self = Self(22050u32);
+    /// `minecraft:red_concrete_double_slab`.
+    pub const RED_CONCRETE_DOUBLE_SLAB: Self = Self(22051u32);
+    /// `minecraft:cartography_table`.
+    pub const CARTOGRAPHY_TABLE: Self = Self(22053u32);
+    /// `minecraft:oxidized_copper_door`.
+    pub const OXIDIZED_COPPER_DOOR: Self = Self(22054u32);
+    /// `minecraft:tube_coral_wall_fan`.
+    pub const TUBE_CORAL_WALL_FAN: Self = Self(22086u32);
+    /// `minecraft:dandelion`.
+    pub const DANDELION: Self = Self(22090u32);
+}
+impl core::fmt::Display for BlockId {
+    /// The block's identifier (`minecraft:air`).
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match by_runtime_id(self.0) {
+            Some(block) if block.id == self.0 => f.write_str(block.identifier),
+            _ => write!(f, "block #{}", self.0),
+        }
+    }
+}
+impl BlockData {
+    /// This row's block type.
+    pub const fn block_id(&self) -> BlockId {
+        BlockId(self.id)
+    }
+}
 /// All generated block registry rows sorted by canonical runtime state range.
 pub static ALL_BLOCKS: [BlockData; 1477usize] = [
     BlockData {

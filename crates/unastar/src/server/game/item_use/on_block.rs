@@ -20,6 +20,7 @@ use crate::entity::EntityRandom;
 use crate::entity::components::GameMode;
 use crate::item::ItemStack;
 use crate::registry::BlockRegistry;
+use crate::registry::block::BlockId;
 use crate::registry::block::{BlockEntry, LiquidKind, StateValue};
 use crate::server::game::blocks::{block_at, set_block};
 use crate::server::game::durability::wear_held;
@@ -109,7 +110,7 @@ impl Use<'_> {
     fn is_air(&self, world: &World, pos: IVec3) -> bool {
         block_at(world, (pos.x, pos.y, pos.z))
             .and_then(|id| self.registry.get_by_runtime_id(id))
-            .is_some_and(|b| b.string_id == "minecraft:air")
+            .is_some_and(|b| b.block_id() == BlockId::AIR)
     }
 
     fn default_state(&self, name: &str) -> Option<u32> {
@@ -658,7 +659,7 @@ fn empty_bucket(world: &mut World, ctx: &Use) -> bool {
         block_at(world, (pos.x, pos.y, pos.z))
             .and_then(|id| Some((id, ctx.registry.get_by_runtime_id(id)?)))
             .is_some_and(|(id, b)| {
-                b.string_id == "minecraft:air" || ctx.registry.liquid_state(id).is_some()
+                b.block_id() == BlockId::AIR || ctx.registry.liquid_state(id).is_some()
             })
     };
     let pos = if replaceable(ctx.clicked) {

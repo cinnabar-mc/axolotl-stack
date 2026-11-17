@@ -542,6 +542,18 @@ fn generate_blocks_module(blocks: &[ParsedBlock], output_dir: &Path) -> miette::
             quote! { #min_state_id..=#max_state_id => Some(&ALL_BLOCKS[#index]) }
         })
         .collect();
+    let block_ids: Vec<TokenStream> = blocks
+        .iter()
+        .map(|block| {
+            let id = block.id;
+            let name = block_id_const(&block.identifier)?;
+            let doc = format!(" `{}`.", block.identifier);
+            Ok(quote! {
+                #[doc = #doc]
+                pub const #name: Self = Self(#id);
+            })
+        })
+        .collect::<miette::Result<_>>()?;
     let count = entries.len();
 
     let code = quote! {
@@ -682,6 +694,33 @@ fn generate_blocks_module(blocks: &[ParsedBlock], output_dir: &Path) -> miette::
             }
         }
 
+        /// A block type, by its registry id (the first canonical runtime state
+        /// of its range). Code that asks "is this block X" compares these, not
+        /// identifiers.
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+        pub struct BlockId(pub u32);
+
+        impl BlockId {
+            #(#block_ids)*
+        }
+
+        impl core::fmt::Display for BlockId {
+            /// The block's identifier (`minecraft:air`).
+            fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+                match by_runtime_id(self.0) {
+                    Some(block) if block.id == self.0 => f.write_str(block.identifier),
+                    _ => write!(f, "block #{}", self.0),
+                }
+            }
+        }
+
+        impl BlockData {
+            /// This row's block type.
+            pub const fn block_id(&self) -> BlockId {
+                BlockId(self.id)
+            }
+        }
+
         /// All generated block registry rows sorted by canonical runtime state range.
         pub static ALL_BLOCKS: [BlockData; #count] = [
             #(#entries),*
@@ -710,6 +749,23 @@ fn generate_blocks_module(blocks: &[ParsedBlock], output_dir: &Path) -> miette::
     Ok(())
 }
 
+/// The `BlockId` constant of `minecraft:name`: `NAME`.
+fn block_id_const(identifier: &str) -> miette::Result<proc_macro2::Ident> {
+    let name = identifier
+        .strip_prefix("minecraft:")
+        .filter(|name| {
+            name.starts_with(|c: char| c.is_ascii_lowercase())
+                && name
+                    .chars()
+                    .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')
+        })
+        .ok_or_else(|| miette::miette!("block identifier `{identifier}` has no constant name"))?;
+    Ok(proc_macro2::Ident::new(
+        &name.to_ascii_uppercase(),
+        proc_macro2::Span::call_site(),
+    ))
+}
+
 fn format_code(code: TokenStream) -> miette::Result<String> {
     let file =
         syn::parse2(code).map_err(|e| miette::miette!("Failed to parse generated code: {}", e))?;
@@ -719,6 +775,17 @@ fn format_code(code: TokenStream) -> miette::Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn block_id_constants_are_the_upper_case_names() {
+        assert_eq!(
+            block_id_const("minecraft:moving_block").unwrap(),
+            "MOVING_BLOCK"
+        );
+        assert_eq!(block_id_const("minecraft:element_0").unwrap(), "ELEMENT_0");
+        assert!(block_id_const("other:stone").is_err());
+        assert!(block_id_const("minecraft:0stone").is_err());
+    }
 
     const NATIVE: &str = r#"native_properties_json="{\"friction\":0.98,\"material\":{\"type\":13,\"blocksMotion\":true,\"liquid\":false},\"solid\":true,\"falling\":false,\"requiresCorrectToolForDrops\":true,\"visualShape\":[0,0,0,1,0.5,1]}""#;
 

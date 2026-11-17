@@ -6,7 +6,7 @@
 use super::RegistryEntry;
 use std::collections::HashMap;
 use std::sync::{Arc, LazyLock};
-pub use unastar_data::blocks::StateValue;
+pub use unastar_data::blocks::{BlockId, StateValue};
 
 const MISSING_INDEX: usize = usize::MAX;
 
@@ -60,6 +60,12 @@ pub struct BlockEntry {
 }
 
 impl BlockEntry {
+    /// The block's type.
+    #[inline]
+    pub fn block_id(&self) -> BlockId {
+        BlockId(self.id)
+    }
+
     /// Whether the native block tag list contains `tag`.
     pub fn has_tag(&self, tag: &str) -> bool {
         self.data.tags.contains(&tag)
@@ -126,6 +132,20 @@ pub enum UnknownBlockState {
     /// The block exists but has no state with exactly these properties.
     #[error("block `{name}` has no state {states}")]
     State { name: String, states: String },
+}
+
+/// A block or block state a system needs when it loads is not in the block
+/// registry.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum MissingBlock {
+    #[error("the block registry has no `{0}`")]
+    Block(BlockId),
+    #[error("`{block}` has no state with {property} = {value}")]
+    State {
+        block: BlockId,
+        property: &'static str,
+        value: String,
+    },
 }
 
 /// `{key=value, ...}` in the saved order, values tagged with their NBT type.
@@ -351,6 +371,42 @@ impl BlockRegistry {
         self.name_map
             .get(name)
             .and_then(|index| self.entries.get(*index))
+    }
+
+    /// The entry of `block`, for systems that resolve the blocks they need
+    /// once, when they load.
+    pub fn require(&self, block: BlockId) -> Result<&BlockEntry, MissingBlock> {
+        self.get(block.0).ok_or(MissingBlock::Block(block))
+    }
+
+    /// The default state of `block` with `property` set to `value`, resolved
+    /// when a system loads.
+    pub fn require_state(
+        &self,
+        block: BlockId,
+        property: &'static str,
+        value: StateValue,
+    ) -> Result<u32, MissingBlock> {
+        let entry = self.require(block)?;
+        entry
+            .with_state_value(entry.default_state_id, property, value)
+            .ok_or_else(|| MissingBlock::State {
+                block,
+                property,
+                value: format!("{value:?}"),
+            })
+    }
+
+    /// The block type of canonical state `runtime_id`.
+    #[inline]
+    pub fn block_id(&self, runtime_id: u32) -> Option<BlockId> {
+        self.get_by_runtime_id(runtime_id).map(BlockEntry::block_id)
+    }
+
+    /// Whether canonical state `runtime_id` is a state of `block`.
+    #[inline]
+    pub fn is(&self, runtime_id: u32, block: BlockId) -> bool {
+        self.block_id(runtime_id) == Some(block)
     }
 
     /// Get a block's default runtime state ID by string ID.

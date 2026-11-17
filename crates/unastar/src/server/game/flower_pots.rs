@@ -16,6 +16,7 @@ use zuri_nbt::{NBTTag, tag};
 
 use super::block_actors;
 use super::types::BlockRegistryResource;
+use crate::registry::block::BlockId;
 use crate::registry::block::{BlockEntry, StateValue};
 
 /// The items an empty pot takes: 37 of the 80 items tried, each going in as
@@ -68,7 +69,7 @@ pub(crate) fn used(world: &mut World, player: Entity, pos: IVec3, face: u8) -> O
     let registry = world.get_resource::<BlockRegistryResource>()?.0.clone();
     let state = super::blocks::block_at(world, (pos.x, pos.y, pos.z))?;
     let pot = registry.get_by_runtime_id(state)?;
-    if pot.string_id != "minecraft:flower_pot" {
+    if pot.block_id() != BlockId::FLOWER_POT {
         return None;
     }
     let mut actor = block_actors::read(world, pos)
