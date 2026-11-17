@@ -49,11 +49,6 @@ const KNOWN_GAPS: &[(&str, u32, &str)] = &[
         "a bed's bounce is not BDS's (measured from five heights, unfitted)",
     ),
     (
-        "elytra_glide_yaw",
-        22,
-        "1 ULP on y after 16 gliding ticks: some f32 order in the glide is not BDS's (the glide_* probes drift 1 to 5 ULP the same way)",
-    ),
-    (
         "powder_snow_walk_into",
         18,
         "powder snow's freezing slowdown (a movement modifier growing each tick) is not simulated",

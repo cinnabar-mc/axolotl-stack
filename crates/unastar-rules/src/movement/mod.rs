@@ -1458,7 +1458,11 @@ fn glide_tick(body: &mut Body, controls: &Controls, terrain: &impl Terrain) {
     let horizontal_speed = (v[0] * v[0] + v[2] * v[2]).sqrt();
     let look_horizontal = (look[0] * look[0] + look[2] * look[2]).sqrt();
     let lift = pitch_cos * pitch_cos;
-    v[1] += -GRAVITY + lift * 0.06;
+    // Gravity less the lift, rounded as `(0.75 c² - 1) × -g` (BDS 1.26.51,
+    // `glide_p4`, `glide_p12`, `glide_pm10`, `elytra_glide_yaw`: `-0.08 +
+    // 0.06 c²` drifts 1 to 5 ULP over a dozen ticks; acacia-physics, MIT,
+    // writes it this way).
+    v[1] -= (0.75 * lift - 1.0) * -GRAVITY;
     if v[1] < 0.0 && look_horizontal > 0.0 {
         let accel = v[1] * -0.1 * lift;
         v[1] += accel;
@@ -1479,6 +1483,11 @@ fn glide_tick(body: &mut Body, controls: &Controls, terrain: &impl Terrain) {
     v[1] *= 0.98;
     v[2] *= 0.99;
     move_and_collide(body, terrain);
+    // The ground or a ceiling stops the glide's vertical velocity (BDS
+    // 1.26.51, `glide_pm60`: 0 after the landing, not -0.55).
+    if body.vertical_collision {
+        body.velocity[1] = 0.0;
+    }
 }
 
 /// Sneaking on the ground: shorten the move until the body would still
