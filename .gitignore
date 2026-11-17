@@ -44,3 +44,7 @@ debug_gen_error_*.rs
 # Per-user agent settings
 .claude/settings.local.json
 CLAUDE.local.md
+
+# Python bytecode
+__pycache__/
+*.pyc
