@@ -13,10 +13,11 @@
 //! 3. **commands** (`--commands FILE`): each scripted [`Step`], one at a
 //!    time, with a fixed wait after it so every server packet is attributable
 //!    to the step that preceded it. Besides the player's commands a script
-//!    can type server-console commands (`!console …`, forwarded by the
-//!    harness that owns BDS's stdin, `tools/bds-sweep/capture.py`) and bring
-//!    a second player in and out (`!join NAME`, `!leave NAME`, recorded to
-//!    `clients/NAME.jsonl` on the session's clock).
+//!    can send client actions ([`crate::actions`]), type server-console
+//!    commands (`!console …`, forwarded by the harness that owns BDS's stdin,
+//!    `tools/bds-sweep/capture.py`) and bring a second player in and out
+//!    (`!join NAME`, `!leave NAME`, recorded to `clients/NAME.jsonl` on the
+//!    session's clock).
 //!
 //! Permission levels are compared across sessions (one member join, one
 //! operator join): BDS 1.26.51 does not resend `AvailableCommands` when a
@@ -32,7 +33,9 @@
 //! (sizes and SHA-256 of every file). `.bin` files hold the packet header
 //! and payload; `.json` is [`crate::debug_json`].
 
+use crate::actions::{self, Actors};
 use crate::debug_json;
+use crate::input::InputStream;
 use anyhow::{Context, Result, bail, ensure};
 use client_diff::{
     Record,
@@ -96,6 +99,13 @@ pub struct Options {
     pub summon_wait: Duration,
     /// Script steps to run after the summon phase.
     pub commands: Vec<Step>,
+    /// ClientData JSON fields that replace jolyne's defaults in the login
+    /// (a custom skin, for example).
+    pub client_data: Option<serde_json::Map<String, Value>>,
+    /// Claim a chunk blob cache in `ClientCacheStatus`.
+    pub blob_cache: bool,
+    /// Send a `PlayerAuthInput` stream after the spawn ([`InputStream`]).
+    pub input: bool,
     /// Wait after each scripted command.
     pub command_wait: Duration,
 }
@@ -130,8 +140,26 @@ pub struct Summon {
     pub feedback: Vec<String>,
 }
 
+/// The ClientData of a login: jolyne's defaults with `overrides` replacing
+/// whole fields.
+pub fn client_data(
+    name: &str,
+    uuid: uuid::Uuid,
+    overrides: &serde_json::Map<String, Value>,
+) -> Result<jolyne::auth::ClientData> {
+    let mut data = serde_json::to_value(jolyne::auth::client::default_client_data(name, uuid))?;
+    let fields = data
+        .as_object_mut()
+        .context("client data is not an object")?;
+    for (key, value) in overrides {
+        ensure!(fields.contains_key(key), "unknown ClientData field {key}");
+        fields.insert(key.clone(), value.clone());
+    }
+    Ok(serde_json::from_value(data)?)
+}
+
 /// One line of a `--commands` script.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Step {
     /// A command the capturing player sends, without its leading `/`.
     Player(String),
@@ -141,6 +169,8 @@ pub enum Step {
     Join(String),
     /// `!leave <name>`: that client disconnects.
     Leave(String),
+    /// Any other `!` line: a client action ([`actions::parse_line`]).
+    Action(actions::Action),
 }
 
 /// Printed to stdout before every step: `@@step@@ <index>`.
@@ -160,14 +190,14 @@ impl Step {
         let (name, rest) = directive.split_once(' ').unwrap_or((directive, ""));
         let rest = rest.trim();
         ensure!(
-            !rest.is_empty(),
+            !matches!(name, "console" | "join" | "leave") || !rest.is_empty(),
             "script directive `{line}` needs an argument"
         );
         Ok(match name {
             "console" => Self::Console(rest.to_owned()),
             "join" => Self::Join(rest.to_owned()),
             "leave" => Self::Leave(rest.to_owned()),
-            _ => bail!("unknown script directive `{line}`"),
+            _ => Self::Action(actions::parse_line(line)?),
         })
     }
 
@@ -178,6 +208,7 @@ impl Step {
             Self::Console(command) => format!("!console {command}"),
             Self::Join(name) => format!("!join {name}"),
             Self::Leave(name) => format!("!leave {name}"),
+            Self::Action(action) => action.line.clone(),
         }
     }
 
@@ -187,6 +218,7 @@ impl Step {
             Self::Console(_) => "console",
             Self::Join(_) => "join",
             Self::Leave(_) => "leave",
+            Self::Action(_) => "action",
         }
     }
 }
@@ -202,6 +234,10 @@ pub struct StepStart {
     pub seq: u64,
     /// Session time when the step began (the clock of every recording).
     pub t_ms: f64,
+    /// For a client action, the first packet it sent: its step starts at
+    /// that packet's record (an input stream may send packets in between).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub packet: Option<String>,
 }
 
 /// A second client: online until its stop signal, answering latency probes.
@@ -222,26 +258,71 @@ pub async fn run(options: &Options) -> Result<()> {
         config.identity_key.clone(),
     )?));
     let transport = recording::connect(options.addr, recorder.clone()).await?;
-    let (mut play, _game) = tokio::time::timeout(options.timeout, async {
-        let stream = BedrockStream::<Handshake, Client, _>::from_transport(
-            transport,
-            ClientConfig::default(),
-        )
-        .await?;
-        stream.join(config).await
+    let client_config = ClientConfig {
+        blob_cache: options.blob_cache,
+        ..ClientConfig::default()
+    };
+    let (mut play, game) = tokio::time::timeout(options.timeout, async {
+        let stream =
+            BedrockStream::<Handshake, Client, _>::from_transport(transport, client_config).await?;
+        match &options.client_data {
+            None => stream.join(config).await.map_err(anyhow::Error::from),
+            Some(overrides) => {
+                let data = client_data(&options.name, config.uuid, overrides)?;
+                let (chain, _) = jolyne::auth::client::generate_self_signed_chain(
+                    &config.identity_key,
+                    &options.name,
+                    config.uuid,
+                )?;
+                let token = jolyne::auth::client::sign_client_data(&config.identity_key, &data)?;
+                let login = stream.request_settings().await.map_err(failed)?;
+                let secure = login
+                    .send_login_with_tokens(&config.identity_key, &chain, &token)
+                    .await
+                    .map_err(failed)?;
+                let packs = secure.await_handshake().await.map_err(failed)?;
+                let start = packs.handle_packs().await.map_err(failed)?;
+                start.await_start_game().await.map_err(failed)
+            }
+        }
     })
     .await
     .context("login timed out")?
     .context("login")?;
     info!("Spawned; collecting post-spawn definitions");
 
+    // Kept outside the session so a session the server ends during the
+    // commands phase still writes what was recorded up to then.
+    let mut phases = Phases::default();
+    let mut summons = Vec::new();
+    let mut steps: Vec<StepStart> = Vec::new();
+    let mut others = BTreeMap::<String, OtherClient>::new();
     let session = async {
         let mut session = Session {
             play: &mut play,
             recorder: &recorder,
             timeout: options.timeout,
+            actors: Actors {
+                me: (
+                    game.start_game.runtime_id.actor_runtime_id,
+                    game.start_game.entity_id.actor_unique_id,
+                ),
+                peer: None,
+                actor: None,
+                inventory: Vec::new(),
+                position: game.start_game.position.clone(),
+                name: options.name.clone(),
+                blobs: Vec::new(),
+            },
+            input: options.input.then(|| {
+                InputStream::new(
+                    game.start_game.runtime_id.actor_runtime_id,
+                    game.start_game.position.clone(),
+                    game.start_game.rotation.clone(),
+                    Instant::now(),
+                )
+            }),
         };
-        let mut phases = Phases::default();
         let mut identifiers = None;
         let mut seen = Vec::new();
         session
@@ -264,7 +345,6 @@ pub async fn run(options: &Options) -> Result<()> {
         session.pump_for(options.settle).await?;
         phases.join_end = session.next_seq()?;
 
-        let mut summons = Vec::new();
         if options.summon {
             let identifiers = identifiers.context("AvailableActorIdentifiers was not received")?;
             let list = summonable_identifiers(&debug_json::nbt_json(&identifiers.0)?)?;
@@ -302,8 +382,6 @@ pub async fn run(options: &Options) -> Result<()> {
             phases.summon_end = Some(session.next_seq()?);
         }
 
-        let mut steps = Vec::new();
-        let mut others = BTreeMap::<String, OtherClient>::new();
         if !options.commands.is_empty() {
             info!("Running {} scripted steps", options.commands.len());
             let started = recorder
@@ -317,6 +395,7 @@ pub async fn run(options: &Options) -> Result<()> {
                     line: step.line(),
                     seq: session.next_seq()?,
                     t_ms: started.elapsed().as_millis() as f64,
+                    packet: None,
                 });
                 // The harness splits BDS's console output by these markers.
                 println!("{STEP_MARKER} {index}");
@@ -324,6 +403,20 @@ pub async fn run(options: &Options) -> Result<()> {
                 let mut wait = options.command_wait;
                 match step {
                     Step::Player(command) => session.command(command).await?,
+                    Step::Action(action) => {
+                        if let actions::ActionKind::Wait(ms) = action.kind {
+                            wait = Duration::from_millis(ms);
+                        } else {
+                            let packets = action.kind.packets(&session.actors)?;
+                            let names = actions::sent_names(&packets);
+                            if let Some(step) = steps.last_mut() {
+                                step.packet = names.first().map(|name| format!("{name:?}"));
+                            }
+                            for packet in packets {
+                                session.play.send_packet(packet).await?;
+                            }
+                        }
+                    }
                     Step::Console(command) => println!("{CONSOLE_MARKER} {command}"),
                     Step::Join(name) => {
                         ensure!(
@@ -370,10 +463,7 @@ pub async fn run(options: &Options) -> Result<()> {
             }
             phases.commands_end = Some(session.next_seq()?);
         }
-        for (name, client) in std::mem::take(&mut others) {
-            leave_other(&name, client).await?;
-        }
-        Ok::<_, anyhow::Error>((phases, summons, steps))
+        Ok::<_, anyhow::Error>(())
     }
     .await;
 
@@ -386,7 +476,26 @@ pub async fn run(options: &Options) -> Result<()> {
         .lock()
         .map_err(|_| anyhow::anyhow!("capture lock poisoned"))?
         .flush()?;
-    let (phases, summons, steps) = session?;
+    if let Err(error) = &session {
+        // A failure during the commands phase (a packet the server refuses,
+        // for example) keeps the steps recorded so far.
+        let commands_started = phases.join_end > 0
+            && (!options.summon || phases.summon_end.is_some())
+            && !options.commands.is_empty();
+        if !commands_started {
+            return session;
+        }
+        warn!("session ended early: {error:#}");
+        phases.commands_end = Some(
+            recorder
+                .lock()
+                .map_err(|_| anyhow::anyhow!("capture lock poisoned"))?
+                .next_seq(),
+        );
+    }
+    for (name, client) in std::mem::take(&mut others) {
+        leave_other(&name, client).await?;
+    }
     if let Err(error) = disconnect
         .context("disconnect timed out")
         .and_then(|r| r.context("disconnect"))
@@ -414,7 +523,14 @@ pub async fn run(options: &Options) -> Result<()> {
             .filter(|s| !s["seq"].is_null())
             .count())
     );
-    Ok(())
+    session
+}
+
+/// A failed join step as an error (its transport is dropped).
+fn failed<T: jolyne::stream::transport::Transport>(
+    failed: jolyne::stream::Failed<T>,
+) -> anyhow::Error {
+    failed.into_parts().0.into()
 }
 
 /// The server closed the session (a `/kick` of the capturing player ends a
@@ -562,6 +678,9 @@ struct Session<'a, T: jolyne::stream::transport::Transport> {
     play: &'a mut BedrockStream<Play, Client, T>,
     recorder: &'a Mutex<Recorder>,
     timeout: Duration,
+    actors: Actors,
+    /// The `PlayerAuthInput` stream, when `--input` is on.
+    input: Option<InputStream>,
 }
 
 impl<T: jolyne::stream::transport::Transport> Session<'_, T> {
@@ -573,9 +692,23 @@ impl<T: jolyne::stream::transport::Transport> Session<'_, T> {
             .next_seq())
     }
 
-    /// Receives one packet, answering server latency probes like a client.
+    /// Receives one packet, answering server latency probes like a client
+    /// and sending the input stream's packets as they fall due.
     async fn recv(&mut self) -> Result<RawPacket> {
-        let packet = match self.play.recv_packet_raw().await {
+        let received = loop {
+            let Some(input) = &mut self.input else {
+                break self.play.recv_packet_raw().await;
+            };
+            let due = input.due();
+            tokio::select! {
+                received = self.play.recv_packet_raw() => break received,
+                () = tokio::time::sleep_until(due) => {
+                    let packet = input.next_packet();
+                    self.play.send_packet(packet).await?;
+                }
+            }
+        };
+        let packet = match received {
             Ok(packet) => packet,
             Err(JolyneError::Disconnected(disconnect)) => {
                 return Err(ServerDisconnected(format!("{:?}", disconnect.packet.body())).into());
@@ -589,6 +722,34 @@ impl<T: jolyne::stream::transport::Transport> Session<'_, T> {
         {
             latency.is_from_server = false;
             self.play.send_packet(McpePacket::from(latency)).await?;
+        }
+        if packet.is(McpePacketName::MovePlayerPacket)
+            || packet.is(McpePacketName::CorrectPlayerMovePredictionPacket)
+            || packet.is(McpePacketName::InventoryContentPacket)
+            || packet.is(McpePacketName::InventorySlotPacket)
+            || packet.is(McpePacketName::LevelChunkPacket)
+        {
+            let data = packet.clone().decode()?.data;
+            self.actors.follow(&data);
+            if let Some(input) = &mut self.input {
+                input.follow(&data);
+            }
+        }
+        if packet.is(McpePacketName::AddPlayerPacket)
+            && let McpePacketData::AddPlayerPacket(player) = packet.clone().decode()?.data
+        {
+            self.actors.peer = Some((
+                player.target_runtime_id.actor_runtime_id,
+                player.abilities_data.target_player_raw_id,
+            ));
+        }
+        if packet.is(McpePacketName::AddActorPacket)
+            && let McpePacketData::AddActorPacket(actor) = packet.clone().decode()?.data
+        {
+            self.actors.actor = Some((
+                actor.target_runtime_id.actor_runtime_id,
+                actor.target_actor_id.actor_unique_id,
+            ));
         }
         Ok(packet)
     }
@@ -990,7 +1151,8 @@ pub struct CommandOutputs {
 }
 
 /// Groups the records in `range` (the commands phase) by the client's
-/// `CommandRequest` packets.
+/// `CommandRequest` packets and by the first packet of each scripted action
+/// (`actions`: its recorded `seq` and script line).
 pub fn command_outputs(
     records: &[Record],
     range: Range<u64>,
@@ -1045,6 +1207,7 @@ pub fn step_outputs(
             packets: Vec::new(),
             excluded: BTreeMap::new(),
         };
+        let mut action_sent = false;
         for record in records
             .iter()
             .filter(|r| (step.seq..until).contains(&r.seq))
@@ -1057,6 +1220,12 @@ pub fn step_outputs(
                         bail!("packet seq {} is not a CommandRequest", record.seq);
                     };
                     output.command = request.command.to_string();
+                    output.request_seq = record.seq;
+                    output.t_ms = record.t_ms;
+                }
+                // A client action starts at the first packet it sent.
+                if !action_sent && step.packet.as_deref() == Some(record.name.as_str()) {
+                    action_sent = true;
                     output.request_seq = record.seq;
                     output.t_ms = record.t_ms;
                 }
@@ -1342,6 +1511,7 @@ mod tests {
             line: line.into(),
             seq,
             t_ms: seq as f64,
+            packet: None,
         };
         let steps = [
             step(0, "player", "/list", 0),
@@ -1364,6 +1534,49 @@ mod tests {
         let names: Vec<usize> = outputs.iter().map(|o| o.packets.len()).collect();
         assert_eq!(names, [1, 1, 1]);
         assert_eq!(outputs[1].packets[0]["packet"], "GameRulesChangedPacket");
+    }
+
+    #[test]
+    fn script_lines_parse_into_every_kind_of_step() {
+        assert_eq!(Step::parse("/list").unwrap(), Step::Player("list".into()));
+        assert_eq!(
+            Step::parse("!console list").unwrap(),
+            Step::Console("list".into())
+        );
+        assert!(Step::parse("!join").is_err());
+        let Step::Action(action) = Step::parse("!packs-ready").unwrap() else {
+            panic!("not an action");
+        };
+        assert_eq!(action.line, "!packs-ready");
+        assert!(Step::parse("!nope").is_err());
+    }
+
+    #[test]
+    fn an_action_step_starts_at_its_first_packet() {
+        let records = vec![
+            record(
+                0,
+                "c2s",
+                jolyne::valentine::PlayerAuthInputPacket::default(),
+            ),
+            record(
+                1,
+                "c2s",
+                jolyne::valentine::ResourcePacksReadyForValidationPacket {},
+            ),
+            record(2, "s2c", CommandOutputPacket::default()),
+        ];
+        let steps = [StepStart {
+            index: 0,
+            kind: "action".into(),
+            line: "!packs-ready".into(),
+            seq: 0,
+            t_ms: 0.0,
+            packet: Some("ResourcePacksReadyForValidationPacket".into()),
+        }];
+        let outputs = step_outputs(&records, &steps, 3, Some(1)).unwrap();
+        assert_eq!(outputs[0].request_seq, 1);
+        assert_eq!(outputs[0].packets.len(), 1);
     }
 
     #[test]

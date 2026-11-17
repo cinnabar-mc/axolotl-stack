@@ -123,6 +123,7 @@ pub fn sync_player_viewers(
             &Rotation,
             &GameMode,
             Has<ExplicitGameMode>,
+            Has<crate::command::Operator>,
             &PlayerActorData,
             Option<&mut ActorViewers>,
         ),
@@ -158,6 +159,7 @@ pub fn sync_player_viewers(
         rotation,
         game_mode,
         explicit_game_mode,
+        operator,
         actor_data,
         viewers,
     ) in &mut players
@@ -195,6 +197,8 @@ pub fn sync_player_viewers(
                 rotation,
                 super::broadcast::add_player_game_type(*game_mode, explicit_game_mode),
                 actor_data,
+                *game_mode,
+                operator,
             ));
             for viewer in changes.fresh {
                 if let Ok((_, session, _)) = sessions.get(viewer)

@@ -51,8 +51,9 @@ documents and still appear in code comments and research docs; the table maps th
 | [0040](0040-judge-player-movement-with-a-shared-simulation.md) | Judge player movement with a simulation shared with the measuring client | 2026-11-11 | proposed | |
 | [0041](0041-run-redstone-as-a-two-tick-circuit-update.md) | Run redstone as one circuit update every other tick, in BDS's phases | 2026-11-10 | accepted | |
 | [0042](0042-one-effect-system-for-mobs-and-players.md) | One status effect system for mobs and players | 2026-11-11 | accepted | |
-| [0044](0044-send-pre-start-game-roster-packets-after-start-game.md) | Send the roster packets BDS sends before StartGame right after it | 2026-11-11 | proposed | |
+| [0044](0044-send-pre-start-game-roster-packets-before-start-game.md) | Send the roster packets BDS sends before StartGame before it | 2026-11-11 | accepted | |
 | [0046](0046-resolve-a-pvp-hit-with-the-attacker-state-passed-in.md) | Resolve a PvP hit with the attacker's state passed in, from before its first input of the tick | 2026-11-11 | proposed | |
+| [0048](0048-write-item-nbt-in-bds-key-order.md) | Write item NBT in BDS's key order | 2026-11-12 | proposed | |
 | [0050](0050-move-pistons-from-the-circuit-update.md) | Move pistons from the circuit update, with measured per-block movement | 2026-11-11 | proposed | |
 | [0051](0051-tick-liquids-per-chunk-in-a-random-chunk-order.md) | Tick liquids per chunk in a random chunk order | 2026-11-11 | proposed | |
 | [0052](0052-generate-one-enchantment-type.md) | Generate one canonical Enchantment type from source-attributed data | 2026-11-12 | accepted | |
@@ -63,6 +64,7 @@ documents and still appear in code comments and research docs; the table maps th
 | [0060](0060-validate-the-movement-harness-against-bds-itself.md) | Validate the movement harness against BDS itself | 2026-11-12 | proposed | |
 | [0062](0062-hopping-mobs-move-through-a-hop-control.md) | Hopping mobs move through a hop control, not the path follower | 2026-11-12 | proposed | |
 | [0063](0063-move-actors-with-measured-piston-pushes.md) | Move actors with measured piston pushes, not moving-block collision | 2026-11-12 | proposed | |
+| [0064](0064-refuse-oversized-serverbound-packets-in-the-network-task.md) | Refuse the serverbound packets BDS refuses in the network task | 2026-11-12 | proposed | |
 | [0065](0065-swimming-mobs-follow-a-pulled-swim-path.md) | Swimming mobs follow a pulled swim path with no gravity | 2026-11-12 | proposed | |
 | [0067](0067-find-movement-rules-from-random-seeds-and-probes.md) | Find movement rules from random seeds and targeted probes, and lay the fixtures out a tick a line | 2026-11-12 | proposed | |
 | [0068](0068-stomp-is-a-melee-reach-judged-after-the-move.md) | The stomp attack is a reach of the one melee goal, judged after the move | 2026-11-12 | proposed | |

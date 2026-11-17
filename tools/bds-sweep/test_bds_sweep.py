@@ -13,6 +13,8 @@ from unittest import mock
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import base64  # noqa: E402
+
 import authority_fixture  # noqa: E402
 import bds_runtime  # noqa: E402
 import breaking_fixture  # noqa: E402
@@ -21,17 +23,20 @@ import experience_table  # noqa: E402
 import food_table  # noqa: E402
 import capture  # noqa: E402
 import commit_fixtures  # noqa: E402
+import commit_protocol_fixtures  # noqa: E402
 import effects_fixture  # noqa: E402
 import knockback_fixture  # noqa: E402
-import replication_fixture  # noqa: E402
 import leveldb_read  # noqa: E402
 import native  # noqa: E402
+import pick_table  # noqa: E402
 import player_fixture  # noqa: E402
 import player_relay_fixture  # noqa: E402
 import player_script  # noqa: E402
+import protocol_probe  # noqa: E402
 import pvp_fixture  # noqa: E402
 import pvp_items  # noqa: E402
 import range_fixture  # noqa: E402
+import replication_fixture  # noqa: E402
 import scenarios  # noqa: E402
 import spawn_bonus_fixture  # noqa: E402
 import subchunk_fixture  # noqa: E402
@@ -464,6 +469,76 @@ class PairCaptureTest(unittest.TestCase):
         self.assertEqual(command[command.index('--name') + 1], 'G')
         self.assertEqual(command[command.index('--settle') + 1], '4')
         self.assertNotIn('--commands', command)
+
+
+class ProtocolProbeTest(unittest.TestCase):
+    def test_client_data_images_match_their_dimensions(self):
+        for data in [protocol_probe.client_data('classic'), protocol_probe.client_data('persona'),
+                     *(protocol_probe.variant(kind) for kind in ('all-pieces', 'floats', 'odd'))]:
+            width, height = data.get('SkinImageWidth', 64), data.get('SkinImageHeight', 64)
+            self.assertEqual(len(base64.b64decode(data['SkinData'])), width * height * 4)
+            self.assertEqual(len(base64.b64decode(data['CapeData'])), 64 * 32 * 4)
+
+    def test_skin_cases_cover_every_type_once_for_pieces_and_tints(self):
+        cases = protocol_probe.skin_cases()
+        types = len(protocol_probe.PIECE_TYPES) + 1  # and persona_bogus
+        self.assertEqual(sum(name.startswith('piece-') for name in cases), types)
+        self.assertEqual(sum(name.startswith('tint-') for name in cases), types + 1)  # and bogus_type
+        self.assertNotIn('persona_hands', protocol_probe.PIECE_TYPES)
+
+    def test_extractor_command_passes_skins_and_the_blob_cache(self):
+        command = capture.extractor_command(Path('x.exe'), Path('out'), client_data=Path('skin.json'),
+                                            blob_cache=True)
+        self.assertEqual(command[command.index('--client-data') + 1], 'skin.json')
+        self.assertIn('--blob-cache', command)
+        self.assertNotIn('--input', command)
+
+    def test_extractor_command_sends_input_on_request(self):
+        command = capture.extractor_command(Path('x.exe'), Path('out'), player_input=True)
+        self.assertIn('--input', command)
+
+    def test_fixture_timelines_start_after_the_join(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            session, target = Path(tmp) / 'guest', Path(tmp) / 'out'
+            session.mkdir()
+            (session / 'manifest.json').write_text(json.dumps({'phases': {'join_end': 2}}), encoding='utf-8')
+            records = [
+                {'seq': 0, 't_ms': 0, 'dir': 's2c', 'name': 'EmotePacket', 'hex': '8a01'},
+                {'seq': 2, 't_ms': 5, 'dir': 'c2s', 'name': 'EmotePacket', 'hex': '8a01'},
+                {'seq': 3, 't_ms': 6, 'dir': 's2c', 'name': 'MoveActorDeltaPacket', 'hex': '6f'},
+            ]
+            (session / 'packets.jsonl').write_text(''.join(json.dumps(r) + '\n' for r in records),
+                                                   encoding='utf-8')
+            copied = commit_protocol_fixtures.copy_session(session, target, None, False)
+            self.assertEqual(copied, 2)
+            self.assertTrue((target / '00000-EmotePacket.bin').exists())
+            self.assertTrue((target / 'sent' / '00002-EmotePacket.bin').exists())
+            timeline = json.loads((target / 'timeline.json').read_text(encoding='utf-8'))
+            self.assertEqual([entry[0] for entry in timeline], [2, 3])
+
+    def test_sent_sizes_replace_the_sent_packets(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            session, target = Path(tmp) / 'command', Path(tmp) / 'out'
+            session.mkdir()
+            records = [
+                {'seq': 1, 't_ms': 0, 'dir': 'c2s', 'name': 'CommandRequestPacket', 'hex': '4d0102'},
+                {'seq': 2, 't_ms': 1, 'dir': 's2c', 'name': 'PacketViolationWarningPacket', 'hex': '9c01'},
+            ]
+            (session / 'packets.jsonl').write_text(''.join(json.dumps(r) + '\n' for r in records),
+                                                   encoding='utf-8')
+            copied = commit_protocol_fixtures.copy_session(session, target, None, False, sent_sizes=True)
+            self.assertEqual(copied, 1)
+            self.assertFalse((target / 'sent').exists())
+            sizes = json.loads((target / 'sent.json').read_text(encoding='utf-8'))
+            self.assertEqual(sizes, [[1, 'CommandRequestPacket', 3]])
+
+    def test_size_commands_have_the_exact_byte_length(self):
+        for length in (480, 507, 508, 540):
+            for fill in ('a', 'é'):
+                self.assertEqual(len(protocol_probe.say(length, fill).encode()), length)
+        scripts = protocol_probe.size_scripts()
+        self.assertIn('!command-request ' + 'r' * 40 + ' say hi', scripts['request-id'])
+        self.assertTrue(all(script.startswith(('!wait', '/gamerule')) for script in scripts.values()))
 
 
 class PlayerScript(unittest.TestCase):
@@ -1209,6 +1284,47 @@ class PvpFixture(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+class PickTable(unittest.TestCase):
+    @staticmethod
+    def slot(item_id, user_data='00000000000000000000'):
+        return {'id': item_id, 'auxvalue': 0, 'user_data_buffer': user_data}
+
+    def test_summons_become_items_data_and_actors_without_one(self):
+        def row(name, packet):
+            return {'name': name, 'packet': packet}
+        empty = {'id': 0, 'auxvalue': 0, 'user_data_buffer': ''}
+        rows = [
+            row('CommandRequestPacket', {'command': '/summon cow ~ ~ ~3'}),
+            row('AddActorPacket', {'actor_type': 'minecraft:cow'}),
+            row('ActorPickRequestPacket', {'with_data': False}),
+            row('GuiDataPickItemPacket', {'item_name': 'item.spawn_egg.entity.cow.name', 'slot': 0}),
+            row('InventoryContentPacket', {'container_id': 0, 'slots': [self.slot(440)]}),
+            row('ActorPickRequestPacket', {'with_data': True}),
+            row('GuiDataPickItemPacket', {'item_name': 'item.spawn_egg.entity.cow.name', 'slot': 0}),
+            row('InventoryContentPacket', {'container_id': 0, 'slots': [self.slot(440)]}),
+            row('CommandRequestPacket', {'command': '/summon chest_minecart ~ ~ ~3'}),
+            row('AddActorPacket', {'actor_type': 'minecraft:chest_minecart'}),
+            row('ActorPickRequestPacket', {'with_data': False}),
+            row('GuiDataPickItemPacket', {'item_name': 'item.chest_minecart.name', 'slot': 0}),
+            row('InventoryContentPacket', {'container_id': 0, 'slots': [self.slot(9)]}),
+            row('ActorPickRequestPacket', {'with_data': True}),
+            row('GuiDataPickItemPacket', {'item_name': 'item.chest_minecart.name', 'slot': 1}),
+            row('InventoryContentPacket', {'container_id': 0, 'slots': [self.slot(9), self.slot(9, 'ffff')]}),
+            row('CommandRequestPacket', {'command': '/summon tnt ~ ~ ~3'}),
+            row('AddActorPacket', {'actor_type': 'minecraft:tnt'}),
+            row('ActorPickRequestPacket', {'with_data': False}),
+            row('InventoryContentPacket', {'container_id': 120, 'slots': [empty]}),
+            row('CommandRequestPacket', {'command': '/summon painting ~ ~ ~3'}),
+        ]
+        actors, no_item = pick_table.table(pick_table.summons(rows),
+                                           {440: 'minecraft:cow_spawn_egg', 9: 'minecraft:chest_minecart'})
+        self.assertEqual(actors['minecraft:cow'],
+                         {'item': 'minecraft:cow_spawn_egg', 'aux': 0, 'name': 'item.spawn_egg.entity.cow.name'})
+        self.assertEqual(actors['minecraft:chest_minecart']['item'], 'minecraft:chest_minecart')
+        self.assertEqual(actors['minecraft:chest_minecart']['data_user_data'], 'ffff')
+        self.assertEqual(no_item, ['minecraft:tnt'])
+
 
 
 class PlacementCases(unittest.TestCase):

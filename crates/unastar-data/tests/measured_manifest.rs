@@ -16,9 +16,10 @@ fn measured_dir() -> PathBuf {
 /// SHA-256 inside the file or that a test re-derives from a tracked capture,
 /// and the enchantment rules table, which records its provenance in its
 /// `source` object (see `data/measured/README.md`).
-const NOT_SWEPT: [&str; 8] = [
+const NOT_SWEPT: [&str; 9] = [
     "README.md",
     "manifest.json",
+    "actor_pick_items.json",
     "block_actor_defaults.json",
     "block_name_keys.json",
     "builtin_recipes.json",

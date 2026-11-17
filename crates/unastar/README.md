@@ -176,7 +176,11 @@ generated in parallel (one lock per chunk; see `world::generator::pipeline`).
 Load timings, method and history are in
 [`tools/perf/README.md`](../../tools/perf/README.md).
 
-After `StartGame` the player gets the rest of the BDS 1.26.51 join in BDS order
+The `StartGame` batch opens with the sleeping-player count, the player's own
+`PlayerList` entry and the clock state, as BDS 1.26.51 sends them: the
+connection task reserves the player's place and colour in the shared
+`OnlineRoster` first (decision 0044). After `StartGame` the player gets the rest
+of the BDS 1.26.51 join in BDS order
 (`server/game/join.rs`): the fixed packets byte-identical to the member join
 capture, then `SetHealth` right before `PlayStatus(PlayerSpawn)`. The game mode
 travels in `StartGame` only. Each player's `PlayerList` entry (skin, platform,
@@ -199,6 +203,15 @@ charged as BDS charges it (`entity/player_life/motion.rs`); falls (landing
 blocks, powder snow, a slowed glide, Feather Falling) and burning follow the
 BDS movement capture. The evidence and tests are in `entity/player_life/testdata/`
 and `entity/player_life/tests/`.
+
+Skins are forwarded the way BDS forwards them (`server/game/roster/skin.rs`:
+geometry rewritten, persona pieces and tints mapped, empty PlayFab id), and
+abilities follow BDS for every game mode and permission: each listed
+player's `UpdateAbilities` after the full list, the newcomer's to online
+players, none on a game mode change. Emotes and emote lists are relayed to
+nearby players and the client packets BDS ignores are ignored
+(`server/game/client_packets.rs`); evidence in
+`crates/bds-extractor/captures/1.26.51/protocol/`.
 
 ## World Generation
 
@@ -938,7 +951,7 @@ copied on purpose are in `docs/quirks/bds.md`. Known differences from BDS:
 |---|---|---|
 | `/give`, `/clear`, `/setblock`, `/fill`, `/clone` | Legacy names with old block states map only for the colour families (and `/give`'s data values also for log, log2 and planks); other legacy names fail with "not implemented" | No full legacy item/block upgrade table yet |
 | `/give`, `/recipe` | Items reaching an inventory unlock no recipes (BDS follows a give with `UnlockedRecipes`); unlocked recipes are not saved; `PlayerHotbar` sent with `shouldselectslot=true` | No recipe-unlock system; shared inventory resync |
-| `/gamemode` | Also resends `UpdateAbilities`; `default` puts the player in the configured mode instead of keeping it on `default` | Unastar's join abilities depend on the game mode; no `default` player mode |
+| `/gamemode` | `default` puts the player in the configured mode instead of keeping it on `default` | No `default` player mode |
 | `/weather`, `/toggledownfall` | State, client events and the fading levels `/weather query` reports; no natural cycle, durations do not count down, no gameplay effect | Weather is not simulated |
 | `/setworldspawn`, `/scoreboard`, `/tickingarea`, `/structure`, `/mobevent` | The world spawn, objectives and scores, ticking areas, structures and mob event switches are not saved with the world (players' spawn points, tags and recipes, and mobs' tags, are) | No level-data store yet |
 | `/scoreboard` | `belowname` sends no score actor data | Not built |
