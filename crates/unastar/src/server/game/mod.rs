@@ -839,6 +839,10 @@ impl GameServer {
             .insert_resource(crate::entity::player_life::authority::MotionTable::new(
                 &blocks,
             ));
+        ecs.world_mut().insert_resource(
+            liquids::LiquidStates::resolve(&blocks)
+                .expect("the vanilla registry has every block the liquids write"),
+        );
         ecs.world_mut()
             .insert_resource(redstone::CircuitTable(Arc::new(
                 redstone::kinds::Table::build(&blocks)
