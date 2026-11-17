@@ -840,6 +840,11 @@ impl GameServer {
                 &blocks,
             ));
         ecs.world_mut()
+            .insert_resource(redstone::CircuitTable(Arc::new(
+                redstone::kinds::Table::build(&blocks)
+                    .expect("the vanilla registry has every block a circuit writes"),
+            )));
+        ecs.world_mut()
             .insert_resource(types::BlockRegistryResource(Arc::new(blocks)));
         crate::entity::spawning::install(ecs.world_mut());
 

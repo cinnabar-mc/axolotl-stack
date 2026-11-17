@@ -10,7 +10,7 @@
 use unastar_data::pistons::Movement;
 
 use crate::registry::BlockRegistry;
-use crate::registry::block::{BlockEntry, StateValue};
+use crate::registry::block::{BlockEntry, BlockId, MissingBlock, StateValue};
 use crate::server::game::block_update::support::Face;
 
 /// The six faces in protocol order (down, up, north, south, west, east).
@@ -533,10 +533,53 @@ fn variant_names(id: &str) -> Vec<String> {
         .collect()
 }
 
-/// Per-runtime-id facts for one registry.
+/// The blocks a circuit writes, resolved once when its table is built:
+/// default states of the blocks it puts down, and the registry ids of the
+/// blocks a state is renamed to (a torch burning out, a repeater powering).
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct CircuitBlocks {
+    /// Default state of air (a piston's old place, primed TNT).
+    pub air: u32,
+    /// Default state of the block in motion at a piston move's destination.
+    pub moving_block: u32,
+    pub piston_arm: u32,
+    pub sticky_piston_arm: u32,
+    pub redstone_torch: u32,
+    pub unlit_redstone_torch: u32,
+    pub powered_repeater: u32,
+    pub unpowered_repeater: u32,
+    pub powered_comparator: u32,
+    pub unpowered_comparator: u32,
+    pub redstone_lamp: u32,
+    pub lit_redstone_lamp: u32,
+}
+
+impl CircuitBlocks {
+    fn resolve(registry: &BlockRegistry) -> Result<Self, MissingBlock> {
+        let state = |block| registry.require(block).map(|entry| entry.default_state_id);
+        let block = |block| registry.require(block).map(|entry| entry.id);
+        Ok(Self {
+            air: state(BlockId::AIR)?,
+            moving_block: state(BlockId::MOVING_BLOCK)?,
+            piston_arm: block(BlockId::PISTON_ARM_COLLISION)?,
+            sticky_piston_arm: block(BlockId::STICKY_PISTON_ARM_COLLISION)?,
+            redstone_torch: block(BlockId::REDSTONE_TORCH)?,
+            unlit_redstone_torch: block(BlockId::UNLIT_REDSTONE_TORCH)?,
+            powered_repeater: block(BlockId::POWERED_REPEATER)?,
+            unpowered_repeater: block(BlockId::UNPOWERED_REPEATER)?,
+            powered_comparator: block(BlockId::POWERED_COMPARATOR)?,
+            unpowered_comparator: block(BlockId::UNPOWERED_COMPARATOR)?,
+            redstone_lamp: block(BlockId::REDSTONE_LAMP)?,
+            lit_redstone_lamp: block(BlockId::LIT_REDSTONE_LAMP)?,
+        })
+    }
+}
+
+/// Per-runtime-id facts for one registry, and the blocks a circuit writes.
 #[derive(Debug, Clone)]
 pub(crate) struct Table {
     facts: Vec<Facts>,
+    pub(crate) blocks: CircuitBlocks,
 }
 
 const NOTHING: Facts = Facts {
@@ -552,7 +595,10 @@ const NOTHING: Facts = Facts {
 };
 
 impl Table {
-    pub(crate) fn build(registry: &BlockRegistry) -> Self {
+    /// The table of `registry`, built when the server loads; a registry
+    /// without a block the circuit writes fails here, not mid-move.
+    pub(crate) fn build(registry: &BlockRegistry) -> Result<Self, MissingBlock> {
+        let blocks = CircuitBlocks::resolve(registry)?;
         let measured = unastar_data::redstone::blocks();
         let mut facts = Vec::new();
         for entry in registry.iter() {
@@ -595,7 +641,7 @@ impl Table {
                 };
             }
         }
-        Self { facts }
+        Ok(Self { facts, blocks })
     }
 
     pub(crate) fn get(&self, state: u32) -> Facts {

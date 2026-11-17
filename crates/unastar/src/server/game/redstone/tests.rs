@@ -26,6 +26,15 @@ fn registry() -> &'static BlockRegistry {
     BlockRegistry::vanilla()
 }
 
+/// The circuit table of the vanilla registry, built once.
+fn table() -> std::sync::Arc<super::kinds::Table> {
+    static TABLE: std::sync::LazyLock<std::sync::Arc<super::kinds::Table>> =
+        std::sync::LazyLock::new(|| {
+            std::sync::Arc::new(super::kinds::Table::build(registry()).unwrap())
+        });
+    TABLE.clone()
+}
+
 fn air() -> u32 {
     registry()
         .default_state_id_by_name("minecraft:air")
@@ -250,9 +259,7 @@ fn placed(stored: &Stored, pos: IVec3, block: &str, states: &Value) -> u32 {
     if full_name(stored_block) != full_name(block) {
         return requested;
     }
-    static TABLE: std::sync::LazyLock<super::kinds::Table> =
-        std::sync::LazyLock::new(|| super::kinds::Table::build(registry()));
-    if TABLE.get(requested).kind != super::kinds::Kind::None {
+    if table().get(requested).kind != super::kinds::Kind::None {
         return requested;
     }
     state(stored_block, stored_states)
@@ -514,7 +521,7 @@ fn replay_in<B: Bench>(
     // whose parity is the witness's, so tick i updates when i + 1 - witness
     // is even.
     let base = 1000 + (witness + 1) % 2;
-    let mut cell = bench(Redstone::starting_at(base - waits - 1));
+    let mut cell = bench(Redstone::starting_at(base - waits - 1, table()));
     for step in steps {
         match step[0].as_str().unwrap() {
             "wait" => {
@@ -910,7 +917,7 @@ fn blocks_pistons_break_drop_like_bds() {
         registry().clone(),
     )));
     world.insert_resource(EntityRandom::seeded(4));
-    let table = super::kinds::Table::build(registry());
+    let table = table();
     let mut failures = Vec::new();
     let mut compared = 0;
     for row in piston_rows("pistons_blocks") {
@@ -1348,7 +1355,7 @@ fn a_loaded_circuit_is_found_through_a_solid_block() {
         )
     };
     let lamp = IVec3::new(2, 0, 0);
-    let mut cell = Cell::new(Redstone::starting_at(1000));
+    let mut cell = Cell::new(Redstone::starting_at(1000, table()));
     // In the world before the circuit started: not changes it saw.
     cell.blocks.insert(IVec3::ZERO, lever(false));
     cell.blocks
@@ -1365,5 +1372,16 @@ fn a_loaded_circuit_is_found_through_a_solid_block() {
     assert_eq!(
         describe(cell.block_at(lamp).unwrap()).0,
         "lit_redstone_lamp"
+    );
+}
+
+#[test]
+fn a_registry_without_the_circuit_blocks_fails_when_the_table_is_built() {
+    use crate::registry::block::{BlockId, MissingBlock};
+    let error = super::kinds::Table::build(&BlockRegistry::new()).unwrap_err();
+    assert_eq!(error, MissingBlock::Block(BlockId::AIR));
+    assert_eq!(
+        error.to_string(),
+        "the block registry has no `minecraft:air`"
     );
 }

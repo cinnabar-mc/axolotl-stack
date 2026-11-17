@@ -136,6 +136,9 @@ fn unastar(case: &Value) -> (Vec<Seen>, IVec3) {
     world.insert_resource(crate::server::game::types::BlockRegistryResource(
         std::sync::Arc::new(BlockRegistry::vanilla().clone()),
     ));
+    world.insert_resource(super::CircuitTable(std::sync::Arc::new(
+        super::kinds::Table::build(BlockRegistry::vanilla()).unwrap(),
+    )));
     world.insert_resource(crate::server::game::types::ServerConfigResource(
         Default::default(),
     ));
