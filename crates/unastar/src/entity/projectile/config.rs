@@ -79,6 +79,21 @@ pub struct ProjectileRules {
     pub bounce_without_damage: bool,
     /// `stop_on_hurt`: it drops away from an actor it hurt.
     pub stop_on_hurt: bool,
+    /// `on_hit.grant_xp`: `(minXP, maxXP)` experience at the hit point.
+    pub grant_xp: Option<(i32, i32)>,
+    /// A mob shot's spread: `uncertainty_base - difficulty ×
+    /// uncertainty_multiplier` (peaceful 0 … hard 3). Players' items set
+    /// their own spread at launch.
+    pub uncertainty_base: f32,
+    pub uncertainty_multiplier: f32,
+    /// `on_hit.arrow_effect`: a tipped arrow ([`super::ArrowPotion`]) gives
+    /// an actor it hits its potion's effect.
+    pub arrow_effect: bool,
+    /// `thrown_potion_effect`: the projectile's potion (its aux value) is
+    /// applied to the actors around the hit point.
+    pub thrown_potion_effect: bool,
+    /// `douse_fire`: a water potion puts out fire around the hit point.
+    pub douse_fire: bool,
 }
 
 /// `on_hit.impact_damage`.
@@ -98,7 +113,12 @@ pub struct ImpactDamage {
     /// Only this actor is damaged (e.g. snowballs hurt blazes); others are
     /// hit without damage.
     pub filter: Option<Arc<str>>,
+    /// How a mob's shot varies its damage with the difficulty.
+    pub difficulty_randomization: DifficultyRandomization,
 }
+
+/// `impact_damage.difficulty_randomization`.
+pub use unastar_data::actor_components::body::ImpactDamageDifficultyRandomization as DifficultyRandomization;
 
 /// `on_hit.particle_on_hit`.
 #[derive(Debug)]
@@ -185,8 +205,6 @@ fn compile(b: body::Projectile, items: &ItemRegistry) -> Result<ProjectileRules,
         ),
         "should_bounce",
     )?;
-    // `uncertainty_*` is the spread of mob shots; the items players shoot
-    // with (bow, crossbow, trident) set their own spread at launch.
     let ignored = b
         .ignored_entities
         .iter()
@@ -217,6 +235,12 @@ fn compile(b: body::Projectile, items: &ItemRegistry) -> Result<ProjectileRules,
         stick_in_ground: None,
         bounce_without_damage: b.should_bounce == ShouldBounce::IfNoDamageDealt,
         stop_on_hurt: b.stop_on_hurt,
+        grant_xp: None,
+        uncertainty_base: b.uncertainty_base,
+        uncertainty_multiplier: b.uncertainty_multiplier,
+        arrow_effect: false,
+        thrown_potion_effect: false,
+        douse_fire: false,
     };
     let Some(on_hit) = b.on_hit else {
         return Ok(rules);
@@ -224,17 +248,18 @@ fn compile(b: body::Projectile, items: &ItemRegistry) -> Result<ProjectileRules,
     for (present, name) in [
         (on_hit.catch_fire.is_some(), "catch_fire"),
         (on_hit.definition_event.is_some(), "definition_event"),
-        (on_hit.douse_fire.is_some(), "douse_fire"),
         (on_hit.freeze_on_hit.is_some(), "freeze_on_hit"),
-        (on_hit.grant_xp.is_some(), "grant_xp"),
         (on_hit.hurt_owner.is_some(), "hurt_owner"),
         (on_hit.ignite.is_some(), "ignite"),
         (on_hit.mob_effect.is_some(), "mob_effect"),
         (on_hit.spawn_aoe_cloud.is_some(), "spawn_aoe_cloud"),
         (on_hit.teleport_owner.is_some(), "teleport_owner"),
         (
-            on_hit.thrown_potion_effect.is_some(),
-            "thrown_potion_effect",
+            on_hit
+                .thrown_potion_effect
+                .as_ref()
+                .is_some_and(|potion| potion.effect != -1),
+            "thrown_potion_effect with a fixed effect",
         ),
         (on_hit.wind_burst_on_hit.is_some(), "wind_burst_on_hit"),
     ] {
@@ -242,14 +267,19 @@ fn compile(b: body::Projectile, items: &ItemRegistry) -> Result<ProjectileRules,
             return Err(ProjectileError::OnHit(name));
         }
     }
+    rules.grant_xp = on_hit.grant_xp.map(|xp| (xp.min_xp, xp.max_xp));
     rules.impact_damage = on_hit.impact_damage.map(compile_impact).transpose()?;
     rules.particle = on_hit
         .particle_on_hit
         .map(|particle| compile_particle(particle, items))
         .transpose()?;
     rules.remove_on_hit = on_hit.remove_on_hit.is_some();
-    // Plain arrows carry no potion, so `arrow_effect` has nothing to apply;
-    // bows only shoot plain arrows (tipped arrows are not implemented).
+    rules.thrown_potion_effect = on_hit.thrown_potion_effect.is_some();
+    rules.douse_fire = on_hit.douse_fire.is_some();
+    // Players' bows only shoot plain arrows (tipped arrows are not
+    // implemented as items); mobs shoot the tipped arrows of their
+    // `minecraft:shooter`.
+    rules.arrow_effect = on_hit.arrow_effect.is_some();
     rules.stick_in_ground = on_hit
         .stick_in_ground
         .map(|stick| (stick.shake_time * 20.0).round().max(0.0) as u32);
@@ -265,10 +295,12 @@ fn compile_impact(
     // damage clamps never apply.
     reject(b.catch_fire, "impact_damage catch_fire")?;
     reject(b.channeling, "impact_damage channeling")?;
-    // `difficulty_randomization` varies the damage of mob shots by
-    // difficulty; only players shoot on this server, so it never applies.
-
+    reject(
+        b.difficulty_randomization == DifficultyRandomization::Additive,
+        "impact_damage additive difficulty_randomization",
+    )?;
     Ok(ImpactDamage {
+        difficulty_randomization: b.difficulty_randomization,
         min: b.damage.min,
         max: b.damage.max.max(b.damage.min),
         knockback: b.knockback,

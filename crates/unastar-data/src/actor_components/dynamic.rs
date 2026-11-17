@@ -17,6 +17,22 @@ use super::generated::body::{
 use super::provisional as p;
 use super::{ActorComponent, ComponentBody, FilterJson, decode};
 
+/// `minecraft:underwater_movement`: the movement speed in water (the
+/// `minecraft:underwater_movement` attribute).
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct UnderwaterMovement {
+    pub value: f32,
+}
+
+/// `minecraft:water_movement`: the drag a mob's motion keeps in water.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct WaterMovement {
+    #[serde(default = "drag_factor")]
+    pub drag_factor: f32,
+}
+
 /// An event reference: a bare event name or a trigger object.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(untagged)]
@@ -56,6 +72,20 @@ macro_rules! defaults {
 }
 
 defaults! {
+    explode_allow_underwater -> bool = p::EXPLODE_ALLOW_UNDERWATER;
+    explode_breaks_blocks -> bool = p::EXPLODE_BREAKS_BLOCKS;
+    explode_causes_fire -> bool = p::EXPLODE_CAUSES_FIRE;
+    explode_damage_scaling -> f32 = p::EXPLODE_DAMAGE_SCALING;
+    explode_destroy_affected_by_griefing -> bool = p::EXPLODE_DESTROY_AFFECTED_BY_GRIEFING;
+    explode_fire_affected_by_griefing -> bool = p::EXPLODE_FIRE_AFFECTED_BY_GRIEFING;
+    explode_fuse_lit -> bool = p::EXPLODE_FUSE_LIT;
+    explode_knockback_scaling -> f32 = p::EXPLODE_KNOCKBACK_SCALING;
+    explode_max_resistance -> f32 = p::EXPLODE_MAX_RESISTANCE;
+    explode_negates_fall_damage -> bool = p::EXPLODE_NEGATES_FALL_DAMAGE;
+    explode_particle_effect -> String = p::EXPLODE_PARTICLE_EFFECT.to_owned();
+    explode_power -> f32 = p::EXPLODE_POWER;
+    explode_sound_effect -> String = p::EXPLODE_SOUND_EFFECT.to_owned();
+    explode_toggles_blocks -> bool = p::EXPLODE_TOGGLES_BLOCKS;
     ageable_duration -> f32 = p::AGEABLE_DURATION;
     ambient_event_name -> String = p::AMBIENT_SOUND_INTERVAL_EVENT_NAME.to_owned();
     ambient_range -> f32 = p::AMBIENT_SOUND_INTERVAL_RANGE;
@@ -136,6 +166,9 @@ defaults! {
     preset_spring_type -> LeashSpringType = p::LEASH_PRESET_SPRING_TYPE;
     can_retrieve_from -> bool = p::LEASHABLE_TO_CAN_RETRIEVE_FROM;
     max_turn -> f32 = p::MOVEMENT_BASIC_MAX_TURN;
+    sway_amplitude -> f32 = p::MOVEMENT_SWAY_AMPLITUDE;
+    sway_frequency -> f32 = p::MOVEMENT_SWAY_FREQUENCY;
+    drag_factor -> f32 = p::WATER_MOVEMENT_DRAG_FACTOR;
     allow_name_tag_renaming -> bool = p::NAMEABLE_ALLOW_NAME_TAG_RENAMING;
     always_show -> bool = p::NAMEABLE_ALWAYS_SHOW;
     avoid_damage_blocks -> bool = p::NAVIGATION_AVOID_DAMAGE_BLOCKS;
@@ -183,7 +216,15 @@ defaults! {
     boost_duration -> f32 = p::BOOSTABLE_DURATION;
     boost_speed_multiplier -> f32 = p::BOOSTABLE_SPEED_MULTIPLIER;
     boost_item_damage -> i32 = p::BOOSTABLE_BOOST_ITEM_DAMAGE;
+    angry_duration -> i32 = p::ANGRY_DURATION;
+    angry_duration_delta -> i32 = p::ANGRY_DURATION_DELTA;
+    angry_broadcast_range -> i32 = p::ANGRY_BROADCAST_RANGE;
+    angry_broadcast_when_dying -> bool = p::ANGRY_BROADCAST_WHEN_DYING;
     color_value -> i32 = p::COLOR_VALUE;
+    color2_value -> i32 = p::COLOR2_VALUE;
+    mark_variant_value -> i32 = p::MARK_VARIANT_VALUE;
+    skin_id_value -> i32 = p::SKIN_ID_VALUE;
+    variant_value -> i32 = p::VARIANT_VALUE;
     dyeable_interact_text -> String = p::IS_DYEABLE_INTERACT_TEXT.to_owned();
     transformation_flag -> bool = p::TRANSFORMATION_FLAG;
     transformation_delay_value -> f32 = p::TRANSFORMATION_DELAY_VALUE;
@@ -620,6 +661,53 @@ pub enum DealsDamageMode {
     NoButEntityEffectsApply,
 }
 
+/// `minecraft:explode`: a fuse that ends in an explosion.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Explode {
+    /// The explosion also affects blocks and actors under water.
+    #[serde(default = "explode_allow_underwater")]
+    pub allow_underwater: bool,
+    #[serde(default = "explode_breaks_blocks")]
+    pub breaks_blocks: bool,
+    #[serde(default = "explode_causes_fire")]
+    pub causes_fire: bool,
+    /// Factor on the damage actors take.
+    #[serde(default = "explode_damage_scaling")]
+    pub damage_scaling: f32,
+    /// `breaks_blocks` only applies while the `mobGriefing` game rule is on.
+    #[serde(default = "explode_destroy_affected_by_griefing")]
+    pub destroy_affected_by_griefing: bool,
+    /// `causes_fire` only applies while the `mobGriefing` game rule is on.
+    #[serde(default = "explode_fire_affected_by_griefing")]
+    pub fire_affected_by_griefing: bool,
+    /// Seconds the fuse burns (fixed or random); absent explodes at once.
+    pub fuse_length: Option<ValueOrRange<f32>>,
+    /// The fuse is lit as soon as the component is added.
+    #[serde(default = "explode_fuse_lit")]
+    pub fuse_lit: bool,
+    /// Factor on the knockback actors take.
+    #[serde(default = "explode_knockback_scaling")]
+    pub knockback_scaling: f32,
+    /// Cap on a block's explosion resistance.
+    #[serde(default = "explode_max_resistance")]
+    pub max_resistance: f32,
+    #[serde(default = "explode_negates_fall_damage")]
+    pub negates_fall_damage: bool,
+    /// `explosion`, `wind_burst` or `breeze_wind_burst`.
+    #[serde(default = "explode_particle_effect")]
+    pub particle_effect: String,
+    #[serde(default = "explode_power")]
+    pub power: f32,
+    /// The level sound played when the explosion happens.
+    #[serde(default = "explode_sound_effect")]
+    pub sound_effect: String,
+    /// The explosion toggles blocks (doors, trapdoors) instead of breaking
+    /// them.
+    #[serde(default = "explode_toggles_blocks")]
+    pub toggles_blocks: bool,
+}
+
 /// `minecraft:despawn`.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -773,6 +861,30 @@ pub struct MovementBasic {
     pub max_turn: f32,
 }
 
+/// `minecraft:movement.generic`: the move control of a mob that walks,
+/// swims and flies (the drowned).
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct MovementGeneric {
+    /// Maximum turn per tick, in degrees.
+    #[serde(default = "max_turn")]
+    pub max_turn: f32,
+}
+
+/// `minecraft:movement.sway`: the move control of a mob that sways from
+/// side to side as it swims (the fish and the tadpole).
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct MovementSway {
+    /// Maximum turn per tick, in degrees.
+    #[serde(default = "max_turn")]
+    pub max_turn: f32,
+    #[serde(default = "sway_amplitude")]
+    pub sway_amplitude: f32,
+    #[serde(default = "sway_frequency")]
+    pub sway_frequency: f32,
+}
+
 /// `minecraft:nameable`.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -843,6 +955,19 @@ pub struct NavigationWalk {
     /// Path through doors using door annotations.
     pub using_door_annotation: Option<bool>,
 }
+
+/// `minecraft:navigation.generic`: the path permissions of
+/// `minecraft:navigation.walk`, read by a navigation that can also swim.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(transparent)]
+pub struct NavigationGeneric(pub NavigationWalk);
+
+/// `minecraft:navigation.float`: the path permissions of
+/// `minecraft:navigation.walk`, read by a navigation through the air (the
+/// bat).
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(transparent)]
+pub struct NavigationFloat(pub NavigationWalk);
 
 /// `minecraft:offspring` (1.26): the offspring half of the old breedable
 /// fields.
@@ -1045,6 +1170,82 @@ pub struct BoostItem {
 #[serde(deny_unknown_fields)]
 pub struct Color {
     #[serde(default = "color_value")]
+    pub value: i32,
+}
+
+/// `minecraft:angry`: a timed angry state that may spread to nearby actors.
+/// Vanilla spells `broadcast_anger` and `broadcast_range` also as
+/// `broadcastAnger` and `broadcastRange` (bee, wandering trader).
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Angry {
+    /// Sound event played every `sound_interval` while angry.
+    #[serde(default)]
+    pub angry_sound: Option<String>,
+    /// Seconds between two angry sounds.
+    #[serde(default)]
+    pub sound_interval: Option<ValueOrRange<f32>>,
+    /// Seconds the actor stays angry; -1 until an event calms it.
+    #[serde(default = "angry_duration")]
+    pub duration: i32,
+    /// Seconds added to `duration`, drawn from `[-delta, delta]`.
+    #[serde(default = "angry_duration_delta")]
+    pub duration_delta: i32,
+    /// Actors the angry actor does not attack.
+    #[serde(default)]
+    pub filters: Option<FilterJson>,
+    /// Other actors of the same definition within `broadcast_range` become
+    /// angry too.
+    #[serde(default, alias = "broadcastAnger")]
+    pub broadcast_anger: bool,
+    #[serde(default)]
+    pub broadcast_anger_on_attack: bool,
+    #[serde(default)]
+    pub broadcast_anger_on_being_attacked: bool,
+    #[serde(default = "angry_broadcast_when_dying")]
+    pub broadcast_anger_when_dying: bool,
+    #[serde(default = "angry_broadcast_range", alias = "broadcastRange")]
+    pub broadcast_range: i32,
+    /// Families the anger spreads to (instead of the same definition).
+    #[serde(default, deserialize_with = "super::de::optional_one_or_many")]
+    pub broadcast_targets: Option<Vec<String>>,
+    /// Conditions an actor must pass to receive the anger.
+    #[serde(default)]
+    pub broadcast_filters: Option<FilterJson>,
+    /// Fired when the anger ends.
+    #[serde(default)]
+    pub calm_event: Option<EventTrigger>,
+}
+
+/// `minecraft:color2`: the actor's second palette colour.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Color2 {
+    #[serde(default = "color2_value")]
+    pub value: i32,
+}
+
+/// `minecraft:variant`: a per-type visual form id (0 is the base entity).
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Variant {
+    #[serde(default = "variant_value")]
+    pub value: i32,
+}
+
+/// `minecraft:mark_variant`: a second per-type visual form id.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct MarkVariant {
+    #[serde(default = "mark_variant_value")]
+    pub value: i32,
+}
+
+/// `minecraft:skin_id`: a per-type skin id (villager base skins).
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SkinId {
+    #[serde(default = "skin_id_value")]
     pub value: i32,
 }
 
@@ -1290,6 +1491,191 @@ pub struct AnnotationBreakDoor {
     pub min_difficulty: Difficulty,
 }
 
+/// An attribute component body: the attribute's `value` and, optionally,
+/// its `max`.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AttributeBody {
+    pub value: f32,
+    #[serde(default)]
+    pub max: Option<f32>,
+}
+
+/// `minecraft:follow_range`: how far a mob keeps track of its target (the
+/// follow range attribute). Vanilla authors `{"value": v, "max": m}`, and
+/// once a bare number.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(untagged)]
+pub enum FollowRange {
+    Value(f32),
+    Attribute(AttributeBody),
+}
+
+/// `minecraft:knockback_resistance`: the knockback resistance attribute.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct KnockbackResistance {
+    pub value: f32,
+    #[serde(default)]
+    pub max: Option<f32>,
+}
+
+/// One box of `minecraft:custom_hit_test`, centred on the actor's position
+/// plus `pivot`.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Hitbox {
+    pub width: f32,
+    pub height: f32,
+    pub pivot: Vec3,
+}
+
+/// `minecraft:custom_hit_test`: boxes a player's hit on the actor may land
+/// on besides its collision box.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CustomHitTest {
+    #[serde(default)]
+    pub hitboxes: Vec<Hitbox>,
+}
+
+/// `minecraft:mob_effect_immunity`: effects that are never applied to the
+/// actor.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct MobEffectImmunity {
+    #[serde(default, deserialize_with = "super::de::optional_one_or_many")]
+    pub mob_effects: Option<Vec<String>>,
+}
+
+/// One effect `minecraft:spell_effects` adds.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SpellEffect {
+    pub effect: String,
+    /// Seconds.
+    pub duration: f32,
+    #[serde(default = "spell_effect_amplifier")]
+    pub amplifier: i32,
+    #[serde(default)]
+    pub display_on_screen_animation: bool,
+}
+
+/// `minecraft:spell_effects`: effects added to and removed from the actor
+/// when the component is applied.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SpellEffects {
+    #[serde(default)]
+    pub add_effects: Option<Vec<SpellEffect>>,
+    #[serde(default, deserialize_with = "super::de::optional_one_or_many")]
+    pub remove_effects: Option<Vec<String>>,
+}
+
+defaults! {
+    spell_effect_amplifier -> i32 = p::SPELL_EFFECTS_AMPLIFIER;
+}
+
+/// `minecraft:shooter`: the projectile a mob's ranged attack launches.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Shooter {
+    /// The projectile actor identifier.
+    pub def: String,
+    /// The projectile's aux value (a tipped arrow's potion, one more than
+    /// the potion id; -1: none).
+    #[serde(default = "shooter_aux_val")]
+    pub aux_val: i32,
+    /// A sound played when the projectile is launched (empty: none).
+    #[serde(default)]
+    pub sound: String,
+    /// Launched as a thrown potion (the witch).
+    #[serde(default)]
+    pub magic: bool,
+    /// Launch speed instead of the projectile's own `power` (0: its own).
+    #[serde(default)]
+    pub power: f32,
+    /// Projectiles chosen by filter (the witch's potions).
+    #[serde(default)]
+    pub projectiles: Vec<serde_json::Value>,
+}
+
+defaults! {
+    shooter_aux_val -> i32 = p::SHOOTER_AUX_VAL;
+}
+
+/// `minecraft:target_nearby_sensor`: events fired as the mob's target comes
+/// within `inside_range`, leaves past `outside_range`, or drops out of
+/// sight inside the range.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TargetNearbySensor {
+    #[serde(default = "target_nearby_inside_range")]
+    pub inside_range: f32,
+    #[serde(default = "target_nearby_outside_range")]
+    pub outside_range: f32,
+    /// The inside events need the target in sight.
+    #[serde(default)]
+    pub must_see: bool,
+    #[serde(default)]
+    pub on_inside_range: Option<ActorDefinitionTrigger>,
+    #[serde(default)]
+    pub on_outside_range: Option<ActorDefinitionTrigger>,
+    #[serde(default)]
+    pub on_vision_lost_inside_range: Option<ActorDefinitionTrigger>,
+}
+
+defaults! {
+    target_nearby_inside_range -> f32 = p::TARGET_NEARBY_INSIDE_RANGE;
+    target_nearby_outside_range -> f32 = p::TARGET_NEARBY_OUTSIDE_RANGE;
+}
+
+/// `minecraft:movement.jump`: the hopping move control (slimes, magma
+/// cubes): the mob moves only while it hops and waits `jump_delay` seconds
+/// on the ground before each hop.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct MovementJump {
+    /// Seconds to wait on the ground before the next hop, drawn per hop.
+    pub jump_delay: FloatRange,
+    /// Degrees the body turns per tick at most.
+    #[serde(default = "movement_jump_max_turn")]
+    pub max_turn: f32,
+}
+
+/// `minecraft:area_attack`: damage dealt to every matching actor near the
+/// mob's box.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AreaAttack {
+    pub cause: Option<ActorDamageCause>,
+    /// Seconds before the mob can hurt again.
+    #[serde(default = "area_attack_damage_cooldown")]
+    pub damage_cooldown: f32,
+    #[serde(default = "area_attack_damage_per_tick")]
+    pub damage_per_tick: f32,
+    /// How close (blocks) an actor must be.
+    #[serde(default = "area_attack_damage_range")]
+    pub damage_range: f32,
+    pub entity_filter: Option<FilterJson>,
+    /// The death message a kill shows instead of the cause's (the sulfur
+    /// cube).
+    pub death_message_override: Option<String>,
+    /// Whether the mob is the damage source (the sulfur cube authors
+    /// `false`); absent means the published default.
+    pub use_self_as_damage_source: Option<bool>,
+    #[serde(default = "area_attack_play_attack_sound")]
+    pub play_attack_sound: bool,
+}
+
+defaults! {
+    movement_jump_max_turn -> f32 = p::MOVEMENT_JUMP_MAX_TURN;
+    area_attack_damage_per_tick -> f32 = p::AREA_ATTACK_DAMAGE_PER_TICK;
+    area_attack_damage_range -> f32 = p::AREA_ATTACK_DAMAGE_RANGE;
+    area_attack_damage_cooldown -> f32 = p::AREA_ATTACK_DAMAGE_COOLDOWN;
+    area_attack_play_attack_sound -> bool = p::AREA_ATTACK_PLAY_ATTACK_SOUND;
+}
+
 macro_rules! dynamic_bodies {
     ($($name:ident),* $(,)?) => {
         $(impl ComponentBody for $name {
@@ -1314,8 +1700,10 @@ macro_rules! dynamic_bodies {
 
 dynamic_bodies!(
     Ageable,
+    Angry,
     AnnotationBreakDoor,
     AmbientSoundInterval,
+    AreaAttack,
     Attack,
     Balloonable,
     BehaviorPanic,
@@ -1324,31 +1712,50 @@ dynamic_bodies!(
     Breathable,
     Breedable,
     Color,
+    Color2,
     ConditionalBandwidthOptimization,
+    CustomHitTest,
     DamageSensor,
     Despawn,
     EnvironmentSensor,
     EquipItem,
     Equipment,
+    Explode,
+    FollowRange,
     Health,
     HurtOnCondition,
     IsDyeable,
     ItemControllable,
+    KnockbackResistance,
     Leashable,
     LeashableTo,
     Loot,
+    MarkVariant,
+    MobEffectImmunity,
     Movement,
     MovementBasic,
+    MovementGeneric,
+    MovementJump,
+    MovementSway,
     Nameable,
+    NavigationFloat,
+    NavigationGeneric,
     NavigationWalk,
     Offspring,
     PushableByBlock,
     Rideable,
     Scale,
     Shareables,
+    Shooter,
+    SkinId,
     SpawnEggInteraction,
     SpawnEntity,
+    SpellEffects,
+    TargetNearbySensor,
     Transformation,
     Timer,
     TypeFamily,
+    UnderwaterMovement,
+    Variant,
+    WaterMovement,
 );

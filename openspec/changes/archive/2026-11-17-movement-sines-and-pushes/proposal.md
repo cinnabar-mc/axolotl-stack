@@ -19,7 +19,7 @@ Prior work:
 
 ## What Changes
 
-- **Trigonometry** (`unastar_rules::math`, [decision 0068](../../../../docs/decisions/0068-take-the-windows-runtime-sine-on-every-platform.md)): the sines and cosines are the Windows C runtime's,
+- **Trigonometry** (`unastar_rules::math`, [decision 0071](../../../../docs/decisions/0071-take-the-windows-runtime-sine-on-every-platform.md)): the sines and cosines are the Windows C runtime's,
   which BDS runs on, on every platform: libm's sine rounded to `f32`, with the runtime's
   one-ULP exceptions shipped as data. The sine table's entry `i` is `sin(i / 10430.378)`. There
   is one table, shared by movement, the drop direction and the sweep client. The glide's look

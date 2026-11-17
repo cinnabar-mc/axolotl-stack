@@ -11,7 +11,9 @@ use unastar_data::actor_components::body::{
 };
 use unastar_rules::filter::Filter;
 
-use super::common::{FilterError, SelfEvent, SelfEventError, filter, insert, self_event};
+use super::common::{
+    FilterError, SelfEvent, SelfEventError, filter, insert, insert_infallible, self_event,
+};
 use crate::entity::components::EffectType;
 use crate::entity::definition::{ComponentError, ComponentKindsBuilder, DefinitionError};
 use crate::entity::goal_selector::GoalControls;
@@ -52,16 +54,35 @@ pub struct AttackConfig {
     pub effect: Option<AttackEffect>,
 }
 
-/// `minecraft:behavior.melee_box_attack`, its seconds converted to ticks
-/// and its boundaries squared as the native goal stores them.
+/// How close a melee goal's target must be to be hit.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum MeleeReach {
+    /// `behavior.melee_box_attack`: the target's box touches the mob's box
+    /// grown by `horizontal` blocks sideways.
+    Box { horizontal: f64 },
+    /// `behavior.stomp_attack`: the target's feet within `sqrt(reach_sq)`
+    /// of the mob's, where `reach_sq` is `(width × reach_multiplier)²` plus
+    /// the target's width; within `no_damage_range_multiplier` times that
+    /// squared distance the mob rears up (`STANDING`) for the last ten
+    /// ticks of its cooldown, and a cooldown that runs out there restarts
+    /// without a hit (BDS 1.26.51 polar bear: `sweep.py polar-bear`).
+    Stomp {
+        reach_multiplier: f64,
+        no_damage_range_multiplier: f64,
+    },
+}
+
+/// A melee goal (`minecraft:behavior.melee_box_attack` or
+/// `minecraft:behavior.stomp_attack`), its seconds converted to ticks and
+/// its boundaries squared as the native goal stores them.
 #[derive(Component, Debug, Clone, PartialEq)]
-pub struct MeleeBoxAttackGoal {
+pub struct MeleeAttackGoal {
     pub priority: i32,
     pub(crate) controls: GoalControls,
+    pub reach: MeleeReach,
     pub attack_once: bool,
     pub can_spread_on_fire: bool,
     pub cooldown_ticks: i32,
-    pub horizontal_reach: f64,
     pub min_path_ticks: i32,
     pub max_path_ticks: i32,
     pub path_fail_ticks: i32,
@@ -70,8 +91,8 @@ pub struct MeleeBoxAttackGoal {
     pub inner_boundary_sq: f64,
     pub outer_boundary_sq: f64,
     /// Full view cone, degrees: the target must be closer to the look
-    /// direction than this to be hit.
-    pub melee_fov: f32,
+    /// direction than this to be hit (`None`: no cone, as the stomp goal).
+    pub melee_fov: Option<f32>,
     pub y_max_head_rotation: f32,
     pub on_attack: Option<SelfEvent>,
     pub on_kill: Option<SelfEvent>,
@@ -80,6 +101,21 @@ pub struct MeleeBoxAttackGoal {
     pub speed_multiplier: f32,
     /// Keep re-pathing without line of sight to the target.
     pub track_target: bool,
+}
+
+/// `minecraft:behavior.swell`: the creeper's goal while its fuse burns. It
+/// runs while the mob is lit (the `IGNITED` flag `minecraft:explode` sets),
+/// stops the mob and plays `fuse` (BDS 1.26.51: a lit creeper stands still
+/// and hisses two ticks after it lights, with or without a target).
+#[derive(Component, Debug, Clone, PartialEq)]
+pub struct SwellGoal {
+    pub priority: i32,
+    pub(crate) controls: GoalControls,
+    /// Authored, but not told apart from the creeper's
+    /// `target_nearby_sensor` ranges, which are the same numbers in vanilla
+    /// and decide when the fuse lights and goes out.
+    pub start_distance: f32,
+    pub stop_distance: f32,
 }
 
 /// One `entity_types` entry of a target goal.
@@ -145,14 +181,21 @@ pub struct BurnsInDaylightConfig {
 pub fn register_component_kinds(
     builder: &mut ComponentKindsBuilder,
 ) -> Result<(), DefinitionError> {
+    insert_infallible(builder, |b: body::BehaviorSwell| SwellGoal {
+        priority: b.priority,
+        controls: controls(&b.control_flags, GoalControls::MOVE),
+        start_distance: b.start_distance,
+        stop_distance: b.stop_distance,
+    })?;
     insert(builder, compile_attack)?;
     insert(builder, compile_melee_box_attack)?;
+    insert(builder, compile_stomp_attack)?;
     insert(builder, compile_nearest_attackable_target)?;
     insert(builder, |b: body::BehaviorHurtByTarget| {
         Ok::<_, HostileError>(HurtByTargetGoal {
             base: TargetGoalBase {
                 priority: b.priority,
-                entries: entries(&b.entity_types)?,
+                entries: retaliation_entries(&b.entity_types)?,
                 attack_owner: b.hurt_owner,
                 must_reach: false,
                 must_see: false,
@@ -189,7 +232,7 @@ fn compile_attack(b: body::Attack) -> Result<AttackConfig, HostileError> {
         .filter(|name| !name.is_empty())
         .map(|name| {
             Ok::<_, HostileError>(AttackEffect {
-                effect: effect_type(&name).ok_or(HostileError::UnknownEffect(name))?,
+                effect: EffectType::from_name(&name).ok_or(HostileError::UnknownEffect(name))?,
                 duration_ticks: (b.effect_duration.max(0.0) * TICKS_PER_SECOND) as u32,
             })
         })
@@ -198,36 +241,6 @@ fn compile_attack(b: body::Attack) -> Result<AttackConfig, HostileError> {
         damage_min,
         damage_max,
         effect,
-    })
-}
-
-/// The mob effect an `effect_name` names.
-fn effect_type(name: &str) -> Option<EffectType> {
-    Some(match name.strip_prefix("minecraft:").unwrap_or(name) {
-        "speed" => EffectType::SPEED,
-        "slowness" => EffectType::SLOWNESS,
-        "haste" => EffectType::HASTE,
-        "mining_fatigue" => EffectType::MINING_FATIGUE,
-        "strength" => EffectType::STRENGTH,
-        "instant_health" => EffectType::INSTANT_HEALTH,
-        "instant_damage" => EffectType::INSTANT_DAMAGE,
-        "jump_boost" => EffectType::JUMP_BOOST,
-        "nausea" => EffectType::NAUSEA,
-        "regeneration" => EffectType::REGENERATION,
-        "resistance" => EffectType::RESISTANCE,
-        "fire_resistance" => EffectType::FIRE_RESISTANCE,
-        "water_breathing" => EffectType::WATER_BREATHING,
-        "invisibility" => EffectType::INVISIBILITY,
-        "blindness" => EffectType::BLINDNESS,
-        "night_vision" => EffectType::NIGHT_VISION,
-        "hunger" => EffectType::HUNGER,
-        "weakness" => EffectType::WEAKNESS,
-        "poison" => EffectType::POISON,
-        "wither" => EffectType::WITHER,
-        "health_boost" => EffectType::HEALTH_BOOST,
-        "absorption" => EffectType::ABSORPTION,
-        "saturation" => EffectType::SATURATION,
-        _ => return None,
     })
 }
 
@@ -261,17 +274,19 @@ fn optional_event(
 
 fn compile_melee_box_attack(
     b: body::BehaviorMeleeBoxAttack,
-) -> Result<MeleeBoxAttackGoal, HostileError> {
+) -> Result<MeleeAttackGoal, HostileError> {
     if !b.attack_types.is_empty() {
         return Err(HostileError::AttackTypes(b.attack_types));
     }
-    Ok(MeleeBoxAttackGoal {
+    Ok(MeleeAttackGoal {
         priority: b.priority,
         controls: controls(&b.control_flags, GoalControls::MOVE | GoalControls::LOOK),
+        reach: MeleeReach::Box {
+            horizontal: f64::from(b.horizontal_reach),
+        },
         attack_once: b.attack_once,
         can_spread_on_fire: b.can_spread_on_fire,
         cooldown_ticks: seconds_to_ticks(b.cooldown_time),
-        horizontal_reach: f64::from(b.horizontal_reach),
         min_path_ticks: seconds_to_ticks(b.min_path_time),
         max_path_ticks: seconds_to_ticks(b.max_path_time),
         path_fail_ticks: seconds_to_ticks(b.path_fail_time_increase),
@@ -279,7 +294,7 @@ fn compile_melee_box_attack(
         outer_boundary_ticks: seconds_to_ticks(b.outer_boundary_time_increase),
         inner_boundary_sq: f64::from(b.path_inner_boundary * b.path_inner_boundary),
         outer_boundary_sq: f64::from(b.path_outer_boundary * b.path_outer_boundary),
-        melee_fov: b.melee_fov,
+        melee_fov: Some(b.melee_fov),
         y_max_head_rotation: b.y_max_head_rotation,
         on_attack: optional_event(b.on_attack)?,
         on_kill: optional_event(b.on_kill)?,
@@ -287,6 +302,62 @@ fn compile_melee_box_attack(
         speed_multiplier: b.speed_multiplier,
         track_target: b.track_target,
     })
+}
+
+/// `behavior.stomp_attack`: the melee goal with the stomp reach. Its
+/// `stomp_range_multiplier` (an area hit around the target) is accepted
+/// without behaviour: BDS 1.26.51's polar bear hurt only its target.
+fn compile_stomp_attack(b: body::BehaviorStompAttack) -> Result<MeleeAttackGoal, HostileError> {
+    if !b.attack_types.is_empty() {
+        return Err(HostileError::AttackTypes(b.attack_types));
+    }
+    Ok(MeleeAttackGoal {
+        priority: b.priority,
+        controls: controls(&b.control_flags, GoalControls::MOVE | GoalControls::LOOK),
+        reach: MeleeReach::Stomp {
+            reach_multiplier: f64::from(b.reach_multiplier),
+            no_damage_range_multiplier: f64::from(b.no_damage_range_multiplier),
+        },
+        attack_once: b.attack_once,
+        can_spread_on_fire: b.can_spread_on_fire,
+        cooldown_ticks: seconds_to_ticks(b.cooldown_time),
+        min_path_ticks: seconds_to_ticks(b.min_path_time),
+        max_path_ticks: seconds_to_ticks(b.max_path_time),
+        path_fail_ticks: seconds_to_ticks(b.path_fail_time_increase),
+        inner_boundary_ticks: seconds_to_ticks(b.inner_boundary_time_increase),
+        outer_boundary_ticks: seconds_to_ticks(b.outer_boundary_time_increase),
+        inner_boundary_sq: f64::from(b.path_inner_boundary * b.path_inner_boundary),
+        outer_boundary_sq: f64::from(b.path_outer_boundary * b.path_outer_boundary),
+        melee_fov: None,
+        y_max_head_rotation: b.y_max_head_rotation,
+        on_attack: optional_event(b.on_attack)?,
+        on_kill: optional_event(b.on_kill)?,
+        random_stop_interval: b.random_stop_interval,
+        speed_multiplier: b.speed_multiplier,
+        track_target: b.track_target,
+    })
+}
+
+/// `behavior.hurt_by_target` entries. The published default is an empty
+/// list, which vanilla relies on to retaliate against any attacker (the
+/// wither skeleton and the zombie pigman author no `entity_types`): an empty
+/// list is one entry with no filter and no distance limit, leaving only the
+/// goal's own `must_see` (measured: BDS zombie pigmen 12, 24 and 40 blocks
+/// from the player that hit them all took it as their target).
+fn retaliation_entries(types: &EntityTypes) -> Result<Arc<[TargetEntry]>, HostileError> {
+    match types {
+        EntityTypes::List(list) if list.is_empty() => {
+            let any: MobDescriptor = serde_json::from_value(serde_json::json!({}))
+                .expect("every descriptor field has a published default");
+            let mut entries = entries(&EntityTypes::MobDescriptor(any))?.to_vec();
+            for entry in &mut entries {
+                entry.max_dist = f32::INFINITY;
+                entry.must_see = None;
+            }
+            Ok(entries.into())
+        }
+        _ => entries(types),
+    }
 }
 
 fn entries(types: &EntityTypes) -> Result<Arc<[TargetEntry]>, HostileError> {

@@ -153,7 +153,7 @@ def main() -> int:
     trials, sources = {}, []
     for directory in dirs:
         loaded = json.loads((directory / 'loaded.json').read_text(encoding='utf-8'))
-        capture = list(packets(directory / 'client' / 'packets.jsonl'))
+        capture = list(packets(directory / 'client-capture' / 'packets.jsonl'))
         sources.append({'sweep': directory.name, **loaded})
         job = json.loads((directory / 'job.json').read_text(encoding='utf-8'))
         specs = {item['key']: {k: item[k] for k in SPEC_KEYS if k in item} for item in job['items']}
@@ -164,11 +164,11 @@ def main() -> int:
         'bds_version': '1.26.51',
         'protocol': sources[0]['protocol_version'],
         'sources': sources,
-        'method': 'tools/bds-sweep/sweep.py knockback --client-capture (--items slice / air); '
+        'method': 'tools/bds-sweep/sweep.py knockback --client-capture (--items slice / air / resist); '
                   'Endstone per-tick samples and ActorKnockbackEvent, player-side packet capture',
         'trials': trials,
     }
-    out.write_text(json.dumps(fixture, separators=(',', ':')) + '\n', encoding='utf-8')
+    out.write_text(json.dumps(fixture, separators=(',', ':')) + '\n', encoding='utf-8', newline='\n')
     print(f'{len(trials)} trials -> {out} ({out.stat().st_size} bytes)')
     return 0
 

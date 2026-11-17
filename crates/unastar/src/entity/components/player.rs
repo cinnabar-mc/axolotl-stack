@@ -35,6 +35,9 @@ pub struct PlayerSession {
     /// Count of dropped packets due to channel being full.
     /// Uses atomic for interior mutability, allowing `send()` to take `&self`.
     packets_dropped: AtomicU32,
+    /// Bytes the transport has queued towards the player (none in headless
+    /// sessions).
+    send_queue: Option<jolyne::stream::transport::SendQueueProbe>,
 }
 
 impl std::fmt::Debug for PlayerSession {
@@ -68,7 +71,21 @@ impl PlayerSession {
             uuid,
             outbound_tx,
             packets_dropped: AtomicU32::new(0),
+            send_queue: None,
         }
+    }
+
+    /// Attaches the transport's send queue so senders can read it.
+    pub fn set_send_queue(&mut self, probe: jolyne::stream::transport::SendQueueProbe) {
+        self.send_queue = Some(probe);
+    }
+
+    /// Bytes the transport has queued towards this player but not yet put on
+    /// the network (0 when the transport does not report them).
+    pub fn transport_queued_bytes(&self) -> usize {
+        self.send_queue
+            .as_ref()
+            .map_or(0, jolyne::stream::transport::SendQueueProbe::queued_bytes)
     }
 
     /// Send a packet to this player.
@@ -169,6 +186,9 @@ pub struct PlayerInput {
     pub sprinting: bool,
     /// Client tick this input was sent
     pub tick: i64,
+    /// The player's velocity: what its last input reported (`pos_delta`, the
+    /// motion after that move), or a knockback the server gave it since.
+    pub velocity: glam::DVec3,
 }
 
 impl PlayerInput {
@@ -270,67 +290,165 @@ pub struct Experience {
     pub progress: f32, // 0.0 to 1.0
 }
 
-/// Block breaking state for survival mode.
-/// Tracks ongoing block breaking for crack animation and anti-cheat validation.
-#[derive(Component, Debug, Default)]
+/// A survival block break in progress. Like BDS, the break advances once per
+/// `PlayerAuthInput` of the breaking player, not per server tick (BDS
+/// 1.26.51, scripted client: a client that sent no input for 10 ticks paused
+/// its break; a 15-tick dirt break completed on the 15th input). Only
+/// `AbortDestroyBlock` or a break elsewhere ends it: a completed break goes
+/// on at that position from zero.
+#[derive(Component, Debug, Default, Clone, PartialEq)]
 pub struct BreakingState {
-    /// Position of block being broken (world coords)
+    /// Position being broken (world coords).
     pub position: Option<(i32, i32, i32)>,
-    /// Server tick when breaking started
-    pub start_tick: u64,
-    /// Expected break time in ticks (20 ticks/sec)
-    /// Default hardness = 1.0s = 20 ticks for bare hand
-    pub expected_ticks: u32,
-    /// Break counter for timing sounds/effects (incremented each tick)
-    /// Every 5 ticks, play breaking sound/particles
-    break_counter: u32,
+    /// The block there when the break started (air included).
+    pub block: u32,
+    /// Face the break works on (its crack particles show on that side).
+    pub face: i32,
+    /// Fraction of the block destroyed so far.
+    pub progress: f64,
+    /// Fraction one input adds: the block, held item and player state when
+    /// the break started or last continued.
+    pub speed: f64,
+    /// A break the server completed itself, waiting for plugin approval:
+    /// its commit also corrects the breaking client, which never predicted it.
+    pub completing: Option<(i32, i32, i32)>,
+    /// Inputs since the break started or moved to another position.
+    pub ticks: u32,
+    /// Whether the other players still hear the break's hit sound: from a
+    /// start on a block that can break until an input finds none there.
+    pub sounding: bool,
+    /// Inputs since the progress began or last advanced that found no block
+    /// that can break there. BDS counts them at the speed of the block that
+    /// is there next: obsidian put by hand on the air of dirt broken 21
+    /// inputs before did not break, obsidian put on its own air did, and so
+    /// did dirt put on the air of obsidian broken with a pickaxe 89 inputs
+    /// before.
+    pub idle_inputs: u32,
+    /// The guarded mode's limit on inputs of progress (see
+    /// [`BreakInputBudget`]); unused in BDS mode.
+    pub budget: BreakInputBudget,
+}
+
+/// The guarded breaking mode's cap: since the progress last began from zero,
+/// at most one input of progress per server tick, counted from the tick of
+/// its first input (so a client that skipped ticks may catch up, never get
+/// ahead). A new progress may not count an input in a tick an earlier one
+/// already did. BDS counts every input (`docs/quirks/bds.md`, Blocks /
+/// mining).
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub struct BreakInputBudget {
+    /// The server tick the current progress counted its first input in.
+    since: Option<u64>,
+    /// Inputs counted since then.
+    counted: u64,
+    /// The server tick of the last input counted.
+    last: Option<u64>,
+}
+
+impl BreakInputBudget {
+    /// Whether an input at server tick `tick` may add progress; counts it if
+    /// so.
+    pub fn take(&mut self, tick: u64) -> bool {
+        if self.last.is_some_and(|last| tick <= last) && self.since.is_none() {
+            return false;
+        }
+        let since = *self.since.get_or_insert(tick);
+        if tick < since || self.counted > tick - since {
+            return false;
+        }
+        self.counted += 1;
+        self.last = Some(tick);
+        true
+    }
+
+    /// The progress begins from zero: its inputs are counted afresh.
+    pub fn restart(&mut self) {
+        self.since = None;
+        self.counted = 0;
+    }
 }
 
 impl BreakingState {
-    /// Start breaking a block at the given position.
-    pub fn start(&mut self, x: i32, y: i32, z: i32, current_tick: u64, break_time_ticks: u32) {
-        self.position = Some((x, y, z));
-        self.start_tick = current_tick;
-        self.expected_ticks = break_time_ticks;
-        self.break_counter = 0;
+    /// Progress closer to 1 than this counts as complete: fifteen inputs of
+    /// 1/15 add up to 0.9999999999999998.
+    const COMPLETE: f64 = 1.0 - 1e-6;
+
+    /// `StartDestroyBlock` on `block` at `position`, `speed` per input (0
+    /// when the block there cannot break). It begins again from zero unless
+    /// that block is the one being broken there: dirt put back after a break
+    /// kept the progress, air did not (BDS).
+    pub fn start(&mut self, position: (i32, i32, i32), block: u32, face: i32, speed: f64) {
+        if self.position == Some(position) && self.block != block {
+            self.restart();
+        }
+        self.block = block;
+        self.ticks = 0;
+        self.sounding = speed > 0.0;
+        self.continue_at(position, block, face, speed);
     }
 
-    /// Stop breaking (abort or finish).
+    /// `ContinueDestroyBlock` on `block` at `position`: another position
+    /// begins again from zero. Where no block can break, the speed of the
+    /// last one is kept, so the break goes on over the air (BDS).
+    pub fn continue_at(&mut self, position: (i32, i32, i32), block: u32, face: i32, speed: f64) {
+        if self.position != Some(position) {
+            self.restart();
+            self.block = block;
+            self.speed = speed;
+            self.ticks = 0;
+            self.sounding = speed > 0.0;
+        } else if speed > 0.0 {
+            self.speed = speed;
+        }
+        self.position = Some(position);
+        self.face = face;
+    }
+
+    /// Stop breaking (`AbortDestroyBlock`).
     pub fn stop(&mut self) {
         self.position = None;
-        self.break_counter = 0;
+        self.restart();
+        self.speed = 0.0;
+        self.sounding = false;
     }
 
-    /// Check if currently breaking a block.
+    /// The progress begins from zero (a completed break, another block).
+    pub fn restart(&mut self) {
+        self.progress = 0.0;
+        self.idle_inputs = 0;
+        self.budget.restart();
+    }
+
+    /// Guarded mode: the block at the position is no longer `self.block`
+    /// (another block, or one placed after the progress began over the
+    /// air), so the progress begins again on it.
+    pub fn retarget(&mut self, block: u32) {
+        self.restart();
+        self.block = block;
+    }
+
+    /// Whether a block is being broken.
     pub fn is_breaking(&self) -> bool {
         self.position.is_some()
     }
 
-    /// Tick the breaking state. Call this once per server tick while breaking.
-    /// Returns `true` every 5 ticks (when sound/particles should be played).
-    pub fn tick(&mut self) -> bool {
-        if self.position.is_none() {
-            return false;
+    /// One input of progress at `speed`, the speed of the block there now
+    /// (`None` where none can break): it adds that input and every idle one
+    /// before it at that speed (see [`BreakingState::idle_inputs`]).
+    pub fn advance(&mut self, speed: Option<f64>) {
+        match speed {
+            Some(speed) => {
+                self.speed = speed;
+                self.progress += speed * f64::from(self.idle_inputs + 1);
+                self.idle_inputs = 0;
+            }
+            None => self.idle_inputs += 1,
         }
-        self.break_counter += 1;
-        self.break_counter.is_multiple_of(5)
     }
 
-    /// Get the current break counter.
-    pub fn break_counter(&self) -> u32 {
-        self.break_counter
-    }
-
-    /// Validate if enough time has passed to break the block.
-    /// Returns true if elapsed >= expected (with 10% tolerance for network latency).
-    pub fn validate_break(&self, current_tick: u64) -> bool {
-        if self.position.is_none() {
-            return false;
-        }
-        let elapsed = current_tick.saturating_sub(self.start_tick) as u32;
-        // Allow 10% tolerance for network latency
-        let min_required = (self.expected_ticks as f32 * 0.9) as u32;
-        elapsed >= min_required
+    /// Whether the block is destroyed.
+    pub fn is_complete(&self) -> bool {
+        self.progress >= Self::COMPLETE
     }
 }
 

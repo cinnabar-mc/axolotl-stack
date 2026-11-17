@@ -29,6 +29,9 @@ pub enum GoalError {
     Molang(#[from] MolangError),
     #[error(transparent)]
     Event(#[from] SelfEventError),
+    /// Only the filterless goal is measured (the vex's).
+    #[error("behavior.look_at_entity filters are not implemented")]
+    LookFilters,
 }
 
 impl ComponentError for GoalError {}
@@ -94,6 +97,14 @@ pub struct RandomStrollGoal {
     pub interval: i32,
 }
 
+/// `minecraft:behavior.flee_sun`: a burning mob in daylight walks to a
+/// covered block nearby (`mob::ai::flee_sun`).
+#[derive(Component, Debug, Clone, PartialEq)]
+pub struct FleeSunGoal {
+    pub base: GoalBase,
+    pub(crate) controls: GoalControls,
+}
+
 /// `minecraft:behavior.look_at_player`.
 #[derive(Component, Debug, Clone, PartialEq)]
 pub struct LookAtPlayerGoal {
@@ -106,6 +117,13 @@ pub struct LookAtPlayerGoal {
     /// Look duration in ticks (`look_time` is authored in seconds).
     pub look_ticks: (i32, i32),
 }
+
+/// `minecraft:behavior.look_at_entity`: the [`LookAtPlayerGoal`] rules
+/// over the nearby mobs instead of the players (BDS 1.26.51: a vex looked
+/// at a frozen cow within 6 blocks, `sweep.py vex --items look`). Whether
+/// players count is not measured; the vex also authors `look_at_player`.
+#[derive(Component, Debug, Clone, PartialEq)]
+pub struct LookAtEntityGoal(pub LookAtPlayerGoal);
 
 /// `minecraft:behavior.random_look_around`.
 #[derive(Component, Debug, Clone, PartialEq)]
@@ -173,15 +191,7 @@ pub fn register_component_kinds(
             speed_multiplier: b.speed_multiplier,
         },
     })?;
-    insert_infallible(builder, |b: body::BehaviorRandomStroll| RandomStrollGoal {
-        base: GoalBase {
-            priority: b.priority,
-            speed_multiplier: b.speed_multiplier,
-        },
-        xz_dist: b.xz_dist.max(1),
-        y_dist: b.y_dist.max(1),
-        interval: b.interval,
-    })?;
+    insert_infallible(builder, random_stroll)?;
     insert_infallible(builder, |b: body::BehaviorLookAtPlayer| LookAtPlayerGoal {
         priority: b.priority,
         look_distance: b.look_distance,
@@ -193,6 +203,22 @@ pub fn register_component_kinds(
             (b.look_time.max * 20.0) as i32,
         ),
     })?;
+    insert(builder, |b: body::BehaviorLookAtEntity| {
+        if b.filters.is_some() {
+            return Err(GoalError::LookFilters);
+        }
+        Ok(LookAtEntityGoal(LookAtPlayerGoal {
+            priority: b.priority,
+            look_distance: b.look_distance,
+            probability: b.probability,
+            half_angle_horizontal: b.angle_of_view_horizontal as f32 / 2.0,
+            half_angle_vertical: b.angle_of_view_vertical as f32 / 2.0,
+            look_ticks: (
+                (b.look_time.min * 20.0) as i32,
+                (b.look_time.max * 20.0) as i32,
+            ),
+        }))
+    })?;
     insert_infallible(builder, |b: body::BehaviorRandomLookAround| {
         RandomLookAroundGoal {
             priority: b.priority,
@@ -203,6 +229,13 @@ pub fn register_component_kinds(
                 b.max_angle_of_view_horizontal,
             ),
         }
+    })?;
+    insert_infallible(builder, |b: body::BehaviorFleeSun| FleeSunGoal {
+        base: GoalBase {
+            priority: b.priority,
+            speed_multiplier: b.speed_multiplier,
+        },
+        controls: super::hostile::controls(&b.control_flags, GoalControls::MOVE),
     })?;
     insert(builder, compile_eat_block)
 }
@@ -236,6 +269,20 @@ fn compile_tempt(b: body::BehaviorTempt) -> Result<TemptGoal, GoalError> {
             b.stop_distance
         },
     })
+}
+
+/// `minecraft:behavior.random_stroll`; also the stroll half of the
+/// silverfish's merge goal.
+pub(super) fn random_stroll(b: body::BehaviorRandomStroll) -> RandomStrollGoal {
+    RandomStrollGoal {
+        base: GoalBase {
+            priority: b.priority,
+            speed_multiplier: b.speed_multiplier,
+        },
+        xz_dist: b.xz_dist.max(1),
+        y_dist: b.y_dist.max(1),
+        interval: b.interval,
+    }
 }
 
 fn compile_eat_block(b: body::BehaviorEatBlock) -> Result<EatBlockGoal, GoalError> {

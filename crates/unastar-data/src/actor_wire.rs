@@ -22,11 +22,14 @@ pub struct ActorWireCatalog {
     /// Hashes of the retained capture manifests, which are the input trust roots.
     pub operator_manifest_sha256: String,
     pub member_manifest_sha256: String,
+    /// Hash of the retained spawn manifest: actors no command summons,
+    /// observed where the game spawned them.
+    pub spawns_manifest_sha256: String,
     /// Canonical pack declarations used to identify observed property type codes.
     pub actor_definitions_sha256: String,
     /// Every consumed manifest-listed file, in relative path order.
     pub sources: Vec<ActorWireSource>,
-    /// Native summon observations in summon identifier order.
+    /// Native summon and spawn observations in identifier order.
     pub observations: Vec<ActorObservation>,
     /// Emitted descriptor identifiers in actual member join packet order.
     pub property_descriptor_order: Vec<String>,
@@ -82,6 +85,25 @@ pub fn get(identifier: &str) -> Option<&'static ActorObservation> {
         .binary_search_by(|row| row.identifier.as_str().cmp(identifier))
         .ok()
         .map(|index| &observations[index])
+}
+
+/// The observation whose native AddActor emitted `actor_type`, for an
+/// actor BDS only ever creates through a summon alias (`/summon
+/// minecraft:zombie_villager` emits `minecraft:zombie_villager_v2`).
+pub fn get_emitted(actor_type: &str) -> Option<&'static ActorObservation> {
+    vanilla()
+        .observations
+        .iter()
+        .find(|row| row.actor_type == actor_type)
+}
+
+/// Summon identifiers BDS answers with another actor: `(summoned, emitted)`.
+pub fn summon_aliases() -> impl Iterator<Item = (&'static str, &'static str)> {
+    vanilla()
+        .observations
+        .iter()
+        .filter(|row| row.identifier != row.actor_type)
+        .map(|row| (row.identifier.as_str(), row.actor_type.as_str()))
 }
 
 #[cfg(test)]

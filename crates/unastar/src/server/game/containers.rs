@@ -119,6 +119,21 @@ fn state_value(world: &World, pos: IVec3, property: &str) -> Option<StateValue> 
         .state_value(runtime_id, property)
 }
 
+/// What a comparator reads from the container at `pos`: 0 when it is empty,
+/// else 1 + 14 x the average fullness of its slots, rounded down (BDS
+/// 1.26.51, `redstone_comparators.json`); `None` when there is no container.
+pub(crate) fn comparator_signal(world: &mut World, pos: IVec3) -> Option<u8> {
+    load(world, pos)?;
+    let container = world.resource::<BlockContainers>().live.get(&pos)?;
+    Some(crate::server::game::redstone::container_reading(
+        container.items.size(),
+        (0..container.items.size())
+            .filter_map(|slot| container.items.item(slot))
+            .filter(|stack| !stack.is_empty())
+            .map(|stack| (u32::from(stack.count), u32::from(stack.max_stack_size()))),
+    ))
+}
+
 /// Decode (or create) the actor at `pos` into the cache. `None` when the
 /// block is not a container, its chunk is not loaded, or its saved actor
 /// cannot be read (it is then left untouched rather than overwritten).
@@ -187,6 +202,33 @@ fn save(world: &mut World, pos: IVec3) {
     if let Some(mut flags) = world.get_mut::<ChunkStateFlags>(chunk) {
         flags.mark_dirty();
     }
+}
+
+/// The slots of the container block at `pos` (`/replaceitem block`), or
+/// `None` when the block holds no container.
+pub fn command_container_slots(world: &mut World, pos: IVec3) -> Option<Vec<ItemStack>> {
+    load(world, pos)?;
+    container(world, pos).map(|c| c.items.slots().to_vec())
+}
+
+/// Puts `stack` into `slot` of the container block at `pos`, saves it and
+/// shows it to the players who have it open. Returns whether it was placed.
+pub fn command_set_container_slot(
+    world: &mut World,
+    pos: IVec3,
+    slot: usize,
+    stack: ItemStack,
+) -> bool {
+    if load(world, pos).is_none() {
+        return false;
+    }
+    let placed =
+        container_mut(world, pos).is_some_and(|mut c| c.items.set_item(slot, stack).is_ok());
+    if placed {
+        save(world, pos);
+        refresh_viewers(world, pos, None);
+    }
+    placed
 }
 
 fn container(world: &World, pos: IVec3) -> Option<&BlockContainer> {
@@ -607,7 +649,7 @@ fn same_stack(a: &ItemStack, b: &ItemStack) -> bool {
         || (a.item_id() == b.item_id()
             && a.count == b.count
             && a.damage == b.damage
-            && a.nbt == b.nbt
+            && a.nbt() == b.nbt()
             && a.net_id == b.net_id)
 }
 
@@ -836,7 +878,7 @@ pub(super) fn grant_experience(world: &mut World, player: Entity, points: i32) {
                 actor_runtime_id: runtime_id as u64,
             },
             attribute_list: vec![
-                attribute("minecraft:player.level", level as f32, i32::MAX as f32),
+                attribute("minecraft:player.level", level as f32, 24_791.0),
                 attribute("minecraft:player.experience", progress, 1.0),
             ],
             tick,
@@ -870,13 +912,28 @@ pub(super) fn placed(world: &mut World, pos: IVec3) {
     if load(world, pos).is_none() {
         return;
     }
-    // BDS announces a new container actor with its client-side state
-    // (`{BlockEntityVersion, id, x, y, z}` after `/setblock chest`).
-    send_client_state(world, pos);
+    // BDS announces a new chest, trapped chest, ender chest or barrel with
+    // its client-side state (`{BlockEntityVersion, id, x, y, z}`), not a
+    // furnace, blast furnace, smoker or hopper (placement capture,
+    // `tools/bds-sweep/scripts/containers-flint.txt`).
+    if announced_on_placement(kind) {
+        send_client_state(world, pos);
+    }
     if kind.pairs() {
         try_pair(world, pos, kind);
     }
     save(world, pos);
+}
+
+/// Whether BDS sends a placed container's actor data right away.
+pub(super) fn announced_on_placement(kind: ContainerKind) -> bool {
+    matches!(
+        kind,
+        ContainerKind::Chest
+            | ContainerKind::TrappedChest
+            | ContainerKind::EnderChest
+            | ContainerKind::Barrel
+    )
 }
 
 fn try_pair(world: &mut World, pos: IVec3, kind: ContainerKind) {
@@ -951,6 +1008,48 @@ pub(super) fn breaking(world: &mut World, pos: IVec3) -> Option<BrokenContainer>
             .collect(),
         randomize: kind.smelter().is_none(),
     })
+}
+
+/// Before a piston moves the container at `pos`: close its windows and
+/// unpair a double chest; the chunk actor, contents and all, moves along.
+pub(crate) fn moving(world: &mut World, pos: IVec3) {
+    if !world.contains_resource::<BlockContainers>() {
+        return;
+    }
+    let Some(kind) = load(world, pos) else {
+        return;
+    };
+    close_viewers(world, pos, kind);
+    if let Some((_, Some(_))) = halves(world, pos)
+        && let Some(other) = container(world, pos).and_then(pair_pos)
+    {
+        if let Some(mut partner) = container_mut(world, other) {
+            partner.pair = None;
+        }
+        save(world, other);
+        send_client_state(world, other);
+        if let Some(mut own) = container_mut(world, pos) {
+            own.pair = None;
+        }
+    }
+    save(world, pos);
+    let mut containers = world.resource_mut::<BlockContainers>();
+    containers.ticking.remove(&pos.to_array());
+    containers.live.remove(&pos);
+}
+
+/// After a container actor was stored at `pos` by another path (a piston
+/// setting a moved chest down): send its client state as BDS does. `false`
+/// when no container stands there.
+pub(crate) fn announce(world: &mut World, pos: IVec3) -> bool {
+    if kind_at(world, pos).is_none() || !world.contains_resource::<BlockContainers>() {
+        return false;
+    }
+    world.resource_mut::<BlockContainers>().live.remove(&pos);
+    if load(world, pos).is_some() {
+        send_client_state(world, pos);
+    }
+    true
 }
 
 /// Scatter a broken container's contents: random 10..30 item chunks, or whole
@@ -1160,7 +1259,7 @@ fn can_burn(world: &World, container: &BlockContainer) -> bool {
     }
     if output.item_id() != result.item_id()
         || output.damage != result.damage
-        || output.nbt != result.nbt
+        || output.nbt() != result.nbt()
     {
         return false;
     }

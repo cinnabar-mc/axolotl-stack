@@ -16,6 +16,7 @@ use bevy_ecs::system::SystemParam;
 use glam::{DVec3, IVec3};
 
 use crate::entity::components::*;
+use crate::entity::effects::{EffectPhysics, LEVITATION_ACCELERATION, SLOW_FALLING_GRAVITY};
 use crate::registry::BlockRegistry;
 use crate::registry::block::{LiquidKind, LiquidState};
 use crate::registry::collision::{Aabb, block_collision_aabbs, connected_state};
@@ -442,9 +443,17 @@ pub fn living_block_friction(blocks: &impl BlockSource, feet: DVec3) -> f64 {
         })
 }
 
-/// Post-move gravity, drag and friction of a living body. In water or lava
-/// the vertical step is `(v.y - 0.02) * drag` and both horizontal axes use
-/// the same drag; otherwise gravity and drag apply as on land, with the
+/// A living body swimming toward a waypoint this tick (set by the mob AI):
+/// water gives it no gravity (BDS 1.26.51: a hunting drowned rises along
+/// the line to its target's feet with no downward pull, while an idle one
+/// sinks 0.02 a tick before drag).
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[component(storage = "SparseSet")]
+pub struct Swimming;
+
+/// Post-move gravity, drag and friction of a living body. In water the
+/// vertical step is `v.y * 0.8 - 0.02`, in lava `(v.y - 0.02) * drag`, and
+/// both horizontal axes use the liquid's drag; otherwise gravity and drag apply as on land, with the
 /// support block's friction × 0.91 on the ground and 0.91 in the air.
 /// Ground and support block are those of `feet` and `on_ground` *before*
 /// the move, as BDS decides them: a mob knocked off the ground still gets
@@ -453,12 +462,19 @@ pub fn living_block_friction(blocks: &impl BlockSource, feet: DVec3) -> f64 {
 /// Horizontal components at most 1e-7 in magnitude are zeroed. A body with
 /// wing-flap drag that travels through air then scales a negative vertical
 /// velocity by `1 - drag` (last, after friction, as BDS orders its drags).
+/// Out of liquids, levitation replaces gravity with a pull toward its speed
+/// (`v + (speed − v) × 0.2`) and slow falling lowers gravity to 0.01 (BDS
+/// 1.26.51 effects capture: a levitation II cow rises 0.0196, 0.0350, ...
+/// toward 0.0907 per tick; a slow falling cow falls 0.0098, 0.0194, ...).
+#[allow(clippy::too_many_arguments)]
 fn apply_living_drag(
     blocks: &impl BlockSource,
     body: &PhysicsBody,
     feet: DVec3,
     on_ground: bool,
     liquid: Option<LiquidKind>,
+    effects: EffectPhysics,
+    swimming: bool,
     velocity: &mut DVec3,
 ) {
     use crate::entity::mob::constants::{LAVA_DRAG, LIQUID_GRAVITY, WATER_DRAG};
@@ -467,15 +483,29 @@ fn apply_living_drag(
         LiquidKind::Lava => LAVA_DRAG,
     });
     let horizontal = if let Some(drag) = liquid_drag {
-        let gravity = if body.gravity > 0.0 {
+        let gravity = if body.gravity > 0.0 && !swimming {
             LIQUID_GRAVITY
         } else {
             0.0
         };
-        velocity.y = (velocity.y - gravity) * drag;
-        drag
+        velocity.y = match liquid {
+            // BDS 1.26.51: an idle drowned sinks `v = 0.8 v − 0.02`
+            // (0.0866, 0.0893, 0.0914, ... toward 0.1 a tick).
+            Some(LiquidKind::Water) => velocity.y * drag - gravity,
+            _ => (velocity.y - gravity) * drag,
+        };
+        match (liquid, body.water_drag) {
+            (Some(LiquidKind::Water), Some(water)) => water,
+            _ => drag,
+        }
     } else {
-        velocity.y = (velocity.y - body.gravity) * body.vertical_drag;
+        velocity.y = match effects.levitation {
+            Some(speed) => velocity.y + (speed - velocity.y) * LEVITATION_ACCELERATION,
+            None if effects.slow_falling && body.gravity > 0.0 && velocity.y <= 0.0 => {
+                velocity.y - SLOW_FALLING_GRAVITY
+            }
+            None => velocity.y - body.gravity,
+        } * body.vertical_drag;
         if let Some(flap) = body.wing_flap_drag
             && velocity.y < 0.0
         {
@@ -518,6 +548,31 @@ pub fn step_body_sensed(
     on_ground: &mut bool,
     age: u64,
 ) -> (DVec3, Option<LiquidKind>) {
+    step_body_with_effects(
+        blocks,
+        body,
+        position,
+        velocity,
+        on_ground,
+        age,
+        EffectPhysics::default(),
+        false,
+    )
+}
+
+/// [`step_body_sensed`] for a living body under levitation or slow falling,
+/// or [`Swimming`].
+#[allow(clippy::too_many_arguments)]
+pub fn step_body_with_effects(
+    blocks: &impl BlockSource,
+    body: &PhysicsBody,
+    position: DVec3,
+    velocity: &mut DVec3,
+    on_ground: &mut bool,
+    age: u64,
+    effects: EffectPhysics,
+    swimming: bool,
+) -> (DVec3, Option<LiquidKind>) {
     let aabb = Aabb::from_feet(position, body.width, body.height);
     let flotation = if body.model == PhysicsModel::Item {
         let foot_pos = position.floor().as_ivec3();
@@ -556,6 +611,25 @@ pub fn step_body_sensed(
 
     // A living body's friction is decided by where it stood before the move.
     let started_on_ground = *on_ground;
+    if !body.collides {
+        // No collision: the whole move goes through blocks, and the body
+        // never stands on anything.
+        *on_ground = false;
+        let feet = position + *velocity;
+        if body.model == PhysicsModel::Living {
+            apply_living_drag(
+                blocks,
+                body,
+                position,
+                false,
+                living_liquid,
+                effects,
+                swimming,
+                velocity,
+            );
+        }
+        return (feet, living_liquid);
+    }
     let result = move_aabb(blocks, aabb, *velocity, body.step_height, *on_ground);
     if result.moved.x != velocity.x {
         velocity.x = 0.0;
@@ -580,6 +654,8 @@ pub fn step_body_sensed(
             position,
             started_on_ground,
             living_liquid,
+            effects,
+            swimming,
             velocity,
         );
         return (feet, living_liquid);
@@ -620,18 +696,35 @@ pub fn tick_physics(
         &PhysicsBody,
         &Age,
         Option<&mut FallDistance>,
+        Option<&EffectPhysics>,
+        Has<Swimming>,
     )>,
 ) {
-    for (mut position, mut velocity, mut on_ground, body, age, fall) in query.iter_mut() {
+    for (mut position, mut velocity, mut on_ground, body, age, fall, effects, swimming) in
+        query.iter_mut()
+    {
         if blocks.block_at(position.0.floor().as_ivec3()).is_none() {
             continue;
         }
         let mut vel = velocity.0;
         let mut grounded = on_ground.0;
-        let (feet, liquid) =
-            step_body_sensed(&blocks, body, position.0, &mut vel, &mut grounded, age.0);
+        let (feet, liquid) = step_body_with_effects(
+            &blocks,
+            body,
+            position.0,
+            &mut vel,
+            &mut grounded,
+            age.0,
+            effects.copied().unwrap_or_default(),
+            swimming,
+        );
         if let Some(mut fall) = fall {
-            let next = fall.after_move(feet.y - position.0.y, grounded, liquid);
+            let mut next = fall.after_move(feet.y - position.0.y, grounded, liquid);
+            // A slow-falling body counts no fall (BDS 1.26.51: a cow slow
+            // falling 20 blocks lands unhurt).
+            if effects.is_some_and(|effects| effects.slow_falling) {
+                next = FallDistance::default();
+            }
             if *fall != next {
                 *fall = next;
             }

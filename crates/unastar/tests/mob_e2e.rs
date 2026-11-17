@@ -313,6 +313,8 @@ fn run_loopback(scenario: Scenario, configure: impl FnOnce(&mut UnastarConfig)) 
     config.server.bind_address = addr.to_string();
     config.server.online_mode = false;
     config.server.max_players = 2;
+    // The view these scenarios were written for (the client asks for 16).
+    config.server.max_chunk_radius = 4;
     config.server.operators = vec![BOT.into()];
     config.players.data_dir = dir.path().join("playerdata");
     configure(&mut config);
@@ -2047,9 +2049,11 @@ impl Bot {
     /// the platform at `feet` (x, z), facing `yaw`, walking forward when
     /// `walking`.
     fn auth_input(&mut self, feet: (f32, f32), yaw: f32, walking: bool, tick: u64) {
+        // The eye as a client reports it, the feet plus the wire offset
+        // (1.62 would put the feet inside the platform for the server's copy).
         let eye = Vec3 {
             x: feet.0,
-            y: PLATFORM_TOP + EYE_HEIGHT,
+            y: PLATFORM_TOP + unastar::entity::item_drop::PLAYER_REPORTED_EYE_HEIGHT as f32,
             z: feet.1,
         };
         let delta = Vec3 {

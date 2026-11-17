@@ -9,22 +9,34 @@
 //! yaw, head yaw and velocity (acceleration and jumps) that the physics step
 //! then integrates. [`push_mobs`] then pushes nearby pushable mobs apart.
 
+mod avoid;
 mod break_door;
 mod control;
 mod eat_block;
+mod flee_sun;
+pub mod fly;
 mod goals;
+pub mod hop;
 mod melee;
 mod nearby;
 mod path;
 mod pickup;
+mod ranged;
+pub mod roost;
 pub mod sensing;
+pub mod silverfish;
 mod targeting;
+
+pub(crate) use targeting::Candidate;
 
 #[cfg(test)]
 mod tests;
+pub mod vex;
 
 pub(crate) use self::break_door::stop_breaking_doors;
+pub use self::melee::{StompClock, StompStep, tick_stomp_attacks};
 pub use self::path::PathBlockTable;
+pub use self::vex::tick_charge_hits;
 
 use bevy_ecs::prelude::*;
 use glam::DVec3;
@@ -35,10 +47,13 @@ use self::goals::{Effects, GoalContext, GoalStates, goal_specs};
 use self::nearby::{ItemView, MobView, Nearby, PlayerView};
 use self::path::WalkPolicy;
 use super::MobKind;
-use super::components::{BasicMovementConfig, JumpConfig, Pushable, WalkNavigationConfig};
+use super::components::{
+    BasicMovementConfig, FloatNavigation, HopMovementConfig, JumpConfig, Pushable,
+    WalkNavigationConfig,
+};
 use super::constants::{
     DEFAULT_JUMP_POWER, DEFAULT_MAX_TURN, ENTITY_PUSH_MIN_DISTANCE, ENTITY_PUSH_REACH,
-    ENTITY_PUSH_STRENGTH, PLAYER_BOX_HEIGHT, PLAYER_BOX_WIDTH,
+    ENTITY_PUSH_STRENGTH, PLAYER_BOX_HEIGHT, PLAYER_BOX_WIDTH, WATER_MOVE_SPEED,
 };
 use super::state::{AttackTarget, Dead, InLove, MateRequest, Persistent};
 use crate::ecs::TickCounter;
@@ -52,7 +67,7 @@ use crate::entity::definition::flags::ActorFlags;
 use crate::entity::definition::metadata::EntityMetadata;
 use crate::entity::goal_selector::{GoalSelector, GoalSpec};
 use crate::entity::item_drop::PLAYER_EYE_HEIGHT;
-use crate::entity::systems::physics::{living_block_friction, living_liquid};
+use crate::entity::systems::physics::{Swimming, living_block_friction, living_liquid};
 use crate::registry::collision::Aabb;
 
 /// Per-mob AI state: the goal selector over the authored goals, their
@@ -73,6 +88,18 @@ impl MobBrain {
     pub fn is_navigating(&self) -> bool {
         !self.nav.is_done()
     }
+
+    /// The float control's state (tests).
+    #[cfg(test)]
+    pub fn fly(&self) -> &fly::FlyState {
+        &self.states.fly
+    }
+
+    /// The float control's state, to pin a wander (tests).
+    #[cfg(test)]
+    pub fn fly_mut(&mut self) -> &mut fly::FlyState {
+        &mut self.states.fly
+    }
 }
 
 /// What a mob's AI does this tick.
@@ -89,17 +116,29 @@ enum Turn {
 pub struct AiScratch {
     mobs: Vec<(Entity, Turn)>,
     nearby: Nearby,
-    /// Mobs whose eat timer ran out this tick; they eat once the AI's
-    /// resource scopes end (eating fires events, which draw randomness).
-    eaten: Vec<Entity>,
-    /// Melee hits `(attacker, target)` of this tick; dealt once the AI's
-    /// resource scopes end (hits draw randomness and hurt players).
-    attacks: Vec<(Entity, Entity)>,
-    /// Item pickups, equips and pickup events of this tick; made once the
-    /// AI's resource scopes end (they spawn items and fire events).
-    gear: Vec<(Entity, pickup::GearWork)>,
+    /// World work the goals asked for this tick.
+    deferred: Deferred,
     /// Door collision boxes for [`break_door`].
     boxes: Vec<Aabb>,
+}
+
+/// World work the goals of this tick asked for, done once the AI's resource
+/// scopes end (it fires events, draws randomness, spawns actors or changes
+/// blocks).
+#[derive(Default)]
+struct Deferred {
+    /// Mobs whose eat timer ran out.
+    eaten: Vec<Entity>,
+    /// Melee hits `(attacker, target)`.
+    attacks: Vec<(Entity, Entity)>,
+    /// Ranged shots `(shooter, target)`.
+    shots: Vec<(Entity, Entity)>,
+    /// Item pickups, equips and pickup events.
+    gear: Vec<(Entity, pickup::GearWork)>,
+    /// Target changes (`on_target_acquired` / `on_target_escape`).
+    target_changes: Vec<TargetChange>,
+    /// Silverfish merging into blocks and waking their friends.
+    silverfish: Vec<(Entity, silverfish::SilverfishWork)>,
 }
 
 type BrainQuery = (Entity, Ref<'static, DefinitionState>, Has<Dead>);
@@ -186,26 +225,29 @@ pub fn tick_mob_ai(
                         .expect("queried with a brain") = brain;
                 }
                 if let Some(output) = output {
-                    apply(
-                        world,
-                        entity,
-                        output,
-                        &mut scratch.eaten,
-                        &mut scratch.attacks,
-                        &mut scratch.gear,
-                    );
+                    apply(world, entity, output, &mut scratch.deferred);
                 }
             }
         });
     });
-    for entity in scratch.eaten.drain(..) {
+    let deferred = &mut scratch.deferred;
+    for entity in deferred.eaten.drain(..) {
         eat_block::finish_eating(world, entity);
     }
-    for (attacker, target) in scratch.attacks.drain(..) {
+    for (attacker, target) in deferred.attacks.drain(..) {
         super::combat::melee::melee_attack(world, attacker, target);
     }
-    for (entity, work) in scratch.gear.drain(..) {
+    for (shooter, target) in deferred.shots.drain(..) {
+        super::combat::ranged::shoot(world, shooter, target);
+    }
+    for (entity, work) in deferred.gear.drain(..) {
         pickup::finish(world, entity, work);
+    }
+    for (entity, work) in deferred.silverfish.drain(..) {
+        super::life::infested::finish(world, entity, work);
+    }
+    for change in deferred.target_changes.drain(..) {
+        fire_target_trigger(world, change);
     }
     break_door::tick_door_breakers(
         world,
@@ -224,6 +266,8 @@ struct Output {
     yaw: f32,
     head_yaw: f32,
     velocity: DVec3,
+    /// The mob swims toward a waypoint this tick (no gravity in water).
+    swimming: bool,
     effects: Effects,
 }
 
@@ -261,7 +305,8 @@ fn think(
         step_height: physics.step_height,
         on_ground,
         liquid: living_liquid(world, Aabb::from_feet(feet, physics.width, physics.height)),
-        movement: mob.get::<MovementConfig>().map_or(0.0, |m| m.value),
+        movement: movement_speed(mob, kind),
+        underwater: underwater_speed(mob, kind),
     };
     let policy = WalkPolicy::new(
         mob.get::<WalkNavigationConfig>(),
@@ -279,12 +324,36 @@ fn think(
         movement,
         look,
     } = brain;
+    let mut effects = Effects::default();
+    // The vex's move control steers before its goals think, whatever its
+    // navigation says (`vex`): a course a goal sets is first flown on the
+    // next tick.
+    let vex = kind.0.native.vex;
+    let vex_flight = vex.filter(|_| turn != Turn::Die).map(|class| {
+        movement.wanted = None;
+        // With a target its body faces the target, else its motion.
+        let facing = states
+            .targets
+            .target
+            .and_then(|target| targeting::Candidate::of(world, target))
+            .map(|target| target.pos);
+        states.fly.steer(
+            feet,
+            vex::arrival_distance(physics.width, physics.height),
+            class.arrival_slowdown,
+            rotation.yaw,
+            max_turn,
+            facing,
+            velocity,
+        )
+    });
     if turn == Turn::Think(true) {
         // A rebuilt composition rebuilds the native goals.
-        states.melee.reset();
+        if states.melee.reset() {
+            effects.standing = Some(false);
+        }
         states.targets.reset();
     }
-    let mut effects = Effects::default();
     let mut ctx = GoalContext {
         world,
         table,
@@ -308,12 +377,15 @@ fn think(
     };
     match turn {
         Turn::Die => {
+            // The goals stop; the target stays (BDS keeps a dying mob's
+            // `TARGET` actor data, and a dying angry mob can still spread
+            // its anger at it).
             selector.stop_all(&mut ctx);
-            ctx.effects.target = Some(None);
             return Some(Output {
                 yaw: rotation.yaw,
                 head_yaw: rotation.head_yaw,
                 velocity,
+                swimming: false,
                 effects,
             });
         }
@@ -325,8 +397,106 @@ fn think(
         }
         Turn::Think(false) => {}
     }
+    let bat = kind.0.native.bat;
+    let resting = bat.is_some()
+        && mob
+            .get::<ActorFlags>()
+            .is_some_and(|f| f.get(actor_flags::RESTING).unwrap_or(false));
+    if let (Some(class), true) = (bat, resting) {
+        // A resting bat neither thinks nor moves; it only checks whether
+        // to wake (`roost`).
+        let velocity = match roost::rest(world, nearby, &class, &ctx.body) {
+            roost::Rest::Hold(velocity) => velocity,
+            roost::Rest::Wake => {
+                ctx.effects.resting = Some(false);
+                DVec3::ZERO
+            }
+        };
+        return Some(Output {
+            yaw: rotation.yaw,
+            head_yaw: rotation.head_yaw,
+            velocity,
+            swimming: false,
+            effects,
+        });
+    }
+    ctx.check_unheld_target();
     selector.tick(&mut ctx);
+    if let Some(class) = &vex {
+        ctx.vex_wander(class);
+    }
     let goal_jump = ctx.jump;
+
+    if let Some(flight) = vex_flight {
+        return Some(Output {
+            yaw: flight.yaw,
+            head_yaw: flight.yaw,
+            velocity: flight.velocity,
+            swimming: false,
+            effects,
+        });
+    }
+
+    if let Some(hop) = mob.get::<HopMovementConfig>() {
+        // A hopping mob never paths: its control turns, waits and jumps.
+        // A slime class jumps higher the bigger it is.
+        let jump_power = kind.0.native.slime.map_or(jump_power, |slime| {
+            let size = mob
+                .get::<EntityMetadata>()
+                .and_then(|metadata| {
+                    super::components::variant::appearance_id(
+                        metadata,
+                        jolyne::valentine::actor_data_i_ds::VARIANT,
+                    )
+                })
+                .unwrap_or(0);
+            (f64::from(jump_power) + slime.jump_per_size * f64::from(size)) as f32
+        });
+        let hop = states
+            .hop
+            .control(hop, rotation.yaw, on_ground, body.movement, &mut rng.0);
+        movement.wanted = None;
+        movement.speed = hop.speed;
+        let velocity = travel(
+            &body,
+            movement,
+            goal_jump || hop.jump,
+            false,
+            jump_power,
+            hop.yaw,
+            living_block_friction(world, feet),
+            velocity,
+        );
+        return Some(Output {
+            yaw: hop.yaw,
+            head_yaw: hop.yaw,
+            velocity,
+            swimming: false,
+            effects,
+        });
+    }
+
+    if mob.contains::<FloatNavigation>() {
+        // A float-navigating mob never paths: its control pushes it at the
+        // point its goal wants.
+        movement.wanted = None;
+        let flight = states
+            .fly
+            .control(f64::from(body.movement), feet, rotation.yaw, velocity);
+        if let Some(class) = bat
+            && roost::settles(world, &class, feet, &mut rng.0)
+        {
+            effects.resting = Some(true);
+            states.fly.reset();
+        }
+        return Some(Output {
+            yaw: flight.yaw,
+            head_yaw: flight.yaw,
+            velocity: flight.velocity,
+            swimming: false,
+            effects,
+        });
+    }
 
     let door_hold = nav.current().is_some_and(|(index, path)| {
         break_door::held_by_breakable_door(
@@ -343,10 +513,12 @@ fn think(
     let move_jump = movement.tick(&body, &mut yaw, max_turn);
     let mut head_yaw = rotation.head_yaw;
     look.tick(feet + DVec3::Y * body.height, yaw, &mut head_yaw);
+    let swimming = movement.swimming(&body);
     let velocity = travel(
         &body,
         movement,
         goal_jump || move_jump,
+        control::blocked_ahead(feet, movement.wanted, velocity, yaw, body.width),
         jump_power,
         yaw,
         living_block_friction(world, feet),
@@ -356,24 +528,62 @@ fn think(
         yaw,
         head_yaw,
         velocity,
+        swimming,
         effects,
     })
 }
 
-fn apply(
-    world: &mut World,
-    entity: Entity,
-    output: Output,
-    eaten: &mut Vec<Entity>,
-    attacks: &mut Vec<(Entity, Entity)>,
-    gear: &mut Vec<(Entity, pickup::GearWork)>,
-) {
+/// The mob's movement speed: its movement attribute (`minecraft:movement`
+/// with the speed and slowness effects' modifiers, clamped at 0) when it has
+/// one, else the authored value.
+fn movement_speed(mob: EntityRef<'_>, kind: &MobKind) -> f32 {
+    let authored = mob.get::<MovementConfig>().map_or(0.0, |m| m.value);
+    let Some(id) = &kind.0.movement_attribute else {
+        return authored;
+    };
+    mob.get::<crate::entity::definition::attributes::ActorAttributes>()
+        .and_then(|attributes| attributes.get(id).ok())
+        .map_or(authored, |value| value.current)
+}
+
+/// The mob's underwater speed: its `minecraft:underwater_movement`
+/// attribute, else the native default.
+fn underwater_speed(mob: EntityRef<'_>, kind: &MobKind) -> f32 {
+    kind.0
+        .underwater_attribute
+        .as_ref()
+        .and_then(|(id, _)| {
+            mob.get::<crate::entity::definition::attributes::ActorAttributes>()?
+                .get(id)
+                .ok()
+        })
+        .map_or(WATER_MOVE_SPEED, |value| value.current)
+}
+
+/// A change of a mob's target this tick.
+#[derive(Debug, Clone, Copy)]
+struct TargetChange {
+    mob: Entity,
+    /// The new target (`on_target_acquired`), or `None` when the target
+    /// was dropped (`on_target_escape`).
+    acquired: Option<Entity>,
+    /// The target before the change.
+    previous: Option<Entity>,
+}
+
+fn apply(world: &mut World, entity: Entity, output: Output, deferred: &mut Deferred) {
     let Output {
         yaw,
         head_yaw,
         velocity,
+        swimming,
         effects,
     } = output;
+    // The target as viewers see it: its actor id in the `TARGET` actor data,
+    // 0 once the target is dropped (as BDS replicates it).
+    let target_id = effects
+        .target
+        .map(|target| target.map_or(0, |target| wire_actor_id(world, target)));
     let mut mob = world.entity_mut(entity);
     if let Some(mut rotation) = mob.get_mut::<Rotation>()
         && (rotation.yaw != yaw || rotation.head_yaw != head_yaw)
@@ -386,20 +596,56 @@ fn apply(
     {
         current.0 = velocity;
     }
+    if swimming != mob.contains::<Swimming>() {
+        if swimming {
+            mob.insert(Swimming);
+        } else {
+            mob.remove::<Swimming>();
+        }
+    }
     if effects.persistent && !mob.contains::<Persistent>() {
         mob.insert(Persistent);
     }
+    let previous = mob.get::<AttackTarget>().map(|target| target.0);
     match effects.target {
         Some(Some(target)) => {
             mob.insert(AttackTarget(target));
+            if previous != Some(target) {
+                deferred.target_changes.push(TargetChange {
+                    mob: entity,
+                    acquired: Some(target),
+                    previous,
+                });
+            }
         }
         Some(None) => {
             mob.remove::<AttackTarget>();
+            if previous.is_some() {
+                deferred.target_changes.push(TargetChange {
+                    mob: entity,
+                    acquired: None,
+                    previous,
+                });
+            }
         }
         None => {}
     }
+    if let Some(id) = target_id
+        && let Some(mut metadata) = mob.get_mut::<EntityMetadata>()
+    {
+        metadata.set_long(jolyne::valentine::actor_data_i_ds::TARGET, id);
+    }
     if let Some(tempted) = effects.tempted {
         set_flag(&mut mob, actor_flags::TEMPTED, tempted);
+    }
+    if let Some(charging) = effects.charging {
+        set_flag(&mut mob, actor_flags::CHARGING, charging);
+    }
+    if let Some(standing) = effects.standing {
+        set_flag(&mut mob, actor_flags::STANDING, standing);
+    }
+    if let Some(resting) = effects.resting {
+        set_flag(&mut mob, actor_flags::RESTING, resting);
     }
     if let Some(request) = effects.mate
         && let Some(mut messages) = world.get_resource_mut::<Messages<MateRequest>>()
@@ -415,19 +661,186 @@ fn apply(
         );
     }
     if effects.eat_finished {
-        eaten.push(entity);
+        deferred.eaten.push(entity);
     }
     if let Some(target) = effects.attack {
-        attacks.push((entity, target));
+        deferred.attacks.push((entity, target));
+    }
+    if let Some(facing) = effects.ranged_facing {
+        set_flag(
+            &mut world.entity_mut(entity),
+            actor_flags::FACING_TARGET_TO_RANGE_ATTACK,
+            facing,
+        );
+    }
+    if let Some(target) = effects.shoot {
+        deferred.shots.push((entity, target));
     }
     if !effects.gear.is_empty() {
-        gear.push((entity, effects.gear));
+        deferred.gear.push((entity, effects.gear));
     }
+    if let Some(work) = effects.silverfish {
+        deferred.silverfish.push((entity, work));
+    }
+    if effects.swell_started
+        && let Some(head) = super::life::anger::head(world, entity)
+    {
+        // Heard one tick after the goal starts: two ticks after the creeper
+        // lit, as BDS 1.26.51 sends `fuse`.
+        super::net::sound::queue_synced_sound(world, Some(entity), head, "fuse", -1);
+    }
+}
+
+/// Make `mob` target `target` from outside its target goals (anger spreading
+/// to its kin, `mob::life::anger`): the target is set as if a target goal
+/// chose it, viewers see it in the `TARGET` actor data, and the mob's
+/// `on_target_acquired` fires. Returns whether the target changed: nothing
+/// happens when it already targets `target` or has no brain (dying).
+pub(crate) fn provoke(world: &mut World, mob: Entity, target: Entity) -> bool {
+    let previous = world.get::<AttackTarget>(mob).map(|t| t.0);
+    if previous == Some(target) || world.get::<Dead>(mob).is_some() {
+        return false;
+    }
+    let Some(mut brain) = world.get_mut::<MobBrain>(mob) else {
+        return false;
+    };
+    brain.states.targets.provoke(target);
+    let id = wire_actor_id(world, target);
+    let mut entity = world.entity_mut(mob);
+    entity.insert(AttackTarget(target));
+    if let Some(mut metadata) = entity.get_mut::<EntityMetadata>() {
+        metadata.set_long(jolyne::valentine::actor_data_i_ds::TARGET, id);
+    }
+    fire_target_trigger(
+        world,
+        TargetChange {
+            mob,
+            acquired: Some(target),
+            previous,
+        },
+    );
+    true
+}
+
+/// Drop `mob`'s target whichever goal holds it (the native target clear an
+/// angry mob makes when it calms); its `on_target_escape` fires. A running
+/// target goal then stops, its target gone.
+pub(crate) fn drop_target(world: &mut World, mob: Entity) {
+    let previous = world.get::<AttackTarget>(mob).map(|t| t.0);
+    if let Some(mut brain) = world.get_mut::<MobBrain>(mob) {
+        brain.states.targets.clear();
+    }
+    let Some(previous) = previous else {
+        return;
+    };
+    let mut entity = world.entity_mut(mob);
+    entity.remove::<AttackTarget>();
+    if let Some(mut metadata) = entity.get_mut::<EntityMetadata>() {
+        metadata.set_long(jolyne::valentine::actor_data_i_ds::TARGET, 0);
+    }
+    fire_target_trigger(
+        world,
+        TargetChange {
+            mob,
+            acquired: None,
+            previous: Some(previous),
+        },
+    );
+}
+
+/// Fire the mob's `on_target_acquired` (a new target) or `on_target_escape`
+/// (the target dropped) event when its filter passes with the target as
+/// `other`. Dying mobs fire neither.
+fn fire_target_trigger(world: &mut World, change: TargetChange) {
+    use super::components::{OnTargetAcquired, OnTargetEscape};
+    if world.get::<Dead>(change.mob).is_some() {
+        return;
+    }
+    if change.acquired.is_some() {
+        warn_of_target(world, change.mob);
+    }
+    let (trigger, other) = match change.acquired {
+        Some(target) => (
+            world
+                .get::<OnTargetAcquired>(change.mob)
+                .map(|t| t.0.clone()),
+            Some(target),
+        ),
+        None => (
+            world.get::<OnTargetEscape>(change.mob).map(|t| t.0.clone()),
+            change.previous,
+        ),
+    };
+    let Some(trigger) = trigger else {
+        return;
+    };
+    let Some(event) = trigger.event else {
+        return;
+    };
+    if let Some(filter) = &trigger.filter
+        && !filter.evaluate(&super::events::MobFacts {
+            world,
+            entity: change.mob,
+            other,
+        })
+    {
+        return;
+    }
+    let Some(handle) = world
+        .get::<super::MobKind>(change.mob)
+        .and_then(|kind| kind.0.events.event(&event.0))
+    else {
+        tracing::warn!(event = %event.0, "target trigger names an event the mob does not define");
+        return;
+    };
+    if let Err(error) = super::events::fire_event(world, change.mob, &handle, other) {
+        tracing::warn!(event = %event.0, %error, "target trigger event failed");
+    }
+}
+
+/// Every mob that takes a new target plays `mob.warning` (`mob.warning.baby`
+/// for a baby) at its head, reaching viewers on the next tick (measured: one
+/// batch after the `TARGET` actor data, for each of the zombie pigmen, the
+/// wither skeleton and the zoglin of the BDS 1.26.51 anger captures).
+fn warn_of_target(world: &mut World, mob: Entity) {
+    let Some(head) = super::life::anger::head(world, mob) else {
+        return;
+    };
+    let baby = world
+        .get::<ActorFlags>(mob)
+        .is_some_and(|flags| flags.get(actor_flags::BABY).unwrap_or(false));
+    let sound = if baby {
+        "mob.warning.baby"
+    } else {
+        "mob.warning"
+    };
+    super::net::sound::queue_synced_sound(world, Some(mob), head, sound, -1);
+}
+
+/// The actor ID viewers know `actor` by: a mob's runtime ID, a player's
+/// runtime entity ID (unastar sends the same number as the unique ID).
+/// The centre of a living target's box; `None` for a dead or missing
+/// actor.
+pub(crate) fn target_centre(world: &World, actor: Entity) -> Option<DVec3> {
+    targeting::Candidate::of(world, actor)
+        .map(|candidate| (candidate.aabb.min + candidate.aabb.max) / 2.0)
+}
+
+pub(crate) fn wire_actor_id(world: &World, actor: Entity) -> i64 {
+    world
+        .get::<crate::entity::components::RuntimeId>(actor)
+        .map(|id| id.0)
+        .or_else(|| {
+            world
+                .get::<crate::entity::components::RuntimeEntityId>(actor)
+                .map(|id| id.0)
+        })
+        .unwrap_or(0)
 }
 
 /// Set one actor flag and mirror the flag words into the metadata the
 /// viewers receive.
-fn set_flag(mob: &mut EntityWorldMut<'_>, flag: u32, on: bool) {
+pub(crate) fn set_flag(mob: &mut EntityWorldMut<'_>, flag: u32, on: bool) {
     use jolyne::valentine::actor_data_i_ds as ids;
     let Some(mut flags) = mob.get_mut::<ActorFlags>() else {
         return;

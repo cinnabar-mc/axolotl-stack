@@ -10,15 +10,18 @@ use jolyne::valentine::actor_flags;
 
 use super::MobKind;
 use super::archetype::MobArchetype;
-use super::components::WalkNavigationConfig;
+use super::components::{FloatNavigation, WalkNavigationConfig};
 use crate::entity::components::{AirSupply, Health, PhysicsBody};
 use crate::entity::definition::DefinitionState;
 use crate::entity::definition::attributes::{ActorAttributes, AttributeValue};
 use crate::entity::definition::components::{
-    MovementConfig, PhysicsConfig, RawCollisionBox, ScaleConfig,
+    MovementConfig, PhysicsConfig, RawCollisionBox, ScaleConfig, UnderwaterMovementConfig,
+    WaterMovementConfig,
 };
 use crate::entity::definition::flags::ActorFlags;
 use crate::entity::definition::metadata::EntityMetadata;
+use crate::entity::effects::EffectModifiers;
+use crate::entity::mob::constants::LIVING_FRICTION_FACTOR;
 
 /// Inputs of the derived state, gathered from the current composition.
 #[allow(clippy::type_complexity)]
@@ -28,9 +31,13 @@ type DeriveInputs<'a> = (
     Option<&'a ScaleConfig>,
     Option<&'a PhysicsConfig>,
     Option<&'a WalkNavigationConfig>,
+    Option<&'a FloatNavigation>,
     Option<&'a Health>,
     Option<&'a MovementConfig>,
+    Option<&'a UnderwaterMovementConfig>,
+    Option<&'a WaterMovementConfig>,
     Option<&'a AirSupply>,
+    Option<&'a EffectModifiers>,
 );
 
 /// Derived state of one mob from its composition.
@@ -46,11 +53,28 @@ struct Derived {
     can_walk: bool,
     health: Option<(f32, f32)>,
     movement: Option<f32>,
+    /// The authored underwater speed; `None` keeps the native one.
+    underwater: Option<f32>,
     air: Option<(i16, i16)>,
+    /// What the active effects do to the movement and health attributes.
+    modifiers: EffectModifiers,
 }
 
 fn derive(
-    (kind, collision, scale, physics, walk, health, movement, air): DeriveInputs<'_>,
+    (
+        kind,
+        collision,
+        scale,
+        physics,
+        walk,
+        floats,
+        health,
+        movement,
+        underwater,
+        water,
+        air,
+        modifiers,
+    ): DeriveInputs<'_>,
 ) -> Derived {
     let scale = scale.map_or(1.0, |s| s.value);
     // Published rule: negative collision dimensions count as zero.
@@ -59,8 +83,22 @@ fn derive(
         physics.map_or((false, false), |p| (p.has_gravity, p.has_collision));
     let mut body = PhysicsBody::living(f64::from(width * scale), f64::from(height * scale));
     body.wing_flap_drag = kind.0.native.wing_flap_drag;
+    body.water_drag = water.map(|w| f64::from(w.drag_factor));
     if !gravity {
         body.gravity = 0.0;
+    }
+    // The `HAS_COLLISION` flag and the body agree: no collision lets the
+    // body through blocks.
+    body.collides = has_collision;
+    if floats.is_some() || kind.0.native.vex.is_some() {
+        // A float-navigating flyer has no gravity whatever its physics
+        // says, and air drags it alike on every axis (BDS 1.26.51: a
+        // ghast's motion kept 0.91 a tick on x, y and z, and so did a
+        // bat's on x and z, its native vertical factor aside). The vex
+        // class flies the same way with its walk navigation (`sweep.py
+        // vex`: 0.91 a tick on every axis).
+        body.gravity = 0.0;
+        body.vertical_drag = LIVING_FRICTION_FACTOR * kind.0.native.flight_vertical_factor;
     }
     Derived {
         body,
@@ -68,10 +106,12 @@ fn derive(
         box_size: (width, height),
         gravity,
         collision: has_collision,
-        can_walk: walk.is_some_and(|w| w.can_walk),
+        can_walk: walk.is_some_and(|w| w.can_walk) || floats.is_some_and(|f| f.can_walk),
         health: health.map(|h| (h.current, h.max)),
         movement: movement.map(|m| m.value),
+        underwater: underwater.map(|u| u.value),
         air: air.map(|a| (a.current_ticks as i16, a.max_ticks as i16)),
+        modifiers: modifiers.cloned().unwrap_or_default(),
     }
 }
 
@@ -116,6 +156,21 @@ fn store(
         attributes
             .update(id, value)
             .expect("archetype attribute layout");
+        attributes
+            .set_modifiers(id, &derived.modifiers.health_modifiers())
+            .expect("archetype attribute layout");
+    }
+    if let Some((id, native)) = &archetype.underwater_attribute {
+        let value = attributes.get(id).expect("archetype attribute layout");
+        attributes
+            .update(
+                id,
+                AttributeValue {
+                    current: derived.underwater.unwrap_or(*native),
+                    ..value
+                },
+            )
+            .expect("archetype attribute layout");
     }
     if let (Some(id), Some(speed)) = (&archetype.movement_attribute, derived.movement) {
         let value = attributes.get(id).expect("archetype attribute layout");
@@ -123,10 +178,13 @@ fn store(
             .update(
                 id,
                 AttributeValue {
-                    current: speed,
+                    current: derived.modifiers.movement(speed),
                     ..value
                 },
             )
+            .expect("archetype attribute layout");
+        attributes
+            .set_modifiers(id, &derived.modifiers.movement)
             .expect("archetype attribute layout");
     }
 }
@@ -161,6 +219,26 @@ pub fn derive_mob_state(mut mobs: Query<(DeriveInputs<'_>, DeriveOutputs<'_>), D
             &mut metadata,
             &mut attributes,
         );
+    }
+}
+
+/// System: a mob's health attribute follows its health in the tick it
+/// changed, just before the viewers are told (BDS 1.26.51 sends a hurt or
+/// healed mob's health with the hurt animation, in the same tick), rather
+/// than at the next tick's [`derive_mob_state`].
+pub fn sync_mob_health(
+    mut mobs: Query<(&MobKind, &Health, &mut ActorAttributes), Changed<Health>>,
+) {
+    for (kind, health, mut attributes) in &mut mobs {
+        let Some(id) = &kind.0.health_attribute else {
+            continue;
+        };
+        let mut value = attributes.get(id).expect("archetype attribute layout");
+        value.current = health.current;
+        value.max = health.max;
+        attributes
+            .update(id, value)
+            .expect("archetype attribute layout");
     }
 }
 

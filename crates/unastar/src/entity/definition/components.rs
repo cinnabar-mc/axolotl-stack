@@ -32,6 +32,22 @@ pub struct MovementConfig {
     pub value: f32,
 }
 
+/// Authored `minecraft:underwater_movement` value: the speed in water (the
+/// drowned's 0.06, its baby's 0.08). A mob without it keeps the value of its
+/// native summon's `minecraft:underwater_movement` row (0.02).
+#[derive(Component, Debug, Clone, Copy, PartialEq)]
+pub struct UnderwaterMovementConfig {
+    pub value: f32,
+}
+
+/// Authored `minecraft:water_movement`: the share of its horizontal motion
+/// a mob keeps each tick in water (the polar bear's 0.98). A mob without it
+/// keeps the native 0.8.
+#[derive(Component, Debug, Clone, Copy, PartialEq)]
+pub struct WaterMovementConfig {
+    pub drag_factor: f32,
+}
+
 /// Unscaled authored collision dimensions in blocks, including explicit zero.
 /// Consumers apply the published negative-dimension-to-zero rule when deriving
 /// geometry, independently from any measured relationship to actor scale.
@@ -70,6 +86,20 @@ pub fn register_component_kinds(
         compile_movement,
         apply::<MovementConfig>,
         remove::<MovementConfig>,
+    )?;
+    builder.register(
+        |b: body::UnderwaterMovement| Ok(UnderwaterMovementConfig { value: b.value }),
+        apply::<UnderwaterMovementConfig>,
+        remove::<UnderwaterMovementConfig>,
+    )?;
+    builder.register(
+        |b: body::WaterMovement| {
+            Ok(WaterMovementConfig {
+                drag_factor: b.drag_factor,
+            })
+        },
+        apply::<WaterMovementConfig>,
+        remove::<WaterMovementConfig>,
     )?;
     builder.register(
         |b: body::CollisionBox| {

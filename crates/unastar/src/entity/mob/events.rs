@@ -7,6 +7,7 @@
 
 use bevy_ecs::prelude::*;
 use glam::{DVec3, IVec3};
+use jolyne::valentine::actor_data_i_ds as ids;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 use thiserror::Error;
@@ -24,6 +25,7 @@ use crate::entity::definition::events::{
     TriggerEvent,
 };
 use crate::entity::definition::flags::ActorFlags;
+use crate::entity::definition::metadata::EntityMetadata;
 use crate::entity::definition::properties::{ActorProperties, PropertyError, PropertyValue};
 use crate::entity::definition::{DefinitionState, GroupChange, queue_group_change};
 use crate::entity::systems::BlockSource;
@@ -127,9 +129,95 @@ impl MobFacts<'_> {
         Some(position + DVec3::Y * height * super::constants::MOB_EYE_HEIGHT_RATIO)
     }
 
+    /// `in_block`: a block named `name` overlaps the actor's box (measured:
+    /// a BDS 1.26.51 skeleton shakes in powder snow at its feet and with
+    /// powder snow at its head only).
+    fn in_block(&self, entity: Entity, name: &str) -> Option<bool> {
+        let registry = self.world.registry();
+        let wanted = if name.contains(':') {
+            registry.get_by_name(name)
+        } else {
+            registry.get_by_name(&format!("minecraft:{name}"))
+        }?
+        .id;
+        let feet = self.feet(entity)?;
+        let body = self
+            .world
+            .get::<crate::entity::components::PhysicsBody>(entity)?;
+        let aabb = crate::registry::collision::Aabb::from_feet(feet, body.width, body.height);
+        let min = aabb.min.floor().as_ivec3();
+        let max = (aabb.max - DVec3::splat(1.0e-7)).floor().as_ivec3();
+        let overlaps = (min.x..=max.x).any(|x| {
+            (min.y..=max.y).any(|y| {
+                (min.z..=max.z).any(|z| {
+                    self.world
+                        .block_at(IVec3::new(x, y, z))
+                        .and_then(|state| registry.get_by_runtime_id(state))
+                        .is_some_and(|entry| entry.id == wanted)
+                })
+            })
+        });
+        Some(overlaps)
+    }
+
+    /// `is_underground`: a block that damps light anywhere from the actor's
+    /// feet block up to the top of the world (measured: a BDS 1.26.51 stray
+    /// counts as underground under stone 3 or 12 blocks up and under
+    /// leaves, not under glass or the open sky).
+    fn underground(&self, entity: Entity) -> Option<bool> {
+        let feet = self.feet(entity)?.floor().as_ivec3();
+        let registry = self.world.registry();
+        let top = crate::world::chunk::MIN_Y + crate::world::chunk::SUBCHUNK_COUNT as i32 * 16;
+        Some((feet.y.max(crate::world::chunk::MIN_Y)..top).any(|y| {
+            self.world
+                .block_at(IVec3::new(feet.x, y, feet.z))
+                .and_then(|state| registry.get_by_runtime_id(state))
+                .is_some_and(|entry| entry.filter_light > 0)
+        }))
+    }
+
     /// `is_underwater`: [`under_water_at`] the breathing point.
     fn under_water(&self, entity: Entity) -> Option<bool> {
         under_water_at(self.world, self.breathing_point(entity)?)
+    }
+
+    /// `distance_to_nearest_player`: from the actor's block position (its
+    /// feet floored, as the native test measures) to the nearest player's
+    /// position; the largest float without a player.
+    fn distance_to_nearest_player(&self, entity: Entity) -> Option<f64> {
+        let from = self.feet(entity)?.floor();
+        let mut nearest = f64::from(f32::MAX);
+        let mut players = self.world.try_query_filtered::<&Position, With<Player>>()?;
+        for position in players.iter(self.world) {
+            nearest = nearest.min(position.0.distance(from));
+        }
+        Some(nearest)
+    }
+
+    /// The ticks a mob has gone without action: since it spawned, was last
+    /// hurt, or (with `despawn_from_distance`) last had a player within its
+    /// `min_distance`.
+    fn inactive_ticks(&self, entity: Entity) -> Option<u64> {
+        let now = self
+            .world
+            .get_resource::<crate::ecs::TickCounter>()?
+            .current;
+        let since = self
+            .world
+            .get::<super::life::despawn::Inactivity>(entity)?
+            .last_near_tick
+            .max(
+                self.world
+                    .get::<super::state::LastHurt>(entity)
+                    .map_or(0, |hurt| hurt.tick),
+            );
+        Some(now.saturating_sub(since))
+    }
+
+    fn appearance(&self, entity: Entity, key: u32) -> Option<Fact> {
+        let metadata = self.world.get::<EntityMetadata>(entity)?;
+        let id = super::components::variant::appearance_id(metadata, key)?;
+        Some(Fact::Number(f64::from(id)))
     }
 
     fn property(&self, entity: Entity, test: &FilterTest) -> Option<PropertyValue> {
@@ -204,6 +292,8 @@ impl FilterContext for MobFacts<'_> {
             },
             // Riding is not implemented: no actor ever has a rider.
             BuiltinTest::RiderCount => Fact::Number(0.0),
+            // Riding is not implemented: no mob rides anything.
+            BuiltinTest::IsRiding => Fact::Bool(false),
             BuiltinTest::HasComponent => {
                 let component = ActorComponent::from_name(test.value.as_str()?)?;
                 Fact::Matches(
@@ -212,6 +302,12 @@ impl FilterContext for MobFacts<'_> {
                         .is_some_and(|state| state.has_actor_component(component)),
                 )
             }
+            // The appearance ids the actor data carries (`components::variant`
+            // and the native class values); an actor without one is not
+            // answered, so the test is false.
+            BuiltinTest::IsVariant => self.appearance(entity, ids::VARIANT)?,
+            BuiltinTest::IsMarkVariant => self.appearance(entity, ids::MARK_VARIANT)?,
+            BuiltinTest::IsSkinId => self.appearance(entity, ids::SKIN_ID)?,
             // Only players sneak.
             BuiltinTest::IsSneakHeld => Fact::Bool(
                 self.world
@@ -221,6 +317,21 @@ impl FilterContext for MobFacts<'_> {
             BuiltinTest::IsDifficulty => {
                 let want = test.value.as_str()?;
                 Fact::Matches(world_difficulty(self.world)? == want)
+            }
+            BuiltinTest::IsPersistent => {
+                Fact::Bool(self.world.get::<super::state::Persistent>(entity).is_some())
+            }
+            BuiltinTest::DistanceToNearestPlayer => {
+                Fact::Number(self.distance_to_nearest_player(entity)?)
+            }
+            // The native test ignores the operator: inactive for at least
+            // `value` seconds.
+            BuiltinTest::InactivityTimer => {
+                let seconds = test.value.as_f64()?;
+                Fact::Matches(
+                    self.inactive_ticks(entity)? as f64
+                        >= seconds * f64::from(super::constants::TICKS_PER_SECOND),
+                )
             }
             BuiltinTest::HasEquipment => {
                 let want = super::components::ItemMatcher::parse(test.value.as_str()?).ok()?;
@@ -238,6 +349,20 @@ impl FilterContext for MobFacts<'_> {
                 Fact::Matches(
                     stack.is_some_and(|stack| want.matches(stack.item_id(), stack.damage)),
                 )
+            }
+            BuiltinTest::InBlock => Fact::Matches(self.in_block(entity, test.value.as_str()?)?),
+            BuiltinTest::IsUnderground => Fact::Bool(self.underground(entity)?),
+            BuiltinTest::IsDaytime => Fact::Bool(crate::world::clock::is_daytime(self.world)),
+            // A ranged weapon in the main hand (`constants::RANGED_WEAPONS`).
+            BuiltinTest::HasRangedWeapon => {
+                let held = if self.world.get::<MobKind>(entity).is_some() {
+                    super::gear::mainhand(self.world, entity)
+                } else {
+                    held_item(self.world, entity)
+                };
+                Fact::Bool(held.is_some_and(|stack| {
+                    super::constants::RANGED_WEAPONS.contains(&stack.item_id())
+                }))
             }
             _ => return None,
         })
