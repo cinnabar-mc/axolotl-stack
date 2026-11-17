@@ -10341,6 +10341,7253 @@
       ]
     },
     {
+      "name": "sinx_jump_0",
+      "description": "Sine probe: a sprint jump from rest at yaw 59.589844, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": 59.589844,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_jump_1",
+      "description": "Sine probe: a sprint jump from rest at yaw -140.53906, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": -140.53906,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_jump_2",
+      "description": "Sine probe: a sprint jump from rest at yaw -131.98828, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": -131.98828,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_jump_3",
+      "description": "Sine probe: a sprint jump from rest at yaw -144.90625, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": -144.90625,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_jump_4",
+      "description": "Sine probe: a sprint jump from rest at yaw -133.8789, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": -133.8789,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_jump_5",
+      "description": "Sine probe: a sprint jump from rest at yaw -45.035156, forward 0.95.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 0.95,
+          "yaw": -45.035156,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_jump_6",
+      "description": "Sine probe: a sprint jump from rest at yaw 45.472656, forward 0.95.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 0.95,
+          "yaw": 45.472656,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_jump_7",
+      "description": "Sine probe: a sprint jump from rest at yaw 48.95703, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": 48.95703,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_jump_8",
+      "description": "Sine probe: a sprint jump from rest at yaw 46.79297, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": 46.79297,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_jump_9",
+      "description": "Sine probe: a sprint jump from rest at yaw -46.953125, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": -46.953125,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_jump_10",
+      "description": "Sine probe: a sprint jump from rest at yaw -130.60938, forward 0.95.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 0.95,
+          "yaw": -130.60938,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_jump_11",
+      "description": "Sine probe: a sprint jump from rest at yaw -137.98828, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": -137.98828,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_jump_12",
+      "description": "Sine probe: a sprint jump from rest at yaw -132.35547, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": -132.35547,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_jump_13",
+      "description": "Sine probe: a sprint jump from rest at yaw -46.39453, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": -46.39453,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_jump_14",
+      "description": "Sine probe: a sprint jump from rest at yaw 45.101563, forward 0.95.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 0.95,
+          "yaw": 45.101563,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_jump_15",
+      "description": "Sine probe: a sprint jump from rest at yaw 45.76172, forward 0.95.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 0.95,
+          "yaw": 45.76172,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_jump_16",
+      "description": "Sine probe: a sprint jump from rest at yaw 47.40625, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": 47.40625,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_jump_17",
+      "description": "Sine probe: a sprint jump from rest at yaw -137.22656, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": -137.22656,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_jump_18",
+      "description": "Sine probe: a sprint jump from rest at yaw 45.390625, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": 45.390625,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_jump_19",
+      "description": "Sine probe: a sprint jump from rest at yaw 55.027344, forward 0.95.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 0.95,
+          "yaw": 55.027344,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_jump_20",
+      "description": "Sine probe: a sprint jump from rest at yaw -134.3789, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": -134.3789,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_jump_21",
+      "description": "Sine probe: a sprint jump from rest at yaw -135.20313, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": -135.20313,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_jump_22",
+      "description": "Sine probe: a sprint jump from rest at yaw -133.35547, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": -133.35547,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_jump_23",
+      "description": "Sine probe: a sprint jump from rest at yaw 47.45703, forward 0.85.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 0.85,
+          "yaw": 47.45703,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_walk_0",
+      "description": "Sine probe: one walking input from rest at yaw 45.953125, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": 45.953125
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_walk_1",
+      "description": "Sine probe: one walking input from rest at yaw -132.21875, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": -132.21875
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_walk_2",
+      "description": "Sine probe: one walking input from rest at yaw 134.92188, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": 134.92188
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_walk_3",
+      "description": "Sine probe: one walking input from rest at yaw -143.35938, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": -143.35938
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_walk_4",
+      "description": "Sine probe: one walking input from rest at yaw 143.35938, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": 143.35938
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_walk_5",
+      "description": "Sine probe: one walking input from rest at yaw -45.015625, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": -45.015625
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_walk_6",
+      "description": "Sine probe: one walking input from rest at yaw -134.78125, forward 0.95.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 0.95,
+          "yaw": -134.78125
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_walk_7",
+      "description": "Sine probe: one walking input from rest at yaw 41.046875, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": 41.046875
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_walk_8",
+      "description": "Sine probe: one walking input from rest at yaw 126.9375, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": 126.9375
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_walk_9",
+      "description": "Sine probe: one walking input from rest at yaw 125.03125, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": 125.03125
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_walk_10",
+      "description": "Sine probe: one walking input from rest at yaw 46.6875, forward 0.95.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 0.95,
+          "yaw": 46.6875
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_walk_11",
+      "description": "Sine probe: one walking input from rest at yaw -42.921875, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": -42.921875
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_walk_12",
+      "description": "Sine probe: one walking input from rest at yaw -125.03125, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": -125.03125
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_walk_13",
+      "description": "Sine probe: one walking input from rest at yaw 46.5, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": 46.5
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_walk_14",
+      "description": "Sine probe: one walking input from rest at yaw -48.84375, forward 0.95.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 0.95,
+          "yaw": -48.84375
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_walk_15",
+      "description": "Sine probe: one walking input from rest at yaw 43.859375, forward 0.95.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 0.95,
+          "yaw": 43.859375
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_walk_16",
+      "description": "Sine probe: one walking input from rest at yaw -43.03125, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": -43.03125
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_walk_17",
+      "description": "Sine probe: one walking input from rest at yaw -136.71875, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": -136.71875
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_walk_18",
+      "description": "Sine probe: one walking input from rest at yaw 134.60938, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": 134.60938
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_walk_19",
+      "description": "Sine probe: one walking input from rest at yaw 48.84375, forward 0.95.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 0.95,
+          "yaw": 48.84375
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_walk_20",
+      "description": "Sine probe: one walking input from rest at yaw 45.578125, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": 45.578125
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_walk_21",
+      "description": "Sine probe: one walking input from rest at yaw -46.6875, forward 0.95.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 0.95,
+          "yaw": -46.6875
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_walk_22",
+      "description": "Sine probe: one walking input from rest at yaw -40.296875, forward 0.9.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 0.9,
+          "yaw": -40.296875
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinx_walk_23",
+      "description": "Sine probe: one walking input from rest at yaw -43.5625, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": -43.5625
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinh_jump_0",
+      "description": "Sine probe: a sprint jump from rest at yaw 4.140625, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": 4.140625,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinh_jump_1",
+      "description": "Sine probe: a sprint jump from rest at yaw 60.40625, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": 60.40625,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinh_jump_2",
+      "description": "Sine probe: a sprint jump from rest at yaw 50.5625, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": 50.5625,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinh_jump_3",
+      "description": "Sine probe: a sprint jump from rest at yaw -73.25, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": -73.25,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinh_jump_4",
+      "description": "Sine probe: a sprint jump from rest at yaw 133.96875, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": 133.96875,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinh_jump_5",
+      "description": "Sine probe: a sprint jump from rest at yaw -163.015625, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": -163.015625,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinh_jump_6",
+      "description": "Sine probe: a sprint jump from rest at yaw -16.640625, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": -16.640625,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinh_jump_7",
+      "description": "Sine probe: a sprint jump from rest at yaw -67.90625, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": -67.90625,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinh_jump_8",
+      "description": "Sine probe: a sprint jump from rest at yaw 76.828125, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": 76.828125,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "sinh_jump_9",
+      "description": "Sine probe: a sprint jump from rest at yaw 156.625, forward 1.0.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.03125, 100, 0.03125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "forward": 1.0,
+          "yaw": 156.625,
+          "sprint": true,
+          "jump": true
+        },
+        {
+          "ticks": 12
+        }
+      ]
+    },
+    {
+      "name": "glide_pm60",
+      "description": "Glide probe: glide at pitch -60, yaw 180.859375.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 118, 20.5],
+        "yaw": 0,
+        "elytra": true
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "glide": true,
+          "yaw": 180.859375,
+          "pitch": -60
+        },
+        {
+          "ticks": 24
+        },
+        {
+          "ticks": 6,
+          "pitch": 0
+        }
+      ]
+    },
+    {
+      "name": "glide_pm40",
+      "description": "Glide probe: glide at pitch -40, yaw -29.484375.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 118, 20.5],
+        "yaw": 0,
+        "elytra": true
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "glide": true,
+          "yaw": -29.484375,
+          "pitch": -40
+        },
+        {
+          "ticks": 24
+        },
+        {
+          "ticks": 6,
+          "pitch": 0
+        }
+      ]
+    },
+    {
+      "name": "glide_pm25",
+      "description": "Glide probe: glide at pitch -25, yaw 0.8125.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 118, 20.5],
+        "yaw": 0,
+        "elytra": true
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "glide": true,
+          "yaw": 0.8125,
+          "pitch": -25
+        },
+        {
+          "ticks": 24
+        },
+        {
+          "ticks": 6,
+          "pitch": 0
+        }
+      ]
+    },
+    {
+      "name": "glide_pm10",
+      "description": "Glide probe: glide at pitch -10, yaw -29.34375.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 118, 20.5],
+        "yaw": 0,
+        "elytra": true
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "glide": true,
+          "yaw": -29.34375,
+          "pitch": -10
+        },
+        {
+          "ticks": 24
+        },
+        {
+          "ticks": 6,
+          "pitch": 0
+        }
+      ]
+    },
+    {
+      "name": "glide_pm3",
+      "description": "Glide probe: glide at pitch -3, yaw 20.265625.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 118, 20.5],
+        "yaw": 0,
+        "elytra": true
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "glide": true,
+          "yaw": 20.265625,
+          "pitch": -3
+        },
+        {
+          "ticks": 24
+        },
+        {
+          "ticks": 6,
+          "pitch": 0
+        }
+      ]
+    },
+    {
+      "name": "glide_p0",
+      "description": "Glide probe: glide at pitch 0, yaw 45.703125.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 118, 20.5],
+        "yaw": 0,
+        "elytra": true
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "glide": true,
+          "yaw": 45.703125,
+          "pitch": 0
+        },
+        {
+          "ticks": 24
+        },
+        {
+          "ticks": 6,
+          "pitch": 0
+        }
+      ]
+    },
+    {
+      "name": "glide_p4",
+      "description": "Glide probe: glide at pitch 4, yaw 180.328125.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 118, 20.5],
+        "yaw": 0,
+        "elytra": true
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "glide": true,
+          "yaw": 180.328125,
+          "pitch": 4
+        },
+        {
+          "ticks": 24
+        },
+        {
+          "ticks": 6,
+          "pitch": 0
+        }
+      ]
+    },
+    {
+      "name": "glide_p12",
+      "description": "Glide probe: glide at pitch 12, yaw -99.390625.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 118, 20.5],
+        "yaw": 0,
+        "elytra": true
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "glide": true,
+          "yaw": -99.390625,
+          "pitch": 12
+        },
+        {
+          "ticks": 24
+        },
+        {
+          "ticks": 6,
+          "pitch": 0
+        }
+      ]
+    },
+    {
+      "name": "glide_p25",
+      "description": "Glide probe: glide at pitch 25, yaw 135.15625.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 118, 20.5],
+        "yaw": 0,
+        "elytra": true
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "glide": true,
+          "yaw": 135.15625,
+          "pitch": 25
+        },
+        {
+          "ticks": 24
+        },
+        {
+          "ticks": 6,
+          "pitch": 0
+        }
+      ]
+    },
+    {
+      "name": "glide_p40",
+      "description": "Glide probe: glide at pitch 40, yaw -99.375.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 118, 20.5],
+        "yaw": 0,
+        "elytra": true
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "glide": true,
+          "yaw": -99.375,
+          "pitch": 40
+        },
+        {
+          "ticks": 24
+        },
+        {
+          "ticks": 6,
+          "pitch": 0
+        }
+      ]
+    },
+    {
+      "name": "glide_p60",
+      "description": "Glide probe: glide at pitch 60, yaw 0.5.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 118, 20.5],
+        "yaw": 0,
+        "elytra": true
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "glide": true,
+          "yaw": 0.5,
+          "pitch": 60
+        },
+        {
+          "ticks": 24
+        },
+        {
+          "ticks": 6,
+          "pitch": 0
+        }
+      ]
+    },
+    {
+      "name": "bedfit_6_1",
+      "description": "Bed bounce fit: fall 0.8125 onto a bed, landing at input 6 (corrected).",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 101.375, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 40
+        }
+      ],
+      "formed": [
+        {
+          "from": [0, 100, 0],
+          "to": [0, 100, 0],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed",
+            "states": {
+              "head_piece_bit": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "bedfit_6_3",
+      "description": "Bed bounce fit: fall 0.875 onto a bed, landing at input 6 (corrected).",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 101.4375, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 40
+        }
+      ],
+      "formed": [
+        {
+          "from": [0, 100, 0],
+          "to": [0, 100, 0],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed",
+            "states": {
+              "head_piece_bit": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "bedfit_6_5",
+      "description": "Bed bounce fit: fall 0.953125 onto a bed, landing at input 6 (corrected).",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 101.515625, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 40
+        }
+      ],
+      "formed": [
+        {
+          "from": [0, 100, 0],
+          "to": [0, 100, 0],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed",
+            "states": {
+              "head_piece_bit": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "bedfit_6_7",
+      "description": "Bed bounce fit: fall 1.03125 onto a bed, landing at input 6 (corrected).",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 101.59375, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 40
+        }
+      ],
+      "formed": [
+        {
+          "from": [0, 100, 0],
+          "to": [0, 100, 0],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed",
+            "states": {
+              "head_piece_bit": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "bedfit_6_9",
+      "description": "Bed bounce fit: fall 1.109375 onto a bed, landing at input 6 (corrected).",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 101.671875, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 40
+        }
+      ],
+      "formed": [
+        {
+          "from": [0, 100, 0],
+          "to": [0, 100, 0],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed",
+            "states": {
+              "head_piece_bit": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "bedfit_12_1",
+      "description": "Bed bounce fit: fall 4.140625 onto a bed, landing at input 12 (corrected).",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 104.703125, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 40
+        }
+      ],
+      "formed": [
+        {
+          "from": [0, 100, 0],
+          "to": [0, 100, 0],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed",
+            "states": {
+              "head_piece_bit": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "bedfit_12_3",
+      "description": "Bed bounce fit: fall 4.296875 onto a bed, landing at input 12 (corrected).",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 104.859375, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 40
+        }
+      ],
+      "formed": [
+        {
+          "from": [0, 100, 0],
+          "to": [0, 100, 0],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed",
+            "states": {
+              "head_piece_bit": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "bedfit_12_5",
+      "description": "Bed bounce fit: fall 4.453125 onto a bed, landing at input 12 (corrected).",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 105.015625, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 40
+        }
+      ],
+      "formed": [
+        {
+          "from": [0, 100, 0],
+          "to": [0, 100, 0],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed",
+            "states": {
+              "head_piece_bit": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "bedfit_12_7",
+      "description": "Bed bounce fit: fall 4.609375 onto a bed, landing at input 12 (corrected).",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 105.171875, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 40
+        }
+      ],
+      "formed": [
+        {
+          "from": [0, 100, 0],
+          "to": [0, 100, 0],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed",
+            "states": {
+              "head_piece_bit": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "bedfit_12_9",
+      "description": "Bed bounce fit: fall 4.765625 onto a bed, landing at input 12 (corrected).",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 105.328125, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 40
+        }
+      ],
+      "formed": [
+        {
+          "from": [0, 100, 0],
+          "to": [0, 100, 0],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed",
+            "states": {
+              "head_piece_bit": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "bedfit_18_1",
+      "description": "Bed bounce fit: fall 9.78125 onto a bed, landing at input 18 (corrected).",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 110.34375, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 40
+        }
+      ],
+      "formed": [
+        {
+          "from": [0, 100, 0],
+          "to": [0, 100, 0],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed",
+            "states": {
+              "head_piece_bit": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "bedfit_18_3",
+      "description": "Bed bounce fit: fall 10.015625 onto a bed, landing at input 18 (corrected).",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 110.578125, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 40
+        }
+      ],
+      "formed": [
+        {
+          "from": [0, 100, 0],
+          "to": [0, 100, 0],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed",
+            "states": {
+              "head_piece_bit": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "bedfit_18_5",
+      "description": "Bed bounce fit: fall 10.234375 onto a bed, landing at input 18 (corrected).",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 110.796875, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 40
+        }
+      ],
+      "formed": [
+        {
+          "from": [0, 100, 0],
+          "to": [0, 100, 0],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed",
+            "states": {
+              "head_piece_bit": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "bedfit_18_7",
+      "description": "Bed bounce fit: fall 10.46875 onto a bed, landing at input 18 (corrected).",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 111.03125, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 40
+        }
+      ],
+      "formed": [
+        {
+          "from": [0, 100, 0],
+          "to": [0, 100, 0],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed",
+            "states": {
+              "head_piece_bit": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "bedfit_18_9",
+      "description": "Bed bounce fit: fall 10.6875 onto a bed, landing at input 18 (corrected).",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 111.25, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 40
+        }
+      ],
+      "formed": [
+        {
+          "from": [0, 100, 0],
+          "to": [0, 100, 0],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed",
+            "states": {
+              "head_piece_bit": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ceil_release_walk",
+      "description": "Sneak under a top slab (1.5 high), let go with forward held and walk out.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-2, 101, 0],
+          "to": [2, 101, 4],
+          "block": {
+            "name": "minecraft:smooth_stone_slab",
+            "states": {
+              "minecraft:vertical_half": "top"
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, -0.75]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 30,
+          "forward": 1,
+          "sneak": true
+        },
+        {
+          "ticks": 45,
+          "forward": 1
+        },
+        {
+          "ticks": 10
+        }
+      ]
+    },
+    {
+      "name": "ceil_release_still",
+      "description": "Sneak under a top slab, stop, let go, wait, then walk out.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-2, 101, 0],
+          "to": [2, 101, 4],
+          "block": {
+            "name": "minecraft:smooth_stone_slab",
+            "states": {
+              "minecraft:vertical_half": "top"
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, -0.75]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 30,
+          "forward": 1,
+          "sneak": true
+        },
+        {
+          "ticks": 3
+        },
+        {
+          "ticks": 3,
+          "sneak": true
+        },
+        {
+          "ticks": 10
+        },
+        {
+          "ticks": 45,
+          "forward": 1
+        },
+        {
+          "ticks": 5
+        }
+      ]
+    },
+    {
+      "name": "ceil_release_jump",
+      "description": "Sneak under a top slab, let go and jump into the slab, then walk out.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-2, 101, 0],
+          "to": [2, 101, 4],
+          "block": {
+            "name": "minecraft:smooth_stone_slab",
+            "states": {
+              "minecraft:vertical_half": "top"
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, -0.75]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 30,
+          "forward": 1,
+          "sneak": true
+        },
+        {
+          "ticks": 2,
+          "forward": 1
+        },
+        {
+          "ticks": 12,
+          "forward": 1,
+          "jump": true
+        },
+        {
+          "ticks": 40,
+          "forward": 1
+        }
+      ]
+    },
+    {
+      "name": "ceil_release_sprint",
+      "description": "Sneak under a top slab, let go with sprint held and walk out.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-2, 101, 0],
+          "to": [2, 101, 4],
+          "block": {
+            "name": "minecraft:smooth_stone_slab",
+            "states": {
+              "minecraft:vertical_half": "top"
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, -0.75]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 30,
+          "forward": 1,
+          "sneak": true
+        },
+        {
+          "ticks": 45,
+          "forward": 1,
+          "sprint": true
+        },
+        {
+          "ticks": 10
+        }
+      ]
+    },
+    {
+      "name": "ceil_release_back",
+      "description": "Sneak under a top slab, let go and walk backwards out.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-2, 101, 0],
+          "to": [2, 101, 4],
+          "block": {
+            "name": "minecraft:smooth_stone_slab",
+            "states": {
+              "minecraft:vertical_half": "top"
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, -0.75]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 30,
+          "forward": 1,
+          "sneak": true
+        },
+        {
+          "ticks": 40,
+          "forward": -1
+        },
+        {
+          "ticks": 5
+        }
+      ]
+    },
+    {
+      "name": "ceil_exit_back_0",
+      "description": "Sneak under a top slab from z -0.75, let go and walk back out.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-2, 101, 0],
+          "to": [2, 101, 4],
+          "block": {
+            "name": "minecraft:smooth_stone_slab",
+            "states": {
+              "minecraft:vertical_half": "top"
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, -0.75]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 30,
+          "forward": 1,
+          "sneak": true
+        },
+        {
+          "ticks": 40,
+          "forward": -1
+        },
+        {
+          "ticks": 5
+        }
+      ]
+    },
+    {
+      "name": "ceil_exit_back_1",
+      "description": "Sneak under a top slab from z -0.7390625, let go and walk back out.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-2, 101, 0],
+          "to": [2, 101, 4],
+          "block": {
+            "name": "minecraft:smooth_stone_slab",
+            "states": {
+              "minecraft:vertical_half": "top"
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, -0.7390625]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 30,
+          "forward": 1,
+          "sneak": true
+        },
+        {
+          "ticks": 40,
+          "forward": -1
+        },
+        {
+          "ticks": 5
+        }
+      ]
+    },
+    {
+      "name": "ceil_exit_back_2",
+      "description": "Sneak under a top slab from z -0.728125, let go and walk back out.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-2, 101, 0],
+          "to": [2, 101, 4],
+          "block": {
+            "name": "minecraft:smooth_stone_slab",
+            "states": {
+              "minecraft:vertical_half": "top"
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, -0.728125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 30,
+          "forward": 1,
+          "sneak": true
+        },
+        {
+          "ticks": 40,
+          "forward": -1
+        },
+        {
+          "ticks": 5
+        }
+      ]
+    },
+    {
+      "name": "ceil_exit_back_3",
+      "description": "Sneak under a top slab from z -0.7171875, let go and walk back out.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-2, 101, 0],
+          "to": [2, 101, 4],
+          "block": {
+            "name": "minecraft:smooth_stone_slab",
+            "states": {
+              "minecraft:vertical_half": "top"
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, -0.7171875]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 30,
+          "forward": 1,
+          "sneak": true
+        },
+        {
+          "ticks": 40,
+          "forward": -1
+        },
+        {
+          "ticks": 5
+        }
+      ]
+    },
+    {
+      "name": "ceil_exit_back_4",
+      "description": "Sneak under a top slab from z -0.70625, let go and walk back out.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-2, 101, 0],
+          "to": [2, 101, 4],
+          "block": {
+            "name": "minecraft:smooth_stone_slab",
+            "states": {
+              "minecraft:vertical_half": "top"
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, -0.70625]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 30,
+          "forward": 1,
+          "sneak": true
+        },
+        {
+          "ticks": 40,
+          "forward": -1
+        },
+        {
+          "ticks": 5
+        }
+      ]
+    },
+    {
+      "name": "ceil_exit_back_5",
+      "description": "Sneak under a top slab from z -0.6953125, let go and walk back out.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-2, 101, 0],
+          "to": [2, 101, 4],
+          "block": {
+            "name": "minecraft:smooth_stone_slab",
+            "states": {
+              "minecraft:vertical_half": "top"
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, -0.6953125]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 30,
+          "forward": 1,
+          "sneak": true
+        },
+        {
+          "ticks": 40,
+          "forward": -1
+        },
+        {
+          "ticks": 5
+        }
+      ]
+    },
+    {
+      "name": "ceil_exit_fwd_0",
+      "description": "Sneak under a one-block top slab from z -0.75, let go under it and walk out forward.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-2, 101, 0],
+          "to": [2, 101, 0],
+          "block": {
+            "name": "minecraft:smooth_stone_slab",
+            "states": {
+              "minecraft:vertical_half": "top"
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, -0.75]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 16,
+          "forward": 1,
+          "sneak": true
+        },
+        {
+          "ticks": 30,
+          "forward": 1
+        },
+        {
+          "ticks": 5
+        }
+      ]
+    },
+    {
+      "name": "ceil_exit_fwd_1",
+      "description": "Sneak under a one-block top slab from z -0.7336, let go under it and walk out forward.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-2, 101, 0],
+          "to": [2, 101, 0],
+          "block": {
+            "name": "minecraft:smooth_stone_slab",
+            "states": {
+              "minecraft:vertical_half": "top"
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, -0.7336]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 16,
+          "forward": 1,
+          "sneak": true
+        },
+        {
+          "ticks": 30,
+          "forward": 1
+        },
+        {
+          "ticks": 5
+        }
+      ]
+    },
+    {
+      "name": "ceil_exit_fwd_2",
+      "description": "Sneak under a one-block top slab from z -0.7172, let go under it and walk out forward.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-2, 101, 0],
+          "to": [2, 101, 0],
+          "block": {
+            "name": "minecraft:smooth_stone_slab",
+            "states": {
+              "minecraft:vertical_half": "top"
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, -0.7172]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 16,
+          "forward": 1,
+          "sneak": true
+        },
+        {
+          "ticks": 30,
+          "forward": 1
+        },
+        {
+          "ticks": 5
+        }
+      ]
+    },
+    {
+      "name": "ceil_exit_fwd_3",
+      "description": "Sneak under a one-block top slab from z -0.7008, let go under it and walk out forward.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-2, 101, 0],
+          "to": [2, 101, 0],
+          "block": {
+            "name": "minecraft:smooth_stone_slab",
+            "states": {
+              "minecraft:vertical_half": "top"
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, -0.7008]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 16,
+          "forward": 1,
+          "sneak": true
+        },
+        {
+          "ticks": 30,
+          "forward": 1
+        },
+        {
+          "ticks": 5
+        }
+      ]
+    },
+    {
+      "name": "ceil_release_resneak2",
+      "description": "Sneak under a top slab, let go, sneak again, let go, walk out back.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-2, 101, 0],
+          "to": [2, 101, 4],
+          "block": {
+            "name": "minecraft:smooth_stone_slab",
+            "states": {
+              "minecraft:vertical_half": "top"
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, -0.75]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 30,
+          "forward": 1,
+          "sneak": true
+        },
+        {
+          "ticks": 4,
+          "forward": 1
+        },
+        {
+          "ticks": 4,
+          "forward": 1,
+          "sneak": true
+        },
+        {
+          "ticks": 4,
+          "forward": 1
+        },
+        {
+          "ticks": 40,
+          "forward": -1
+        },
+        {
+          "ticks": 5
+        }
+      ]
+    },
+    {
+      "name": "ceil_push_10",
+      "description": "Let go of a sneak under a one-block top slab and walk out forward; the box overlaps the slab by about 0.001 when it could stand.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-2, 101, 0],
+          "to": [2, 101, 0],
+          "block": {
+            "name": "minecraft:smooth_stone_slab",
+            "states": {
+              "minecraft:vertical_half": "top"
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, -0.6954]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 16,
+          "forward": 1,
+          "sneak": true
+        },
+        {
+          "ticks": 30,
+          "forward": 1
+        },
+        {
+          "ticks": 5
+        }
+      ]
+    },
+    {
+      "name": "ceil_push_30",
+      "description": "Let go of a sneak under a one-block top slab and walk out forward; the box overlaps the slab by about 0.003 when it could stand.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-2, 101, 0],
+          "to": [2, 101, 0],
+          "block": {
+            "name": "minecraft:smooth_stone_slab",
+            "states": {
+              "minecraft:vertical_half": "top"
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, -0.6974]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 16,
+          "forward": 1,
+          "sneak": true
+        },
+        {
+          "ticks": 30,
+          "forward": 1
+        },
+        {
+          "ticks": 5
+        }
+      ]
+    },
+    {
+      "name": "ceil_push_50",
+      "description": "Let go of a sneak under a one-block top slab and walk out forward; the box overlaps the slab by about 0.005 when it could stand.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-2, 101, 0],
+          "to": [2, 101, 0],
+          "block": {
+            "name": "minecraft:smooth_stone_slab",
+            "states": {
+              "minecraft:vertical_half": "top"
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, -0.6994]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 16,
+          "forward": 1,
+          "sneak": true
+        },
+        {
+          "ticks": 30,
+          "forward": 1
+        },
+        {
+          "ticks": 5
+        }
+      ]
+    },
+    {
+      "name": "ceil_push_75",
+      "description": "Let go of a sneak under a one-block top slab and walk out forward; the box overlaps the slab by about 0.0075 when it could stand.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-2, 101, 0],
+          "to": [2, 101, 0],
+          "block": {
+            "name": "minecraft:smooth_stone_slab",
+            "states": {
+              "minecraft:vertical_half": "top"
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, -0.7019]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 16,
+          "forward": 1,
+          "sneak": true
+        },
+        {
+          "ticks": 30,
+          "forward": 1
+        },
+        {
+          "ticks": 5
+        }
+      ]
+    },
+    {
+      "name": "ceil_push_90",
+      "description": "Let go of a sneak under a one-block top slab and walk out forward; the box overlaps the slab by about 0.009 when it could stand.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-2, 101, 0],
+          "to": [2, 101, 0],
+          "block": {
+            "name": "minecraft:smooth_stone_slab",
+            "states": {
+              "minecraft:vertical_half": "top"
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, -0.7034]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 16,
+          "forward": 1,
+          "sneak": true
+        },
+        {
+          "ticks": 30,
+          "forward": 1
+        },
+        {
+          "ticks": 5
+        }
+      ]
+    },
+    {
+      "name": "ceil_push_105",
+      "description": "Let go of a sneak under a one-block top slab and walk out forward; the box overlaps the slab by about 0.0105 when it could stand.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-2, 101, 0],
+          "to": [2, 101, 0],
+          "block": {
+            "name": "minecraft:smooth_stone_slab",
+            "states": {
+              "minecraft:vertical_half": "top"
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, -0.7049]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 16,
+          "forward": 1,
+          "sneak": true
+        },
+        {
+          "ticks": 30,
+          "forward": 1
+        },
+        {
+          "ticks": 5
+        }
+      ]
+    },
+    {
+      "name": "ceil_push_120",
+      "description": "Let go of a sneak under a one-block top slab and walk out forward; the box overlaps the slab by about 0.012 when it could stand.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-2, 101, 0],
+          "to": [2, 101, 0],
+          "block": {
+            "name": "minecraft:smooth_stone_slab",
+            "states": {
+              "minecraft:vertical_half": "top"
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, -0.7064]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 16,
+          "forward": 1,
+          "sneak": true
+        },
+        {
+          "ticks": 30,
+          "forward": 1
+        },
+        {
+          "ticks": 5
+        }
+      ]
+    },
+    {
+      "name": "ceil_push_135",
+      "description": "Let go of a sneak under a one-block top slab and walk out forward; the box overlaps the slab by about 0.0135 when it could stand.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-2, 101, 0],
+          "to": [2, 101, 0],
+          "block": {
+            "name": "minecraft:smooth_stone_slab",
+            "states": {
+              "minecraft:vertical_half": "top"
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, -0.7079]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 16,
+          "forward": 1,
+          "sneak": true
+        },
+        {
+          "ticks": 30,
+          "forward": 1
+        },
+        {
+          "ticks": 5
+        }
+      ]
+    },
+    {
+      "name": "ceil_push_150",
+      "description": "Let go of a sneak under a one-block top slab and walk out forward; the box overlaps the slab by about 0.015 when it could stand.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-2, 101, 0],
+          "to": [2, 101, 0],
+          "block": {
+            "name": "minecraft:smooth_stone_slab",
+            "states": {
+              "minecraft:vertical_half": "top"
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, -0.7094]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 16,
+          "forward": 1,
+          "sneak": true
+        },
+        {
+          "ticks": 30,
+          "forward": 1
+        },
+        {
+          "ticks": 5
+        }
+      ]
+    },
+    {
+      "name": "ceil_push_200",
+      "description": "Let go of a sneak under a one-block top slab and walk out forward; the box overlaps the slab by about 0.02 when it could stand.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-2, 101, 0],
+          "to": [2, 101, 0],
+          "block": {
+            "name": "minecraft:smooth_stone_slab",
+            "states": {
+              "minecraft:vertical_half": "top"
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, -0.7144]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 16,
+          "forward": 1,
+          "sneak": true
+        },
+        {
+          "ticks": 30,
+          "forward": 1
+        },
+        {
+          "ticks": 5
+        }
+      ]
+    },
+    {
+      "name": "ceil_push_300",
+      "description": "Let go of a sneak under a one-block top slab and walk out forward; the box overlaps the slab by about 0.03 when it could stand.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-2, 101, 0],
+          "to": [2, 101, 0],
+          "block": {
+            "name": "minecraft:smooth_stone_slab",
+            "states": {
+              "minecraft:vertical_half": "top"
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, -0.7244]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 16,
+          "forward": 1,
+          "sneak": true
+        },
+        {
+          "ticks": 30,
+          "forward": 1
+        },
+        {
+          "ticks": 5
+        }
+      ]
+    },
+    {
+      "name": "ceil_push_diagonal",
+      "description": "As ceil_push_50, walking forward and right: does the push stop the sideways velocity too?",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-2, 101, 0],
+          "to": [2, 101, 0],
+          "block": {
+            "name": "minecraft:smooth_stone_slab",
+            "states": {
+              "minecraft:vertical_half": "top"
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, -0.6994]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 16,
+          "forward": 1,
+          "sneak": true
+        },
+        {
+          "ticks": 30,
+          "forward": 1,
+          "strafe": -0.3
+        },
+        {
+          "ticks": 5
+        }
+      ]
+    },
+    {
+      "name": "current_stand",
+      "description": "Stand in flowing water (depth 3) in a channel and let the current push.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-1, 100, 4],
+          "to": [-1, 101, 13],
+          "block": {
+            "name": "minecraft:glass"
+          }
+        },
+        {
+          "from": [1, 100, 4],
+          "to": [1, 101, 13],
+          "block": {
+            "name": "minecraft:glass"
+          }
+        },
+        {
+          "from": [0, 100, 4],
+          "to": [0, 101, 4],
+          "block": {
+            "name": "minecraft:glass"
+          }
+        },
+        {
+          "from": [0, 100, 5],
+          "to": [0, 100, 5],
+          "block": {
+            "name": "minecraft:water"
+          }
+        },
+        {
+          "from": [0, 100, 6],
+          "to": [0, 100, 6],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 1
+            }
+          }
+        },
+        {
+          "from": [0, 100, 7],
+          "to": [0, 100, 7],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [0, 100, 8],
+          "to": [0, 100, 8],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [0, 100, 9],
+          "to": [0, 100, 9],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [0, 100, 10],
+          "to": [0, 100, 10],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [0, 100, 11],
+          "to": [0, 100, 11],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 6
+            }
+          }
+        },
+        {
+          "from": [0, 100, 12],
+          "to": [0, 100, 12],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 7
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, 8.5]
+      },
+      "inputs": [
+        {
+          "ticks": 40
+        }
+      ]
+    },
+    {
+      "name": "current_walk_up",
+      "description": "Walk against the current in a channel.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-1, 100, 4],
+          "to": [-1, 101, 13],
+          "block": {
+            "name": "minecraft:glass"
+          }
+        },
+        {
+          "from": [1, 100, 4],
+          "to": [1, 101, 13],
+          "block": {
+            "name": "minecraft:glass"
+          }
+        },
+        {
+          "from": [0, 100, 4],
+          "to": [0, 101, 4],
+          "block": {
+            "name": "minecraft:glass"
+          }
+        },
+        {
+          "from": [0, 100, 5],
+          "to": [0, 100, 5],
+          "block": {
+            "name": "minecraft:water"
+          }
+        },
+        {
+          "from": [0, 100, 6],
+          "to": [0, 100, 6],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 1
+            }
+          }
+        },
+        {
+          "from": [0, 100, 7],
+          "to": [0, 100, 7],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [0, 100, 8],
+          "to": [0, 100, 8],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [0, 100, 9],
+          "to": [0, 100, 9],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [0, 100, 10],
+          "to": [0, 100, 10],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [0, 100, 11],
+          "to": [0, 100, 11],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 6
+            }
+          }
+        },
+        {
+          "from": [0, 100, 12],
+          "to": [0, 100, 12],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 7
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, 10.5]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 30,
+          "forward": -1
+        },
+        {
+          "ticks": 10
+        }
+      ]
+    },
+    {
+      "name": "current_source_edge",
+      "description": "Stand on the source next to flowing water.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-1, 100, 4],
+          "to": [-1, 101, 13],
+          "block": {
+            "name": "minecraft:glass"
+          }
+        },
+        {
+          "from": [1, 100, 4],
+          "to": [1, 101, 13],
+          "block": {
+            "name": "minecraft:glass"
+          }
+        },
+        {
+          "from": [0, 100, 4],
+          "to": [0, 101, 4],
+          "block": {
+            "name": "minecraft:glass"
+          }
+        },
+        {
+          "from": [0, 100, 5],
+          "to": [0, 100, 5],
+          "block": {
+            "name": "minecraft:water"
+          }
+        },
+        {
+          "from": [0, 100, 6],
+          "to": [0, 100, 6],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 1
+            }
+          }
+        },
+        {
+          "from": [0, 100, 7],
+          "to": [0, 100, 7],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [0, 100, 8],
+          "to": [0, 100, 8],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [0, 100, 9],
+          "to": [0, 100, 9],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [0, 100, 10],
+          "to": [0, 100, 10],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [0, 100, 11],
+          "to": [0, 100, 11],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 6
+            }
+          }
+        },
+        {
+          "from": [0, 100, 12],
+          "to": [0, 100, 12],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 7
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, 5.5]
+      },
+      "inputs": [
+        {
+          "ticks": 40
+        }
+      ]
+    },
+    {
+      "name": "current_diamond_one",
+      "description": "Stand in one cell of water spreading from a source in every direction: the current is diagonal.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-4, 100, 4],
+          "to": [4, 101, 4],
+          "block": {
+            "name": "minecraft:glass"
+          }
+        },
+        {
+          "from": [-4, 100, 12],
+          "to": [4, 101, 12],
+          "block": {
+            "name": "minecraft:glass"
+          }
+        },
+        {
+          "from": [-4, 100, 5],
+          "to": [-4, 101, 11],
+          "block": {
+            "name": "minecraft:glass"
+          }
+        },
+        {
+          "from": [4, 100, 5],
+          "to": [4, 101, 11],
+          "block": {
+            "name": "minecraft:glass"
+          }
+        },
+        {
+          "from": [-3, 100, 5],
+          "to": [-3, 100, 5],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 6
+            }
+          }
+        },
+        {
+          "from": [-3, 100, 6],
+          "to": [-3, 100, 6],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [-3, 100, 7],
+          "to": [-3, 100, 7],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [-3, 100, 8],
+          "to": [-3, 100, 8],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [-3, 100, 9],
+          "to": [-3, 100, 9],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [-3, 100, 10],
+          "to": [-3, 100, 10],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [-3, 100, 11],
+          "to": [-3, 100, 11],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 6
+            }
+          }
+        },
+        {
+          "from": [-2, 100, 5],
+          "to": [-2, 100, 5],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [-2, 100, 6],
+          "to": [-2, 100, 6],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [-2, 100, 7],
+          "to": [-2, 100, 7],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [-2, 100, 8],
+          "to": [-2, 100, 8],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [-2, 100, 9],
+          "to": [-2, 100, 9],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [-2, 100, 10],
+          "to": [-2, 100, 10],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [-2, 100, 11],
+          "to": [-2, 100, 11],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [-1, 100, 5],
+          "to": [-1, 100, 5],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [-1, 100, 6],
+          "to": [-1, 100, 6],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [-1, 100, 7],
+          "to": [-1, 100, 7],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [-1, 100, 8],
+          "to": [-1, 100, 8],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 1
+            }
+          }
+        },
+        {
+          "from": [-1, 100, 9],
+          "to": [-1, 100, 9],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [-1, 100, 10],
+          "to": [-1, 100, 10],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [-1, 100, 11],
+          "to": [-1, 100, 11],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [0, 100, 5],
+          "to": [0, 100, 5],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [0, 100, 6],
+          "to": [0, 100, 6],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [0, 100, 7],
+          "to": [0, 100, 7],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 1
+            }
+          }
+        },
+        {
+          "from": [0, 100, 8],
+          "to": [0, 100, 8],
+          "block": {
+            "name": "minecraft:water"
+          }
+        },
+        {
+          "from": [0, 100, 9],
+          "to": [0, 100, 9],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 1
+            }
+          }
+        },
+        {
+          "from": [0, 100, 10],
+          "to": [0, 100, 10],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [0, 100, 11],
+          "to": [0, 100, 11],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [1, 100, 5],
+          "to": [1, 100, 5],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [1, 100, 6],
+          "to": [1, 100, 6],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [1, 100, 7],
+          "to": [1, 100, 7],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [1, 100, 8],
+          "to": [1, 100, 8],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 1
+            }
+          }
+        },
+        {
+          "from": [1, 100, 9],
+          "to": [1, 100, 9],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [1, 100, 10],
+          "to": [1, 100, 10],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [1, 100, 11],
+          "to": [1, 100, 11],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [2, 100, 5],
+          "to": [2, 100, 5],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [2, 100, 6],
+          "to": [2, 100, 6],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [2, 100, 7],
+          "to": [2, 100, 7],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [2, 100, 8],
+          "to": [2, 100, 8],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [2, 100, 9],
+          "to": [2, 100, 9],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [2, 100, 10],
+          "to": [2, 100, 10],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [2, 100, 11],
+          "to": [2, 100, 11],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [3, 100, 5],
+          "to": [3, 100, 5],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 6
+            }
+          }
+        },
+        {
+          "from": [3, 100, 6],
+          "to": [3, 100, 6],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [3, 100, 7],
+          "to": [3, 100, 7],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [3, 100, 8],
+          "to": [3, 100, 8],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [3, 100, 9],
+          "to": [3, 100, 9],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [3, 100, 10],
+          "to": [3, 100, 10],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [3, 100, 11],
+          "to": [3, 100, 11],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 6
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [1.5, 100, 9.5]
+      },
+      "inputs": [
+        {
+          "ticks": 30
+        }
+      ]
+    },
+    {
+      "name": "current_diamond_four",
+      "description": "Stand across four cells of spreading water, the source one of them: the current is their average.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-4, 100, 4],
+          "to": [4, 101, 4],
+          "block": {
+            "name": "minecraft:glass"
+          }
+        },
+        {
+          "from": [-4, 100, 12],
+          "to": [4, 101, 12],
+          "block": {
+            "name": "minecraft:glass"
+          }
+        },
+        {
+          "from": [-4, 100, 5],
+          "to": [-4, 101, 11],
+          "block": {
+            "name": "minecraft:glass"
+          }
+        },
+        {
+          "from": [4, 100, 5],
+          "to": [4, 101, 11],
+          "block": {
+            "name": "minecraft:glass"
+          }
+        },
+        {
+          "from": [-3, 100, 5],
+          "to": [-3, 100, 5],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 6
+            }
+          }
+        },
+        {
+          "from": [-3, 100, 6],
+          "to": [-3, 100, 6],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [-3, 100, 7],
+          "to": [-3, 100, 7],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [-3, 100, 8],
+          "to": [-3, 100, 8],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [-3, 100, 9],
+          "to": [-3, 100, 9],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [-3, 100, 10],
+          "to": [-3, 100, 10],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [-3, 100, 11],
+          "to": [-3, 100, 11],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 6
+            }
+          }
+        },
+        {
+          "from": [-2, 100, 5],
+          "to": [-2, 100, 5],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [-2, 100, 6],
+          "to": [-2, 100, 6],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [-2, 100, 7],
+          "to": [-2, 100, 7],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [-2, 100, 8],
+          "to": [-2, 100, 8],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [-2, 100, 9],
+          "to": [-2, 100, 9],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [-2, 100, 10],
+          "to": [-2, 100, 10],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [-2, 100, 11],
+          "to": [-2, 100, 11],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [-1, 100, 5],
+          "to": [-1, 100, 5],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [-1, 100, 6],
+          "to": [-1, 100, 6],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [-1, 100, 7],
+          "to": [-1, 100, 7],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [-1, 100, 8],
+          "to": [-1, 100, 8],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 1
+            }
+          }
+        },
+        {
+          "from": [-1, 100, 9],
+          "to": [-1, 100, 9],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [-1, 100, 10],
+          "to": [-1, 100, 10],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [-1, 100, 11],
+          "to": [-1, 100, 11],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [0, 100, 5],
+          "to": [0, 100, 5],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [0, 100, 6],
+          "to": [0, 100, 6],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [0, 100, 7],
+          "to": [0, 100, 7],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 1
+            }
+          }
+        },
+        {
+          "from": [0, 100, 8],
+          "to": [0, 100, 8],
+          "block": {
+            "name": "minecraft:water"
+          }
+        },
+        {
+          "from": [0, 100, 9],
+          "to": [0, 100, 9],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 1
+            }
+          }
+        },
+        {
+          "from": [0, 100, 10],
+          "to": [0, 100, 10],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [0, 100, 11],
+          "to": [0, 100, 11],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [1, 100, 5],
+          "to": [1, 100, 5],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [1, 100, 6],
+          "to": [1, 100, 6],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [1, 100, 7],
+          "to": [1, 100, 7],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [1, 100, 8],
+          "to": [1, 100, 8],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 1
+            }
+          }
+        },
+        {
+          "from": [1, 100, 9],
+          "to": [1, 100, 9],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [1, 100, 10],
+          "to": [1, 100, 10],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [1, 100, 11],
+          "to": [1, 100, 11],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [2, 100, 5],
+          "to": [2, 100, 5],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [2, 100, 6],
+          "to": [2, 100, 6],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [2, 100, 7],
+          "to": [2, 100, 7],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [2, 100, 8],
+          "to": [2, 100, 8],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [2, 100, 9],
+          "to": [2, 100, 9],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [2, 100, 10],
+          "to": [2, 100, 10],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [2, 100, 11],
+          "to": [2, 100, 11],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [3, 100, 5],
+          "to": [3, 100, 5],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 6
+            }
+          }
+        },
+        {
+          "from": [3, 100, 6],
+          "to": [3, 100, 6],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [3, 100, 7],
+          "to": [3, 100, 7],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [3, 100, 8],
+          "to": [3, 100, 8],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [3, 100, 9],
+          "to": [3, 100, 9],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [3, 100, 10],
+          "to": [3, 100, 10],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [3, 100, 11],
+          "to": [3, 100, 11],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 6
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.95, 100, 8.05]
+      },
+      "inputs": [
+        {
+          "ticks": 30
+        }
+      ]
+    },
+    {
+      "name": "current_diamond_walk",
+      "description": "Walk diagonally across water spreading from a source.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-4, 100, 4],
+          "to": [4, 101, 4],
+          "block": {
+            "name": "minecraft:glass"
+          }
+        },
+        {
+          "from": [-4, 100, 12],
+          "to": [4, 101, 12],
+          "block": {
+            "name": "minecraft:glass"
+          }
+        },
+        {
+          "from": [-4, 100, 5],
+          "to": [-4, 101, 11],
+          "block": {
+            "name": "minecraft:glass"
+          }
+        },
+        {
+          "from": [4, 100, 5],
+          "to": [4, 101, 11],
+          "block": {
+            "name": "minecraft:glass"
+          }
+        },
+        {
+          "from": [-3, 100, 5],
+          "to": [-3, 100, 5],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 6
+            }
+          }
+        },
+        {
+          "from": [-3, 100, 6],
+          "to": [-3, 100, 6],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [-3, 100, 7],
+          "to": [-3, 100, 7],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [-3, 100, 8],
+          "to": [-3, 100, 8],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [-3, 100, 9],
+          "to": [-3, 100, 9],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [-3, 100, 10],
+          "to": [-3, 100, 10],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [-3, 100, 11],
+          "to": [-3, 100, 11],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 6
+            }
+          }
+        },
+        {
+          "from": [-2, 100, 5],
+          "to": [-2, 100, 5],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [-2, 100, 6],
+          "to": [-2, 100, 6],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [-2, 100, 7],
+          "to": [-2, 100, 7],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [-2, 100, 8],
+          "to": [-2, 100, 8],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [-2, 100, 9],
+          "to": [-2, 100, 9],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [-2, 100, 10],
+          "to": [-2, 100, 10],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [-2, 100, 11],
+          "to": [-2, 100, 11],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [-1, 100, 5],
+          "to": [-1, 100, 5],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [-1, 100, 6],
+          "to": [-1, 100, 6],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [-1, 100, 7],
+          "to": [-1, 100, 7],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [-1, 100, 8],
+          "to": [-1, 100, 8],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 1
+            }
+          }
+        },
+        {
+          "from": [-1, 100, 9],
+          "to": [-1, 100, 9],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [-1, 100, 10],
+          "to": [-1, 100, 10],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [-1, 100, 11],
+          "to": [-1, 100, 11],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [0, 100, 5],
+          "to": [0, 100, 5],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [0, 100, 6],
+          "to": [0, 100, 6],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [0, 100, 7],
+          "to": [0, 100, 7],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 1
+            }
+          }
+        },
+        {
+          "from": [0, 100, 8],
+          "to": [0, 100, 8],
+          "block": {
+            "name": "minecraft:water"
+          }
+        },
+        {
+          "from": [0, 100, 9],
+          "to": [0, 100, 9],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 1
+            }
+          }
+        },
+        {
+          "from": [0, 100, 10],
+          "to": [0, 100, 10],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [0, 100, 11],
+          "to": [0, 100, 11],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [1, 100, 5],
+          "to": [1, 100, 5],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [1, 100, 6],
+          "to": [1, 100, 6],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [1, 100, 7],
+          "to": [1, 100, 7],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [1, 100, 8],
+          "to": [1, 100, 8],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 1
+            }
+          }
+        },
+        {
+          "from": [1, 100, 9],
+          "to": [1, 100, 9],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [1, 100, 10],
+          "to": [1, 100, 10],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [1, 100, 11],
+          "to": [1, 100, 11],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [2, 100, 5],
+          "to": [2, 100, 5],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [2, 100, 6],
+          "to": [2, 100, 6],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [2, 100, 7],
+          "to": [2, 100, 7],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [2, 100, 8],
+          "to": [2, 100, 8],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [2, 100, 9],
+          "to": [2, 100, 9],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [2, 100, 10],
+          "to": [2, 100, 10],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [2, 100, 11],
+          "to": [2, 100, 11],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [3, 100, 5],
+          "to": [3, 100, 5],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 6
+            }
+          }
+        },
+        {
+          "from": [3, 100, 6],
+          "to": [3, 100, 6],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [3, 100, 7],
+          "to": [3, 100, 7],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [3, 100, 8],
+          "to": [3, 100, 8],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [3, 100, 9],
+          "to": [3, 100, 9],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [3, 100, 10],
+          "to": [3, 100, 10],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [3, 100, 11],
+          "to": [3, 100, 11],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 6
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [-2.5, 100, 5.5],
+        "yaw": -45
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 30,
+          "forward": 1
+        },
+        {
+          "ticks": 10
+        }
+      ]
+    },
+    {
+      "name": "current_diamond_jump",
+      "description": "Jump and strafe in water spreading from a source.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-4, 100, 4],
+          "to": [4, 101, 4],
+          "block": {
+            "name": "minecraft:glass"
+          }
+        },
+        {
+          "from": [-4, 100, 12],
+          "to": [4, 101, 12],
+          "block": {
+            "name": "minecraft:glass"
+          }
+        },
+        {
+          "from": [-4, 100, 5],
+          "to": [-4, 101, 11],
+          "block": {
+            "name": "minecraft:glass"
+          }
+        },
+        {
+          "from": [4, 100, 5],
+          "to": [4, 101, 11],
+          "block": {
+            "name": "minecraft:glass"
+          }
+        },
+        {
+          "from": [-3, 100, 5],
+          "to": [-3, 100, 5],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 6
+            }
+          }
+        },
+        {
+          "from": [-3, 100, 6],
+          "to": [-3, 100, 6],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [-3, 100, 7],
+          "to": [-3, 100, 7],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [-3, 100, 8],
+          "to": [-3, 100, 8],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [-3, 100, 9],
+          "to": [-3, 100, 9],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [-3, 100, 10],
+          "to": [-3, 100, 10],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [-3, 100, 11],
+          "to": [-3, 100, 11],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 6
+            }
+          }
+        },
+        {
+          "from": [-2, 100, 5],
+          "to": [-2, 100, 5],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [-2, 100, 6],
+          "to": [-2, 100, 6],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [-2, 100, 7],
+          "to": [-2, 100, 7],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [-2, 100, 8],
+          "to": [-2, 100, 8],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [-2, 100, 9],
+          "to": [-2, 100, 9],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [-2, 100, 10],
+          "to": [-2, 100, 10],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [-2, 100, 11],
+          "to": [-2, 100, 11],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [-1, 100, 5],
+          "to": [-1, 100, 5],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [-1, 100, 6],
+          "to": [-1, 100, 6],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [-1, 100, 7],
+          "to": [-1, 100, 7],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [-1, 100, 8],
+          "to": [-1, 100, 8],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 1
+            }
+          }
+        },
+        {
+          "from": [-1, 100, 9],
+          "to": [-1, 100, 9],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [-1, 100, 10],
+          "to": [-1, 100, 10],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [-1, 100, 11],
+          "to": [-1, 100, 11],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [0, 100, 5],
+          "to": [0, 100, 5],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [0, 100, 6],
+          "to": [0, 100, 6],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [0, 100, 7],
+          "to": [0, 100, 7],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 1
+            }
+          }
+        },
+        {
+          "from": [0, 100, 8],
+          "to": [0, 100, 8],
+          "block": {
+            "name": "minecraft:water"
+          }
+        },
+        {
+          "from": [0, 100, 9],
+          "to": [0, 100, 9],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 1
+            }
+          }
+        },
+        {
+          "from": [0, 100, 10],
+          "to": [0, 100, 10],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [0, 100, 11],
+          "to": [0, 100, 11],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [1, 100, 5],
+          "to": [1, 100, 5],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [1, 100, 6],
+          "to": [1, 100, 6],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [1, 100, 7],
+          "to": [1, 100, 7],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [1, 100, 8],
+          "to": [1, 100, 8],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 1
+            }
+          }
+        },
+        {
+          "from": [1, 100, 9],
+          "to": [1, 100, 9],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [1, 100, 10],
+          "to": [1, 100, 10],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [1, 100, 11],
+          "to": [1, 100, 11],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [2, 100, 5],
+          "to": [2, 100, 5],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [2, 100, 6],
+          "to": [2, 100, 6],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [2, 100, 7],
+          "to": [2, 100, 7],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [2, 100, 8],
+          "to": [2, 100, 8],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 2
+            }
+          }
+        },
+        {
+          "from": [2, 100, 9],
+          "to": [2, 100, 9],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [2, 100, 10],
+          "to": [2, 100, 10],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [2, 100, 11],
+          "to": [2, 100, 11],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [3, 100, 5],
+          "to": [3, 100, 5],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 6
+            }
+          }
+        },
+        {
+          "from": [3, 100, 6],
+          "to": [3, 100, 6],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [3, 100, 7],
+          "to": [3, 100, 7],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [3, 100, 8],
+          "to": [3, 100, 8],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 3
+            }
+          }
+        },
+        {
+          "from": [3, 100, 9],
+          "to": [3, 100, 9],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 4
+            }
+          }
+        },
+        {
+          "from": [3, 100, 10],
+          "to": [3, 100, 10],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 5
+            }
+          }
+        },
+        {
+          "from": [3, 100, 11],
+          "to": [3, 100, 11],
+          "block": {
+            "name": "minecraft:water",
+            "states": {
+              "liquid_depth": 6
+            }
+          }
+        }
+      ],
+      "start": {
+        "feet": [2.5, 100, 9.5]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 20,
+          "strafe": 1,
+          "jump": true
+        },
+        {
+          "ticks": 10
+        }
+      ]
+    },
+    {
+      "name": "random_344",
+      "description": "Random seed 344 (movement-diff random): a sprint jump at the edge of a trapdoor: 6384 ULP on x after two air ticks, not matched yet",
+      "inputs": [
+        {
+          "ticks": 4
+        },
+        {
+          "forward": -1.0,
+          "jump": false,
+          "sneak": true,
+          "sprint": false,
+          "strafe": 0.0,
+          "ticks": 3,
+          "yaw": -37.5
+        },
+        {
+          "forward": 1.0,
+          "jump": true,
+          "sneak": true,
+          "sprint": false,
+          "strafe": -1.0,
+          "ticks": 6,
+          "yaw": -60.0
+        },
+        {
+          "forward": 0.0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "strafe": -1.0,
+          "ticks": 7,
+          "turn": 6.0
+        },
+        {
+          "forward": -1.0,
+          "jump": false,
+          "sneak": false,
+          "sprint": true,
+          "strafe": 0.30000001192092896,
+          "ticks": 3
+        },
+        {
+          "forward": 1.0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "strafe": -1.0,
+          "ticks": 7
+        },
+        {
+          "forward": 0.5,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "strafe": -1.0,
+          "ticks": 10
+        },
+        {
+          "forward": 1.0,
+          "jump": true,
+          "sneak": false,
+          "sprint": true,
+          "strafe": 0.0,
+          "ticks": 5,
+          "turn": -1.5
+        },
+        {
+          "forward": 0.0,
+          "jump": false,
+          "sneak": false,
+          "sprint": true,
+          "strafe": 0.0,
+          "ticks": 12
+        },
+        {
+          "forward": 0.0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "strafe": 1.0,
+          "ticks": 4
+        },
+        {
+          "ticks": 10
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, -2.5]
+      },
+      "world": [
+        {
+          "block": {
+            "name": "minecraft:blue_ice"
+          },
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40]
+        },
+        {
+          "block": {
+            "name": "minecraft:trapdoor",
+            "states": {}
+          },
+          "from": [2, 102, 3],
+          "to": [2, 102, 4]
+        },
+        {
+          "block": {
+            "name": "minecraft:trapdoor",
+            "states": {}
+          },
+          "from": [1, 102, 5],
+          "to": [3, 102, 5]
+        },
+        {
+          "block": {
+            "name": "minecraft:glass",
+            "states": {}
+          },
+          "from": [-1, 100, 9],
+          "to": [-1, 100, 10]
+        },
+        {
+          "block": {
+            "name": "minecraft:smooth_stone_slab",
+            "states": {
+              "minecraft:vertical_half": "top"
+            }
+          },
+          "from": [-2, 100, 2],
+          "to": [-1, 100, 2]
+        },
+        {
+          "block": {
+            "name": "minecraft:honey_block",
+            "states": {}
+          },
+          "from": [-3, 100, 1],
+          "to": [-2, 101, 2]
+        },
+        {
+          "block": {
+            "name": "minecraft:packed_ice",
+            "states": {}
+          },
+          "from": [0, 101, 3],
+          "to": [2, 101, 4]
+        }
+      ]
+    },
+    {
+      "name": "random_354",
+      "description": "Random seed 354 (movement-diff random): a slime bounce's corrected velocity an ULP off, not matched yet",
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "forward": 0.0,
+          "jump": false,
+          "sneak": false,
+          "sprint": true,
+          "strafe": 0.30000001192092896,
+          "ticks": 12
+        },
+        {
+          "forward": -1.0,
+          "jump": true,
+          "sneak": false,
+          "sprint": false,
+          "strafe": 0.0,
+          "ticks": 13,
+          "yaw": -60.0
+        },
+        {
+          "forward": 1.0,
+          "jump": false,
+          "sneak": false,
+          "sprint": true,
+          "strafe": 0.0,
+          "ticks": 4
+        },
+        {
+          "forward": 1.0,
+          "jump": true,
+          "sneak": false,
+          "sprint": true,
+          "strafe": 1.0,
+          "ticks": 5
+        },
+        {
+          "forward": 1.0,
+          "jump": false,
+          "sneak": false,
+          "sprint": true,
+          "strafe": -1.0,
+          "ticks": 3
+        },
+        {
+          "forward": 1.0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "strafe": 0.30000001192092896,
+          "ticks": 13,
+          "yaw": -105.0
+        },
+        {
+          "forward": 0.0,
+          "jump": false,
+          "sneak": false,
+          "sprint": true,
+          "strafe": 0.30000001192092896,
+          "ticks": 6
+        },
+        {
+          "forward": 0.5,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "strafe": 1.0,
+          "ticks": 12
+        },
+        {
+          "ticks": 10
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, -2.5]
+      },
+      "world": [
+        {
+          "block": {
+            "name": "minecraft:slime"
+          },
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40]
+        },
+        {
+          "block": {
+            "name": "minecraft:web",
+            "states": {}
+          },
+          "from": [-4, 100, 3],
+          "to": [-4, 100, 3]
+        },
+        {
+          "block": {
+            "name": "minecraft:oak_stairs",
+            "states": {
+              "weirdo_direction": 0
+            }
+          },
+          "from": [1, 101, 3],
+          "to": [2, 102, 4]
+        },
+        {
+          "block": {
+            "name": "minecraft:soul_sand",
+            "states": {}
+          },
+          "from": [1, 101, 2],
+          "to": [3, 101, 2]
+        },
+        {
+          "block": {
+            "name": "minecraft:ice",
+            "states": {}
+          },
+          "from": [-3, 100, 9],
+          "to": [-3, 100, 9]
+        },
+        {
+          "block": {
+            "name": "minecraft:web",
+            "states": {}
+          },
+          "from": [-3, 102, 1],
+          "to": [-1, 102, 1]
+        },
+        {
+          "block": {
+            "name": "minecraft:oak_stairs",
+            "states": {
+              "weirdo_direction": 0
+            }
+          },
+          "from": [-4, 102, 3],
+          "to": [-3, 103, 3]
+        },
+        {
+          "block": {
+            "name": "minecraft:honey_block",
+            "states": {}
+          },
+          "from": [1, 100, 1],
+          "to": [3, 101, 3]
+        }
+      ]
+    },
+    {
+      "name": "random_386",
+      "description": "Random seed 386 (movement-diff random): a slime bounce's corrected velocity an ULP off, not matched yet",
+      "inputs": [
+        {
+          "ticks": 3
+        },
+        {
+          "forward": 1.0,
+          "jump": true,
+          "sneak": false,
+          "sprint": false,
+          "strafe": 0.0,
+          "ticks": 13
+        },
+        {
+          "forward": 0.5,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "strafe": 0.0,
+          "ticks": 10
+        },
+        {
+          "forward": 1.0,
+          "jump": false,
+          "sneak": true,
+          "sprint": true,
+          "strafe": 1.0,
+          "ticks": 5
+        },
+        {
+          "forward": 1.0,
+          "jump": true,
+          "sneak": false,
+          "sprint": true,
+          "strafe": 0.0,
+          "ticks": 8
+        },
+        {
+          "forward": 1.0,
+          "jump": true,
+          "sneak": false,
+          "sprint": true,
+          "strafe": 0.30000001192092896,
+          "ticks": 8,
+          "turn": 0.0,
+          "yaw": 52.5
+        },
+        {
+          "forward": 0.0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "strafe": 0.0,
+          "ticks": 6,
+          "turn": 4.5
+        },
+        {
+          "forward": 1.0,
+          "jump": false,
+          "sneak": false,
+          "sprint": true,
+          "strafe": 1.0,
+          "ticks": 3
+        },
+        {
+          "forward": 1.0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "strafe": 0.0,
+          "ticks": 10,
+          "turn": -7.5
+        },
+        {
+          "forward": 1.0,
+          "jump": false,
+          "sneak": false,
+          "sprint": true,
+          "strafe": 0.0,
+          "ticks": 11
+        },
+        {
+          "forward": 1.0,
+          "jump": false,
+          "sneak": false,
+          "sprint": true,
+          "strafe": 1.0,
+          "ticks": 10
+        },
+        {
+          "ticks": 10
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, -2.5]
+      },
+      "world": [
+        {
+          "block": {
+            "name": "minecraft:slime"
+          },
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40]
+        },
+        {
+          "block": {
+            "name": "minecraft:oak_stairs",
+            "states": {
+              "weirdo_direction": 0
+            }
+          },
+          "from": [3, 100, 4],
+          "to": [3, 100, 4]
+        },
+        {
+          "block": {
+            "name": "minecraft:web",
+            "states": {}
+          },
+          "from": [-3, 100, 10],
+          "to": [-3, 100, 10]
+        },
+        {
+          "block": {
+            "name": "minecraft:smooth_stone_slab",
+            "states": {
+              "minecraft:vertical_half": "top"
+            }
+          },
+          "from": [3, 100, 1],
+          "to": [5, 101, 1]
+        },
+        {
+          "block": {
+            "name": "minecraft:soul_sand",
+            "states": {}
+          },
+          "from": [-4, 101, 6],
+          "to": [-3, 101, 6]
+        },
+        {
+          "block": {
+            "name": "minecraft:honey_block",
+            "states": {}
+          },
+          "from": [0, 101, 10],
+          "to": [0, 101, 11]
+        },
+        {
+          "block": {
+            "name": "minecraft:smooth_stone_slab",
+            "states": {}
+          },
+          "from": [-1, 101, 3],
+          "to": [1, 101, 4]
+        },
+        {
+          "block": {
+            "name": "minecraft:blue_ice",
+            "states": {}
+          },
+          "from": [1, 102, 6],
+          "to": [2, 102, 6]
+        },
+        {
+          "block": {
+            "name": "minecraft:glass",
+            "states": {}
+          },
+          "from": [1, 100, 8],
+          "to": [3, 100, 9]
+        }
+      ]
+    },
+    {
+      "name": "random_388",
+      "description": "Random seed 388 (movement-diff random): 1 ULP on z in a jump from a sneak let go against a block, not matched yet",
+      "inputs": [
+        {
+          "ticks": 3
+        },
+        {
+          "forward": 1.0,
+          "jump": true,
+          "sneak": false,
+          "sprint": true,
+          "strafe": 0.0,
+          "ticks": 7
+        },
+        {
+          "forward": 0.5,
+          "jump": false,
+          "sneak": true,
+          "sprint": true,
+          "strafe": 0.0,
+          "ticks": 9
+        },
+        {
+          "forward": 1.0,
+          "jump": true,
+          "sneak": false,
+          "sprint": false,
+          "strafe": 0.30000001192092896,
+          "ticks": 7,
+          "turn": 3.0
+        },
+        {
+          "forward": 1.0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "strafe": 0.0,
+          "ticks": 6,
+          "turn": 0.0
+        },
+        {
+          "forward": 0.0,
+          "jump": false,
+          "sneak": false,
+          "sprint": true,
+          "strafe": 1.0,
+          "ticks": 5
+        },
+        {
+          "forward": 1.0,
+          "jump": true,
+          "sneak": false,
+          "sprint": true,
+          "strafe": 0.0,
+          "ticks": 7,
+          "yaw": 82.5
+        },
+        {
+          "forward": 0.5,
+          "jump": true,
+          "sneak": false,
+          "sprint": false,
+          "strafe": -1.0,
+          "ticks": 5,
+          "turn": -4.5
+        },
+        {
+          "forward": 0.0,
+          "jump": true,
+          "sneak": false,
+          "sprint": false,
+          "strafe": 1.0,
+          "ticks": 12,
+          "turn": -3.0
+        },
+        {
+          "forward": 0.0,
+          "jump": true,
+          "sneak": true,
+          "sprint": true,
+          "strafe": 1.0,
+          "ticks": 13
+        },
+        {
+          "forward": 1.0,
+          "jump": true,
+          "sneak": false,
+          "sprint": false,
+          "strafe": 0.0,
+          "ticks": 11
+        },
+        {
+          "ticks": 10
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100, -2.5]
+      },
+      "world": [
+        {
+          "block": {
+            "name": "minecraft:blue_ice"
+          },
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40]
+        },
+        {
+          "block": {
+            "name": "minecraft:blue_ice",
+            "states": {}
+          },
+          "from": [-1, 101, 1],
+          "to": [1, 101, 1]
+        },
+        {
+          "block": {
+            "name": "minecraft:smooth_stone_slab",
+            "states": {
+              "minecraft:vertical_half": "top"
+            }
+          },
+          "from": [1, 102, 8],
+          "to": [2, 102, 9]
+        },
+        {
+          "block": {
+            "name": "minecraft:oak_stairs",
+            "states": {
+              "weirdo_direction": 0
+            }
+          },
+          "from": [0, 102, 6],
+          "to": [1, 102, 7]
+        },
+        {
+          "block": {
+            "name": "minecraft:slime",
+            "states": {}
+          },
+          "from": [-1, 102, 1],
+          "to": [1, 102, 1]
+        },
+        {
+          "block": {
+            "name": "minecraft:slime",
+            "states": {}
+          },
+          "from": [0, 100, 5],
+          "to": [2, 101, 5]
+        },
+        {
+          "block": {
+            "name": "minecraft:soul_sand",
+            "states": {}
+          },
+          "from": [-1, 102, 9],
+          "to": [1, 102, 9]
+        }
+      ]
+    },
+    {
       "name": "bubble_column_up",
       "description": "Ride an upward bubble column (water over soul sand, formed by BDS). Played last: the column leaves water in the second layer, which clearing the area does not remove.",
       "world": [
@@ -10403,6 +17650,130 @@
       ]
     },
     {
+      "name": "bubble_up_from_102_4",
+      "description": "Bubble column probe: start at feet 102.4 in an upward column (the corpus's column; played last).",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-1, 100, 1],
+          "to": [1, 108, 3],
+          "block": {
+            "name": "minecraft:glass"
+          }
+        },
+        {
+          "from": [0, 101, 2],
+          "to": [0, 108, 2],
+          "block": {
+            "name": "minecraft:water"
+          }
+        },
+        {
+          "from": [0, 100, 2],
+          "to": [0, 100, 2],
+          "block": {
+            "name": "minecraft:soul_sand"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 102.4, 2.5]
+      },
+      "inputs": [
+        {
+          "ticks": 40
+        }
+      ],
+      "formed": [
+        {
+          "from": [0, 101, 2],
+          "to": [0, 108, 2],
+          "block": {
+            "name": "minecraft:bubble_column",
+            "states": {
+              "drag_down": false
+            }
+          }
+        },
+        {
+          "from": [0, 101, 2],
+          "to": [0, 108, 2],
+          "block": {
+            "name": "minecraft:flowing_water"
+          },
+          "layer": 1
+        }
+      ]
+    },
+    {
+      "name": "bubble_up_from_104_2",
+      "description": "Bubble column probe: start at feet 104.2 in an upward column (the corpus's column; played last).",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-1, 100, 1],
+          "to": [1, 108, 3],
+          "block": {
+            "name": "minecraft:glass"
+          }
+        },
+        {
+          "from": [0, 101, 2],
+          "to": [0, 108, 2],
+          "block": {
+            "name": "minecraft:water"
+          }
+        },
+        {
+          "from": [0, 100, 2],
+          "to": [0, 100, 2],
+          "block": {
+            "name": "minecraft:soul_sand"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 104.2, 2.5]
+      },
+      "inputs": [
+        {
+          "ticks": 40
+        }
+      ],
+      "formed": [
+        {
+          "from": [0, 101, 2],
+          "to": [0, 108, 2],
+          "block": {
+            "name": "minecraft:bubble_column",
+            "states": {
+              "drag_down": false
+            }
+          }
+        },
+        {
+          "from": [0, 101, 2],
+          "to": [0, 108, 2],
+          "block": {
+            "name": "minecraft:flowing_water"
+          },
+          "layer": 1
+        }
+      ]
+    },
+    {
       "name": "bubble_column_down",
       "description": "Sink in a downward bubble column (water over magma). Played last: the column leaves water in the second layer, which clearing the area does not remove.",
       "world": [
@@ -10441,6 +17812,130 @@
       "inputs": [
         {
           "ticks": 50
+        }
+      ],
+      "formed": [
+        {
+          "from": [0, 101, 2],
+          "to": [0, 108, 2],
+          "block": {
+            "name": "minecraft:bubble_column",
+            "states": {
+              "drag_down": true
+            }
+          }
+        },
+        {
+          "from": [0, 101, 2],
+          "to": [0, 108, 2],
+          "block": {
+            "name": "minecraft:flowing_water"
+          },
+          "layer": 1
+        }
+      ]
+    },
+    {
+      "name": "bubble_down_from_103_6",
+      "description": "Bubble column probe: start at feet 103.6 in a downward column (the corpus's column; played last).",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-1, 100, 1],
+          "to": [1, 108, 3],
+          "block": {
+            "name": "minecraft:glass"
+          }
+        },
+        {
+          "from": [0, 101, 2],
+          "to": [0, 108, 2],
+          "block": {
+            "name": "minecraft:water"
+          }
+        },
+        {
+          "from": [0, 100, 2],
+          "to": [0, 100, 2],
+          "block": {
+            "name": "minecraft:magma"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 103.6, 2.5]
+      },
+      "inputs": [
+        {
+          "ticks": 40
+        }
+      ],
+      "formed": [
+        {
+          "from": [0, 101, 2],
+          "to": [0, 108, 2],
+          "block": {
+            "name": "minecraft:bubble_column",
+            "states": {
+              "drag_down": true
+            }
+          }
+        },
+        {
+          "from": [0, 101, 2],
+          "to": [0, 108, 2],
+          "block": {
+            "name": "minecraft:flowing_water"
+          },
+          "layer": 1
+        }
+      ]
+    },
+    {
+      "name": "bubble_down_from_107_0",
+      "description": "Bubble column probe: start at feet 107.0 in a downward column (the corpus's column; played last).",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-1, 100, 1],
+          "to": [1, 108, 3],
+          "block": {
+            "name": "minecraft:glass"
+          }
+        },
+        {
+          "from": [0, 101, 2],
+          "to": [0, 108, 2],
+          "block": {
+            "name": "minecraft:water"
+          }
+        },
+        {
+          "from": [0, 100, 2],
+          "to": [0, 100, 2],
+          "block": {
+            "name": "minecraft:magma"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 107.0, 2.5]
+      },
+      "inputs": [
+        {
+          "ticks": 40
         }
       ],
       "formed": [

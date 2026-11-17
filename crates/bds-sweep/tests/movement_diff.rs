@@ -26,32 +26,142 @@ const KNOWN_GAPS: &[(&str, u32, &str)] = &[
     (
         "bed_drop_1",
         6,
-        "a bed's bounce is not BDS's (measured from five heights, unfitted)",
+        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
     ),
     (
         "bed_drop_2",
         9,
-        "a bed's bounce is not BDS's (measured from five heights, unfitted)",
+        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
     ),
     (
         "bed_drop_3",
         11,
-        "a bed's bounce is not BDS's (measured from five heights, unfitted)",
+        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
     ),
     (
         "bed_drop_4",
         12,
-        "a bed's bounce is not BDS's (measured from five heights, unfitted)",
+        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
     ),
     (
         "bed_drop_7",
         16,
-        "a bed's bounce is not BDS's (measured from five heights, unfitted)",
+        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
+    ),
+    (
+        "bedfit_6_1",
+        6,
+        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
+    ),
+    (
+        "bedfit_6_3",
+        6,
+        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
+    ),
+    (
+        "bedfit_6_5",
+        6,
+        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
+    ),
+    (
+        "bedfit_6_7",
+        6,
+        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
+    ),
+    (
+        "bedfit_6_9",
+        6,
+        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
+    ),
+    (
+        "bedfit_12_1",
+        12,
+        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
+    ),
+    (
+        "bedfit_12_3",
+        12,
+        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
+    ),
+    (
+        "bedfit_12_5",
+        12,
+        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
+    ),
+    (
+        "bedfit_12_7",
+        12,
+        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
+    ),
+    (
+        "bedfit_12_9",
+        12,
+        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
+    ),
+    (
+        "bedfit_18_1",
+        18,
+        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
+    ),
+    (
+        "bedfit_18_3",
+        18,
+        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
+    ),
+    (
+        "bedfit_18_5",
+        18,
+        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
+    ),
+    (
+        "bedfit_18_7",
+        18,
+        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
+    ),
+    (
+        "bedfit_18_9",
+        18,
+        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
+    ),
+    (
+        "current_diamond_jump",
+        11,
+        "jumping out of spreading water: the push as the box leaves the water is not BDS's",
+    ),
+    (
+        "current_diamond_one",
+        30,
+        "1 ULP on the velocity once the box spans four flowing blocks",
+    ),
+    (
+        "current_diamond_walk",
+        36,
+        "1 ULP on the velocity once the box spans several flowing blocks",
     ),
     (
         "powder_snow_walk_into",
         18,
         "powder snow's freezing slowdown (a movement modifier growing each tick) is not simulated",
+    ),
+    (
+        "random_344",
+        45,
+        "a sprint jump at the edge of a trapdoor: x off after two air ticks",
+    ),
+    (
+        "random_354",
+        72,
+        "a slime bounce's corrected velocity an ULP off (as random_291)",
+    ),
+    (
+        "random_386",
+        90,
+        "a slime bounce's corrected velocity an ULP off (as random_291)",
+    ),
+    (
+        "random_388",
+        20,
+        "1 ULP on z in a jump from a sneak let go against a block",
     ),
     (
         "random_291",
