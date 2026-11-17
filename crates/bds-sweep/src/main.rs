@@ -80,6 +80,10 @@
 //! * `action NAME X Y Z FACE`: one raw block action with the next input
 //!   (`start`, `continue`, `crack`, `predict`, `abort`, `stop`,
 //!   `creative-destroy`); several on one tick share the input.
+//! * `subchunks CX CY CZ COPIES ENTRIES`: `COPIES` identical
+//!   `SubChunkRequest`s centred on sub-chunk (CX, CY, CZ), each naming
+//!   `ENTRIES` offsets: columns -8..7 in x, then in z, then the next sub-chunk
+//!   up (a flooding client).
 //!
 //! `--script FILE` drives the client without the plugin, against any
 //! server: one `TICK ORDER` line per step, run when the client's input tick
@@ -281,6 +285,12 @@ enum Order {
     Animate,
     /// Only the `MissedSwing` input flag.
     MissedSwing,
+    /// `copies` identical `SubChunkRequest`s ([`subchunk_flood`]).
+    SubChunks {
+        center: [i32; 3],
+        copies: u32,
+        entries: u32,
+    },
     /// Item release `Release`.
     ReleaseItem,
     /// Item release `Use` (finish eating or drinking).
@@ -544,6 +554,26 @@ fn face_centre(face: u8) -> [i32; 3] {
     }
 }
 
+/// A `SubChunkRequest` centred on sub-chunk `center` naming `entries`
+/// offsets: columns -8..7 in x, then in z, then the next sub-chunk up.
+fn subchunk_flood(center: [i32; 3], entries: u32) -> jolyne::valentine::SubChunkRequestPacket {
+    use jolyne::valentine::types::{SubChunkPacketPayloadSubChunkPosOffset, SubChunkPos};
+    let offset = |i: u32| SubChunkPacketPayloadSubChunkPosOffset {
+        subchunk_offset_x: (i % 16) as i8 - 8,
+        subchunk_offset_y: ((i / 256) % 128) as i8,
+        subchunk_offset_z: ((i / 16) % 16) as i8 - 8,
+    };
+    jolyne::valentine::SubChunkRequestPacket {
+        dimension_type: Default::default(),
+        center_pos: SubChunkPos {
+            subchunk_position_x: center[0],
+            subchunk_position_y: center[1],
+            subchunk_position_z: center[2],
+        },
+        sub_chunk_position_offset_list: (0..entries).map(offset).collect(),
+    }
+}
+
 /// Parses a plugin order from a chat message (anywhere in the text).
 fn parse_order(text: &str) -> Option<Order> {
     let rest = &text[text.find("bds-sweep:")? + "bds-sweep:".len()..];
@@ -597,6 +627,16 @@ fn parse_order(text: &str) -> Option<Order> {
             return (slot < 9).then_some(Order::ClaimSlot(Some(slot)));
         }
         "consume" => return Some(Order::Consume),
+        "subchunks" => {
+            let values = numbers(words, 5)?;
+            let copies = u32::try_from(values[3]).ok()?;
+            let entries = u32::try_from(values[4]).ok()?;
+            return Some(Order::SubChunks {
+                center: [values[0] as i32, values[1] as i32, values[2] as i32],
+                copies,
+                entries,
+            });
+        }
         keyword @ ("flags" | "held-flags") => {
             let flags = words
                 .next()
@@ -1403,6 +1443,15 @@ impl Player {
                 return Ok(vec![self.animate_swing()]);
             }
             Order::Animate => return Ok(vec![self.animate_swing()]),
+            Order::SubChunks {
+                center,
+                copies,
+                entries,
+            } => {
+                self.world.expect_refusals();
+                let request = McpePacket::from(subchunk_flood(center, entries));
+                return Ok(vec![request; copies as usize]);
+            }
             Order::MissedSwing => self
                 .pressed
                 .push(EnumsPlayerAuthInputPacketPayloadInputData::Missedswing),

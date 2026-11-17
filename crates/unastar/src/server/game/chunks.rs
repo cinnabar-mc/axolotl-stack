@@ -20,9 +20,6 @@ use jolyne::valentine::types::{
 };
 use jolyne::valentine::{ChunkRadiusUpdatedPacket, McpePacket, SubChunkPacket};
 
-/// Maximum subchunk requests per packet (DoS protection).
-const MAX_SUBCHUNK_REQUESTS: usize = 1024;
-
 /// Sub-chunk payload bytes per `SubChunk` packet. A request naming many
 /// columns is answered in several packets (same center, entries in request
 /// order) so no packet nears the RakNet reassembly limit (512 split parts,
@@ -52,8 +49,16 @@ pub fn apply_chunk_requests(
     // player's transport holding its terrain budget) are retried next tick;
     // once one of a player's requests waits, the later ones wait too, so the
     // player's requests are answered in order.
+    //
+    // A request is bounded by what the player can see: sub-chunks of columns
+    // outside its view are answered at once with `LevelChunkDoesntExist`, as
+    // BDS 1.26.51 answers them (sub-chunk flood capture), and a sub-chunk
+    // already waiting for the player is not queued twice. So the waiting
+    // requests of a player never name more than its view's sub-chunks.
     let mut deferred = Vec::new();
     let mut waiting: Vec<Entity> = Vec::new();
+    let mut queued: std::collections::HashMap<Entity, std::collections::HashSet<[i32; 3]>> =
+        std::collections::HashMap::new();
     for (entity, action) in queue.0.drain(..) {
         match action {
             ChunkAction::RadiusRequest(req) => {
@@ -62,6 +67,9 @@ pub fn apply_chunk_requests(
             // A player that left has nobody to answer.
             ChunkAction::SubchunkRequest(_) if sessions.get(entity).is_err() => {}
             ChunkAction::SubchunkRequest(req) => {
+                let Some(req) = answer_out_of_view(entity, req, &sessions, &loaders) else {
+                    continue;
+                };
                 let rest = if waiting.contains(&entity) {
                     Some(req)
                 } else {
@@ -78,7 +86,9 @@ pub fn apply_chunk_requests(
                         &mut chunk_viewers_q,
                     )
                 };
-                if let Some(rest) = rest {
+                if let Some(rest) =
+                    rest.and_then(|rest| not_yet_queued(rest, queued.entry(entity).or_default()))
+                {
                     waiting.push(entity);
                     deferred.push((entity, ChunkAction::SubchunkRequest(rest)));
                 }
@@ -86,6 +96,89 @@ pub fn apply_chunk_requests(
         }
     }
     queue.0.extend(deferred);
+}
+
+/// The sub-chunk an offset of `req` names.
+fn absolute(
+    req: &jolyne::valentine::SubChunkRequestPacket,
+    offset: &SubChunkPacketPayloadSubChunkPosOffset,
+) -> [i32; 3] {
+    let center = &req.center_pos;
+    [
+        center
+            .subchunk_position_x
+            .saturating_add(i32::from(offset.subchunk_offset_x)),
+        center
+            .subchunk_position_y
+            .saturating_add(i32::from(offset.subchunk_offset_y)),
+        center
+            .subchunk_position_z
+            .saturating_add(i32::from(offset.subchunk_offset_z)),
+    ]
+}
+
+/// Answers the sub-chunks of `req` in columns outside the player's view with
+/// `LevelChunkDoesntExist` (BDS 1.26.51 answers a request 1000 columns away
+/// so, every entry, at once) and returns the rest of the request, if any. A
+/// player without a [`ChunkLoader`] sees everything.
+fn answer_out_of_view(
+    entity: Entity,
+    req: jolyne::valentine::SubChunkRequestPacket,
+    sessions: &Query<&PlayerSession>,
+    loaders: &Query<&mut ChunkLoader>,
+) -> Option<jolyne::valentine::SubChunkRequestPacket> {
+    let Ok(loader) = loaders.get(entity) else {
+        return Some(req);
+    };
+    let (seen, unseen): (Vec<_>, Vec<_>) = req
+        .sub_chunk_position_offset_list
+        .iter()
+        .cloned()
+        .partition(|offset| {
+            let [x, _, z] = absolute(&req, offset);
+            loader.in_view((x, z))
+        });
+    if !unseen.is_empty()
+        && let Ok(session) = sessions.get(entity)
+    {
+        let answer = SubChunkPacket {
+            cache_enabled: false,
+            dimension_type: req.dimension_type.clone(),
+            center_pos: req.center_pos.clone(),
+            sub_chunk_data: unseen
+                .into_iter()
+                .map(|offset| {
+                    empty_entry(
+                        offset,
+                        EnumsSubChunkPacketPayloadSubChunkRequestResult::Levelchunkdoesntexist,
+                    )
+                })
+                .collect(),
+        };
+        let _ = session.send(McpePacket::from(answer));
+    }
+    (!seen.is_empty()).then(|| jolyne::valentine::SubChunkRequestPacket {
+        sub_chunk_position_offset_list: seen,
+        ..req
+    })
+}
+
+/// `req` without the sub-chunks already waiting for the player (`queued`),
+/// which it adds to; `None` when nothing is left.
+fn not_yet_queued(
+    req: jolyne::valentine::SubChunkRequestPacket,
+    queued: &mut std::collections::HashSet<[i32; 3]>,
+) -> Option<jolyne::valentine::SubChunkRequestPacket> {
+    let fresh: Vec<_> = req
+        .sub_chunk_position_offset_list
+        .iter()
+        .filter(|offset| queued.insert(absolute(&req, offset)))
+        .cloned()
+        .collect();
+    (!fresh.is_empty()).then(|| jolyne::valentine::SubChunkRequestPacket {
+        sub_chunk_position_offset_list: fresh,
+        ..req
+    })
 }
 
 fn handle_chunk_radius_request(
@@ -160,10 +253,9 @@ fn handle_subchunk_request(
         "SubChunkRequest received"
     );
 
-    let offsets = &req.sub_chunk_position_offset_list[..req
-        .sub_chunk_position_offset_list
-        .len()
-        .min(MAX_SUBCHUNK_REQUESTS)];
+    // BDS 1.26.51 answers every entry of a request, 5000 of them too (sub-chunk
+    // flood capture); what the player cannot see was answered before this.
+    let offsets = &req.sub_chunk_position_offset_list[..];
     let column_of = |offset: &SubChunkPacketPayloadSubChunkPosOffset| {
         (
             chunk_x.saturating_add(i32::from(offset.subchunk_offset_x)),
@@ -535,5 +627,115 @@ mod tests {
             split_answer(vec![entry(0, 0, 10), entry(1, 0, 10)]).len(),
             1
         );
+    }
+
+    /// A request naming `entries` sub-chunks around sub-chunk `center`, in
+    /// the flood order of the BDS capture (`scripts/subchunk-flood.txt`):
+    /// columns -8..7 in x, then z, then the next sub-chunk up.
+    fn flood(center: [i32; 3], entries: u32) -> SubChunkRequestPacket {
+        SubChunkRequestPacket {
+            dimension_type: DimensionType { value: 0 },
+            center_pos: SubChunkPos {
+                subchunk_position_x: center[0],
+                subchunk_position_y: center[1],
+                subchunk_position_z: center[2],
+            },
+            sub_chunk_position_offset_list: (0..entries)
+                .map(|i| SubChunkPacketPayloadSubChunkPosOffset {
+                    subchunk_offset_x: (i % 16) as i8 - 8,
+                    subchunk_offset_y: ((i / 256) % 128) as i8,
+                    subchunk_offset_z: ((i / 16) % 16) as i8 - 8,
+                })
+                .collect(),
+        }
+    }
+
+    /// A flooding client (the requests of the BDS sub-chunk flood capture:
+    /// 20 copies of 256 columns around it, 200 copies of 1024 sub-chunks
+    /// 1000 columns away, one request of 5000) is answered like BDS: every
+    /// sub-chunk outside its view at once with `LevelChunkDoesntExist`,
+    /// every entry of the 5000, no disconnect; and what waits for it never
+    /// names a sub-chunk twice, so it stays within its view.
+    #[test]
+    fn a_flooding_client_is_answered_and_its_queue_stays_within_its_view() {
+        let mut world = World::new();
+        world.insert_resource(ChunkManager::new(WorldConfig::void_spawn_platform(1)));
+        world.insert_resource(ServerConfigResource(Default::default()));
+        world.init_resource::<ChunkPacketQueue>();
+        world.init_resource::<StreamStats>();
+        world.init_resource::<ColumnLoads>();
+        let (tx, mut rx) = tokio::sync::mpsc::channel(1 << 16);
+        let player = world
+            .spawn((
+                PlayerSession::new(1, "flood".into(), None, None, tx),
+                ChunkLoader::new(4),
+            ))
+            .id();
+        let mut requests = vec![flood([0, -4, 0], 256); 20];
+        requests.extend(vec![flood([1000, -4, 1000], 1024); 200]);
+        requests.push(flood([0, -4, 0], 5000));
+        let sent: usize = requests
+            .iter()
+            .map(|r| r.sub_chunk_position_offset_list.len())
+            .sum();
+        world.resource_mut::<ChunkPacketQueue>().0.extend(
+            requests
+                .into_iter()
+                .map(|r| (player, ChunkAction::SubchunkRequest(r))),
+        );
+        world.run_system_once(apply_chunk_requests).unwrap();
+
+        let mut answered = 0;
+        let mut far_refused = 0;
+        while let Ok(packet) = rx.try_recv() {
+            let McpePacketData::SubChunkPacket(answer) = packet.data else {
+                continue;
+            };
+            for entry in &answer.sub_chunk_data {
+                answered += 1;
+                if answer.center_pos.subchunk_position_x == 1000 {
+                    assert_eq!(
+                        entry.sub_chunk_request_result,
+                        EnumsSubChunkPacketPayloadSubChunkRequestResult::Levelchunkdoesntexist
+                    );
+                    far_refused += 1;
+                }
+            }
+        }
+        assert_eq!(far_refused, 200 * 1024);
+        // What was not answered waits, once per sub-chunk, in the view.
+        let loader = ChunkLoader::new(4);
+        let mut waiting = std::collections::HashSet::new();
+        for (_, action) in &world.resource::<ChunkPacketQueue>().0 {
+            let ChunkAction::SubchunkRequest(req) = action else {
+                continue;
+            };
+            for offset in &req.sub_chunk_position_offset_list {
+                let pos = absolute(req, offset);
+                assert!(
+                    loader.in_view((pos[0], pos[2])),
+                    "{pos:?} waits outside the view"
+                );
+                assert!(waiting.insert(pos), "{pos:?} waits twice");
+            }
+        }
+        assert!(answered + waiting.len() <= sent);
+        assert!(
+            answered > far_refused,
+            "the view's sub-chunks are answered too"
+        );
+    }
+
+    /// Sub-chunks already waiting for a player are not queued again.
+    #[test]
+    fn a_waiting_sub_chunk_is_queued_once() {
+        let mut queued = std::collections::HashSet::new();
+        let first = not_yet_queued(flood([0, -4, 0], 256), &mut queued).unwrap();
+        assert_eq!(first.sub_chunk_position_offset_list.len(), 256);
+        for _ in 0..19 {
+            assert!(not_yet_queued(flood([0, -4, 0], 256), &mut queued).is_none());
+        }
+        // The same sub-chunks named from another centre are the same.
+        assert!(not_yet_queued(flood([1, -4, 0], 1), &mut queued).is_none());
     }
 }

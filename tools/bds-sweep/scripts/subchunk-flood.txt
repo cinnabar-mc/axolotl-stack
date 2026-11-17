@@ -1,0 +1,30 @@
+# What BDS does with a client that floods SubChunkRequests: duplicates,
+# columns far outside the view, a burst of requests far beyond it, and one
+# request naming more than 1024 sub-chunks. Played by
+# `bds-sweep-client --script` (one `TICK ORDER` line per client tick) on
+# plain BDS; `subchunks CX CY CZ COPIES ENTRIES` sends COPIES identical
+# requests centred on sub-chunk (CX, CY, CZ), each naming ENTRIES offsets
+# (columns -8..7 in x, then z, then one sub-chunk up). The player stands at
+# (0.5, -60, 0.5), column (0, 0); its view is what ChunkRadiusUpdated grants.
+20 /gamerule domobspawning false
+21 /gamerule dodaylightcycle false
+22 /tp @s 0.5 -60 0.5
+
+# A. One sub-chunk of the player's own column (the baseline answer).
+40 subchunks 0 -4 0 1 1
+
+# B. The same request for the 16 x 16 columns around the player, 20 times.
+60 subchunks 0 -4 0 20 256
+
+# C. 16 x 16 columns 1000 chunks away, once.
+100 subchunks 1000 -4 1000 1 256
+
+# D. A burst: 200 copies of a 1024-entry request 1000 chunks away.
+140 subchunks 1000 -4 1000 200 1024
+
+# E. One request naming 5000 sub-chunks around the player.
+200 subchunks 0 -4 0 1 5000
+
+# F. Still connected? One more baseline request.
+260 subchunks 0 -4 0 1 1
+300 exit

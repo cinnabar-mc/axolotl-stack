@@ -198,9 +198,18 @@ pub struct World {
     columns: HashMap<[i32; 2], i32>,
     /// Columns whose sub-chunks were requested.
     requested: HashSet<[i32; 2]>,
+    /// The script sent requests of its own (`subchunks`): answers other than
+    /// success are kept out of the world instead of failing the session.
+    refusals_expected: bool,
 }
 
 impl World {
+    /// The client sends sub-chunk requests of its own, which the server may
+    /// refuse: refused entries are skipped from now on.
+    pub fn expect_refusals(&mut self) {
+        self.refusals_expected = true;
+    }
+
     /// A fully loaded world of air holding `blocks` (position, canonical
     /// state, layer), with every column within `margin` chunks of them
     /// announced and loaded: the world of a movement scenario.
@@ -384,6 +393,7 @@ impl World {
                 )
                 .with_context(|| format!("sub-chunk {key:?}"))?,
                 SubChunkResult::Successallair => SubChunk::air(),
+                _ if self.refusals_expected => continue,
                 other => bail!("SubChunk {key:?} answered {other:?}"),
             };
             self.sub_chunks.insert(key, sub);
