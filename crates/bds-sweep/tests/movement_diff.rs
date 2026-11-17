@@ -164,6 +164,46 @@ const KNOWN_GAPS: &[(&str, u32, &str)] = &[
         "1 ULP on z in a jump from a sneak let go against a block",
     ),
     (
+        "slimefit_6_2",
+        18,
+        "a slime bounce an ULP off after a landing late in its tick (as random_291); no f32 form of the bounce fits it and the other 17 slime probes",
+    ),
+    (
+        "slimefit_6_4",
+        6,
+        "a slime bounce an ULP off after a landing late in its tick (as random_291); no f32 form of the bounce fits it and the other 17 slime probes",
+    ),
+    (
+        "slimefit_6_6",
+        18,
+        "a slime bounce an ULP off after a landing late in its tick (as random_291); no f32 form of the bounce fits it and the other 17 slime probes",
+    ),
+    (
+        "slimefit_6_8",
+        30,
+        "a slime bounce an ULP off after a landing late in its tick (as random_291); no f32 form of the bounce fits it and the other 17 slime probes",
+    ),
+    (
+        "surface_swim_d2_p15",
+        47,
+        "a swimmer surfacing: BDS steers it up until about 0.2 under the surface, then holds its height",
+    ),
+    (
+        "surface_swim_d2_p45",
+        36,
+        "a swimmer surfacing: BDS steers it up until about 0.2 under the surface, then holds its height",
+    ),
+    (
+        "surface_swim_d3_p30",
+        47,
+        "a swimmer surfacing: BDS steers it up until about 0.2 under the surface, then holds its height",
+    ),
+    (
+        "surface_swim_d3_p60",
+        39,
+        "a swimmer surfacing: BDS steers it up until about 0.2 under the surface, then holds its height",
+    ),
+    (
         "random_291",
         72,
         "a slime bounce an ULP off after the tick's gravity; no f32 order found",

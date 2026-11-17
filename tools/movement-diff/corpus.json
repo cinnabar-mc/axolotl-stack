@@ -17588,6 +17588,1130 @@
       ]
     },
     {
+      "name": "glide_h7",
+      "description": "Held-out glide probe: pitch 7, yaw 60.640625.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 118, 20.5],
+        "elytra": true
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "glide": true,
+          "yaw": 60.640625,
+          "pitch": 7
+        },
+        {
+          "ticks": 13
+        },
+        {
+          "ticks": 12
+        },
+        {
+          "ticks": 6,
+          "pitch": 0
+        }
+      ]
+    },
+    {
+      "name": "glide_h18",
+      "description": "Held-out glide probe: pitch 18, yaw -149.375.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 118, 20.5],
+        "elytra": true
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "glide": true,
+          "yaw": -149.375,
+          "pitch": 18
+        },
+        {
+          "ticks": 13
+        },
+        {
+          "ticks": 12
+        },
+        {
+          "ticks": 6,
+          "pitch": 0
+        }
+      ]
+    },
+    {
+      "name": "glide_h33",
+      "description": "Held-out glide probe: pitch 33, yaw 60.21875.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 118, 20.5],
+        "elytra": true
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "glide": true,
+          "yaw": 60.21875,
+          "pitch": 33
+        },
+        {
+          "ticks": 13
+        },
+        {
+          "ticks": 12
+        },
+        {
+          "ticks": 6,
+          "pitch": 0
+        }
+      ]
+    },
+    {
+      "name": "glide_h50",
+      "description": "Held-out glide probe: pitch 50, yaw -94.78125.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 118, 20.5],
+        "elytra": true
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "glide": true,
+          "yaw": -94.78125,
+          "pitch": 50
+        },
+        {
+          "ticks": 13
+        },
+        {
+          "ticks": 12
+        },
+        {
+          "ticks": 6,
+          "pitch": 0
+        }
+      ]
+    },
+    {
+      "name": "glide_hm5",
+      "description": "Held-out glide probe: pitch -5, yaw 185.28125.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 118, 20.5],
+        "elytra": true
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "glide": true,
+          "yaw": 185.28125,
+          "pitch": -5
+        },
+        {
+          "ticks": 13
+        },
+        {
+          "ticks": 12
+        },
+        {
+          "ticks": 6,
+          "pitch": 0
+        }
+      ]
+    },
+    {
+      "name": "glide_hm18",
+      "description": "Held-out glide probe: pitch -18, yaw 60.671875.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 118, 20.5],
+        "elytra": true
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "glide": true,
+          "yaw": 60.671875,
+          "pitch": -18
+        },
+        {
+          "ticks": 13
+        },
+        {
+          "ticks": 12
+        },
+        {
+          "ticks": 6,
+          "pitch": 0
+        }
+      ]
+    },
+    {
+      "name": "glide_hm33",
+      "description": "Held-out glide probe: pitch -33, yaw -44.203125.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 118, 20.5],
+        "elytra": true
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "glide": true,
+          "yaw": -44.203125,
+          "pitch": -33
+        },
+        {
+          "ticks": 13
+        },
+        {
+          "ticks": 12
+        },
+        {
+          "ticks": 6,
+          "pitch": 0
+        }
+      ]
+    },
+    {
+      "name": "glide_hm50",
+      "description": "Held-out glide probe: pitch -50, yaw -44.25.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 118, 20.5],
+        "elytra": true
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "glide": true,
+          "yaw": -44.25,
+          "pitch": -50
+        },
+        {
+          "ticks": 13
+        },
+        {
+          "ticks": 12
+        },
+        {
+          "ticks": 6,
+          "pitch": 0
+        }
+      ]
+    },
+    {
+      "name": "glide_h2",
+      "description": "Held-out glide probe: pitch 2, yaw 10.390625.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 118, 20.5],
+        "elytra": true
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "glide": true,
+          "yaw": 10.390625,
+          "pitch": 2
+        },
+        {
+          "ticks": 13
+        },
+        {
+          "ticks": 12
+        },
+        {
+          "ticks": 6,
+          "pitch": 0
+        }
+      ]
+    },
+    {
+      "name": "glide_h10_m20",
+      "description": "Held-out glide probe: pitch 10 then -20, yaw -149.0625.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 118, 20.5],
+        "elytra": true
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "glide": true,
+          "yaw": -149.0625,
+          "pitch": 10
+        },
+        {
+          "ticks": 13
+        },
+        {
+          "ticks": 12,
+          "pitch": -20
+        },
+        {
+          "ticks": 6,
+          "pitch": 0
+        }
+      ]
+    },
+    {
+      "name": "glide_hm12_25",
+      "description": "Held-out glide probe: pitch -12 then 25, yaw 120.4375.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 118, 20.5],
+        "elytra": true
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 1,
+          "glide": true,
+          "yaw": 120.4375,
+          "pitch": -12
+        },
+        {
+          "ticks": 13
+        },
+        {
+          "ticks": 12,
+          "pitch": 25
+        },
+        {
+          "ticks": 6,
+          "pitch": 0
+        }
+      ]
+    },
+    {
+      "name": "surface_swim_d2_p15",
+      "description": "Sprint-swim up to the surface of a pool 2 deep at pitch -15.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-4, 100, 2],
+          "to": [4, 101, 12],
+          "block": {
+            "name": "minecraft:glass"
+          }
+        },
+        {
+          "from": [-3, 100, 3],
+          "to": [3, 101, 11],
+          "block": {
+            "name": "minecraft:water"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100.0, 3.5]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 20,
+          "forward": 1,
+          "sprint": true,
+          "pitch": 30
+        },
+        {
+          "ticks": 25,
+          "forward": 1,
+          "sprint": true,
+          "pitch": -15
+        },
+        {
+          "ticks": 10
+        }
+      ]
+    },
+    {
+      "name": "surface_swim_d2_p45",
+      "description": "Sprint-swim up to the surface of a pool 2 deep at pitch -45.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-4, 100, 2],
+          "to": [4, 101, 12],
+          "block": {
+            "name": "minecraft:glass"
+          }
+        },
+        {
+          "from": [-3, 100, 3],
+          "to": [3, 101, 11],
+          "block": {
+            "name": "minecraft:water"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100.0, 3.5]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 20,
+          "forward": 1,
+          "sprint": true,
+          "pitch": 30
+        },
+        {
+          "ticks": 25,
+          "forward": 1,
+          "sprint": true,
+          "pitch": -45
+        },
+        {
+          "ticks": 10
+        }
+      ]
+    },
+    {
+      "name": "surface_swim_d3_p30",
+      "description": "Sprint-swim up to the surface of a pool 3 deep at pitch -30.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-4, 100, 2],
+          "to": [4, 102, 12],
+          "block": {
+            "name": "minecraft:glass"
+          }
+        },
+        {
+          "from": [-3, 100, 3],
+          "to": [3, 102, 11],
+          "block": {
+            "name": "minecraft:water"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100.0, 3.5]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 20,
+          "forward": 1,
+          "sprint": true,
+          "pitch": 30
+        },
+        {
+          "ticks": 25,
+          "forward": 1,
+          "sprint": true,
+          "pitch": -30
+        },
+        {
+          "ticks": 10
+        }
+      ]
+    },
+    {
+      "name": "surface_swim_d3_p60",
+      "description": "Sprint-swim up to the surface of a pool 3 deep at pitch -60.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [-4, 100, 2],
+          "to": [4, 102, 12],
+          "block": {
+            "name": "minecraft:glass"
+          }
+        },
+        {
+          "from": [-3, 100, 3],
+          "to": [3, 102, 11],
+          "block": {
+            "name": "minecraft:water"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100.0, 3.5]
+      },
+      "inputs": [
+        {
+          "ticks": 5
+        },
+        {
+          "ticks": 20,
+          "forward": 1,
+          "sprint": true,
+          "pitch": 30
+        },
+        {
+          "ticks": 25,
+          "forward": 1,
+          "sprint": true,
+          "pitch": -60
+        },
+        {
+          "ticks": 10
+        }
+      ]
+    },
+    {
+      "name": "slimefit_6_2",
+      "description": "Slime bounce fit. Fall 0.84375 onto slime, landing at input 6.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:slime"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 101.84375, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 30
+        }
+      ]
+    },
+    {
+      "name": "slimefit_6_4",
+      "description": "Slime bounce fit. Fall 0.921875 onto slime, landing at input 6.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:slime"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 101.921875, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 30
+        }
+      ]
+    },
+    {
+      "name": "slimefit_6_6",
+      "description": "Slime bounce fit. Fall 1.0 onto slime, landing at input 6.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:slime"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 102.0, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 30
+        }
+      ]
+    },
+    {
+      "name": "slimefit_6_8",
+      "description": "Slime bounce fit. Fall 1.0625 onto slime, landing at input 6.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:slime"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 102.0625, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 30
+        }
+      ]
+    },
+    {
+      "name": "slimefit_12_2",
+      "description": "Slime bounce fit. Fall 4.21875 onto slime, landing at input 12.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:slime"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 105.21875, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 32
+        }
+      ]
+    },
+    {
+      "name": "slimefit_12_4",
+      "description": "Slime bounce fit. Fall 4.375 onto slime, landing at input 12.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:slime"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 105.375, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 32
+        }
+      ]
+    },
+    {
+      "name": "slimefit_12_6",
+      "description": "Slime bounce fit. Fall 4.53125 onto slime, landing at input 12.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:slime"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 105.53125, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 32
+        }
+      ]
+    },
+    {
+      "name": "slimefit_12_8",
+      "description": "Slime bounce fit. Fall 4.6875 onto slime, landing at input 12.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:slime"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 105.6875, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 32
+        }
+      ]
+    },
+    {
+      "name": "slimefit_18_2",
+      "description": "Slime bounce fit. Fall 9.890625 onto slime, landing at input 18.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:slime"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 110.890625, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 38
+        }
+      ]
+    },
+    {
+      "name": "slimefit_18_4",
+      "description": "Slime bounce fit. Fall 10.125 onto slime, landing at input 18.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:slime"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 111.125, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 38
+        }
+      ]
+    },
+    {
+      "name": "slimefit_18_6",
+      "description": "Slime bounce fit. Fall 10.34375 onto slime, landing at input 18.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:slime"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 111.34375, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 38
+        }
+      ]
+    },
+    {
+      "name": "slimefit_18_8",
+      "description": "Slime bounce fit. Fall 10.578125 onto slime, landing at input 18.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:slime"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 111.578125, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 38
+        }
+      ]
+    },
+    {
+      "name": "slimehold_9_5",
+      "description": "Slime bounce, held out of the fit. Fall 2.40625 onto slime, landing at input 9.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:slime"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 103.40625, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 30
+        }
+      ]
+    },
+    {
+      "name": "slimehold_15_3",
+      "description": "Slime bounce, held out of the fit. Fall 6.890625 onto slime, landing at input 15.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:slime"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 107.890625, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 35
+        }
+      ]
+    },
+    {
+      "name": "slimehold_21_7",
+      "description": "Slime bounce, held out of the fit. Fall 14.15625 onto slime, landing at input 21.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:slime"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 115.15625, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 41
+        }
+      ]
+    },
+    {
+      "name": "slimehold_24_5",
+      "description": "Slime bounce, held out of the fit. Fall 18.046875 onto slime, landing at input 24.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:slime"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 119.046875, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 44
+        }
+      ]
+    },
+    {
+      "name": "slimehold_8_9",
+      "description": "Slime bounce, held out of the fit. Fall 2.0625 onto slime, landing at input 8.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:slime"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 103.0625, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 30
+        }
+      ]
+    },
+    {
+      "name": "slimehold_13_1",
+      "description": "Slime bounce, held out of the fit. Fall 4.921875 onto slime, landing at input 13.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:slime"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 105.921875, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 33
+        }
+      ]
+    },
+    {
       "name": "bubble_column_up",
       "description": "Ride an upward bubble column (water over soul sand, formed by BDS). Played last: the column leaves water in the second layer, which clearing the area does not remove.",
       "world": [

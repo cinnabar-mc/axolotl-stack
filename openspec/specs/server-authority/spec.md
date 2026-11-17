@@ -131,7 +131,7 @@ The server SHALL take a client's state without judging it where the simulation d
 - **THEN** the input is trusted and no correction is sent
 
 #### Scenario: Situations the movement differential confirmed
-- **WHEN** a standing player sends an input under slowness or levitation, next to scaffolding, a lava source or a bubble column
+- **WHEN** a standing player sends an input under slowness or levitation, next to scaffolding, a lava source or a bubble column, or in flowing water
 - **THEN** the input is judged, not trusted
 
 #### Scenario: The movement attribute under effects

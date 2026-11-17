@@ -45,7 +45,7 @@ Besides the hand-written situations the corpus holds:
   bounces from 20 heights, measured for a fit), `sinx_*` and `sinh_*` (one sprint jump or walk
   from rest, which shows a sine at full precision: `sinx_*` at angles where the Windows C
   runtime's sine is an ULP off the correctly rounded one, `sinh_*` at random yaws held out of the
-  fit), `glide_p*` (glides at twelve pitches), `ceil_*` (a sneak let go under a top slab, the
+  fit), `glide_p*` (glides at eleven pitches), `ceil_*` (a sneak let go under a top slab, the
   exit from under it and the push out of a shallow overlap), `current_*` (standing, walking and
   jumping in flowing water), `bubble_*_from_*` (bubble columns entered at other heights);
 - seeds of randomised runs, kept as regression scenarios: `random_N` (`movement-diff random`
@@ -239,8 +239,9 @@ committed result; `report.md` ("Harness validation") gives the numbers of the co
    operations swapped, a threshold moved, a rule switched off), plays the corpus and lists the
    scenarios that catch each change (`mutations.json`): those that differ from BDS earlier with
    it than without it, so a known gap catches a mutation that moves its first difference
-   forward. A mutation no scenario catches is a blind spot, and the next scenario to write. Write catchers by simulating candidates with and
-   without the mutation and keeping those that differ in what a BDS trace shows: the position on
+   forward. A mutation no scenario catches is a blind spot, and the next scenario to write.
+   Write catchers by simulating candidates with and without the mutation and keeping those
+   that differ in what a BDS trace shows: the position on
    every tick (smallest ULPs near the origin), ground contact, and the velocity on every sixth
    tick. A constant whose one-ULP change no product can show (the swim rate, slow falling's
    gravity) is mutated by the smallest change that shows.

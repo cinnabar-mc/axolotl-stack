@@ -28,7 +28,8 @@ Prior work:
   and slow. A standing box less than 0.01 into a block is pushed out to its face.
 - **Bubble columns:** simulated (a push for each column block touched, after the drag), and
   judged instead of trusted.
-- **Water currents:** the average flow of the water blocks touched, times 0.014, before the move.
+- **Water currents:** the flows of the water blocks touched, summed and normalised, times 0.014,
+  before the move.
   Flowing water is judged instead of trusted; falling water and flowing lava stay trusted.
 - **Rest after a teleport:** the input BDS rests still takes the pushes.
 - **Water floor and glides:** a move in water that hits a floor stops the vertical velocity; a

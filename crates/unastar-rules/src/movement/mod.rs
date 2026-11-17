@@ -750,7 +750,7 @@ pub fn update_state(
 }
 
 /// What [`update_state`] needs from around the body.
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Surroundings {
     /// The block at the eyes holds water ([`eyes_in_water`]).
     pub submerged: bool,
@@ -760,6 +760,17 @@ pub struct Surroundings {
     /// How far a body standing up is pushed out of the blocks its standing
     /// box overlaps by less than [`STAND_PUSH`] (zero for none).
     pub stand_push: [f32; 3],
+}
+
+impl Default for Surroundings {
+    /// Dry, with room to stand and nothing to push out of.
+    fn default() -> Self {
+        Self {
+            submerged: false,
+            room_to_stand: true,
+            stand_push: [0.0; 3],
+        }
+    }
 }
 
 impl Surroundings {
@@ -884,7 +895,7 @@ pub fn step(body: &mut Body, controls: &Controls, terrain: &impl Terrain) -> Cha
 }
 
 /// The input after a teleport: the body stays where it was put, at rest,
-/// but what pushes it still does (BDS 1.26.51, `bubble_down_2`: a body put
+/// but what pushes it still does (BDS 1.26.51, `bubble_down_from_107_0`: a body put
 /// in a downward column moves 0.06 down on the first input after the
 /// resting one; `current_stand`: one in a current moves 0.028, two pushes).
 pub fn rest(body: &mut Body, terrain: &impl Terrain) {
@@ -983,7 +994,7 @@ fn push_by_current(body: &mut Body, terrain: &impl Terrain) {
 /// column block the box touches, from the lowest: an upward column's block
 /// by 0.06 up to at most 0.7, its top block (air above) by 0.1 up to 1.8; a
 /// downward column's block by 0.03 down to at most 0.3, its top block to
-/// 0.9 (BDS 1.26.51, `bubble_up_*`, `bubble_down_*`: a body touching three
+/// 0.9 (BDS 1.26.51, `bubble_up_from_*`, `bubble_down_from_*`: a body in three
 /// blocks of an upward column gains 0.18 a tick after the water's drag and
 /// sink, 0.22 with the top one; a sinking one falls 0.3 a tick, and lies on
 /// the bottom at -0.065, the water's -0.005 and two blocks' 0.03).
@@ -1028,7 +1039,7 @@ fn move_relative(body: &mut Body, controls: &Controls, speed: f32) {
     let scale = speed / force.sqrt().max(1.0);
     // The input turns by the C runtime's sine and cosine of the yaw, not the
     // sine table (that is the sprint jump's and the look vector's): yaw 37.5
-    // matches BDS only this way, and the walks of the `sin_*` probes take its
+    // matches BDS only this way, and the walks of the `sinx_*` probes take its
     // one-ULP exceptions ([`crate::math`]).
     let yaw = controls.yaw.to_radians();
     let (sin, cos) = (sin(yaw), cos(yaw));
@@ -1458,10 +1469,11 @@ fn glide_tick(body: &mut Body, controls: &Controls, terrain: &impl Terrain) {
     let horizontal_speed = (v[0] * v[0] + v[2] * v[2]).sqrt();
     let look_horizontal = (look[0] * look[0] + look[2] * look[2]).sqrt();
     let lift = pitch_cos * pitch_cos;
-    // Gravity less the lift, rounded as `(0.75 c² - 1) × -g` (BDS 1.26.51,
-    // `glide_p4`, `glide_p12`, `glide_pm10`, `elytra_glide_yaw`: `-0.08 +
-    // 0.06 c²` drifts 1 to 5 ULP over a dozen ticks; acacia-physics, MIT,
-    // writes it this way).
+    // Gravity less the lift, rounded as `(0.75 c² - 1) × g` (fitted to BDS
+    // 1.26.51 traces: of nine `f32` orderings only this one gives all 93
+    // corrected velocities of the `glide_p*` and `elytra_glide*` scenarios,
+    // and all 69 of the held-out `glide_h*` pitches; `-0.08 + 0.06 c²` misses
+    // 14 of them by 1 to 5 ULP).
     v[1] -= (0.75 * lift - 1.0) * -GRAVITY;
     if v[1] < 0.0 && look_horizontal > 0.0 {
         let accel = v[1] * -0.1 * lift;

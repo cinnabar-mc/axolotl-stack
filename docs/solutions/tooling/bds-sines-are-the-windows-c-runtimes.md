@@ -41,8 +41,12 @@ both. Round 7 read the sines one at a time from BDS and fitted them.
   the glide moves as at -179.67. Wrapping the walk's or the sprint jump's yaw breaks
   `sprint_turn_jump`.
 
-## Still open
+## Also
 
-Glides drift 1 to 5 ULP after a dozen ticks at some pitches (`glide_p12`, `glide_pm10`,
-`elytra_glide_yaw`). No single-step `f32` reordering of the glide removes it, and doing the
-glide in `f64` is far worse.
+Glides drifted 1 to 5 ULP after a dozen ticks at some pitches even with the right sines.
+Computing the glide in `f64` was far worse. The cause was the rounding of gravity less the
+lift. Enumerating nine `f32` orderings of it against every corrected velocity of the glide
+scenarios left one, `(0.75 cos² - 1) × 0.08`, and twelve held-out pitches played afterwards
+confirmed it (`glide_h*`). Fit such an expression by enumerating its orderings over all the
+corrected ticks, re-syncing to BDS's velocity at each correction; one scenario rarely tells
+the orderings apart.

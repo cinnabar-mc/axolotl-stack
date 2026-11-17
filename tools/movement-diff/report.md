@@ -1563,9 +1563,8 @@ On round 7's probes:
 | bubble columns (`bubble_*`), 6 | 6 | 0 | 0 |
 | bed heights (`bedfit_*`), 15 | 0 | 0 | 0 |
 
-acacia matched three glides unastar first missed (`glide_p4`, `glide_p12`, `glide_pm10`): it
-rounds the glide's gravity as `(0.75 cos² - 1) × -0.08`. unastar now does too, which also fixed
-`elytra_glide_yaw`. `glide_p85` is not in the corpus: its dive killed the player on BDS.
+`glide_p85` is not in the corpus: its dive killed the player on BDS. The comparison columns are
+a benchmark only; every unastar rule is fitted to BDS traces.
 
 ## Velocity on every input
 

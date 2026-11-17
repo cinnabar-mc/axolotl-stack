@@ -12,7 +12,8 @@
 //! is `sin(i / 10430.378)` in `f32` (the lookup's own scale inverted, not
 //! `i × 2pi / 65536`), indexed by the angle times 10430.378, truncated.
 //!
-//! Measured on BDS 1.26.51 (`tools/movement-diff`, the `sin_*` probes):
+//! Measured on BDS 1.26.51 (`tools/movement-diff`, the `sinx_*` and `sinh_*`
+//! probes):
 //! sprint jumps from rest at 160 yaws read 152 table entries, all equal to
 //! `sin(i / 10430.378)` and 18 of them an angle ULP off `sin(i × 2pi /
 //! 65536)`; 24 sprint jumps reading entries where the C runtime's sine is
@@ -130,7 +131,7 @@ pub fn player_throw_direction(yaw: f32, pitch: f32) -> [f32; 3] {
 mod tests {
     use super::*;
 
-    /// The table entries the BDS probes read (`sin_*` in the movement
+    /// The table entries the BDS probes read (`sinx_*` and `sinh_*` in the movement
     /// corpus), including entries where the correctly rounded sine of
     /// `i × 2pi / 65536` is an ULP off.
     #[test]

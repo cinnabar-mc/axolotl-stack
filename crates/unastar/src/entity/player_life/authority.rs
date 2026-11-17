@@ -847,7 +847,8 @@ impl PlayerMotion {
         body.vertical_collision = has(Flag::Verticalcollision);
         body.horizontal_collision = has(Flag::Horizontalcollision);
         body.sneaking = has(Flag::Sneaking);
-        // The client stands up when it reports no sneak.
+        // A client that reports no sneak is taken as standing (a crouch under
+        // a ceiling is a crawl space, trusted on its own).
         body.crouched = false;
         // A sprint with its speed: the simulation sets the speed only when a
         // sprint starts.
