@@ -46,6 +46,13 @@ impl UnastarServer {
     /// Create a new server instance from config.
     pub async fn new(config: Arc<UnastarConfig>) -> Result<Self, Box<dyn std::error::Error>> {
         let player_data_store = Arc::new(PlayerDataStore::new(config.players.data_dir.clone()));
+        if let Some(radius) = config.server.default_chunk_radius {
+            warn!(
+                default_chunk_radius = radius,
+                max_chunk_radius = config.server.max_chunk_radius,
+                "`server.default_chunk_radius` is ignored: each player gets the view distance it requests, up to `server.max_chunk_radius`"
+            );
+        }
 
         // Create ECS-based game server
         let mut server = GameServer::with_config(config.server_config());
@@ -158,6 +165,10 @@ impl UnastarServer {
             online_mode: self.config.server.online_mode,
             allow_legacy_auth: self.config.server.allow_legacy_auth,
             encryption_enabled: self.config.server.encryption_enabled,
+            compression: jolyne::config::CompressionConfig {
+                level: self.config.server.compression_level,
+                ..Default::default()
+            },
             resource_packs: Arc::new(ServerPacks {
                 required: self.config.server.require_resource_packs,
                 ..ServerPacks::default()
@@ -332,6 +343,8 @@ impl UnastarServer {
 
                     let tick_logic_start = std::time::Instant::now();
                     let plugin_manager = &mut self.plugin_manager;
+                    // When the game tick started and ended, and the plugins ended.
+                    let mut stages = (tick_logic_start, tick_logic_start, tick_logic_start);
                     let events_processed = network_tick(
                         &mut self.server,
                         &mut event_rx,
@@ -339,19 +352,24 @@ impl UnastarServer {
                         self.config.players.save_on_disconnect,
                         |server| {
                             // Game tick (queues packets to broadcast systems), then plugins.
+                            let ecs_start = std::time::Instant::now();
                             server.tick();
+                            let ecs_end = std::time::Instant::now();
                             plugin_manager.tick(server.ecs.world_mut());
+                            stages = (ecs_start, ecs_end, std::time::Instant::now());
                         },
                     )
                     .await;
+                    let (ecs_start, ecs_end, plugins_end) = stages;
+                    let events_elapsed = ecs_start.saturating_duration_since(tick_logic_start);
                     let tick_logic_elapsed = tick_logic_start.elapsed();
+                    let plugins_elapsed = plugins_end.saturating_duration_since(ecs_end);
 
                     // Signal all network tasks to flush their buffers
                     let _ = tick_tx.send(());
 
                     let total_elapsed = tick_start.elapsed();
 
-                    // Log slow ticks (> 20ms = taking more than half our budget)
                     if total_elapsed.as_millis() > 20 || tick_count.is_multiple_of(200) {
                         trace!(
                             tick = tick_count,
@@ -361,10 +379,20 @@ impl UnastarServer {
                             "Tick timing"
                         );
                     }
-                    if total_elapsed.as_millis() > 40 {
+                    // Over the 50 ms tick budget: name the slow stages.
+                    if total_elapsed > TICK_DURATION {
+                        let stages = self
+                            .server
+                            .ecs
+                            .world()
+                            .resource::<crate::ecs::TickStages>()
+                            .slowest(ecs_end, 4);
                         warn!(
                             tick = tick_count,
                             total_ms = total_elapsed.as_millis(),
+                            network_events_ms = events_elapsed.as_millis(),
+                            plugins_ms = plugins_elapsed.as_millis(),
+                            slowest_stages_ms = %stages,
                             "SLOW TICK detected"
                         );
                     }
@@ -468,11 +496,12 @@ async fn network_tick(
                 chunk_radius,
                 outbound_tx,
                 inbound_rx,
+                send_queue,
             } => {
                 // Registered even when the spawn is refused: the router drops packets
                 // of sessions without a player.
                 inbound.register(session_id, inbound_rx);
-                spawn_or_reject(
+                let player = spawn_or_reject(
                     server,
                     client_data,
                     PlayerSpawnData {
@@ -487,6 +516,9 @@ async fn network_tick(
                         chunk_radius,
                     },
                 );
+                if let (Some(player), Some(probe)) = (player, send_queue) {
+                    server.attach_send_queue(player, probe);
+                }
             }
             NetworkEvent::Disconnected { session_id } => disconnected.push(session_id),
         }
@@ -522,7 +554,7 @@ fn spawn_or_reject(
     server: &mut GameServer,
     client_data: Option<Box<jolyne::auth::ClientData>>,
     data: PlayerSpawnData,
-) -> bool {
+) -> Option<bevy_ecs::entity::Entity> {
     use jolyne::valentine::{
         DisconnectPacket, DisconnectPacketMessages, DisconnectPacketMessagesUnion,
         EnumsConnectionDisconnectFailReason, McpePacket,
@@ -546,10 +578,11 @@ fn spawn_or_reject(
                 },
             ),
         }));
-        return false;
+        return None;
     }
-    let Err(error) = server.spawn_player_with_login(data, client_data.as_deref()) else {
-        return true;
+    let error = match server.spawn_player_with_login(data, client_data.as_deref()) {
+        Ok(player) => return Some(player),
+        Err(error) => error,
     };
     warn!(session_id, %error, "Rejecting player with invalid saved data");
     let _ = reject_tx.try_send(McpePacket::from(DisconnectPacket {
@@ -561,7 +594,7 @@ fn spawn_or_reject(
             },
         ),
     }));
-    false
+    None
 }
 
 struct AcceptLoopState {
@@ -683,6 +716,7 @@ fn spawn_accept_loop(mut listener: BedrockListener<RaknetListener>, state: Accep
                                         chunk_radius,
                                         outbound_tx: outbound_tx.clone(),
                                         inbound_rx,
+                                        send_queue: play_stream.send_queue_probe(),
                                     })
                                     .await
                                     .is_err()
@@ -797,7 +831,7 @@ mod tests {
                 };
 
                 let (data, mut rx) = join(1, "minecraft:not_a_real_item");
-                assert!(!spawn_or_reject(&mut server, None, data));
+                assert!(spawn_or_reject(&mut server, None, data).is_none());
                 assert!(
                     server
                         .ecs
@@ -821,7 +855,7 @@ mod tests {
                 assert_eq!(messages.message, UNRESTORABLE_PLAYER_MESSAGE);
 
                 let (data, _rx) = join(2, "minecraft:stone");
-                assert!(spawn_or_reject(&mut server, None, data));
+                assert!(spawn_or_reject(&mut server, None, data).is_some());
             })
             .unwrap()
             .join()
@@ -931,6 +965,7 @@ mod network_tick_tests {
                 chunk_radius: 0,
                 outbound_tx,
                 inbound_rx,
+                send_queue: None,
             })
             .unwrap();
         Harness {
