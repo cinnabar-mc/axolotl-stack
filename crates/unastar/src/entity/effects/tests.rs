@@ -795,3 +795,49 @@ fn saturation_from_item_use_feeds_every_step() {
     let world = server.ecs.world_mut();
     assert_eq!(world.get::<Hunger>(player).unwrap().food_level, 13);
 }
+
+/// One absorption source given after another stacks as BDS stacks it: the
+/// absorption of the effect as it stands afterwards is added to what is
+/// left, up to the attribute's maximum, even when the weaker one given
+/// leaves the stronger effect in place (BDS 1.26.51 capture,
+/// `testdata/bds-1.26.51-absorption-stacking.json`).
+#[test]
+fn absorption_from_two_sources_stacks_like_bds() {
+    #[derive(serde::Deserialize)]
+    struct Given {
+        level: u8,
+        ticks: u32,
+    }
+    #[derive(serde::Deserialize)]
+    struct Case {
+        name: String,
+        given: Vec<Given>,
+        absorption: Vec<f32>,
+    }
+    #[derive(serde::Deserialize)]
+    struct Fixture {
+        max: f32,
+        cases: Vec<Case>,
+    }
+    let fixture: Fixture = serde_json::from_str(include_str!(
+        "testdata/bds-1.26.51-absorption-stacking.json"
+    ))
+    .unwrap();
+    assert_eq!(fixture.max, crate::server::game::attributes::MAX_ABSORPTION);
+    for case in fixture.cases {
+        let (mut server, player, _rx) = server(true);
+        let world = server.ecs.world_mut();
+        for (given, expected) in case.given.iter().zip(&case.absorption) {
+            give(
+                world,
+                player,
+                EffectType::ABSORPTION,
+                ActiveEffect::new(given.level, given.ticks),
+            );
+            let absorption = world
+                .get::<crate::server::game::attributes::Absorption>(player)
+                .map_or(0.0, |a| a.0);
+            assert_eq!(absorption, *expected, "{}", case.name);
+        }
+    }
+}

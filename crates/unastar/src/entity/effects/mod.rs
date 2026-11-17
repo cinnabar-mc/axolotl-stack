@@ -291,6 +291,17 @@ pub fn give(
         EnumsMobEffectPacketPayloadEvent::Update
     };
     send_mob_effect(world, entity, event, effect, &current);
+    // Absorption adds the amount of the effect as it now stands even when a
+    // weaker one leaves it in place: `/effect absorption 60 1` (8) then a
+    // golden apple (level I) makes 16 (BDS 1.26.51 absorption capture).
+    if effect == EffectType::ABSORPTION {
+        add_absorption(
+            world,
+            entity,
+            HEALTH_PER_LEVEL * (f32::from(current.level) + 1.0),
+            given == Given::Added,
+        );
+    }
     if given != Given::Kept {
         if effect.is_instant() {
             world
@@ -300,14 +311,6 @@ pub fn give(
                 .get_mut()
                 .0
                 .push(effect);
-        }
-        if effect == EffectType::ABSORPTION {
-            add_absorption(
-                world,
-                entity,
-                HEALTH_PER_LEVEL * (f32::from(current.level) + 1.0),
-                given == Given::Added,
-            );
         }
         refresh(world, entity);
     }

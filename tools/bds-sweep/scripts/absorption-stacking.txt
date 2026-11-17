@@ -1,0 +1,53 @@
+# How two absorption sources stack on a player, against BDS:
+# `python tools/bds-sweep/script.py tools/bds-sweep/scripts/absorption-stacking.txt --out DIR`.
+# A golden apple (absorption I) then an enchanted golden apple (absorption IV),
+# the reverse, the same apple twice, and /effect on top of an apple. Read the
+# `absorption` attribute in the UpdateAttributes the player gets. Effects are
+# cleared between cases. Ticks are the client's inputs; eating takes 32.
+# Arena as in foods.txt: a stone floor at y=-61, the player at (0.5,-60,0.5).
+20 /gamerule sendcommandfeedback false
+21 /gamerule domobspawning false
+22 /gamerule dodaylightcycle false
+23 /gamerule randomtickspeed 0
+24 /time set 6000
+25 /fill -4 -61 -4 4 -61 4 stone
+26 /fill -4 -60 -4 4 -55 4 air
+27 /gamemode survival @s
+28 /clear @s
+29 /tp @s 0.5 -60 0.5 -90 0
+30 /effect @s clear
+
+# A. golden apple, then enchanted golden apple
+50 /give @s golden_apple 1 0
+53 use
+100 /clear @s
+101 /give @s enchanted_golden_apple 1 0
+104 use
+150 /clear @s
+151 /effect @s clear
+
+# B. enchanted golden apple, then golden apple
+200 /give @s enchanted_golden_apple 1 0
+203 use
+250 /clear @s
+251 /give @s golden_apple 1 0
+254 use
+300 /clear @s
+301 /effect @s clear
+
+# C. golden apple twice
+350 /give @s golden_apple 1 0
+353 use
+400 /clear @s
+401 /give @s golden_apple 1 0
+404 use
+450 /clear @s
+451 /effect @s clear
+
+# D. /effect absorption II (8), then a golden apple (absorption I)
+500 /effect @s absorption 60 1 true
+520 /give @s golden_apple 1 0
+523 use
+570 /clear @s
+571 /effect @s clear
+600 exit
