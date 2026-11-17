@@ -48,6 +48,7 @@ documents and still appear in code comments and research docs; the table maps th
 | [0035](0035-disable-a-plugin-after-it-traps.md) | Disable a plugin after it traps | 2026-11-05 | accepted | |
 | [0036](0036-run-a-command-before-its-players-later-inputs.md) | Run a command before the inputs its player sent after it | 2026-11-10 | accepted | |
 | [0039](0039-fail-the-column-on-damaged-sub-chunks.md) | Fail the column load on damaged sub-chunk data | 2026-11-10 | proposed | |
+| [0040](0040-judge-player-movement-with-a-shared-simulation.md) | Judge player movement with a simulation shared with the measuring client | 2026-11-11 | proposed | |
 | [0041](0041-run-redstone-as-a-two-tick-circuit-update.md) | Run redstone as one circuit update every other tick, in BDS's phases | 2026-11-10 | accepted | |
 | [0042](0042-one-effect-system-for-mobs-and-players.md) | One status effect system for mobs and players | 2026-11-11 | accepted | |
 | [0044](0044-send-pre-start-game-roster-packets-after-start-game.md) | Send the roster packets BDS sends before StartGame right after it | 2026-11-11 | proposed | |
@@ -56,11 +57,14 @@ documents and still appear in code comments and research docs; the table maps th
 | [0051](0051-tick-liquids-per-chunk-in-a-random-chunk-order.md) | Tick liquids per chunk in a random chunk order | 2026-11-11 | proposed | |
 | [0052](0052-generate-one-enchantment-type.md) | Generate one canonical Enchantment type from source-attributed data | 2026-11-12 | accepted | |
 | [0053](0053-bedrock-terrain-uses-java-exact-noise.md) | Bedrock-style terrain uses the Java-exact noise backend | 2026-11-12 | proposed | |
+| [0054](0054-measure-bds-movement-through-a-far-reporting-client.md) | Measure BDS's own movement with a client that reports a far position | 2026-11-12 | proposed | |
 | [0056](0056-guarded-block-breaking.md) | Guard survival block breaking by default, keep BDS's breaking as an option | 2026-11-12 | accepted | |
 | [0059](0059-infested-blocks-are-a-measured-table.md) | Infested blocks are a measured table | 2026-11-12 | proposed | |
+| [0060](0060-validate-the-movement-harness-against-bds-itself.md) | Validate the movement harness against BDS itself | 2026-11-12 | proposed | |
 | [0062](0062-hopping-mobs-move-through-a-hop-control.md) | Hopping mobs move through a hop control, not the path follower | 2026-11-12 | proposed | |
 | [0063](0063-move-actors-with-measured-piston-pushes.md) | Move actors with measured piston pushes, not moving-block collision | 2026-11-12 | proposed | |
 | [0065](0065-swimming-mobs-follow-a-pulled-swim-path.md) | Swimming mobs follow a pulled swim path with no gravity | 2026-11-12 | proposed | |
+| [0067](0067-find-movement-rules-from-random-seeds-and-probes.md) | Find movement rules from random seeds and targeted probes, and lay the fixtures out a tick a line | 2026-11-12 | proposed | |
 | [0068](0068-stomp-is-a-melee-reach-judged-after-the-move.md) | The stomp attack is a reach of the one melee goal, judged after the move | 2026-11-12 | proposed | |
 | [0069](0069-flyers-push-straight-at-their-point.md) | Float-navigating flyers push straight at their point, with no path and no gravity | 2026-11-12 | proposed | |
 
