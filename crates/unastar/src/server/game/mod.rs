@@ -591,6 +591,24 @@ impl GameServer {
                 .in_set(PhysicsSet)
                 .after(tick_physics),
         );
+        // Stomp goals decide by where the mob stands after its move.
+        ecs.schedule_mut().add_systems(
+            crate::entity::mob::ai::tick_stomp_attacks
+                .in_set(PhysicsSet)
+                .after(tick_physics),
+        );
+        // A charging vex hits by where it stands after its move.
+        ecs.schedule_mut().add_systems(
+            crate::entity::mob::ai::tick_charge_hits
+                .in_set(PhysicsSet)
+                .after(tick_physics),
+        );
+        // The slime classes report leaving the ground and landing.
+        ecs.schedule_mut().add_systems(
+            crate::entity::mob::ai::hop::report_ground_changes
+                .in_set(PhysicsSet)
+                .after(tick_physics),
+        );
         // Mob AI turns goals into rotation and velocity before the physics
         // step integrates them; pushing separates overlapping mobs.
         ecs.schedule_mut().add_systems(
@@ -691,14 +709,16 @@ impl GameServer {
                 .after(liquids::tick_liquids)
                 .before(tick_block_breaking),
         );
-        // The mobs' effect step, mob fall damage, condition damage,
+        // The mobs' effect step, mob fall damage, contact damage, condition damage,
         // daylight burning and fire, death, then experience orbs. After the
         // entity chain so deaths from fire/effects are caught the same tick.
         ecs.schedule_mut().add_systems(
             (
                 crate::entity::effects::tick_mob_effects,
                 crate::entity::mob::combat::fall::apply_fall_damage,
+                crate::entity::mob::combat::area_attack::area_attacks,
                 crate::entity::mob::combat::hurt_on_condition,
+                crate::entity::mob::combat::damage_over_time,
                 crate::entity::mob::combat::fire::burn_in_daylight,
                 crate::entity::mob::combat::fire::burn_mobs,
                 crate::entity::mob::combat::explode::tick_fuses,
@@ -782,12 +802,14 @@ impl GameServer {
                 .after(despawn_dead)
                 .before(tick_block_breaking),
         );
-        // Environment sensors, timers, then anger. Their group changes apply
-        // at the next tick's definition barrier (`PhysicsSet`), which is when
-        // anger that spread this tick starts on its receivers.
+        // Environment sensors, target-nearby sensors, timers, then anger.
+        // Their group changes apply at the next tick's definition barrier
+        // (`PhysicsSet`), which is when anger that spread this tick starts
+        // on its receivers.
         ecs.schedule_mut().add_systems(
             (
                 crate::entity::mob::life::sensors::tick_environment_sensors,
+                crate::entity::mob::life::sensors::tick_target_nearby_sensors,
                 crate::entity::mob::life::sensors::tick_timers,
                 crate::entity::mob::life::anger::tick_anger,
             )

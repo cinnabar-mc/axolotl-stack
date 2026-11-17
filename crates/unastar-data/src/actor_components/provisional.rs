@@ -344,6 +344,18 @@ pub const LEASHABLE_TO_CAN_RETRIEVE_FROM: bool = false;
 /// ML `minecraftcomponent_movement.basic`: `max_turn` 30.
 pub const MOVEMENT_BASIC_MAX_TURN: f32 = 30.0;
 
+// minecraft:movement.sway
+
+/// ML `minecraftcomponent_movement.sway`: `sway_amplitude` 0.05.
+pub const MOVEMENT_SWAY_AMPLITUDE: f32 = 0.05;
+/// ML `minecraftcomponent_movement.sway`: `sway_frequency` 0.5.
+pub const MOVEMENT_SWAY_FREQUENCY: f32 = 0.5;
+
+// minecraft:water_movement
+
+/// ML `minecraftcomponent_water_movement`: `drag_factor` 0.8.
+pub const WATER_MOVEMENT_DRAG_FACTOR: f32 = 0.8;
+
 // minecraft:nameable
 
 /// ML `minecraftcomponent_nameable`: `allow_name_tag_renaming` true.
@@ -500,3 +512,31 @@ pub const SHAREABLES_PRIORITY: i32 = 0;
 /// ML `minecraftcomponent_spell_effects`: an added effect without an
 /// `amplifier` is level I (amplifier 0).
 pub const SPELL_EFFECTS_AMPLIFIER: i32 = 0;
+
+// minecraft:shooter
+
+/// ML `minecraftcomponent_shooter`: `aux_val` -1 (no aux value).
+pub const SHOOTER_AUX_VAL: i32 = -1;
+
+// minecraft:target_nearby_sensor (Mojang form `minecraft_target_nearby_sensor.form.json`)
+
+/// `inside_range` 1 block.
+pub const TARGET_NEARBY_INSIDE_RANGE: f32 = 1.0;
+/// `outside_range` 5 blocks.
+pub const TARGET_NEARBY_OUTSIDE_RANGE: f32 = 5.0;
+
+// minecraft:movement.jump (Mojang form `minecraft_movement_jump.form.json`)
+
+/// `max_turn` 30 degrees per tick.
+pub const MOVEMENT_JUMP_MAX_TURN: f32 = 30.0;
+
+// minecraft:area_attack (Mojang form `minecraft_area_attack.form.json`)
+
+/// `damage_per_tick` 2.
+pub const AREA_ATTACK_DAMAGE_PER_TICK: f32 = 2.0;
+/// `damage_range` 0.2 blocks.
+pub const AREA_ATTACK_DAMAGE_RANGE: f32 = 0.2;
+/// `damage_cooldown` 0 seconds.
+pub const AREA_ATTACK_DAMAGE_COOLDOWN: f32 = 0.0;
+/// `play_attack_sound` true.
+pub const AREA_ATTACK_PLAY_ATTACK_SOUND: bool = true;
