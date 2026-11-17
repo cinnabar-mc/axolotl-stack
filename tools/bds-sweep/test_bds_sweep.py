@@ -15,6 +15,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import base64  # noqa: E402
 
+import authority_fixture  # noqa: E402
 import bds_runtime  # noqa: E402
 import breaking_fixture  # noqa: E402
 import combat_fixture  # noqa: E402
@@ -597,6 +598,48 @@ class PlayerFixture(unittest.TestCase):
         self.assertEqual(player_fixture.ATTRIBUTE.findall(body), [
             ('19.0', 'minecraft:health'), ('1.3973968', 'minecraft:player.exhaustion')])
 
+    def test_teleports_and_corrections_are_read_from_their_packets(self):
+        teleport = ('MovePlayerPacket { player_runtime_id: ActorRuntimeId { actor_runtime_id: 1 }, '
+                    'position: Vec3 { x: 4.5, y: -58.37999, z: 4.5 }, rotation: Vec2 { x: 0.0, y: 0.0 }, '
+                    'y_head_rotation: 0.0, position_mode: Teleport, on_ground: true, '
+                    'riding_runtime_id: ActorRuntimeId { actor_runtime_id: 0 }, teleport_data: '
+                    'Some(MovePlayerTeleportData { teleportation_cause: 3, source_actor_type: 1 }), '
+                    'tick: PlayerInputTick { inputtick: 66 } }')
+        self.assertEqual(player_fixture.MOVE.search(teleport).groups(),
+                         ('4.5', '-58.37999', '4.5', 'Teleport', '66'))
+        correction = ('CorrectPlayerMovePredictionPacket { prediction_type: Player, pos: Vec3 { x: 0.5, '
+                      'y: -58.37999, z: 8.5 }, pos_delta: Vec3 { x: 0.0, y: -0.0784, z: 0.0 }, rotation: '
+                      'Vec2 { x: 0.0, y: 0.0 }, vehicle_angular_velocity: None, on_ground: true, '
+                      'tick: PlayerInputTick { inputtick: 201 } }')
+        self.assertEqual(player_fixture.CORRECTION.search(correction).groups(),
+                         ('0.5', '-58.37999', '8.5', '0.0', '-0.0784', '0.0', 'true', '201'))
+
+
+class AuthorityFixture(unittest.TestCase):
+    def test_inputs_and_relays_are_read_from_their_packets(self):
+        body = ('PlayerAuthInputPacket { player_rotation: Vec2 { x: 1.5, y: -90.0 }, position: Vec3 { '
+                'x: 0.5, y: -58.37999, z: 0.7 }, move_vector: Vec2 { x: 0.0, y: 1.0 }, '
+                'player_head_rotation: -90.0, input_data: [Up, Handledteleport, Verticalcollision], '
+                'input_mode: Mouse, client_tick: PlayerInputTick { inputtick: 167 } }')
+        pitch, yaw, x, y, z, strafe, forward = authority_fixture.INPUT.search(body).groups()
+        self.assertEqual((pitch, yaw, x, y, z, strafe, forward),
+                         ('1.5', '-90.0', '0.5', '-58.37999', '0.7', '0.0', '1.0'))
+        flags = authority_fixture.FLAGS.search(body).group(1).split(', ')
+        self.assertEqual([f for f in flags if f in authority_fixture.KEPT],
+                         ['Handledteleport', 'Verticalcollision'])
+        relay = ('MovePlayerPacket { player_runtime_id: ActorRuntimeId { actor_runtime_id: 1 }, position: '
+                 'Vec3 { x: 0.5, y: -58.37999, z: 0.5 }, rotation: Vec2 { x: 0.0, y: 0.0 }, '
+                 'y_head_rotation: 0.0, position_mode: Normal, on_ground: true, riding_runtime_id: '
+                 'ActorRuntimeId { actor_runtime_id: 0 }, teleport_data: None, '
+                 'tick: PlayerInputTick { inputtick: 86 } }')
+        self.assertEqual(authority_fixture.RELAY.search(relay).groups(),
+                         ('0.5', '-58.37999', '0.5', 'Normal', 'true'))
+
+    def test_whole_numbers_are_written_as_integers(self):
+        self.assertEqual(authority_fixture.number('-58.0'), -58)
+        self.assertIsInstance(authority_fixture.number('-58.0'), int)
+        self.assertEqual(authority_fixture.number('-58.37999'), -58.37999)
+
 
 class KnockbackTrials(unittest.TestCase):
     def items(self, which: str) -> list[dict]:
@@ -942,6 +985,165 @@ class EffectTrials(unittest.TestCase):
         for item in items:
             self.assertTrue(item['frozen'])
             self.assertTrue(any('resistance 100000 4' in line for line in item['setup']))
+
+    def test_ranged_item_sets_pin_geometry_spread_damage_and_avoidance(self):
+        geometry = sweep.ranged_items(self.args('geometry'))
+        self.assertEqual(len({tuple(item['at'][:3]) for item in geometry}), len(geometry))
+        for item in geometry:
+            self.assertEqual(item['mob'], 'minecraft:' + item['key'].split('|')[0])
+            self.assertTrue(any('resistance 100000 4' in line for line in item['setup']))
+        spread = sweep.ranged_items(self.args('spread'))
+        for item in spread:
+            # Every barrier the setup places, the cleanup clears.
+            placed = [line for line in item['setup'] if line.endswith(' barrier')]
+            self.assertEqual(len(placed), 3)
+            for line in placed:
+                self.assertIn(line.replace(' barrier', ' air'), item['cleanup'])
+        damage = sweep.ranged_items(self.args('damage'))
+        for item in damage:
+            self.assertFalse(any('resistance' in line for line in item['setup']))
+            self.assertTrue(any('health_boost' in line for line in item['setup']))
+        avoid = sweep.ranged_items(self.args('avoid'))
+        for item in avoid:
+            self.assertFalse(item['frozen'])
+            self.assertTrue(any('summon minecraft:wolf' in line for line in item['setup']))
+        with self.assertRaises(SystemExit):
+            sweep.ranged_items(self.args('every'))
+
+    def test_ranged_fixture_structures_setup_and_scripted_commands(self):
+        import ranged_fixture
+        self.assertEqual(ranged_fixture.block_change('fill 0 -60 -1 1 -58 -1 barrier'),
+                         {'from': [0, -60, -1], 'to': [1, -58, -1], 'block': 'minecraft:barrier'})
+        self.assertEqual(ranged_fixture.block_change('setblock 1 -56 0 dispenser ["facing_direction"=0]'),
+                         {'from': [1, -56, 0], 'to': [1, -56, 0], 'block': 'minecraft:dispenser',
+                          'states': {'facing_direction': 0}})
+        self.assertIsNone(ranged_fixture.block_change('gamemode survival "BDSSweep"'))
+        actions = [{'t': 5, 'commands': ['replaceitem entity @e[type=minecraft:skeleton] slot.weapon.mainhand 0 '
+                                         'minecraft:air', 'event entity @e[type=minecraft:skeleton] '
+                                                          'minecraft:spring_trap']},
+                   {'t': 65, 'commands': ['tp "BDSSweep" 0.5 -60 0.5 -90 0']}]
+        self.assertEqual(ranged_fixture.scripted(actions),
+                         {'hand': [{'t': 5, 'item': None}], 'teleports': [{'t': 65, 'to': [0.5, -60.0, 0.5]}],
+                          'fired_events': [{'t': 5, 'event': 'minecraft:spring_trap'}]})
+
+    def test_silverfish_items_restore_every_block_they_place(self):
+        merge = sweep.silverfish_items(self.args('merge'))
+        self.assertEqual(len(merge), 10)
+        wake = sweep.silverfish_items(self.args('wake'))
+        for item in wake:
+            placed = [line for line in item['setup'] if line.endswith(' infested_stone')]
+            self.assertTrue(placed)
+            for line in placed:
+                self.assertIn(line.replace(' infested_stone', ' air'), item['cleanup'])
+            self.assertEqual(item['actions'][0]['t'], 40)
+        nogrief = sweep.silverfish_items(self.args('wake-nogrief'))
+        self.assertTrue(all('gamerule mobgriefing false' in item['setup'] for item in nogrief))
+        self.assertTrue(all('gamerule mobgriefing true' in item['cleanup'] for item in nogrief))
+        pits = sweep.silverfish_items(self.args('blocks'))
+        self.assertIn('silverfish|blocks-deepslate-0', [item['key'] for item in pits])
+        self.assertIn('silverfish|blocks-deepslate-x-0', [item['key'] for item in pits])
+        for item in pits + sweep.silverfish_items(self.args('pit')) + sweep.silverfish_items(self.args('griefing')):
+            self.assertIn('fill 4 -61 0 6 -58 2 air', item['cleanup'])
+        with self.assertRaises(SystemExit):
+            sweep.silverfish_items(self.args('every'))
+
+    def test_silverfish_fixture_reads_the_pit_block_and_its_states(self):
+        import silverfish_fixture
+        result = {'key': 'silverfish|blocks-deepslate-0', 'spec': {'setup': [
+            'fill 4 -61 0 6 -58 2 deepslate ["pillar_axis"="x"]', 'fill 5 -60 1 5 -59 1 air']}}
+        self.assertEqual(silverfish_fixture.setup_block(result), ('minecraft:deepslate', {'pillar_axis': 'x'}))
+        result['spec']['setup'][0] = 'fill 4 -61 0 6 -58 2 stone'
+        self.assertEqual(silverfish_fixture.setup_block(result), ('minecraft:stone', {}))
+
+    def test_creeper_fixture_reads_actor_data_by_id(self):
+        import creeper_fixture
+        entries = [{'id': 0, 'payload': {'DataItemInt64Payload': {'type_': 'Int64', 'value': 1 << 10}}},
+                   {'id': 55, 'payload': {'DataItemIntPayload': {'type_': 'Int', 'value': 29}}}]
+        self.assertEqual(creeper_fixture.data_items(entries), {0: 1 << 10, 55: 29})
+
+    def test_creeper_items_rebuild_the_floor_and_pick_items_by_name(self):
+        items = sweep.creeper_items(self.args())
+        keys = [item['key'] for item in items]
+        self.assertIn('creeper|flint', keys)
+        for item in items:
+            self.assertIn('fill -8 -61 -8 14 -61 8 grass_block', item['cleanup'])
+            self.assertIn('gamerule mobgriefing true', item['cleanup'])
+        flint = next(item for item in items if item['key'] == 'creeper|flint')
+        self.assertEqual([action['t'] for action in flint['actions'] if action.get('order') == 'interact'], [10, 20])
+        alone = next(item for item in items if item['key'] == 'creeper|flint-alone')
+        self.assertNotIn('gamemode survival "BDSSweep"', alone['setup'])
+        chosen = sweep.creeper_items(self.args('cancel,sight'))
+        self.assertEqual([item['key'] for item in chosen], ['creeper|cancel', 'creeper|sight'])
+        with self.assertRaises(SystemExit):
+            sweep.creeper_items(self.args('nothing'))
+
+    def test_tracked_mob_items_summon_with_their_event_and_clean_up(self):
+        bears = sweep.polar_bear_items(self.args('all'))
+        keys = [item['key'] for item in bears]
+        self.assertIn('polar_bear|stomp-22', keys)
+        self.assertIn('polar_bear|swim-push-0', keys)
+        for item in bears:
+            self.assertTrue(any(line.startswith('summon minecraft:polar_bear') for line in item['setup']))
+            self.assertEqual(item['track'], ['minecraft:polar_bear'])
+            if sweep.PEN[0] in item['setup']:
+                self.assertIn(sweep.UNPEN[0], item['cleanup'])
+        attack = next(item for item in bears if item['key'] == 'polar_bear|attack-0')
+        self.assertTrue(attack['setup'][-1].endswith('minecraft:ageable_grow_up'))
+        self.assertIn('damage @e[type=minecraft:polar_bear]', attack['actions'][1]['commands'][0])
+        bats = sweep.bat_items(self.args('room'))
+        self.assertEqual(len(bats), 4)
+        self.assertEqual(bats[0]['setup'][-1], 'summon minecraft:bat 20.5 -56 0.5 0 0')
+        self.assertEqual(bats[0]['cleanup'][-2:], sweep.UNROOM)
+        low = sweep.bat_items(self.args('low'))
+        self.assertEqual(len(low), 8)
+        self.assertEqual([action['t'] for action in low[0]['actions']], [20, 120, 220, 320])
+        self.assertEqual(low[0]['cleanup'][-2:], sweep.UNLOW)
+        canopy = sweep.bat_items(self.args('canopy'))
+        self.assertEqual(canopy[1]['actions'][0]['commands'], ['tp "BDSSweep" 18.4 -60 0.5'])
+        tadpoles = sweep.tadpole_items(self.args('all'))
+        self.assertEqual(len(tadpoles), 7)
+        # The tadpole's grow-up event has no namespace.
+        self.assertEqual(tadpoles[-1]['setup'][-1], 'summon minecraft:tadpole 11.5 -57 0.5 90 0 ageable_grow_up')
+        self.assertEqual(tadpoles[-1]['track'], ['minecraft:tadpole', 'minecraft:frog'])
+        vexes = sweep.vex_items(self.args('all'))
+        self.assertEqual([item['key'] for item in vexes],
+                         ['vex|idle-0', 'vex|idle-1'] + [f'vex|charge-{n}' for n in range(6)]
+                         + ['vex|look-0', 'vex|look-1', 'vex|decay-0', 'vex|decay-1'])
+        self.assertTrue(vexes[-1]['setup'][-1].endswith('minecraft:add_damage_timer'))
+        # The player follows the decaying vex so it stays in view.
+        self.assertEqual(vexes[-1]['actions'][0]['commands'],
+                         ['execute at @e[type=minecraft:vex] run tp "BDSSweep" ~ ~4 ~'])
+        goats = sweep.goat_items(self.args('all'))
+        self.assertEqual(len(goats), 19)
+        self.assertEqual(goats[0]['actions'][0]['commands'][-1],
+                         'event entity @e[type=minecraft:goat] minecraft:born_screamer')
+        self.assertEqual(sweep.goat_items(self.args('horn'))[0]['track'], ['minecraft:goat', 'minecraft:item'])
+        self.assertEqual(len(sweep.ghast_items(self.args('all'))), 2)
+        with self.assertRaises(SystemExit):
+            sweep.polar_bear_items(self.args('nothing'))
+
+    def test_mob_fixture_reads_flag_words_and_flag_changes(self):
+        import mob_fixture
+        word = {'id': 0, 'payload': {'DataItemInt64Payload': {'type_': 'Int64', 'value': 1 << 39}}}
+        self.assertEqual(mob_fixture.flags_of(mob_fixture.data_items([word]), None), 1 << 39)
+        rows = [(3, {'name': 'AddActorPacket', 'packet': {
+                    'target_runtime_id': {'actor_runtime_id': 7}, 'target_actor_id': {'actor_unique_id': -7},
+                    'actor_data': {'data': [{'id': 0, 'payload': {'DataItemInt64Payload': {'value': 0}}}]}}}),
+                (5, {'name': 'SetActorDataPacket', 'packet': {
+                    'target_runtime_id': {'actor_runtime_id': 7}, 'actor_data': {'data': [word]}}}),
+                (6, {'name': 'ActorEventPacket', 'packet': {
+                    'target_runtime_id': {'actor_runtime_id': 7}, 'event_id': 'StartAttacking', 'data': 0}})]
+        out = mob_fixture.actor_packets(rows, {7}, {})[7]
+        self.assertEqual(out['added'], 3)
+        self.assertEqual(out['flag_changes'], [{'t': 5, 'flag': 39, 'set': True}])
+        self.assertEqual(out['events'], [{'t': 6, 'event': 'StartAttacking', 'data': 0}])
+        # An AddActor before the item's first mark still gives the flags
+        # its changes are counted from.
+        adds = mob_fixture.added_flags([rows[0][1]])
+        self.assertEqual(adds, {7: 0})
+        late = mob_fixture.actor_packets(rows[1:], {7}, adds)[7]
+        self.assertEqual(late['flags'], '0')
+        self.assertEqual(late['flag_changes'], [{'t': 5, 'flag': 39, 'set': True}])
 
     def test_mooshroom_items_interact_twice_with_the_held_item(self):
         items = sweep.mooshroom_items(self.args())

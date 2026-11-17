@@ -61,18 +61,104 @@ Each joined session SHALL have an outbound queue of 1024 packets. `PlayerSession
 
 Evidence: crates/unastar/src/entity/components/player.rs (`PlayerSession::send`, `packets_dropped`), crates/unastar/src/server/runtime.rs (`OUTBOUND_CHANNEL_CAPACITY`), crates/unastar/src/network/mod.rs (`run_network_loop`, `terminates_connection`), crates/unastar/src/server/game/mod.rs (test `player_spawn_sets_join_chunk_gate_without_network_io`)
 
-### Requirement: Client-reported movement is accepted within a per-tick delta
-The server SHALL take a player's position, rotation and input flags from `PlayerAuthInput`, and MUST reject whole (leave the player where it was and forward none of its block actions) any update whose position, rotation, head yaw or move vector is not finite, or whose position is more than 64 blocks from the server-tracked position. Rotation is not range-checked. There is no server-side collision or speed simulation; see the `player.movement` parity row.
+### Requirement: Player movement is simulated and judged by the server
+The server SHALL keep its own copy of each player's movement, simulate every `PlayerAuthInput` on it and judge the reported position with the acceptance rules in `docs/quirks/bds.md` (Entities / player movement authority, pull, horizontal take), answering a refused report with `CorrectPlayerMovePrediction` carrying the copy's state after that input. The copy MUST be the player's position for viewers, falls, `MOVING` and exhaustion. An input with a non-finite value MUST be rejected whole.
 
 #### Scenario: Teleport-sized jump
-- **WHEN** a `PlayerAuthInput` reports a position 100 blocks from the tracked one
-- **THEN** the update is rejected with the warning `Rejected implausible PlayerAuthInput movement delta`, no move event is produced and its block actions are not processed
+- **WHEN** a `PlayerAuthInput` reports a position 100 blocks from the server's copy of a standing player
+- **THEN** the player stays where the copy is and the client is corrected to it
+
+#### Scenario: Too fast
+- **WHEN** a client walking forward reports positions 0.4 blocks a tick ahead (authority capture phase `speed`)
+- **THEN** the copy walks at walking speed and the client is corrected on the inputs BDS corrected, to BDS's position and velocity
+
+#### Scenario: Through a wall
+- **WHEN** a client reports moving 0.2 blocks a tick through a stone wall (phase `phase_wall`)
+- **THEN** the copy stops at the wall and the client is corrected as BDS corrected it
+
+#### Scenario: Claiming the ground while falling
+- **WHEN** a client falling 10 blocks reports vertical collision on every input (phase `nofall`)
+- **THEN** the copy falls, lands and deals the 7 damage BDS dealt
+
+#### Scenario: A close position is taken
+- **WHEN** a standing client reports a position 0.09 blocks from the copy (phase `offset_z_0_09`)
+- **THEN** the copy takes that position and no correction is sent
 
 #### Scenario: Non-finite input
-- **WHEN** a `PlayerAuthInput` carries a NaN position or an infinite rotation
-- **THEN** the update is rejected with the warning `Rejected non-finite PlayerAuthInput` and the stored position and rotation are unchanged
+- **WHEN** a `PlayerAuthInput` carries a NaN position or rotation
+- **THEN** it is rejected whole with the warning `Rejected non-finite PlayerAuthInput` and the player does not move and none of its block actions are processed
 
-Evidence: crates/unastar/src/server/game/movement.rs (`MAX_AUTH_INPUT_MOVE_DELTA_PER_TICK`, `apply_movement`, `process_auth_input`, `auth_input_is_finite`, tests `moves_within_the_delta_are_accepted_and_larger_ones_rejected`, `non_finite_positions_and_rotations_are_rejected`), [docs/parity/systems.toml](../../../docs/parity/systems.toml) (`player.movement`)
+Evidence: crates/unastar-rules/src/movement/mod.rs (`step`), crates/unastar-rules/src/movement/authority.rs (`Authority::judge`), crates/unastar/src/entity/player_life/authority.rs (`PlayerMotion::input`), crates/unastar/src/server/game/movement.rs (`process_auth_input`, test `non_finite_positions_and_rotations_are_rejected`), crates/unastar/src/entity/player_life/tests/authority.rs (`the_copy_moves_and_corrects_like_bds`, `close_positions_bds_keeps_are_taken`, `cheated_falls_hurt_like_bds`, `a_teleport_sized_jump_is_corrected`), crates/unastar/src/entity/player_life/testdata/bds-1.26.51-authority.json
+
+### Requirement: A server teleport is enforced on the next input
+When the server moves a player (a command, a plugin, an ender pearl or chorus fruit), it SHALL NOT simulate the player's next input: the copy MUST stay at rest at the destination, and a reported position beyond the acceptance threshold MUST be corrected to it, whether or not the input says `HandledTeleport` and even when that input would otherwise be trusted. A respawn MUST NOT count as a teleport: the next input is simulated from the spawn point.
+
+#### Scenario: An input sent before the teleport
+- **WHEN** `/tp` moves a player 8 blocks and its next input still reports the old position
+- **THEN** that input is corrected to the destination with zero velocity and on the ground, and the player stays at the destination
+
+#### Scenario: A client that never follows
+- **WHEN** a client ignores a teleport and every correction (phase `tp_ignore_uncorrected`)
+- **THEN** the copy stays at the destination and the client is corrected on the inputs BDS corrected
+
+#### Scenario: A respawn the client ignores
+- **WHEN** a respawned client's next input still reports where it died
+- **THEN** that input is corrected to the copy simulated from the spawn point through that input
+
+Evidence: crates/unastar/src/entity/player_life/authority.rs (`PlayerMotion::teleported`, `PlayerMotion::respawned`), crates/unastar/src/command/exec/teleport.rs, crates/unastar/src/server/game/item_use/mod.rs (`teleport`), crates/unastar/src/server/game/plugins.rs, crates/unastar/src/entity/player_life/respawn.rs, crates/unastar/src/server/game/command_tests.rs (`a_teleport_cannot_be_undone_by_the_input_already_on_its_way`), crates/unastar/src/entity/player_life/tests/authority.rs (`the_copy_moves_and_corrects_like_bds`), crates/unastar/src/entity/player_life/tests/respawn.rs (`the_copy_of_the_player_respawns_with_it`)
+
+### Requirement: Movement the simulation does not cover is trusted
+The server SHALL take a client's state without judging it where the simulation does not reproduce vanilla: flight in a game mode that can fly, nearby blocks with rules of their own, movement enchantments where they act, a riptide spin started in water, a crawl space, a client only slower than the copy's simulation of its keys (not after a knockback), or the first input after a join or respawn near the spawn point. Each trust MUST be bounded by the move it allows.
+
+#### Scenario: Replayed vanilla movement
+- **WHEN** the BDS movement capture's phases (walking, sprinting, sneaking, jumps, swims, glides, falls onto slime, beds, hay, water and powder snow, fire, lava, knockback) are replayed
+- **THEN** the server sends no correction BDS did not send, and every correction it sends carries BDS's position and velocity
+
+#### Scenario: Flying
+- **WHEN** a flying creative player reports a position 10 blocks above the copy
+- **THEN** the copy takes it and no correction is sent
+
+#### Scenario: Teleport-sized jump while flying
+- **WHEN** a flying creative player reports a position 100 blocks from the copy, twice
+- **THEN** both inputs are rejected with the warning `Rejected implausible PlayerAuthInput movement delta`, the copy stays where it was and no correction is sent
+
+#### Scenario: Claimed flight
+- **WHEN** a survival client sends `StartFlying` with a position 5 blocks above the copy
+- **THEN** the flag is ignored and the input is judged and corrected
+
+#### Scenario: Situations the simulation does not cover
+- **WHEN** a standing player sends an input sneaking in swift sneak leggings, next to water in depth strider boots, on soul soil in soul speed boots, starting a riptide spin next to water, under a block at eye height or next to a bubble column
+- **THEN** the input is trusted and no correction is sent
+
+#### Scenario: Situations the movement differential confirmed
+- **WHEN** a standing player sends an input under slowness or levitation, next to scaffolding or next to a lava source
+- **THEN** the input is judged, not trusted
+
+#### Scenario: The movement attribute under effects
+- **WHEN** a player sprints under slowness II
+- **THEN** its movement attribute is 0.091 with the `MovementSlowdown` modifier (-0.3) listed before the sprint's
+
+#### Scenario: A slower client
+- **WHEN** a client eats while it walks, or holds the sprint key at 6 food, and so moves slower than the copy's simulation of its keys
+- **THEN** each such input is taken and no correction is sent
+
+#### Scenario: A knockback refused
+- **WHEN** a client stands still after the server knocks it back
+- **THEN** its inputs are judged, not taken as slower, and it is corrected
+
+#### Scenario: Out of a near trust's reach
+- **WHEN** a client next to a ladder reports a position 10 blocks away or inside the wall beside it, or claims a crawl space 5 blocks away
+- **THEN** the input is judged and corrected
+
+#### Scenario: A bounded velocity
+- **WHEN** a trusted input reports a velocity of 1e30 blocks a tick
+- **THEN** the copy's velocity is 4 blocks a tick on that axis
+
+#### Scenario: Judging resumes where the client is
+- **WHEN** a client starts sprinting during trusted inputs and keeps sprinting after they end
+- **THEN** the copy follows it exactly, at sprint speed, without a correction
+
+Evidence: crates/unastar/src/entity/player_life/authority.rs (`MotionTable`, `Trust`, `Situation`, `PlayerMotion::input`), crates/unastar/src/server/game/movement.rs (`MAX_AUTH_INPUT_MOVE_DELTA_PER_TICK`, `situation_of`, test `moves_within_the_delta_are_accepted_and_larger_ones_rejected`), crates/unastar/src/entity/player_life/tests/authority.rs (`flight_is_trusted_within_64_blocks`, `a_trusted_velocity_is_bounded`, `a_survival_client_cannot_fly`, `situations_the_simulation_does_not_cover_are_trusted`, `a_slower_client_is_taken`, `a_knockback_must_be_followed`, `near_trusts_do_not_reach_far`, `a_riptide_spin_is_trusted_for_twenty_inputs`, `a_sprint_goes_on_after_trusted_inputs`, `waterlogged_blocks_are_water_and_flowing_water_is_trusted`), crates/unastar/src/server/game/attributes.rs (`effect_modifiers_are_listed_as_bds_sends_them`), crates/bds-sweep/tests/movement_diff.rs (`unastar_moves_like_bds_in_every_scenario`), crates/unastar/src/entity/player_life/tests/movement.rs (`assert_corrections_like_bds`), [docs/parity/systems.toml](../../../docs/parity/systems.toml) (`player.movement`)
 
 ### Requirement: Block interaction requires reach and a building game mode
 Every block break action, click and placement SHALL pass `can_interact`: the player has a game mode that can break blocks (survival or creative), a finite server-tracked position, the target is inside the world height in a loaded chunk, and the nearest point of the target block is within 5 blocks of that position (6 in creative). A failed check MUST change nothing and send an `UpdateBlock` with the server's block; a failed click also resends the neighbour and the inventory.
@@ -242,6 +328,32 @@ In the `bds` breaking mode, a player's `PlayerAuthInput`s that arrive in the sam
 - **THEN** the block breaks on the 15th input without waiting for further ticks, and the 16th input finds air
 
 Evidence: crates/unastar/src/server/game/blocks.rs (`apply_block_actions`, `MAX_WAITING_BLOCK_ACTIONS`), crates/unastar/src/server/game/blocks/breaking_tests.rs (`survival_breaking_answers_every_input_like_bds`: the burst scenario), [docs/quirks/bds.md](../../../docs/quirks/bds.md) (Blocks / mining: inputs are not held to server time)
+
+### Requirement: Terrain stays within the transport's queue
+Chunk streaming SHALL keep the bytes the transport reports queued towards a player, plus sub-chunk answers queued within the last 45 ms, within 512 KiB, half of the RakNet session's 1 MiB reliable-queue limit. A sub-chunk request MUST be answered column by column while its answers fit (one answer always goes out when nothing is queued); the rest MUST wait for a later tick in request order. No new column MUST be sent while the budget is full.
+
+#### Scenario: Respawn into a stored view
+- **WHEN** a player respawns or teleports 3000 blocks into a stored radius-12 view
+- **THEN** the view loads and the session's queue never passes its 1 MiB limit, so the player is not disconnected with `QueueTooLong`
+
+#### Scenario: Answers wait for the transport
+- **WHEN** the transport reports half the budget queued and an answer of more than the other half is due
+- **THEN** that answer waits; once the transport reports the queue drained, it goes out
+
+Evidence: crates/unastar/src/world/ecs/streaming.rs (`SendWindow::may_answer`, `SendWindow::may_send`, tests `answers_wait_while_the_transport_holds_the_byte_budget`, `no_new_columns_while_the_transport_is_full`), crates/unastar/src/server/game/chunks.rs (`handle_subchunk_request`), crates/unastar/tests/stream_respawn.rs (`respawn_and_teleport_into_a_stored_view_stay_under_the_session_queue_limit`), [docs/quirks/bds.md](../../../docs/quirks/bds.md) (World / chunk streaming)
+
+### Requirement: Chunk sends are clocked by acknowledgements
+Chunk streaming SHALL apply no per-tick count. Each player MUST have a send window of `LevelChunk`s not yet acknowledged by an answered `SubChunkRequest`: it starts at 128, grows by one per acknowledgement within 400 ms up to 256, halves (at most once per 400 ms, never below 8) when acknowledgements come later, and stops counting a column after 3 s. A single `SubChunk` packet MUST carry about 128 KiB of answers at most.
+
+#### Scenario: Window growth and back-off
+- **WHEN** acknowledgements arrive within 400 ms, and later they arrive after it
+- **THEN** the window grows by one per acknowledgement up to 256, then halves once per 400 ms down to 8
+
+#### Scenario: Large answers
+- **WHEN** one request names many dense columns
+- **THEN** the answer is split between columns into several `SubChunk` packets
+
+Evidence: crates/unastar/src/world/ecs/streaming.rs (`SendWindow`, tests `prompt_acks_grow_the_window_by_one_each_up_to_the_max`, `late_acks_halve_the_window_once_per_interval_and_never_below_min`, `unacknowledged_columns_stop_counting_after_the_timeout`), crates/unastar/src/server/game/chunks.rs (`SUBCHUNK_ANSWER_BYTES`, test `large_answers_split_between_columns`), crates/unastar/src/server/game/mod.rs (test `the_view_streams_within_the_acknowledged_send_window`)
 
 ### Requirement: Item cooldowns are kept by the server
 The server SHALL keep each player's item cooldowns by category, from the held item's `minecraft:cooldown` component, on its own tick count, and never trust the client's reported cooldown state. While an attack cooldown runs, a hit or jab with an item of that category MUST change nothing. Starting one MUST send `PlayerStartItemCooldown` with the category and its ticks. Other items MUST NOT be held back.

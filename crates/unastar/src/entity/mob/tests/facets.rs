@@ -44,11 +44,18 @@ const WITHER_SKELETON: &str = "minecraft:wither_skeleton";
 const ENDERMITE: &str = "minecraft:endermite";
 const ZOMBIE_PIGMAN: &str = "minecraft:zombie_pigman";
 const ZOGLIN: &str = "minecraft:zoglin";
+const SKELETON: &str = "minecraft:skeleton";
+const STRAY: &str = "minecraft:stray";
+const BOGGED: &str = "minecraft:bogged";
+const PARCHED: &str = "minecraft:parched";
 /// `/summon minecraft:zombie_villager` creates this actor (see
 /// `hostile::summoned_zombie_villager_is_a_v2_whose_add_actor_matches_native_summon`).
 const ZOMBIE_VILLAGER: &str = "minecraft:zombie_villager_v2";
+const SILVERFISH: &str = "minecraft:silverfish";
+const SLIME: &str = "minecraft:slime";
+const MAGMA_CUBE: &str = "minecraft:magma_cube";
 
-fn block(name: &str) -> u32 {
+pub(super) fn block(name: &str) -> u32 {
     BlockRegistry::vanilla()
         .default_state_id_by_name(name)
         .expect(name)
@@ -63,10 +70,21 @@ pub(super) struct Arena {
 /// A grass floor whose top is y = 64 over chunks -1..=1 × -1..=1, plus the
 /// blocks `build` places (y 50..80), at midnight. One player in `mode`
 /// stands at (12.5, 64, 12.5) and views every chunk.
-fn arena(
+pub(super) fn arena(
     seed: u64,
     difficulty: Difficulty,
     mode: GameMode,
+    build: impl Fn(IVec3) -> Option<u32>,
+) -> Arena {
+    arena_of(seed, difficulty, mode, 1, build)
+}
+
+/// [`arena`] over chunks `-chunks..=chunks` on x and z.
+pub(super) fn arena_of(
+    seed: u64,
+    difficulty: Difficulty,
+    mode: GameMode,
+    chunks: i32,
     build: impl Fn(IVec3) -> Option<u32>,
 ) -> Arena {
     let mut server = GameServer::with_config(ServerConfig {
@@ -97,8 +115,8 @@ fn arena(
         ))
         .id();
     let grass = block("minecraft:grass_block");
-    for cx in -1..=1 {
-        for cz in -1..=1 {
+    for cx in -chunks..=chunks {
+        for cz in -chunks..=chunks {
             let mut column = Chunk::new(cx, cz);
             for lx in 0u8..16 {
                 for lz in 0u8..16 {
@@ -143,7 +161,7 @@ impl Arena {
     /// A mob of `identifier` with its feet at `feet`, a baby exactly when
     /// `baby`, that drew a spawn branch with component groups (the zombie
     /// pigman can draw an undeclared one and spawn without any).
-    fn spawn(&mut self, identifier: &str, feet: DVec3, baby: bool) -> Entity {
+    pub(super) fn spawn(&mut self, identifier: &str, feet: DVec3, baby: bool) -> Entity {
         let world = self.world();
         for _ in 0..2000 {
             let mob = spawn_mob(world, identifier, feet, 0.0, SpawnCause::Spawned)
@@ -159,11 +177,11 @@ impl Arena {
         panic!("no {identifier} with baby = {baby} in 2000 spawns");
     }
 
-    fn adult(&mut self, identifier: &str, feet: DVec3) -> Entity {
+    pub(super) fn adult(&mut self, identifier: &str, feet: DVec3) -> Entity {
         self.spawn(identifier, feet, false)
     }
 
-    fn feet(&mut self, mob: Entity) -> DVec3 {
+    pub(super) fn feet(&mut self, mob: Entity) -> DVec3 {
         self.world().get::<Position>(mob).unwrap().0
     }
 
@@ -173,7 +191,7 @@ impl Arena {
         }
     }
 
-    fn set_block(&mut self, pos: IVec3, name: &str) {
+    pub(super) fn set_block(&mut self, pos: IVec3, name: &str) {
         let state = block(name);
         let world = self.world();
         let (cx, cz) = crate::world::ecs::world_to_chunk_coords(pos.x, pos.z);
@@ -189,7 +207,7 @@ impl Arena {
             .set_block(x, y, z, state);
     }
 
-    fn move_player(&mut self, feet: DVec3) {
+    pub(super) fn move_player(&mut self, feet: DVec3) {
         let player = self.player;
         self.world().get_mut::<Position>(player).unwrap().0 =
             feet + DVec3::Y * crate::entity::PLAYER_EYE_HEIGHT;
@@ -268,10 +286,15 @@ fn listed_mobs_fall_and_stay_on_the_ground() {
     for identifier in [
         HUSK,
         WITHER_SKELETON,
+        SKELETON,
+        STRAY,
+        BOGGED,
+        PARCHED,
         ENDERMITE,
         ZOMBIE_PIGMAN,
         ZOGLIN,
         ZOMBIE_VILLAGER,
+        SILVERFISH,
     ] {
         let mut a = floor(1, Difficulty::Normal, GameMode::Creative);
         let mob = a.adult(identifier, DVec3::new(0.5, 70.0, 0.5));
@@ -300,6 +323,10 @@ fn listed_mobs_stroll_within_their_range_around_obstacles() {
     for identifier in [
         HUSK,
         WITHER_SKELETON,
+        SKELETON,
+        STRAY,
+        BOGGED,
+        PARCHED,
         ENDERMITE,
         ZOMBIE_PIGMAN,
         ZOGLIN,
@@ -349,6 +376,10 @@ fn listed_mobs_jump_a_block_to_reach_a_stroll_target() {
     for identifier in [
         HUSK,
         WITHER_SKELETON,
+        SKELETON,
+        STRAY,
+        BOGGED,
+        PARCHED,
         ENDERMITE,
         ZOMBIE_PIGMAN,
         ZOMBIE_VILLAGER,
@@ -379,10 +410,15 @@ fn overlapping_listed_mobs_push_each_other_apart() {
     for identifier in [
         HUSK,
         WITHER_SKELETON,
+        SKELETON,
+        STRAY,
+        BOGGED,
+        PARCHED,
         ENDERMITE,
         ZOMBIE_PIGMAN,
         ZOGLIN,
         ZOMBIE_VILLAGER,
+        SILVERFISH,
     ] {
         let mut a = floor(7, Difficulty::Normal, GameMode::Creative);
         let first = a.adult(identifier, DVec3::new(0.4, SURFACE, 0.5));
@@ -420,8 +456,10 @@ fn listed_mobs_float_up_in_water() {
                 _ => None,
             },
         );
+        // Rising at most 0.1 a tick (`v = 0.8 v − 0.02` plus the 0.04
+        // impulse, as BDS's floating slime rises).
         let mob = a.adult(identifier, DVec3::new(0.5, 56.0, 0.5));
-        a.ticks(80);
+        a.ticks(120);
         let feet = a.feet(mob);
         assert!(feet.y > 61.5, "{identifier} still sunk at {feet}");
     }
@@ -434,6 +472,10 @@ fn listed_mobs_turn_their_heads_toward_a_nearby_player() {
     for identifier in [
         HUSK,
         WITHER_SKELETON,
+        SKELETON,
+        STRAY,
+        BOGGED,
+        PARCHED,
         ZOMBIE_PIGMAN,
         ZOGLIN,
         ZOMBIE_VILLAGER,
@@ -465,6 +507,10 @@ fn idle_listed_mobs_look_around_within_the_angle_range() {
     for identifier in [
         HUSK,
         WITHER_SKELETON,
+        SKELETON,
+        STRAY,
+        BOGGED,
+        PARCHED,
         ZOMBIE_PIGMAN,
         ZOGLIN,
         ZOMBIE_VILLAGER,
@@ -505,10 +551,17 @@ fn listed_mobs_despawn_far_from_players_and_stay_near_them() {
     for identifier in [
         HUSK,
         WITHER_SKELETON,
+        SKELETON,
+        STRAY,
+        BOGGED,
+        PARCHED,
         ENDERMITE,
         ZOMBIE_PIGMAN,
         ZOGLIN,
         ZOMBIE_VILLAGER,
+        SILVERFISH,
+        SLIME,
+        MAGMA_CUBE,
     ] {
         let mut a = floor(15, Difficulty::Normal, GameMode::Creative);
         let near = a.adult(identifier, DVec3::new(0.5, SURFACE, 0.5));
@@ -526,7 +579,23 @@ fn listed_mobs_despawn_far_from_players_and_stay_near_them() {
 /// definition gives it, and not for a family it lacks.
 #[test]
 fn listed_mobs_belong_to_their_authored_families() {
-    let cases: [(&str, &[&str], &str); 6] = [
+    let cases: [(&str, &[&str], &str); 13] = [
+        (SKELETON, &["skeleton", "undead", "monster", "mob"], "stray"),
+        (
+            STRAY,
+            &["stray", "skeleton", "monster", "mob", "undead"],
+            "bogged",
+        ),
+        (
+            BOGGED,
+            &["bogged", "skeleton", "monster", "mob", "undead"],
+            "parched",
+        ),
+        (
+            PARCHED,
+            &["parched", "skeleton", "monster", "mob", "undead"],
+            "wither",
+        ),
         (
             ZOMBIE_VILLAGER,
             &["zombie", "zombie_villager", "undead", "monster", "mob"],
@@ -557,6 +626,13 @@ fn listed_mobs_belong_to_their_authored_families() {
             &["zombie_pigman", "undead", "monster", "mob"],
             "baby_zombie_pigman",
         ),
+        (
+            SILVERFISH,
+            &["silverfish", "monster", "mob", "arthropod"],
+            "undead",
+        ),
+        (SLIME, &["slime", "monster", "mob"], "magmacube"),
+        (MAGMA_CUBE, &["magmacube", "monster", "mob"], "slime"),
     ];
     let mut a = floor(17, Difficulty::Normal, GameMode::Creative);
     for (identifier, families, absent) in cases {
@@ -582,7 +658,15 @@ fn listed_mobs_belong_to_their_authored_families() {
 /// kill without equipment.
 #[test]
 fn listed_mobs_drop_their_loot_and_experience_when_killed_by_a_player() {
-    let cases: [(&str, &[&str], Option<&str>, u32); 6] = [
+    // The stray, bogged and parched also drop a tipped arrow on a player
+    // kill (`set_potion`), which loot does not implement.
+    let cases: [(&str, &[&str], Option<&str>, u32); 8] = [
+        (
+            SKELETON,
+            &["minecraft:arrow", "minecraft:bone"],
+            Some("minecraft:bone"),
+            5,
+        ),
         (
             ZOMBIE_VILLAGER,
             &[
@@ -622,6 +706,7 @@ fn listed_mobs_drop_their_loot_and_experience_when_killed_by_a_player() {
             5,
         ),
         (ENDERMITE, &[], None, 3),
+        (SILVERFISH, &[], None, 5),
         (
             ZOMBIE_PIGMAN,
             &[
@@ -665,7 +750,16 @@ fn listed_mobs_drop_their_loot_and_experience_when_killed_by_a_player() {
 /// by the lava cause and burns to death.
 #[test]
 fn listed_mobs_standing_in_lava_are_hurt_by_it() {
-    for identifier in [HUSK, ENDERMITE, ZOMBIE_VILLAGER] {
+    for identifier in [
+        HUSK,
+        ENDERMITE,
+        ZOMBIE_VILLAGER,
+        SKELETON,
+        STRAY,
+        BOGGED,
+        PARCHED,
+        SILVERFISH,
+    ] {
         let mut a = floor(21, Difficulty::Normal, GameMode::Creative);
         let mob = a.adult(identifier, DVec3::new(0.5, SURFACE, 0.5));
         a.without::<RandomStrollGoal>(mob);
@@ -734,7 +828,14 @@ fn tough_player(a: &mut Arena) {
 /// cooldown.
 #[test]
 fn listed_hostile_mobs_target_and_hit_a_survival_player() {
-    for identifier in [HUSK, WITHER_SKELETON, ENDERMITE, ZOGLIN, ZOMBIE_VILLAGER] {
+    for identifier in [
+        HUSK,
+        WITHER_SKELETON,
+        ENDERMITE,
+        ZOGLIN,
+        ZOMBIE_VILLAGER,
+        SILVERFISH,
+    ] {
         let mut a = floor(23, Difficulty::Normal, GameMode::Survival);
         tough_player(&mut a);
         a.move_player(DVec3::new(6.5, SURFACE, 0.5));
@@ -759,7 +860,16 @@ fn listed_hostile_mobs_target_and_hit_a_survival_player() {
 /// targeted.
 #[test]
 fn listed_hostile_mobs_ignore_creative_players() {
-    for identifier in [HUSK, WITHER_SKELETON, ENDERMITE, ZOGLIN, ZOMBIE_VILLAGER] {
+    for identifier in [
+        HUSK,
+        WITHER_SKELETON,
+        ENDERMITE,
+        ZOGLIN,
+        ZOMBIE_VILLAGER,
+        SILVERFISH,
+        SLIME,
+        MAGMA_CUBE,
+    ] {
         let mut a = floor(25, Difficulty::Hard, GameMode::Creative);
         a.move_player(DVec3::new(4.5, SURFACE, 0.5));
         let mob = a.adult(identifier, DVec3::new(0.5, SURFACE, 0.5));

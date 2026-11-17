@@ -323,4 +323,52 @@ mod tests {
         );
         assert!(sent.diff(&health, &hunger, 0.0, &none, false).is_empty());
     }
+
+    #[test]
+    fn effect_modifiers_are_listed_as_bds_sends_them() {
+        use crate::entity::effects::{
+            MOVEMENT_SLOWDOWN_MODIFIER, MOVEMENT_SPEED_MODIFIER, SLOWNESS_PER_LEVEL,
+            SPEED_PER_LEVEL,
+        };
+        let modifier = |(name, id): (&'static str, &'static str), amount| WireModifier {
+            id,
+            name,
+            amount,
+            operation: 2,
+            operand: 2,
+        };
+        // BDS 1.26.51 (movement differential, slowness_sprint): 0.091,
+        // MovementSlowdown -0.3 then the sprint's 0.3.
+        let slowness = EffectModifiers {
+            movement: vec![modifier(
+                MOVEMENT_SLOWDOWN_MODIFIER,
+                SLOWNESS_PER_LEVEL * 2.0,
+            )],
+            health_boost: 0.0,
+        };
+        let slowed = movement(&slowness, true);
+        assert_eq!(slowed.current_value, 0.091);
+        let names: Vec<_> = slowed
+            .modifiers
+            .iter()
+            .map(|m| (&*m.name, m.amount))
+            .collect();
+        assert_eq!(
+            names,
+            [("MovementSlowdown", -0.3), ("Sprinting speed boost", 0.3)]
+        );
+        // Speed II walking: 0.14.
+        let speed = EffectModifiers {
+            movement: vec![modifier(MOVEMENT_SPEED_MODIFIER, SPEED_PER_LEVEL * 2.0)],
+            health_boost: 0.0,
+        };
+        let fast = movement(&speed, false);
+        assert_eq!(fast.current_value, 0.14);
+        assert_eq!(fast.modifiers[0].id, MOVEMENT_SPEED_MODIFIER.1);
+        assert!(
+            movement(&EffectModifiers::default(), false)
+                .modifiers
+                .is_empty()
+        );
+    }
 }

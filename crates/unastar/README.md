@@ -80,25 +80,101 @@ still had queued beyond that tick's budget is dropped (the count is logged at de
 since the client has gone and there is no prediction left to keep in step.
 
 `PlayerAuthInput` is rejected whole (the player stays where it was) when its
-position, rotation, head yaw or move vector is not finite, or when the position is
-more than 64 blocks from the server-tracked one.
+position, rotation, head yaw or move vector is not finite.
+
+### Movement authority
+
+Player movement is server-authoritative, as in BDS 1.26.51
+(`entity/player_life/authority.rs`). The server keeps its own copy of each
+player and simulates every `PlayerAuthInput` on it with `unastar_rules::movement`,
+the `f32` simulation the sweep client runs on BDS. It then judges the reported
+position with BDS's rules (`unastar_rules::movement::authority`; the measured
+rules are in `docs/quirks/bds.md`, Entities / player movement authority, pull,
+teleport):
+
+- positions within a tenth of a block are taken;
+- other positions pull the copy towards the client;
+- positions out of reach, or ones the copy could not reach (too fast, through a
+  wall, hovering, claiming the ground while falling), are answered with
+  `CorrectPlayerMovePrediction` carrying the copy's state.
+
+The copy is what the player's viewers see, and what its falls, `MOVING` and
+exhaustion follow. A teleport (command, plugin, ender pearl, chorus fruit) leaves
+the copy at rest at the destination for the next input, so no input sent before
+the client saw it can undo it. A respawn places the copy at the spawn point, and
+a knockback becomes its velocity. Every other server-side move of a player must
+update the copy too (`PlayerMotion::teleported`), or the client's next input is
+corrected back.
+
+The simulation does not reproduce everything yet. Inputs it does not cover
+are trusted (`Trust`): the copy takes the client's position, its velocity
+(capped at 4 blocks a tick per axis) and its flags. How far a trusted input may
+move the copy depends on who brings the trust about.
+
+The server grants this one; a trusted input more than 64 blocks from the copy
+is rejected whole:
+- flying in a game mode that can fly, and spectators (a survival client's
+  `StartFlying` is ignored).
+
+Effects are judged: speed, slowness, jump boost, slow falling and levitation
+are simulated as BDS moves them, and the movement attribute carries BDS's
+speed and slowness modifiers.
+
+A client can seek these out, so they cover about one tick of movement (1.5
+blocks horizontally, 4 vertically) and never pass through a block the
+simulation reproduces; beyond that the copy judges the input:
+- inputs near blocks with movement rules the simulation does not reproduce
+  yet: flowing water and lava, bubble columns, beds and powder snow
+  (`MotionTable`, both block layers; `Block::confirmed`). Ladders, vines and
+  the climbing plants, scaffolding, sweet berry bushes, honey, soul sand,
+  slime, cobwebs, ice and lava sources are judged: the movement differential
+  (`tools/movement-diff`) matches BDS on them bit for bit;
+- depth strider near water, swift sneak while sneaking, soul speed near soul
+  sand or soil;
+- a riptide trident's spin started in water, for at most 20 inputs (up to 4
+  blocks per axis);
+- a crawl space at the copy's feet.
+
+Two more cases are covered:
+- A client only slower than the copy's simulation of its keys is taken (no
+  farther horizontally, level vertically). This covers an item in use and a
+  sprint key held at 6 food or less. It does not apply while a knockback plays
+  out, so refusing knockback is still corrected.
+- The first input after joining or respawning is trusted when it is within 2
+  blocks of the spawn point.
+
+A situation leaves the trusted list only with a BDS run of the sweep client that
+covers it without corrections. The movement replays in `entity/player_life/tests/` assert
+that the server sends exactly BDS's corrections and none that BDS did not send.
 
 ## Joining
 
 Players join through jolyne's streamed spawn (`start_game_streamed`, BDS order):
-the player enters the ECS at its `RequestChunkRadius` with the granted radius
-(`server.default_chunk_radius`), and the chunk systems send the view
-(`NetworkChunkPublisherUpdate`), the chunks available that tick, and then
-`PlayStatus(PlayerSpawn)` once, never waiting for generation. The rest of the
+the player enters the ECS at its `RequestChunkRadius` with the view distance it
+requested, capped at `server.max_chunk_radius` (default 16, like BDS caps
+requests at `view-distance`; the old `server.default_chunk_radius` key is
+accepted but ignored with a startup warning), and the chunk systems send the view
+(`NetworkChunkPublisherUpdate`) and then `PlayStatus(PlayerSpawn)` once, never
+waiting for storage or generation. The rest of the
 view streams through the same `ChunkLoader` while the client loads, so nothing
 is resent after it initializes; jolyne's receive path enforces
 `SetLocalPlayerAsInitialized` and the 60 s spawn timeout. Clients that withhold
 initialization until their announced view has loaded (BDS-style, Cinnabar)
-therefore never wait on terrain that is not coming. Loopback timing with the
-jolyne client (connect to `PlayerSpawn` / to the whole radius-disk view loaded):
-Java world radius 4, about 0.5 s / 3.0 s fresh and 0.16 s / 0.45 s when the area
-is already generated; radius 12, about 0.6 s / 17 s fresh and 0.14 s / 2.9 s
-generated (8 chunks per player per tick bound the generated case).
+therefore never wait on terrain that is not coming.
+
+Chunk streaming (`world::ecs::streaming`) reads, generates and encodes columns in
+the background and never on the tick. Each column is encoded once per revision and
+the encoding is shared by every player and sub-chunk answer. Each player's view is
+the disk `dx² + dz² <= (r + 1)²`, sent nearest first, and columns a moving player
+reaches within two seconds are loaded before they enter it. Sending is not capped
+per tick: a send window of unacknowledged columns and a 512 KiB budget on what the
+RakNet session still holds bound it. That is an intended deviation from BDS's
+bursts of 20 `LevelChunk`s (see `docs/quirks/bds.md`). Unloaded chunks are written
+in the background; a column whose write fails comes back loaded and is retried.
+The generation pool stays three requests deep per worker, and Java terrain is
+generated in parallel (one lock per chunk; see `world::generator::pipeline`).
+Load timings, method and history are in
+[`tools/perf/README.md`](../../tools/perf/README.md).
 
 The `StartGame` batch opens with the sleeping-player count, the player's own
 `PlayerList` entry and the clock state, as BDS 1.26.51 sends them: the
@@ -150,7 +226,7 @@ nearby players and the client packets BDS ignores are ignored
 The default spawn rule keeps returning players at their saved position and otherwise
 uses the generator's spawn; set `location` (with `always_at_location = true`) to pin it.
 Java-style chunks are generated on a bounded pool of `world.generation_threads`
-workers (0 = half the cores, 1..=8), off the ECS tick thread. Chunk biomes are 3D
+workers (0 = half the cores, 1..=16), off the ECS tick thread. Chunk biomes are 3D
 (4x4x4 quarts) on the wire and in storage (`Data3D`).
 
 Generation runs through `world::generator::ChunkPipeline`: per-chunk terrain stages
@@ -593,9 +669,94 @@ Mooshroom interactions (`sweep.py mooshroom --client-capture`, distilled by
 by `src/entity/mob/interaction/bds_mooshroom.rs`: stew and suspicious stew
 into the hand (`add_items`, `has_mark_variant` loot), flowers eaten with
 `particle_on_start` smoke, shearing with largeexplode particles, five
-mushrooms and the cow it turns into (`minecraft:transformation`, which runs
-only when it names nothing but its target), the particle positions for an
+mushrooms and the cow it turns into (`minecraft:transformation`), the particle positions for an
 adult, a baby and a raised player, and the sounds at the middle of its box.
+
+The skeleton family's ranged attack (`sweep.py ranged --client-capture` on
+easy, normal and hard plus the `geometry`, `aim`, `spread`, `damage`,
+`damage-long`, `weapon`, `filters`, `avoid`, `avoid-many` and `pickup` sets,
+distilled by `tools/bds-sweep/ranged_fixture.py` into
+`src/entity/mob/combat/testdata/bds-1.26.51-ranged.json`) is replayed by
+`src/entity/mob/combat/bds_ranged.rs`: the shot ticks after the target, where
+each arrow starts, its owner, aux value, rotation and sounds, the aim (the
+drag-free parabola to the centre of the target's box) and spread per
+difficulty as distributions, arrow damage by difficulty, tipped-arrow
+effects, the bow as the only ranged weapon, the `is_underground` and
+`in_block` filters, the skeleton's trap sensor, fleeing a wolf
+(`behavior.avoid_mob_type`) and the arrow pickup after its shake.
+
+The silverfish (`sweep.py silverfish --client-capture`: 1 × 1 pits of 14 kinds
+of block, interleaved stone and cobblestone pits, mobGriefing off, and
+infested stone around a hurt silverfish, distilled by
+`tools/bds-sweep/silverfish_fixture.py` into
+`src/entity/mob/ai/testdata/bds-1.26.51-silverfish.json`) is replayed by
+`src/entity/mob/tests/silverfish.rs`: which blocks it merges into and what
+they become (the measured table `unastar-data/data/measured/infested_blocks.json`,
+decision 0059), which faces and how soon by distribution over seeded runs,
+and the wake-up scan's order, range, cadence and stopping coin, the released
+silverfish's position and mobGriefing turning woken blocks back into stone.
+The creeper's fuse (`sweep.py creeper`, distilled by
+`tools/bds-sweep/creeper_fixture.py` into
+`src/entity/mob/ai/testdata/bds-1.26.51-creeper.json`) is measured; its
+`target_nearby_sensor` decision is replayed on the BDS positions by
+`src/entity/mob/tests/creeper.rs` (ranges between the collision boxes). The
+creeper spawns once `minecraft:explode` (blocks round 4) and
+`behavior.melee_attack` exist.
+
+The slime and the magma cube (`sweep.py slime --client-capture`: calm hops of
+each size, attacks on a survival player, splits and floats, and
+`sweep.py slime-spawn`, distilled by `tools/bds-sweep/slime_fixture.py` into
+`src/entity/mob/ai/testdata/bds-1.26.51-slime.json`) are replayed by
+`src/entity/mob/tests/slime.rs`: their summons, a hop tick by tick (the magma
+cube jumping 0.42 + 0.1 × its size), the hop delays and random turns by
+distribution over seeded runs, contact damage (`minecraft:area_attack`),
+splitting into 2 to 4 children at the body's block centre, and slime chunks
+(every slime BDS spawned stood in one). They move through the hop control
+`mob::ai::hop` instead of the path follower (decision 0062).
+
+The drowned (`sweep.py drowned --client-capture`: sinking, hunting a player on
+a pool floor, at the surface and on land, trident throws, daytime targeting,
+200 spawn equipments and underwater conversions, distilled by
+`tools/bds-sweep/drowned_fixture.py` into
+`src/entity/mob/ai/testdata/bds-1.26.51-drowned.json`) is replayed by
+`src/entity/mob/tests/drowned.rs`: its summon, sinking tick by tick, the floor
+walk and the straight swim at its underwater speed, trident throws by
+distribution, daytime targeting, equipment by distribution and the zombie's
+and husk's conversions on BDS's tick. A navigation that can swim paths over
+water cells while the mob is in water (`entity::navigation::swim`), and the
+swimmer has no gravity (decision 0065). Transformations run with a delay, a
+sound, a spawn event (`ActorReference`) and kept equipment.
+
+The polar bear (`sweep.py polar-bear --client-capture`: hostile bears chasing the
+player, a baby's anger reaching an adult, bears knocked across a pool, distilled
+by `tools/bds-sweep/mob_fixture.py` into
+`src/entity/mob/ai/testdata/bds-1.26.51-polar_bear.json`) is replayed by
+`src/entity/mob/tests/polar_bear.rs`: its summon, the stomp goal's rear-ups,
+stand-downs and hits on BDS's ticks, and its horizontal drag in water.
+`behavior.stomp_attack` is a reach of the one melee goal (`MeleeAttackGoal`),
+judged after the physics step (decision 0068). `water_movement` sets the
+horizontal drag in water.
+
+The bat (`sweep.py bat --client-capture`: bats under the open sky, resting in
+one-block rooms, hurt, unroofed and approached, distilled by
+`tools/bds-sweep/mob_fixture.py` into
+`src/entity/mob/ai/testdata/bds-1.26.51-bat.json`) is replayed by
+`src/entity/mob/tests/bat.rs`: its summon, its pushes tick by tick, its wander
+lengths and idle draws by distribution, and its resting (born resting,
+settling about once in 100 ticks under a roof, waking by roof, player and
+hurt). A float-navigating mob flies straight at the point its goal wants, with
+no path search and no gravity (`mob::ai::fly`, decision 0069); the bat's
+resting is native (`mob::ai::roost`).
+
+The vex (`sweep.py vex --client-capture`: wandering, charging a survival player,
+beside a cow, and decaying, distilled into
+`src/entity/mob/ai/testdata/bds-1.26.51-vex.json`) is replayed by
+`src/entity/mob/tests/vex.rs`: its summon, its wanders and charges tick by tick,
+its waits by distribution, its hits and its decay. The vex class flies through
+one held course, steered before its goals: no gravity, no block collision, a
+push of 0.05 × speed a tick at the point and half its velocity on arrival
+(`mob::ai::vex`, decision 0070). `behavior.charge_attack` hits after the move
+(`tick_charge_hits`), and `damage_over_time` hurts with no cause.
 
 ### Measured item and falling-block motion
 
@@ -954,6 +1115,19 @@ break and hurt actors by distance and exposure, compared with BDS by distributio
 (`explosion/tests.rs`, `crates/unastar-data/data/measured/explosions/`). Power primes TNT in
 the circuit update; the primed TNT (`minecraft:explode`, `entity/mob/combat/explode.rs`)
 explodes 81 ticks later a sixteenth of its height above its feet.
+
+Liquids (`server/game/liquids/`) flow like BDS 1.26.51, tick by tick (`liquids/tests.rs`
+replays the cells of `crates/unastar-data/data/measured/liquids/`; decision
+[0051](../../docs/decisions/0051-tick-liquids-per-chunk-in-a-random-chunk-order.md)). A liquid is
+still until a block beside it changes or a bucket places it (`liquids::place_source`,
+`liquids::take_source`); water then ticks every 5 game ticks, lava every 30 (10 in the
+nether). Flow, falling, the drop search, sources between two sources, obsidian, cobblestone,
+stone and basalt follow the measured rules; per block, a liquid breaks it, fills its liquid
+layer or stays out (`unastar_data::liquids`). A block that holds water keeps the water it is set
+into, and air set over it leaves the water as a source. Ticks crossing into another chunk land
+early by BDS's random chunk order; changes are sent once per tick, batched per subchunk. Not
+modelled: BDS's order for ticks due in the same game tick, lava fire spread, nether water
+evaporation, bubble columns and sponges.
 
 Random block ticks (`server/game/random_ticks.rs`) follow BDS 1.26.51 by distribution
 (`random_ticks/tests.rs` compares measured fields of

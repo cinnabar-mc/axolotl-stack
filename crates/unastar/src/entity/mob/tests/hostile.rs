@@ -95,7 +95,7 @@ fn flag(world: &World, mob: Entity, index: u32) -> bool {
     world.get::<ActorFlags>(mob).unwrap().get(index).unwrap()
 }
 
-fn native(bytes: &[u8]) -> AddActorPacket {
+pub(super) fn native(bytes: &[u8]) -> AddActorPacket {
     assert_eq!(bytes[0], 0x0d);
     let mut input = &bytes[1..];
     let packet = AddActorPacket::decode(&mut input, ()).unwrap();
@@ -141,7 +141,12 @@ impl Harness {
 
 /// Our AddActor for `mob` equals the native summon's in every field the
 /// spawn decides (type, attributes, actor data, links, synced properties).
-fn assert_add_actor_matches(world: &World, identifier: &str, mob: Entity, native: &AddActorPacket) {
+pub(super) fn assert_add_actor_matches(
+    world: &World,
+    identifier: &str,
+    mob: Entity,
+    native: &AddActorPacket,
+) {
     let ours = add_actor_packet(
         identifier,
         world.get::<RuntimeId>(mob).unwrap().0,
@@ -268,6 +273,48 @@ fn spawned_wither_skeleton_add_actor_matches_native_summon() {
     ));
     let skeleton = h.at_native("minecraft:wither_skeleton", &native);
     assert_add_actor_matches(h.world(), "minecraft:wither_skeleton", skeleton, &native);
+}
+
+/// The skeleton family (the skeleton, stray, bogged and parched): each
+/// summon's AddActor equals BDS's, its hand holding the bow its gear table
+/// rolls, its native skeleton kind and its ranged-mode composition included.
+#[test]
+fn spawned_skeleton_family_add_actor_matches_native_summon() {
+    for (seed, identifier, bytes) in [
+        (
+            30,
+            "minecraft:skeleton",
+            &include_bytes!(
+                "../../../../../bds-extractor/captures/1.26.51/operator/summons/skeleton.bin"
+            )[..],
+        ),
+        (
+            31,
+            "minecraft:stray",
+            &include_bytes!(
+                "../../../../../bds-extractor/captures/1.26.51/operator/summons/stray.bin"
+            )[..],
+        ),
+        (
+            32,
+            "minecraft:bogged",
+            &include_bytes!(
+                "../../../../../bds-extractor/captures/1.26.51/operator/summons/bogged.bin"
+            )[..],
+        ),
+        (
+            33,
+            "minecraft:parched",
+            &include_bytes!(
+                "../../../../../bds-extractor/captures/1.26.51/operator/summons/parched.bin"
+            )[..],
+        ),
+    ] {
+        let mut h = harness(seed, Difficulty::Easy);
+        let native = native(bytes);
+        let mob = h.at_native(identifier, &native);
+        assert_add_actor_matches(h.world(), identifier, mob, &native);
+    }
 }
 
 #[test]

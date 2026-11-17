@@ -25,7 +25,8 @@ sweep harness (T2). Everything here needs a BDS runtime: the shared one
 | `command_probe.py` | Console and operator-player answers for commands `command-script.txt` does not cover (`reloadconfig`, `reloadpacketlimitconfig`, `wsserver`, `script`, `place`, `locate`, `ride`, `packstack`, `/give` refusals, malformed `/tellraw` JSON, syntax-error tokens) on a new flat world; `depth` runs long `/execute` chains on the console, starting BDS again after each one it exits on (a player's CommandRequest over 550 bytes is refused with a packet violation); `fixture` writes `crates/unastar/src/command/exec/testdata/bds-command-probe.json` (local paths redacted) |
 | `le_nbt.py` | Little-endian NBT reader and writer (types and compound order kept) for `level.dat` and level records, independent of unastar |
 | `player_script.py` | Plain-BDS scripted player captures: a timed script of console commands and client orders with every client's packets recorded (see [Movement](#movement)) |
-| `player_fixture.py` | Distils `player_script.py` captures into a value-only test fixture: per phase the subject's inputs, the packets one client got about the subject, and the subject's attributes before the phase |
+| `player_fixture.py` | Distils `player_script.py` captures into a value-only test fixture: per phase the subject's inputs, the packets one client got about the subject, the subject's attributes before the phase, and the teleports and corrections BDS sent it |
+| `authority_fixture.py` | Distils movement-authority probes (a subject misreporting its position on purpose, and a viewer) into a compact value-only fixture: per phase the subject's inputs, BDS's own copy of it from the viewer's `MovePlayer` relays, and the corrections and teleports BDS sent; `crates/unastar/src/entity/player_life/testdata/bds-1.26.51-authority.json` |
 | `block_names.py` | `script OUT` writes a `/testforblock` script over every palette block; `table CAPTURE` turns its capture into `crates/unastar-data/data/measured/block_name_keys.json` |
 | `sweep.py` | T2: one sweep job under Endstone with `bds-sweep-client` as the player; output in `<runtime>/sweeps/1.26.51/<kind>-<UTC>/` |
 | `endstone-sweep/` | The Endstone Python plugin that runs jobs server-side (inert unless `BDS_SWEEP_JOB` is set) |
@@ -61,6 +62,12 @@ sweep harness (T2). Everything here needs a BDS runtime: the shared one
 | `scripts/buckets-eggs.txt` | Water, lava and powder snow buckets placed and taken (a one-block pit keeps liquids still), water into a slab, milk, the fish buckets, creative; cow, pig, chicken and zombie spawn eggs (peaceful), a side face, creative, the air and a monster spawner |
 | `scripts/give.txt`, `give_script.py`, `give_table.py` | `/give` of every registry item to an empty inventory; `give_table.py` keeps the slot BDS resent for each (`crates/unastar/src/command/exec/testdata/bds-give.json`) |
 | `combat_fixture.py` | Cuts replay fixtures out of a `script.py` capture: the client's inputs and actions with BDS's hurt, health, cooldown, sound and flag packets inside scenario windows (`crates/unastar/src/entity/mob/combat/hit/testdata/bds-spears.jsonl`), or the requests of one command and their outputs (`--commands enchant`, `crates/unastar/src/item/testdata/bds-enchant-spears.jsonl`) |
+| `ranged_fixture.py` | `ranged` sweeps (every item set, run with `--client-capture`) to `crates/unastar/src/entity/mob/combat/testdata/bds-1.26.51-ranged.json`: per item the difficulty, the mob, the player and the setup blocks, the target / facing / shaking flag changes, every arrow (sample, AddActor position, velocity, rotation, owner, aux, the batch's sounds, the player's feet, when it stuck and was taken), damage events, the player's `MobEffect`s, and the mob's positions when it moved |
+| `silverfish_fixture.py` | `silverfish` sweeps (run with `--client-capture`) to `crates/unastar/src/entity/mob/ai/testdata/bds-1.26.51-silverfish.json`: per merge item the pit's block, mobGriefing, the spawn feet, the `SilverfishMergeAnim` tick, the block that changed (position, network id) and the `RemoveActor` tick; per wake item the hurt tick, the infested cells and per tick the destroy particles, the bare block updates and where each released silverfish's `AddActor` stood |
+| `creeper_fixture.py` | `creeper` sweeps (run with `--client-capture`) to `crates/unastar/src/entity/mob/ai/testdata/bds-1.26.51-creeper.json`: per item the creeper's and the player's feet every tick, whether the player was a target, the actions, and the creeper's `TARGET`, `IGNITED` / `POWERED` / `MOVING` flag changes, `FUSE_TIME` values, sounds, explosion level event and `RemoveActor`, each with its tick; a later sweep's item replaces an earlier one of the same name |
+| `slime_fixture.py` | `slime` sweeps (run with `--client-capture`) and `slime-spawn` runs to `crates/unastar/src/entity/mob/ai/testdata/bds-1.26.51-slime.json`: per item the mob, its size, its first 120 ticks, every tick its ground contact or yaw changed and its hops; for `attack` the player's hits; for `split` where the body was last seen and each child's `AddActor` and `born` sound; and every slime `slime-spawn` saw spawn |
+| `drowned_fixture.py` | `drowned` sweeps (run with `--client-capture`) to `crates/unastar/src/entity/mob/ai/testdata/bds-1.26.51-drowned.json`: per item the player's feet, the summoned mob's ticks (`sink` and `hunt` items), every damage the player took, each thrown trident's first sample, for `convert` items the tick the mob turned and what it held, and the equipment of the 200 `equipment` drowned |
+| `mob_fixture.py` | The generic fixture of the tracked-mob sweeps (`bat`, `ghast`, `polar-bear`, `tadpole`, `vex`, `goat`, run with `--client-capture`; `--only` picks item kinds, the key without its last `-` part, and `--events-only` keeps those kinds without their per-tick rows), e.g. `crates/unastar/src/entity/mob/ai/testdata/bds-1.26.51-polar_bear.json`: per item the player's feet whenever they moved, the setup and actions, every damage event, and per tracked actor its ticks (feet, yaw, pitch, velocity, ground contact, health), its actor flags at `AddActor` (taken from anywhere in the capture, as an item's `AddActor` can come before its first mark) and every flag that changed, its `ActorEvent`s and its sounds, each with its tick |
 | `native.py` | Readers for protocolgen's CC0 native data (block palette, mining classes, items, item tags) the jobs are built from |
 | `scenarios.py` | Block scenario families for the `scenarios` job (stairs, connections, wall_above, gate_in_wall, support, surfaces, soils, junctions, halves; round 2: stairs_blocks, connections_blocks, wall_heights_blocks, multiface_support, rails, soils_more, coral_death) |
 | `circuits.py` | Round 3: redstone circuit families for the `scenarios` job (`redstone_*`, `MEASURED`; the `circuits_pilot*` families are the pilots): a circuit built in a 22 x 6 cell, a timeline of inputs at known ticks and a read of every position every tick |
@@ -69,6 +76,7 @@ sweep harness (T2). Everything here needs a BDS runtime: the shared one
 | `pistons.py` | Round 4: piston families for the `scenarios` job on the circuit layout (`pistons_*`): push lines, every block in front of a sticky piston, slime and honey, power, timing, chains and actors (the timeline's actor box) |
 | `plates.py` | Round 4: pressure plate and tripwire families on the circuit layout (`plates_*`): every plate kind under armour stands, pigs held still, items and stacks, the weighted plates under 1-64 items, tripwires; the actors in the cell every tick |
 | `tnt.py` | Round 4: TNT families on their own layout (`tnt.LAYOUT`, cells 16 apart, a 13 x 10 x 13 box refilled): priming and the primed actor's path, 64 blasts per material in a 9 x 9 x 9 cube (`tnt_blast_*`), and mobs held still at known spots (`tnt_hits`) |
+| `liquids.py` | Liquids (`liquids_*`, `liquid_blocks_*`, `liquid_holders`): a liquid set and woken by a stone set on it (BDS leaves a liquid set by a command still), spread, falling, drops, sources, receding, mixing, chunk crossings and same-tick order read every tick; every block against water and lava, and which blocks keep water set into them. Layouts `liquids` (18 apart), `liquids_chunks` (chunk centres), `liquid_blocks` (6 apart, walled), `liquids_nether` (a ticking area in the nether, `dimension`/`setup`) and `liquids_world` (a natural world, `level_type`); `tick_marks` layouts turn the client capture on and mark every timeline tick (`bds-sweep:tick <wave> <tick>`) so the liquid layer and the per-tick packets can be cut per cell |
 | `placements.py` | The survival clicks of the `placements` job in case groups (`GROUPS`: round 1's `blocks`, then signs, door hinges, uses, coral, skulls, directions, mushrooms, bells, multi-face blocks, candles, crops, plants and stacks, block actors, follow-up; round 3's `leftovers`: flower pot plants, cave vine ages, cake slices, string): blocks set around the click, the stack in hand, the player's feet and look, `before` commands, the click, follow-up steps, the positions read back |
 | `subchunk_fixture.py` | Sub-chunk records BDS saves: builds every palette shape in a flat world (and generates a seed-12345 world), reloads each and checks cells with `/testforblock`, then writes `crates/unastar/tests/fixtures/bds_1_26_51_subchunks.json` (steps `build`, `probe`, `natural`, `natural-probe`, `fixture`) |
 | `subchunk_roundtrip.py` | Sub-chunk records between BDS and unastar: one BDS-saved world edited by the same plan from BDS's console (chunks then unloaded) and through unastar's provider (`cargo run -p unastar --example subchunk_roundtrip`), every record of the edited columns compared byte for byte; BDS reopens the world unastar edited and one unastar generated and checks cells with `/testforblock`; writes `crates/unastar/tests/fixtures/bds_1_26_51_subchunk_edits.json` (steps `source`, `plan`, `bds-edit`, `unastar-edit`, `compare`, `bds-verify`, `generate`, `generated-verify`, `fixture`) |
@@ -160,6 +168,10 @@ send the same text with `tellraw <player> {"rawtext":[{"text":"bds-sweep:..."}]}
 | `bds-sweep:select SLOT` | `MobEquipment` selecting hotbar index 0..8 |
 | `bds-sweep:flags A,B` / `held-flags A,B` | Input flags by any name and case (`Jumpdown`, `Startgliding`, ...) on the next input only, or on every input (replacing the held set) until `held-flags none` |
 | `bds-sweep:action NAME X Y Z FACE` | One raw block action with the next input (`start`, `continue`, `crack`, `predict`, `abort`, `stop`, `creative-destroy`); several on one tick share the input |
+| `bds-sweep:teleports follow\|late N\|ignore\|fake` | How the next server teleports are taken: followed as a vanilla client does, `N` inputs late, never (no `HandledTeleport` either), or acknowledged without moving |
+| `bds-sweep:corrections follow\|ignore` | Rewind on `CorrectPlayerMovePrediction` (the default) or keep the client's own prediction and only count the correction |
+| `bds-sweep:offset DX DY DZ` | Report the position this many thousandths of a block away from the simulated one (`offset 0 0 0` ends it, and a drift) |
+| `bds-sweep:drift DX DY DZ` | Grow that offset by this many thousandths of a block every input |
 
 `bds-sweep-client --script FILE` plays timed orders without the plugin: one `TICK ORDER` line per
 step at that client input tick, an order above without its `bds-sweep:` prefix, a slash command
@@ -205,8 +217,11 @@ knockback events, all on one sequence counter.
 ### Movement
 
 The client simulates its own movement like a vanilla client and reports it in
-every `PlayerAuthInput`, so BDS's server-authoritative movement accepts it:
-gravity and drag, ground friction and acceleration (sprint speed 0.13,
+every `PlayerAuthInput`, so BDS's server-authoritative movement accepts it. The
+simulation is `unastar_rules::movement` (re-exported as `physics`), the same
+code `unastar` judges its players with, so a run without corrections on BDS
+checks the server's physics too. It covers gravity and drag, ground
+friction and acceleration (sprint speed 0.13,
 air speed 0.02/0.026), jumps (0.42, sprint-jump push 0.2, 10-tick delay),
 sneaking (BDS applies the 0.3 itself, so the move vector is sent unscaled)
 and its edge stop, collisions with step-up, slime and bed bounces, cobwebs and
@@ -252,8 +267,17 @@ Tooling for such runs:
   (`crates/unastar/src/entity/player_life/testdata/bds-1.26.51-movement.json`).
 - A second client standing near the first receives BDS's own simulation of it
   (`MovePlayer` every tick); while the first client disagrees, BDS moves its
-  copy towards the client's position by up to about 0.005 blocks a tick, so
+  copy towards the client's position by up to 0.005 blocks a tick, so
   calibrate against runs without corrections.
+- `bds-sweep-client --scenarios CORPUS --scenario-log FILE` plays the movement corpus when it
+  gets the `scenarios` order, reporting a position 3 blocks off so BDS's copy moves by its own
+  simulation (`tools/movement-diff/README.md`, run by `tools/movement-diff/bds_run.py`).
+- `authority_fixture.py SPEC.json OUT.json --captures DIR` writes the
+  movement-authority fixture from runs where the subject misreports on purpose
+  (`offset`, `drift`, `walk`, `teleports`, `corrections ignore`) and a viewer
+  watches BDS's copy; it also checks that every correction in the runs has the
+  fields BDS always sends. `unastar`'s authority tests replay it
+  (`crates/unastar/src/entity/player_life/tests/authority.rs`).
 
 Drop references come only from server `InventoryContent`/`InventorySlot`
 updates; missing/empty/idless slots and invalid counts fail rather than invent
@@ -285,9 +309,21 @@ see `crates/unastar/README.md` for its setup and retained native evidence.
 | `bonus` | the random spawn bonuses BDS saves for each kind (`--keep-world`, `--difficulty easy\|hard`) | 870 mobs of 13 kinds (no villagers, golems, wolves or illagers, which fight the others) frozen on a grid around the sweep player and left in the world; read their records from the kept world |
 | `walk` | how BDS relays a player's movement to another player (needs `--observer`) | the sweep player driven by `bds-sweep:walk` (standing, turning, walking, stepping up, tilting) with the observer 8 blocks south and a cow spawned at yaw 33.3 for its `AddActor` rotation |
 | `effects` | what effects do to a mob or to the sweep player, tick by tick (`--items mobs\|players\|all`) | a cow or zombie in a barrier cell three blocks east, or the survival player; `/effect` and `/damage` at fixed ticks (poison, regeneration, wither, instant effects, resistance, fire resistance, health boost, absorption, speed, slowness, invisibility, hidden particles, several at once, stacking, clearing, expiry; levitation and slow falling on a frozen cow; hunger and saturation on the player); every tick a `bds-sweep:mark` chat line puts the capture on the samples |
-| `ranged` | how the skeleton family shoots (once per `--difficulty`) | a frozen skeleton (8 and 15 blocks), stray, bogged and parched shooting at the survival sweep player, kept alive by Resistance V and Regeneration; 300 ticks each |
+| `ranged` | how the skeleton family shoots (once per `--difficulty`); `--items geometry`, `aim`, `spread`, `damage`, `damage-long`, `weapon`, `filters`, `avoid`, `avoid-many` and `pickup` add the start point, the aim, the spread, the arrow damage, the ranged weapons, the `is_underground` / `in_block` filters and the trap sensor, avoidance and arrow pickup | a frozen skeleton (8 and 15 blocks), stray, bogged and parched shooting at the survival sweep player, kept alive by Resistance V and Regeneration, 300 ticks each; the other sets pin the player in a barrier pen, raise or move the shooter, replace its hand, put a stray under roofs, a skeleton in powder snow or next to a frozen wolf, or drop a dispensed arrow beside the player |
 | `melee-effects` | the effect a husk's hit applies, per `--difficulty` | a husk walks up to the survival player and hits it for 200 ticks; Health Boost X, a full heal and Regeneration V keep the player alive without Resistance (which would change the hits); `--client-capture` holds each hit's hunger `MobEffect` |
 | `mooshroom` | the mooshroom's interactions | the survival player holding a bowl, an allium (brown mooshroom) or shears interacts with a frozen mooshroom (`bds-sweep:interact`, twice); `--items geometry` moves the particle: the player on a block diagonally above, a baby mooshroom, and a bowl after the allium (suspicious stew). One mooshroom in 20 spawns a baby, which has no interactions, so those items grow theirs up first |
+| `silverfish` | the silverfish's goals: `--items merge` (a 3 × 3 pit), `pit` (a 1 × 1 stone pit, 20 times), `blocks` (1 × 1 pits of 14 kinds of block, 3 times each), `griefing` (mobGriefing off), `ab` (stone and cobblestone pits interleaved, 20 each), `wake` and `wake-nogrief` (infested stone around a frozen silverfish hurt on tick 40) | a silverfish with no target in a pit dug into the block, or frozen among infested stone with the protected survival player 4 blocks west |
+| `creeper` | the creeper's fuse (`--items slice`, or item names: `approach`, `cancel`, `sight`, `flint`, `charged`, `no-griefing`, `flint-alone`, `gap`, `gap-far`) | the survival player under Resistance V in a barrier pen, a frozen or walking creeper 2-6 blocks east; the floor the blast broke is rebuilt after every item |
+| `slime` | the slime and the magma cube, summoned at a size (`summon … spawn_<size>`), every one of them sampled every tick (`track`): `--items hop` (calm, 600 ticks, three times per size), `attack` (the survival player, Health Boost X, a barrier wall behind it), `split` (killed by `/damage` or `/kill`, 80 ticks), `float` (a slime in water, a magma cube in lava) or `all` | a barrier wall at x = -1 behind the player for `attack`; the job removes the tracked mobs without killing them, so nothing splits into the next item |
+| `slime-spawn` | natural slime spawning (`spawn_watch`: every new slime recorded and removed, other monsters removed) | the still creative player at the origin of the superflat world (floor y -61), normal, midnight, mob spawning on; two items of `--samples` × 100 ticks |
+| `drowned` | the drowned in a glass pool (`POOL`, water x 3..19, y -60..-54), every drowned, zombie, husk and thrown trident sampled every tick: `--items sink` (no target), `hunt` (the survival player on the pool floor, on a pillar at the surface, on land), `trident` (a ranged drowned, no Resistance), `day` (noon, the player in the water or on land), `equipment` (200 drowned with their natural spawn event), `convert` (a zombie, a baby zombie and a husk under water for 1,100 ticks) or `all` | mobs summoned with a spawn event (`summon … minecraft:as_adult`); the player kept alive by Health Boost X, Regeneration V and Water Breathing |
+| `witch` | the witch: `--items throw` (the player 3, 6, 9 and 10 blocks away), `drink` (under water, in fire, hurt, target moved away), `resist` (`/damage` of several causes) or `all` | a frozen witch, the survival player in a barrier pen open towards it, no Resistance; findings in `docs/research/witch-bds-1.26.51.md` |
+| `bat` | the bat: `--items room` (a closed glass room, 1,200 ticks, four times), `open` (open sky, 600 ticks, twice), `cave` (a dark stone room three blocks tall, 2,400 ticks, three times), `wake` (the cave, the creative or survival player teleported into it on tick 1,500), `low` (a stone room one block tall, the bat hurt by 1 on ticks 20, 120, 220 and 320, eight times), `near` (resting in a narrower one-block room, the player outside its wall 3.85 to 6 blocks away), `unroof` (the block over the resting bat removed on tick 40), `canopy` (resting under a stone roof two blocks over the floor, the player teleported 3.75 to 4.1 blocks away in clear sight) or `all` | the bat summoned (its definition has no events) and sampled every tick, the creative player outside unless an item moves it |
+| `ghast` | a ghast high over the floor (`--items open`, 600 ticks, twice): how a second float-navigating flyer drags | the creative player far away |
+| `vex` | the vex: `--items idle` (in the glass room, 400 ticks, twice), `charge` (the survival player 8 blocks away, Health Boost X and Regeneration V, six times), `look` (a frozen cow beside it, the player far, twice), `decay` (summoned with `minecraft:add_damage_timer`, the player teleported over the vex every 40 ticks to keep it in view, 2,800 ticks, twice) or `all` | the vex summoned and sampled every tick |
+| `goat` | adult goats (`ageable_grow_up`, then `/event … born_screamer` or `born_default` on tick 0): `--items ram` (a screamer 8 blocks from the survival player, three times), `ram-default` (twice), `horn` (a screamer behind a one-block wall of stone, packed ice, an oak log or glass, items tracked), `jump` (a stone well three blocks deep), `fall` (summoned 8 to 24 blocks up) or `all` | the goats sampled every tick |
+| `polar-bear` | the polar bear: `--items stroll`, `attack` (the survival player hits it with `/damage` from 3 blocks), `stomp` (an angered adult frozen 1.4 to 5 blocks from the player held by barrier walls), `baby` (a baby's anger reaching an adult), `swim`, `swim-push` (hit across the glass pool) or `all` | adults summoned with `minecraft:ageable_grow_up`, babies with `minecraft:entity_born`; the player kept alive by Health Boost X and Regeneration V |
+| `tadpole` | the tadpole in the glass pool: `--items swim` (600 ticks, four times), `grow` (summoned with `ageable_grow_up`, the tadpole and its frog sampled, 60 ticks, three times) or `all` | the creative player outside |
 | `entity-loot` | `/loot spawn … kill <mob>` outcomes, like `drops` for blocks (`--items <mob>,...`, `--samples`) | a frozen, resistant mob; the sweep player runs the command |
 | `pvp` | player-versus-player hits between three lockstep clients (`--items numbers,reach,hurt` or `all`, `extra`, or item keys; `--repeats N`; `--entity-interactions-strict` runs BDS with that property) | survival, normal difficulty unless an item says otherwise, `keepinventory`, no natural regeneration; per item: game modes, held items and hotbars, armour, effects, positions, a heal and optional `/damage`, then 40 to 50 lockstep ticks with every player sampled each tick; see `pvp_items.py` |
 | `scenarios` | block states BDS stores after a scripted sequence of block sets (with or without the block update a placement triggers), waits and reads | items from `scenarios.py` families run in waves of up to 64 cells (6 blocks apart, east of the player); one wait covers a wave; touched cells are cleared without updates and the superflat layers restored after each wave |
@@ -327,6 +363,8 @@ python tools/bds-sweep/combat_fixture.py <dir>/client-capture/packets.jsonl <fix
 & $py tools/bds-sweep/sweep.py scenarios --family tnt_prime,tnt_actors,tnt_hits   # ~2 min
 & $py tools/bds-sweep/sweep.py scenarios --family tnt_blast_dirt,tnt_blast_oak_planks,tnt_blast_cobblestone,tnt_blast_glass   # ~2 min
 & $py tools/bds-sweep/summarize.py round4 <dir> [<dir> ...]     # -> data/measured/pistons/, explosions/ and pistons/blocks.json
+& $py tools/bds-sweep/sweep.py scenarios --family liquids_pilot  # liquids.FAMILIES; one layout per run
+& $py tools/bds-sweep/summarize.py liquids <dir> [<dir> ...]     # -> data/measured/liquids/
 & $py tools/bds-sweep/summarize.py placements <dir>   # -> crates/unastar/src/server/game/testdata/bds-placements.json
 & $py tools/bds-sweep/summarize.py item-blocks <dir>  # -> data/measured/item_blocks.json
 & $py tools/bds-sweep/sweep.py knockback --items slice --client-capture   # also air, far, resist
@@ -350,9 +388,26 @@ python tools/bds-sweep/spawn_bonus_fixture.py <fixture.json> <easy dir> <hard di
 & $py tools/bds-sweep/sweep.py effects --client-capture   # --items mobs | players
 python tools/bds-sweep/effects_fixture.py <fixture.json> <effects dir> [<effects dir> ...]
 & $py tools/bds-sweep/sweep.py ranged --difficulty easy --client-capture   # and normal, hard
+& $py tools/bds-sweep/sweep.py ranged --items aim --difficulty hard --client-capture   # geometry, spread, damage, ...
+python tools/bds-sweep/ranged_fixture.py <fixture.json> <ranged dir> [<ranged dir> ...]
 & $py tools/bds-sweep/sweep.py mooshroom --client-capture   # and --items geometry
 & $py tools/bds-sweep/sweep.py melee-effects --difficulty hard --client-capture
 python tools/bds-sweep/mooshroom_fixture.py <fixture.json> <basic dir> <geometry dir>
+& $py tools/bds-sweep/sweep.py silverfish --items pit --client-capture   # also merge, blocks, griefing, wake, wake-nogrief
+python tools/bds-sweep/silverfish_fixture.py <fixture.json> <silverfish dir> [<silverfish dir> ...]
+& $py tools/bds-sweep/sweep.py creeper --client-capture   # or --items flint,charged
+python tools/bds-sweep/creeper_fixture.py <fixture.json> <creeper dir> [<creeper dir> ...]
+& $py tools/bds-sweep/sweep.py slime --items hop --client-capture   # also attack, split, float
+& $py tools/bds-sweep/sweep.py slime-spawn --samples 120 --client-capture
+python tools/bds-sweep/slime_fixture.py <fixture.json> <hop dir> <float dir> <attack dir> <split dir> <spawn dir>
+& $py tools/bds-sweep/sweep.py drowned --items all --difficulty normal --client-capture
+python tools/bds-sweep/drowned_fixture.py <fixture.json> <drowned dir>
+& $py tools/bds-sweep/sweep.py witch --items all --difficulty normal --client-capture
+& $py tools/bds-sweep/sweep.py polar-bear --items all --difficulty normal --client-capture   # and bat, tadpole
+python tools/bds-sweep/mob_fixture.py --only attack,baby,swim-push,stomp <fixture.json> <polar-bear dir> [<dir> ...]
+python tools/bds-sweep/mob_fixture.py --only open,low,unroof,canopy-survival,canopy-creative <bat fixture.json> <bat dirs>
+& $py tools/bds-sweep/sweep.py vex --items all --difficulty normal --client-capture   # and goat
+python tools/bds-sweep/mob_fixture.py --only idle,charge,look --events-only decay <vex fixture.json> <vex dir>
 & $py tools/bds-sweep/sweep.py entity-loot --items wither_skeleton --samples 800
 cargo run -p bds-extractor -- --decode <dir>/client-capture/packets.jsonl --only MobEffectPacket --output <out.jsonl>
 ```

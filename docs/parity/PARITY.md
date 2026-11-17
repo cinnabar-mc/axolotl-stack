@@ -12,15 +12,15 @@ Each domain's first line is its headline: the rows its family table, gap list an
 
 | Domain | Rows | Missing | Partial | Done | Verified | N/A | Done+verified |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| [Entities](#entities): actor rows (summon and replication) | 137 | 110 | 2 | 2 | 19 | 4 | 15.8% |
-| Entities: behaviour sub-rows (components, spawn rules) | 4082 | 998 | 2648 | 329 | 61 | 46 | 9.7% |
+| [Entities](#entities): actor rows (summon and replication) | 137 | 98 | 2 | 3 | 30 | 4 | 24.8% |
+| Entities: behaviour sub-rows (components, spawn rules) | 4082 | 905 | 2579 | 439 | 113 | 46 | 13.7% |
 | [Blocks](#blocks) | 1477 | 0 | 408 | 511 | 391 | 167 | 68.9% |
 | [Items](#items): behaviour sub-rows (food, durability, placement, ...) | 2347 | 99 | 832 | 619 | 620 | 177 | 57.1% |
 | Items: registered (exists in the registry, no behaviour) | 2076 | 0 | 0 | 2076 | 0 | 0 | 100.0% |
 | [Commands](#commands) | 82 | 1 | 38 | 2 | 40 | 1 | 51.9% |
-| [Protocol](#protocol) | 231 | 113 | 33 | 40 | 30 | 15 | 32.4% |
+| [Protocol](#protocol) | 231 | 112 | 33 | 40 | 31 | 15 | 32.9% |
 | [World generation](#world-generation) | 1275 | 87 | 430 | 642 | 9 | 107 | 55.7% |
-| [Gameplay systems](#gameplay-systems) | 72 | 30 | 38 | 4 | 0 | 0 | 5.6% |
+| [Gameplay systems](#gameplay-systems) | 72 | 29 | 39 | 4 | 0 | 0 | 5.6% |
 
 ## Where to help
 
@@ -30,27 +30,27 @@ Open rows are missing or partial headline rows (the first summary line of each d
 
 Add a `[[claim]]` to [claims.toml](claims.toml) in your first pull request for the area: `area`, `owner` (your `@github-handle`), `since` (the date), `domain`, and the `families`, `ids` or id `prefixes` you are taking, and `change` (the OpenSpec change doing the work, if any); remove it when you stop or when the change is archived. `parity check` rejects unknown families or ids and claims that overlap, so talk to the owner of a claimed area before working inside it. The rest of the workflow is in [CONTRIBUTING.md](../../CONTRIBUTING.md).
 
-**Entities**: 60 open rows free, 52 claimed.
+**Entities**: 58 open rows free, 42 claimed.
 
 | Free family | Open | Missing | Partial |
 |---|---:|---:|---:|
-| passive (part claimed) | 20 | 20 | 0 |
+| passive (part claimed) | 19 | 19 | 0 |
 | object | 16 | 15 | 1 |
-| projectile | 14 | 13 | 1 |
+| projectile | 13 | 12 | 1 |
 | built_in | 4 | 4 | 0 |
 | village | 4 | 4 | 0 |
 | boss | 2 | 2 | 0 |
 
 | Claimed area | Claimed by | Since | Open |
 |---|---|---|---:|
-| Mobs: hostile, tameable and aquatic (with dolphins, turtles, axolotls and bats) | lane ENT | 2026-10-29 | 52 |
+| Mobs: hostile, tameable and aquatic (with dolphins, turtles, axolotls and bats) | lane ENT | 2026-10-29 | 42 |
 
-**Blocks**: 238 open rows free, 170 claimed.
+**Blocks**: 240 open rows free, 168 claimed.
 
 | Free family | Open | Missing | Partial |
 |---|---:|---:|---:|
 | functional (part claimed) | 57 | 0 | 57 |
-| surface_dynamic (part claimed) | 45 | 0 | 45 |
+| surface_dynamic (part claimed) | 47 | 0 | 47 |
 | candles | 34 | 0 | 34 |
 | building_blocks | 27 | 0 | 27 |
 | coral | 20 | 0 | 20 |
@@ -62,7 +62,7 @@ Add a `[[claim]]` to [claims.toml](claims.toml) in your first pull request for t
 | Claimed area | Claimed by | Since | Open |
 |---|---|---|---:|
 | Block behaviour families, gravity, fire, redstone and random ticks | lane BLOCKS | 2026-10-29 | 153 |
-| Liquids: water and lava flow, waterlogging, sponges | a contributor | 2026-10-29 | 7 |
+| Liquids: water and lava flow, mixing, the liquid layer | lane LIQUIDS | 2026-11-11 | 5 |
 | Workstation blocks | lane ITEMS | 2026-10-29 | 10 |
 
 **Items**: 0 open rows free, 931 claimed.
@@ -77,11 +77,11 @@ Add a `[[claim]]` to [claims.toml](claims.toml) in your first pull request for t
 |---|---|---|---:|
 | Commands | lane COMMANDS | 2026-10-29 | 39 |
 
-**Protocol**: 146 open rows free, 0 claimed.
+**Protocol**: 145 open rows free, 0 claimed.
 
 | Free family | Open | Missing | Partial |
 |---|---:|---:|---:|
-| clientbound | 91 | 74 | 17 |
+| clientbound | 90 | 73 | 17 |
 | bidirectional | 55 | 39 | 16 |
 
 Nothing in this domain is claimed.
@@ -107,7 +107,7 @@ Nothing in this domain is claimed.
 | Claimed area | Claimed by | Since | Open |
 |---|---|---|---:|
 | Gravity, fire, redstone, block updates and random ticks | lane BLOCKS | 2026-10-29 | 6 |
-| Liquids: water and lava flow, waterlogging, sponges | a contributor | 2026-10-29 | 1 |
+| Liquids: water and lava flow, mixing, the liquid layer | lane LIQUIDS | 2026-11-11 | 1 |
 | Workstations: crafting, smelting, anvil, grindstone, smithing, brewing, enchanting | lane ITEMS | 2026-10-29 | 8 |
 | Survival block breaking | lane ITEMS | 2026-11-10 | 1 |
 | Generation speed | lane PERF | 2026-10-29 | 1 |
@@ -122,11 +122,11 @@ One row per vanilla actor (`minecraft:cow`): it can be spawned/summoned and is r
 | aquatic | 8 | 8 | 0 | 0 | 0 | 0 | 0.0% |
 | boss | 2 | 2 | 0 | 0 | 0 | 0 | 0.0% |
 | built_in | 9 | 4 | 0 | 0 | 2 | 3 | 33.3% |
-| hostile | 38 | 30 | 0 | 0 | 8 | 0 | 21.1% |
+| hostile | 38 | 21 | 0 | 0 | 17 | 0 | 44.7% |
 | object | 18 | 15 | 1 | 0 | 1 | 1 | 5.9% |
-| passive | 39 | 34 | 0 | 0 | 5 | 0 | 12.8% |
+| passive | 39 | 32 | 0 | 0 | 7 | 0 | 17.9% |
 | player | 1 | 0 | 0 | 1 | 0 | 0 | 100.0% |
-| projectile | 18 | 13 | 1 | 1 | 3 | 0 | 22.2% |
+| projectile | 18 | 12 | 1 | 2 | 3 | 0 | 27.8% |
 | village | 4 | 4 | 0 | 0 | 0 | 0 | 0.0% |
 
 Sub-rows by facet, most incomplete first (30 of 371):
@@ -135,34 +135,34 @@ Sub-rows by facet, most incomplete first (30 of 371):
 |---|---:|---:|---:|---:|---:|---:|---:|
 | pushable_by_block | 117 | 2 | 115 | 0 | 0 | 0 | 0.0% |
 | conditional_bandwidth_optimization | 116 | 98 | 12 | 0 | 5 | 1 | 4.3% |
-| physics | 125 | 0 | 107 | 13 | 4 | 1 | 13.7% |
-| type_family | 124 | 1 | 105 | 17 | 0 | 1 | 13.8% |
-| collision_box | 124 | 0 | 105 | 10 | 8 | 1 | 14.6% |
-| pushable_by_entity | 109 | 0 | 97 | 12 | 0 | 0 | 11.0% |
+| type_family | 124 | 1 | 98 | 24 | 0 | 1 | 19.5% |
+| physics | 125 | 0 | 96 | 19 | 9 | 1 | 22.6% |
+| collision_box | 124 | 0 | 94 | 20 | 9 | 1 | 23.6% |
 | nameable | 93 | 0 | 93 | 0 | 0 | 0 | 0.0% |
+| pushable_by_entity | 109 | 0 | 92 | 17 | 0 | 0 | 15.6% |
 | breathable | 84 | 1 | 83 | 0 | 0 | 0 | 0.0% |
-| health | 94 | 1 | 83 | 6 | 3 | 1 | 9.7% |
-| is_hidden_when_invisible | 92 | 1 | 79 | 0 | 12 | 0 | 13.0% |
-| movement | 92 | 0 | 80 | 6 | 6 | 0 | 13.0% |
-| hurt_on_condition | 87 | 0 | 76 | 10 | 0 | 1 | 11.6% |
-| jump.static | 79 | 0 | 68 | 11 | 0 | 0 | 13.9% |
-| experience_reward | 80 | 0 | 67 | 13 | 0 | 0 | 16.2% |
-| loot | 78 | 0 | 65 | 12 | 0 | 1 | 15.6% |
-| despawn | 76 | 0 | 64 | 12 | 0 | 0 | 15.8% |
-| behavior.look_at_player | 69 | 0 | 58 | 11 | 0 | 0 | 15.9% |
+| is_hidden_when_invisible | 92 | 1 | 78 | 0 | 13 | 0 | 14.1% |
+| health | 94 | 1 | 76 | 12 | 4 | 1 | 17.2% |
+| movement | 92 | 0 | 72 | 11 | 9 | 0 | 21.7% |
+| hurt_on_condition | 87 | 0 | 71 | 15 | 0 | 1 | 17.4% |
+| experience_reward | 80 | 0 | 65 | 15 | 0 | 0 | 18.8% |
+| loot | 78 | 0 | 63 | 14 | 0 | 1 | 18.2% |
+| jump.static | 79 | 0 | 62 | 15 | 2 | 0 | 21.5% |
 | can_climb | 57 | 0 | 57 | 0 | 0 | 0 | 0.0% |
-| movement.basic | 65 | 0 | 56 | 9 | 0 | 0 | 13.8% |
+| despawn | 76 | 0 | 57 | 19 | 0 | 0 | 25.0% |
 | spawn_rules | 59 | 5 | 50 | 4 | 0 | 0 | 6.8% |
-| navigation.walk | 66 | 0 | 54 | 12 | 0 | 0 | 18.2% |
+| behavior.look_at_player | 69 | 0 | 54 | 15 | 0 | 0 | 21.7% |
 | behavior.random_stroll | 64 | 0 | 52 | 12 | 0 | 0 | 18.8% |
-| behavior.random_look_around | 55 | 0 | 44 | 11 | 0 | 0 | 20.0% |
+| movement.basic | 65 | 0 | 50 | 15 | 0 | 0 | 23.1% |
+| navigation.walk | 66 | 0 | 49 | 17 | 0 | 0 | 25.8% |
 | behavior.float | 49 | 0 | 43 | 6 | 0 | 0 | 12.2% |
-| behavior.nearest_attackable_target | 49 | 0 | 43 | 6 | 0 | 0 | 12.2% |
 | leashable | 43 | 38 | 5 | 0 | 0 | 0 | 0.0% |
 | leashable_to | 42 | 37 | 5 | 0 | 0 | 0 | 0.0% |
-| attack | 48 | 0 | 41 | 7 | 0 | 0 | 14.6% |
-| damage_sensor | 39 | 0 | 38 | 1 | 0 | 0 | 2.6% |
-| behavior.hurt_by_target | 42 | 0 | 37 | 5 | 0 | 0 | 11.9% |
+| behavior.random_look_around | 55 | 0 | 40 | 15 | 0 | 0 | 27.3% |
+| attack | 48 | 0 | 37 | 11 | 0 | 0 | 22.9% |
+| damage_sensor | 39 | 0 | 37 | 1 | 1 | 0 | 5.1% |
+| behavior.hurt_by_target | 42 | 0 | 36 | 6 | 0 | 0 | 14.3% |
+| rideable | 36 | 28 | 8 | 0 | 0 | 0 | 0.0% |
 
 ### Entities gaps
 
@@ -182,7 +182,7 @@ Top-level rows only; sub-row gaps are in the status file and rolled up by facet 
 
 **hostile**
 
-- missing: `minecraft:blaze`, `minecraft:bogged`, `minecraft:breeze`, `minecraft:cave_spider`, `minecraft:creaking`, `minecraft:creeper`, `minecraft:drowned`, `minecraft:elder_guardian`, `minecraft:enderman`, `minecraft:evocation_illager`, `minecraft:ghast`, `minecraft:guardian` and 18 more
+- missing: `minecraft:blaze`, `minecraft:breeze`, `minecraft:cave_spider`, `minecraft:creaking`, `minecraft:creeper`, `minecraft:elder_guardian`, `minecraft:enderman`, `minecraft:evocation_illager`, `minecraft:ghast`, `minecraft:guardian`, `minecraft:phantom`, `minecraft:piglin` and 9 more
 
 **object**
 
@@ -191,12 +191,12 @@ Top-level rows only; sub-row gaps are in the status file and rolled up by facet 
 
 **passive**
 
-- missing: `minecraft:allay`, `minecraft:armadillo`, `minecraft:axolotl`, `minecraft:bat`, `minecraft:bee`, `minecraft:camel`, `minecraft:camel_husk`, `minecraft:cat`, `minecraft:copper_golem`, `minecraft:dolphin`, `minecraft:donkey`, `minecraft:ender_crystal` and 22 more
+- missing: `minecraft:allay`, `minecraft:armadillo`, `minecraft:axolotl`, `minecraft:bee`, `minecraft:camel`, `minecraft:camel_husk`, `minecraft:cat`, `minecraft:copper_golem`, `minecraft:dolphin`, `minecraft:donkey`, `minecraft:ender_crystal`, `minecraft:fox` and 20 more
 
 **projectile**
 
 - `minecraft:xp_bottle`: AddActor/RemoveActor timing differs from BDS by a tick (see notes)
-- missing: `minecraft:breeze_wind_charge_projectile`, `minecraft:dragon_fireball`, `minecraft:ender_pearl`, `minecraft:fireball`, `minecraft:fishing_hook`, `minecraft:lingering_potion`, `minecraft:llama_spit`, `minecraft:shulker_bullet`, `minecraft:small_fireball`, `minecraft:thrown_trident`, `minecraft:wind_charge_projectile`, `minecraft:wither_skull` and 1 more
+- missing: `minecraft:breeze_wind_charge_projectile`, `minecraft:dragon_fireball`, `minecraft:ender_pearl`, `minecraft:fireball`, `minecraft:fishing_hook`, `minecraft:lingering_potion`, `minecraft:llama_spit`, `minecraft:shulker_bullet`, `minecraft:small_fireball`, `minecraft:wind_charge_projectile`, `minecraft:wither_skull`, `minecraft:wither_skull_dangerous`
 
 **village**
 
@@ -326,8 +326,11 @@ One row per vanilla block: it can exist in the world, be placed and broken with 
 
 **liquids**
 
-- `minecraft:flowing_lava`, `minecraft:flowing_water`, `minecraft:lava`, `minecraft:water`: no flow or source spreading
 - `minecraft:bubble_column`: not formed above soul sand or magma; does not push entities
+- `minecraft:flowing_lava`: BDS never places it (flowing lava is lava with liquid_depth); the engine ticks it like lava when a world holds it, untested
+- `minecraft:flowing_water`: BDS never places it in the block layer (flowing water is water with liquid_depth) but shows it in the liquid layer of seagrass, kelp and coral fans; unastar stores water there
+- `minecraft:lava`: lava does not set fire to blocks beside it; ticks due in the same game tick run in the order scheduled, not in BDS's (see world.liquids)
+- `minecraft:water`: ticks due in the same game tick run in the order scheduled, not in BDS's (see world.liquids); water placed in the nether does not evaporate
 
 **ores**
 
@@ -474,7 +477,7 @@ Sub-rows by facet, most incomplete first (25 of 25):
 **buckets**
 
 - `minecraft:bucket/bucket`: cannot catch fish, axolotls or tadpoles; lava and powder snow pickup are not covered by a test
-- `minecraft:water_bucket/bucket`: does not waterlog blocks (BDS 1.26.51 waterlogs a slab clicked with it, on block layer 1); water placed in the Nether does not evaporate
+- `minecraft:water_bucket/bucket`: water placed in the Nether does not evaporate
 - missing: `minecraft:axolotl_bucket/bucket`, `minecraft:sulfur_cube_bucket/bucket`, `minecraft:tadpole_bucket/bucket`
 
 **entity_placers**
@@ -568,7 +571,7 @@ One row per 1.26.51 packet: inbound packets are handled, outbound packets are se
 | Family | Rows | Missing | Partial | Done | Verified | N/A | Done+verified |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | bidirectional | 80 | 39 | 16 | 14 | 5 | 6 | 25.7% |
-| clientbound | 146 | 74 | 17 | 26 | 20 | 9 | 33.6% |
+| clientbound | 146 | 73 | 17 | 26 | 21 | 9 | 34.3% |
 | serverbound | 5 | 0 | 0 | 0 | 5 | 0 | 100.0% |
 
 ### Protocol gaps
@@ -591,7 +594,7 @@ One row per 1.26.51 packet: inbound packets are handled, outbound packets are se
 - `ClientCacheMissResponsePacket`: always empty: unastar never sends cached chunks, so it has no blobs to answer with
 - `CompletedUsingItemPacket`: sent when food is eaten, milk, potions and ominous bottles are drunk and a crossbow finishes loading; the honey bottle and the other consumables are not compared with BDS
 - 11 more partial rows with other gaps (see [protocol.toml](protocol.toml))
-- missing: `AddBehaviorTreePacket`, `AddPaintingPacket`, `AddVolumeEntityPacket`, `AnimateEntityPacket`, `AwardAchievementPacket`, `CameraAimAssistActorPriorityPacket`, `CameraAimAssistPacket`, `CameraInstructionPacket`, `CameraPacket`, `CameraShakePacket`, `ChangeDimensionPacket`, `ChangeMobPropertyPacket` and 62 more
+- missing: `AddBehaviorTreePacket`, `AddPaintingPacket`, `AddVolumeEntityPacket`, `AnimateEntityPacket`, `AwardAchievementPacket`, `CameraAimAssistActorPriorityPacket`, `CameraAimAssistPacket`, `CameraInstructionPacket`, `CameraPacket`, `CameraShakePacket`, `ChangeDimensionPacket`, `ChangeMobPropertyPacket` and 61 more
 
 ## World generation
 
@@ -722,7 +725,7 @@ Cross-cutting gameplay systems with no data source to enumerate them from; this 
 | performance | 2 | 0 | 2 | 0 | 0 | 0 | 0.0% |
 | platform | 6 | 0 | 3 | 3 | 0 | 0 | 50.0% |
 | player | 17 | 5 | 11 | 1 | 0 | 0 | 5.9% |
-| world | 19 | 6 | 13 | 0 | 0 | 0 | 0.0% |
+| world | 19 | 5 | 14 | 0 | 0 | 0 | 0.0% |
 
 ### Gameplay systems gaps
 
@@ -749,7 +752,7 @@ Cross-cutting gameplay systems with no data source to enumerate them from; this 
 
 **performance**
 
-- `performance.chunk_streaming`: chunks stream to players nearest first under a fixed per-player chunk budget per tick; no committed join or flight benchmark and no comparison with BDS 1.26.51 on the same machine
+- `performance.chunk_streaming`: respawn/teleport not yet checked with the real client; the BDS 1.26.51 comparison covers radius 4-6 only (BDS stops answering the benchmark client's sub-chunk requests from radius 8), fresh-world jumps only (joins to a restarted BDS failed intermittently) and no BDS flight; accepted difference: BDS sends a moved view nearest first in bursts of 20 LevelChunks (20-40 per 50 ms), we send the same order bounded by unanswered columns and 512 KiB of queued answers per player (about 72 columns per 50 ms on loopback); eight players flying apart into fresh terrain outrun generation
 - `performance.generation_speed`: the worldgen_bench example measures generation throughput and allocations (tools/worldgen-perf); no committed comparison with BDS 1.26.51 on the same machine
 
 **platform**
@@ -764,17 +767,17 @@ Cross-cutting gameplay systems with no data source to enumerate them from; this 
 - `player.block_breaking`: breaking runs no neighbour updates (attached blocks and door halves stay); in creative, a PredictDestroyBlock without a StartDestroyBlock in its input is refused like one on air, which BDS was not seen doing; of the block action types BDS cannot read in an input only CreativeDestroyBlock was measured; this server sends the block changes of a tick after the next inputs' corrections, BDS before them
 - `player.block_placing`: logs, stairs, slabs, facing blocks, doors, hoppers and torches place with orientation, and hoes, shovels, axes, shears, flint and steel, fire charges, bone meal and buckets act on blocks; no crops/seeds, beds, signs, buttons, fence/wall/pane connections or support checks
 - `player.combat`: melee against mobs and mob attacks on players with hurt timer, armour and knockback; bows, crossbows and snowballs; hits wear the weapon. Player-versus-player melee matches the BDS PvP sweep (710 trials, three lockstep clients) when the hits are applied in BDS's order: reach 6.7 / 12 between positions, the claimed position within 6, the held item, the pvp rule, immune modes and dead attackers, weapon damage with Sharpness, Strength and Weakness, critical hits (no Blindness or Slow Falling), armour, Protection and Resistance before the hurt window, the excess hit's push and hurt event, the window counted from packet arrival, the sprint and Knockback second push, knockback resistance, the hit particles, last-hurt-by and sound. unastar applies every input of a tick before every attack, with the attacker's state from before its first input, and attacks in arrival order: an attack sent after its own input, different players' attacks in one tick, and the victim moving between two hits of a tick follow BDS only once packets are applied in BDS's order (decision 0045; ignored tests). The victim's velocity is the one its client reported. No shields, thrown tridents, mace smash, strict entity-interaction facing check, totems or crits on climbables, in water or riding (unmeasured)
-- `player.damage_sources`: falls (3 to 12.5 blocks, into water, onto hay, slime, a bed, into powder snow, a glide that slowed down and Feather Falling boots), a fire block and the burning after it (a 1-point burn 20, 40, ... ticks before the fire runs out) match the BDS movement capture; lava, void, mob attacks and drowning (air supply, BREATHING flag, a 2-damage hit every 20 ticks without air, the refill, Respiration, bubble columns and the air saved across a rejoin) match the BDS breath and player-data captures; a killing hit sends only the death event and other hits knock back before the hurt event; a hit inside the hurt window that exceeds it knocks back, shows the hurt and restarts the window (BDS PvP sweep); the damage game rules gate their causes from every source; no suffocation, freezing, cactus, starvation, magic, lightning or explosion damage, and no protection enchantment but Feather Falling; in a fire block BDS's hurts alternate between fire (6) and fire_tick (7) with its input timing where unastar's are fire; how long lava sets a player alight (15 s) and the descent under which a glide restarts the fall (0.5 a tick) are unmeasured; block identities resolved by name string for fall damage
+- `player.damage_sources`: falls are measured on the server's own copy of the player, so a client claiming the ground through a fall or descending slowly takes BDS's damage (BDS authority capture); falls (3 to 12.5 blocks, into water, onto hay, slime, a bed, into powder snow, a glide that slowed down and Feather Falling boots), a fire block and the burning after it (a 1-point burn 20, 40, ... ticks before the fire runs out) match the BDS movement capture; lava, void, mob attacks and drowning (air supply, BREATHING flag, a 2-damage hit every 20 ticks without air, the refill, Respiration, bubble columns and the air saved across a rejoin) match the BDS breath and player-data captures; a killing hit sends only the death event and other hits knock back before the hurt event; a hit inside the hurt window that exceeds it knocks back, shows the hurt and restarts the window (BDS PvP sweep); the damage game rules gate their causes from every source; no suffocation, freezing, cactus, starvation, magic, lightning or explosion damage, and no protection enchantment but Feather Falling; in a fire block BDS's hurts alternate between fire (6) and fire_tick (7) with its input timing where unastar's are fire; how long lava sets a player alight (15 s) and the descent under which a glide restarts the fall (0.5 a tick) are unmeasured; block identities resolved by name string for fall damage
 - 6 more partial rows with other gaps (see [systems.toml](systems.toml))
 - missing: `player.achievements`, `player.books`, `player.fishing`, `player.maps`, `player.sleeping`
 
 **world**
 
 - `world.block_updates`: neighbour updates, survival checks and shapes follow BDS; scheduled block ticks exist only for buttons, coral blocks, redstone and gravity (no general scheduled-tick queue)
-- `world.chunk_ticking`: chunks load around players and entities tick in loaded chunks; no ticking areas and no random block ticks
+- `world.chunk_ticking`: chunks load around players in a view disk (nearest first with look-ahead; storage reads, generation and network encoding off the tick; spawning loaded columns, restoring their actors and unloading take at most 4 ms of a tick each; sending paced by acknowledgements and the transport's queue; timings in tools/perf/README.md) and entities tick in loaded chunks; the disk is centred on the player's chunk, BDS appears to centre it on the block position (153 columns at radius 6 against our 149); no ticking areas and no random block ticks
 - `world.day_cycle`: clock, daylight cycle and moon phase work; no sleeping skip and time is not persisted
 - `world.difficulty`: mob damage scaling, peaceful monsters, regional difficulty and hard-only door breaking; no hunger effects (starvation floors, peaceful regeneration) and effects of unimplemented mobs
 - `world.explosions`: the blast pattern, block resistance, drops (every block by hand), damage with exposure and the TNT fuse follow BDS; knockback is not measured (applied along the line from the centre with the impact); fire from explosions, underwater explosions, the max_resistance of other sources, creepers and other exploding mobs (their components are not implemented) and beds and respawn anchors are missing; block changes are sent at once, not with the next tick
-- 8 more partial rows with other gaps (see [systems.toml](systems.toml))
-- missing: `world.dimensions`, `world.fire`, `world.liquids`, `world.structure_blocks`, `world.structures_hardcoded`, `world.world_border`
+- 9 more partial rows with other gaps (see [systems.toml](systems.toml))
+- missing: `world.dimensions`, `world.fire`, `world.structure_blocks`, `world.structures_hardcoded`, `world.world_border`
 

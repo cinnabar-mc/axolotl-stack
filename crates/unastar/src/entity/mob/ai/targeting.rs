@@ -119,6 +119,15 @@ impl Candidate {
             player: false,
         })
     }
+    /// The feet: the bottom centre of the box.
+    pub fn feet(&self) -> DVec3 {
+        let aabb = self.aabb;
+        DVec3::new(
+            (aabb.min.x + aabb.max.x) / 2.0,
+            aabb.min.y,
+            (aabb.min.z + aabb.max.z) / 2.0,
+        )
+    }
 }
 
 /// The fraction of `entity`'s four armour slots that hold an item.
@@ -483,8 +492,15 @@ impl GoalContext<'_> {
         if target.player && self.difficulty() == Difficulty::Peaceful {
             return false;
         }
+        // Measured across the ground: BDS 1.26.51's drowned (within_radius
+        // 12) kept a player standing 11.5 blocks away across and 6 up (13.8
+        // to the player's eyes) as its target.
         let range = self.follow_range();
-        if self.body.feet.distance_squared(target.pos) > range * range {
+        let (dx, dz) = (
+            target.pos.x - self.body.feet.x,
+            target.pos.z - self.body.feet.z,
+        );
+        if dx * dx + dz * dz > range * range {
             return false;
         }
         if self.states.targets.must_see {
