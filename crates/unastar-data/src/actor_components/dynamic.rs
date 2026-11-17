@@ -17,6 +17,22 @@ use super::generated::body::{
 use super::provisional as p;
 use super::{ActorComponent, ComponentBody, FilterJson, decode};
 
+/// `minecraft:underwater_movement`: the movement speed in water (the
+/// `minecraft:underwater_movement` attribute).
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct UnderwaterMovement {
+    pub value: f32,
+}
+
+/// `minecraft:water_movement`: the drag a mob's motion keeps in water.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct WaterMovement {
+    #[serde(default = "drag_factor")]
+    pub drag_factor: f32,
+}
+
 /// An event reference: a bare event name or a trigger object.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(untagged)]
@@ -150,6 +166,9 @@ defaults! {
     preset_spring_type -> LeashSpringType = p::LEASH_PRESET_SPRING_TYPE;
     can_retrieve_from -> bool = p::LEASHABLE_TO_CAN_RETRIEVE_FROM;
     max_turn -> f32 = p::MOVEMENT_BASIC_MAX_TURN;
+    sway_amplitude -> f32 = p::MOVEMENT_SWAY_AMPLITUDE;
+    sway_frequency -> f32 = p::MOVEMENT_SWAY_FREQUENCY;
+    drag_factor -> f32 = p::WATER_MOVEMENT_DRAG_FACTOR;
     allow_name_tag_renaming -> bool = p::NAMEABLE_ALLOW_NAME_TAG_RENAMING;
     always_show -> bool = p::NAMEABLE_ALWAYS_SHOW;
     avoid_damage_blocks -> bool = p::NAVIGATION_AVOID_DAMAGE_BLOCKS;
@@ -842,6 +861,30 @@ pub struct MovementBasic {
     pub max_turn: f32,
 }
 
+/// `minecraft:movement.generic`: the move control of a mob that walks,
+/// swims and flies (the drowned).
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct MovementGeneric {
+    /// Maximum turn per tick, in degrees.
+    #[serde(default = "max_turn")]
+    pub max_turn: f32,
+}
+
+/// `minecraft:movement.sway`: the move control of a mob that sways from
+/// side to side as it swims (the fish and the tadpole).
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct MovementSway {
+    /// Maximum turn per tick, in degrees.
+    #[serde(default = "max_turn")]
+    pub max_turn: f32,
+    #[serde(default = "sway_amplitude")]
+    pub sway_amplitude: f32,
+    #[serde(default = "sway_frequency")]
+    pub sway_frequency: f32,
+}
+
 /// `minecraft:nameable`.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -912,6 +955,19 @@ pub struct NavigationWalk {
     /// Path through doors using door annotations.
     pub using_door_annotation: Option<bool>,
 }
+
+/// `minecraft:navigation.generic`: the path permissions of
+/// `minecraft:navigation.walk`, read by a navigation that can also swim.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(transparent)]
+pub struct NavigationGeneric(pub NavigationWalk);
+
+/// `minecraft:navigation.float`: the path permissions of
+/// `minecraft:navigation.walk`, read by a navigation through the air (the
+/// bat).
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(transparent)]
+pub struct NavigationFloat(pub NavigationWalk);
 
 /// `minecraft:offspring` (1.26): the offspring half of the old breedable
 /// fields.
@@ -1520,6 +1576,106 @@ defaults! {
     spell_effect_amplifier -> i32 = p::SPELL_EFFECTS_AMPLIFIER;
 }
 
+/// `minecraft:shooter`: the projectile a mob's ranged attack launches.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Shooter {
+    /// The projectile actor identifier.
+    pub def: String,
+    /// The projectile's aux value (a tipped arrow's potion, one more than
+    /// the potion id; -1: none).
+    #[serde(default = "shooter_aux_val")]
+    pub aux_val: i32,
+    /// A sound played when the projectile is launched (empty: none).
+    #[serde(default)]
+    pub sound: String,
+    /// Launched as a thrown potion (the witch).
+    #[serde(default)]
+    pub magic: bool,
+    /// Launch speed instead of the projectile's own `power` (0: its own).
+    #[serde(default)]
+    pub power: f32,
+    /// Projectiles chosen by filter (the witch's potions).
+    #[serde(default)]
+    pub projectiles: Vec<serde_json::Value>,
+}
+
+defaults! {
+    shooter_aux_val -> i32 = p::SHOOTER_AUX_VAL;
+}
+
+/// `minecraft:target_nearby_sensor`: events fired as the mob's target comes
+/// within `inside_range`, leaves past `outside_range`, or drops out of
+/// sight inside the range.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TargetNearbySensor {
+    #[serde(default = "target_nearby_inside_range")]
+    pub inside_range: f32,
+    #[serde(default = "target_nearby_outside_range")]
+    pub outside_range: f32,
+    /// The inside events need the target in sight.
+    #[serde(default)]
+    pub must_see: bool,
+    #[serde(default)]
+    pub on_inside_range: Option<ActorDefinitionTrigger>,
+    #[serde(default)]
+    pub on_outside_range: Option<ActorDefinitionTrigger>,
+    #[serde(default)]
+    pub on_vision_lost_inside_range: Option<ActorDefinitionTrigger>,
+}
+
+defaults! {
+    target_nearby_inside_range -> f32 = p::TARGET_NEARBY_INSIDE_RANGE;
+    target_nearby_outside_range -> f32 = p::TARGET_NEARBY_OUTSIDE_RANGE;
+}
+
+/// `minecraft:movement.jump`: the hopping move control (slimes, magma
+/// cubes): the mob moves only while it hops and waits `jump_delay` seconds
+/// on the ground before each hop.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct MovementJump {
+    /// Seconds to wait on the ground before the next hop, drawn per hop.
+    pub jump_delay: FloatRange,
+    /// Degrees the body turns per tick at most.
+    #[serde(default = "movement_jump_max_turn")]
+    pub max_turn: f32,
+}
+
+/// `minecraft:area_attack`: damage dealt to every matching actor near the
+/// mob's box.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AreaAttack {
+    pub cause: Option<ActorDamageCause>,
+    /// Seconds before the mob can hurt again.
+    #[serde(default = "area_attack_damage_cooldown")]
+    pub damage_cooldown: f32,
+    #[serde(default = "area_attack_damage_per_tick")]
+    pub damage_per_tick: f32,
+    /// How close (blocks) an actor must be.
+    #[serde(default = "area_attack_damage_range")]
+    pub damage_range: f32,
+    pub entity_filter: Option<FilterJson>,
+    /// The death message a kill shows instead of the cause's (the sulfur
+    /// cube).
+    pub death_message_override: Option<String>,
+    /// Whether the mob is the damage source (the sulfur cube authors
+    /// `false`); absent means the published default.
+    pub use_self_as_damage_source: Option<bool>,
+    #[serde(default = "area_attack_play_attack_sound")]
+    pub play_attack_sound: bool,
+}
+
+defaults! {
+    movement_jump_max_turn -> f32 = p::MOVEMENT_JUMP_MAX_TURN;
+    area_attack_damage_per_tick -> f32 = p::AREA_ATTACK_DAMAGE_PER_TICK;
+    area_attack_damage_range -> f32 = p::AREA_ATTACK_DAMAGE_RANGE;
+    area_attack_damage_cooldown -> f32 = p::AREA_ATTACK_DAMAGE_COOLDOWN;
+    area_attack_play_attack_sound -> bool = p::AREA_ATTACK_PLAY_ATTACK_SOUND;
+}
+
 macro_rules! dynamic_bodies {
     ($($name:ident),* $(,)?) => {
         $(impl ComponentBody for $name {
@@ -1547,6 +1703,7 @@ dynamic_bodies!(
     Angry,
     AnnotationBreakDoor,
     AmbientSoundInterval,
+    AreaAttack,
     Attack,
     Balloonable,
     BehaviorPanic,
@@ -1577,19 +1734,28 @@ dynamic_bodies!(
     MobEffectImmunity,
     Movement,
     MovementBasic,
+    MovementGeneric,
+    MovementJump,
+    MovementSway,
     Nameable,
+    NavigationFloat,
+    NavigationGeneric,
     NavigationWalk,
     Offspring,
     PushableByBlock,
     Rideable,
     Scale,
     Shareables,
+    Shooter,
     SkinId,
     SpawnEggInteraction,
     SpawnEntity,
     SpellEffects,
+    TargetNearbySensor,
     Transformation,
     Timer,
     TypeFamily,
+    UnderwaterMovement,
     Variant,
+    WaterMovement,
 );

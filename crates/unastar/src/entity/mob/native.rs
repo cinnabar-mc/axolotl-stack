@@ -4,8 +4,11 @@
 use unastar_data::actor_identifiers::ActorType;
 
 use super::constants::{
-    ANIMAL_AMBIENT_SOUND_INTERVAL, CHICKEN_FALL_DAMAGE_MULTIPLIER, DEFAULT_AMBIENT_SOUND_INTERVAL,
-    WING_FLAP_VERTICAL_DRAG, ZOMBIE_KNOCKBACK_RESISTANCE_BONUS,
+    ANIMAL_AMBIENT_SOUND_INTERVAL, BAT_FALL_DAMAGE_MULTIPLIER, BAT_FLIGHT_VERTICAL_FACTOR,
+    BAT_REST_CHANCE, BAT_WAKE_RANGE, CHICKEN_FALL_DAMAGE_MULTIPLIER,
+    DEFAULT_AMBIENT_SOUND_INTERVAL, MAGMA_CUBE_FALL_DAMAGE_MULTIPLIER, MAGMA_CUBE_JUMP_PER_SIZE,
+    VEX_ARRIVAL_SLOWDOWN, VEX_PUSH_SCALE, VEX_WANDER_CHANCE, VEX_WANDER_SPEED, VEX_WANDER_XZ,
+    VEX_WANDER_Y, WING_FLAP_VERTICAL_DRAG, ZOMBIE_KNOCKBACK_RESISTANCE_BONUS,
 };
 
 /// The native traits of one actor class.
@@ -42,6 +45,62 @@ pub struct NativeTraits {
     /// skeleton 1, stray 2, bogged 3, parched 4) although their definitions
     /// declare no `minecraft:variant`.
     pub variant: Option<i32>,
+    /// The slime classes (the slime and the magma cube): see
+    /// [`SlimeClass`].
+    pub slime: Option<SlimeClass>,
+    /// Multiplies a float-navigating flyer's vertical air drag (see
+    /// `mob::derive`): the bat's vertical motion keeps 0.6 of the 0.91
+    /// every axis keeps (BDS 1.26.51, `sweep.py bat`: 0.546 a tick on y
+    /// whenever it did not push, where the ghast's kept 0.91).
+    pub flight_vertical_factor: f64,
+    /// The bat class: see [`BatClass`].
+    pub bat: Option<BatClass>,
+    /// The vex class: see [`VexClass`].
+    pub vex: Option<VexClass>,
+}
+
+/// What the vex class does natively, whatever its definition's walk
+/// navigation says: it flies like a float flyer (no gravity, 0.91 drag on
+/// every axis) through a move control that pushes it at one point until it
+/// arrives, and wanders to random block centres when nothing else moves it
+/// (`mob::ai::vex`).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct VexClass {
+    /// The push a tick is movement x speed multiplier x this.
+    pub push_scale: f64,
+    /// The wander's speed multiplier.
+    pub wander_speed: f64,
+    /// The chance per tick that a vex with no point starts a wander.
+    pub wander_chance: f32,
+    /// The wander's reach in blocks on x and z, and on y.
+    pub wander_xz: i32,
+    pub wander_y: i32,
+    /// The velocity share kept on the tick it arrives.
+    pub arrival_slowdown: f64,
+}
+
+/// What the bat class does natively: it is born resting, rests hanging
+/// under solid blocks and wakes when its roof goes, a player comes near or
+/// it is hurt (`mob::ai::roost`).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct BatClass {
+    /// The chance per tick that a flying bat under a solid block settles.
+    pub rest_chance: f32,
+    /// A resting bat wakes when a player's eyes come this close to its
+    /// feet.
+    pub wake_range: f64,
+}
+
+/// What the slime classes do natively: they split into smaller copies when
+/// they die (`mob::life::split`), report leaving the ground and landing in
+/// their `CLIENT_EVENT` actor data (`mob::ai::hop`), and the magma cube
+/// jumps higher the bigger it is.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct SlimeClass {
+    /// Added to the jump impulse per size step (`VARIANT`): BDS 1.26.51's
+    /// magma cubes of size 1, 2 and 4 rose 0.52, 0.62 and 0.82 on the
+    /// first tick of a hop, its slimes 0.42 at every size.
+    pub jump_per_size: f64,
 }
 
 /// Which native natural-spawn check an actor class runs.
@@ -53,6 +112,9 @@ pub enum SpawnClass {
     Animal,
     /// The monster walk-target value plus the darkness test.
     Monster,
+    /// The plain mob check, and only in a slime chunk below
+    /// `SLIME_CHUNK_MAX_FEET_Y` (`entity::spawning::slime_chunk`).
+    Slime,
 }
 
 impl NativeTraits {
@@ -75,6 +137,35 @@ impl NativeTraits {
         };
         let follow_range_bonus = zombie_bonuses;
         let variant = skeleton_kind(actor_type);
+        let bat = match actor_type {
+            ActorType::Bat => Some(BatClass {
+                rest_chance: BAT_REST_CHANCE,
+                wake_range: BAT_WAKE_RANGE,
+            }),
+            _ => None,
+        };
+        let vex = match actor_type {
+            ActorType::Vex => Some(VexClass {
+                push_scale: VEX_PUSH_SCALE,
+                wander_speed: VEX_WANDER_SPEED,
+                wander_chance: VEX_WANDER_CHANCE,
+                wander_xz: VEX_WANDER_XZ,
+                wander_y: VEX_WANDER_Y,
+                arrival_slowdown: VEX_ARRIVAL_SLOWDOWN,
+            }),
+            _ => None,
+        };
+        let flight_vertical_factor = match actor_type {
+            ActorType::Bat => BAT_FLIGHT_VERTICAL_FACTOR,
+            _ => 1.0,
+        };
+        let slime = match actor_type {
+            ActorType::Slime => Some(SlimeClass { jump_per_size: 0.0 }),
+            ActorType::MagmaCube => Some(SlimeClass {
+                jump_per_size: MAGMA_CUBE_JUMP_PER_SIZE,
+            }),
+            _ => None,
+        };
         match actor_type {
             ActorType::Chicken => Self {
                 wing_flap_drag: Some(WING_FLAP_VERTICAL_DRAG),
@@ -86,10 +177,18 @@ impl NativeTraits {
                 knockback_resistance_bonus,
                 follow_range_bonus,
                 variant,
+                slime,
+                flight_vertical_factor,
+                bat,
+                vex,
             },
             _ => Self {
                 wing_flap_drag: None,
-                fall_damage_multiplier: 1.0,
+                fall_damage_multiplier: match actor_type {
+                    ActorType::MagmaCube => MAGMA_CUBE_FALL_DAMAGE_MULTIPLIER,
+                    ActorType::Bat => BAT_FALL_DAMAGE_MULTIPLIER,
+                    _ => 1.0,
+                },
                 spawn_class,
                 immune_to_wither,
                 ambient_sound_interval,
@@ -97,6 +196,10 @@ impl NativeTraits {
                 knockback_resistance_bonus,
                 follow_range_bonus,
                 variant,
+                slime,
+                flight_vertical_factor,
+                bat,
+                vex,
             },
         }
     }
@@ -218,6 +321,7 @@ impl SpawnClass {
             | A::Zombie
             | A::ZombieVillager
             | A::ZombieVillagerV2 => Self::Monster,
+            A::Slime => Self::Slime,
             _ => return None,
         })
     }

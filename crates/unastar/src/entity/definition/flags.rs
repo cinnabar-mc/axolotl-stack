@@ -108,11 +108,16 @@ pub fn register_component_kinds(
     use unastar_data::actor_components::body;
     register_flag::<body::IsBaby, { actor_flags::BABY }>(builder)?;
     register_flag::<body::CanClimb, { actor_flags::CANCLIMB }>(builder)?;
+    // The bat's summon carries CANFLY (BDS 1.26.51).
+    register_flag::<body::CanFly, { actor_flags::CANFLY }>(builder)?;
     register_flag::<body::IsHiddenWhenInvisible, { actor_flags::HIDDEN_WHEN_INVISIBLE }>(builder)?;
     register_flag::<body::UsesLegacyFriction, { actor_flags::USES_LEGACY_FRICTION }>(builder)?;
     register_flag::<body::IsSaddled, { actor_flags::SADDLED }>(builder)?;
     register_flag::<body::UsesUniformAirDrag, { actor_flags::USES_UNIFORM_AIR_DRAG }>(builder)?;
     register_flag::<body::IsShaking, { actor_flags::SHAKING }>(builder)?;
+    // A charged creeper's AddActor carries POWERED (BDS 1.26.51: a creeper
+    // given `minecraft:become_charged` on its spawn tick).
+    register_flag::<body::IsCharged, { actor_flags::POWERED }>(builder)?;
     // Fire never ignites the actor and fire causes do not hurt it; both
     // read the flag (`mob::combat::{fire, hit}`).
     register_flag::<body::FireImmune, { actor_flags::FIRE_IMMUNE }>(builder)?;

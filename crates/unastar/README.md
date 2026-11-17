@@ -656,9 +656,94 @@ Mooshroom interactions (`sweep.py mooshroom --client-capture`, distilled by
 by `src/entity/mob/interaction/bds_mooshroom.rs`: stew and suspicious stew
 into the hand (`add_items`, `has_mark_variant` loot), flowers eaten with
 `particle_on_start` smoke, shearing with largeexplode particles, five
-mushrooms and the cow it turns into (`minecraft:transformation`, which runs
-only when it names nothing but its target), the particle positions for an
+mushrooms and the cow it turns into (`minecraft:transformation`), the particle positions for an
 adult, a baby and a raised player, and the sounds at the middle of its box.
+
+The skeleton family's ranged attack (`sweep.py ranged --client-capture` on
+easy, normal and hard plus the `geometry`, `aim`, `spread`, `damage`,
+`damage-long`, `weapon`, `filters`, `avoid`, `avoid-many` and `pickup` sets,
+distilled by `tools/bds-sweep/ranged_fixture.py` into
+`src/entity/mob/combat/testdata/bds-1.26.51-ranged.json`) is replayed by
+`src/entity/mob/combat/bds_ranged.rs`: the shot ticks after the target, where
+each arrow starts, its owner, aux value, rotation and sounds, the aim (the
+drag-free parabola to the centre of the target's box) and spread per
+difficulty as distributions, arrow damage by difficulty, tipped-arrow
+effects, the bow as the only ranged weapon, the `is_underground` and
+`in_block` filters, the skeleton's trap sensor, fleeing a wolf
+(`behavior.avoid_mob_type`) and the arrow pickup after its shake.
+
+The silverfish (`sweep.py silverfish --client-capture`: 1 × 1 pits of 14 kinds
+of block, interleaved stone and cobblestone pits, mobGriefing off, and
+infested stone around a hurt silverfish, distilled by
+`tools/bds-sweep/silverfish_fixture.py` into
+`src/entity/mob/ai/testdata/bds-1.26.51-silverfish.json`) is replayed by
+`src/entity/mob/tests/silverfish.rs`: which blocks it merges into and what
+they become (the measured table `unastar-data/data/measured/infested_blocks.json`,
+decision 0059), which faces and how soon by distribution over seeded runs,
+and the wake-up scan's order, range, cadence and stopping coin, the released
+silverfish's position and mobGriefing turning woken blocks back into stone.
+The creeper's fuse (`sweep.py creeper`, distilled by
+`tools/bds-sweep/creeper_fixture.py` into
+`src/entity/mob/ai/testdata/bds-1.26.51-creeper.json`) is measured; its
+`target_nearby_sensor` decision is replayed on the BDS positions by
+`src/entity/mob/tests/creeper.rs` (ranges between the collision boxes). The
+creeper spawns once `minecraft:explode` (blocks round 4) and
+`behavior.melee_attack` exist.
+
+The slime and the magma cube (`sweep.py slime --client-capture`: calm hops of
+each size, attacks on a survival player, splits and floats, and
+`sweep.py slime-spawn`, distilled by `tools/bds-sweep/slime_fixture.py` into
+`src/entity/mob/ai/testdata/bds-1.26.51-slime.json`) are replayed by
+`src/entity/mob/tests/slime.rs`: their summons, a hop tick by tick (the magma
+cube jumping 0.42 + 0.1 × its size), the hop delays and random turns by
+distribution over seeded runs, contact damage (`minecraft:area_attack`),
+splitting into 2 to 4 children at the body's block centre, and slime chunks
+(every slime BDS spawned stood in one). They move through the hop control
+`mob::ai::hop` instead of the path follower (decision 0062).
+
+The drowned (`sweep.py drowned --client-capture`: sinking, hunting a player on
+a pool floor, at the surface and on land, trident throws, daytime targeting,
+200 spawn equipments and underwater conversions, distilled by
+`tools/bds-sweep/drowned_fixture.py` into
+`src/entity/mob/ai/testdata/bds-1.26.51-drowned.json`) is replayed by
+`src/entity/mob/tests/drowned.rs`: its summon, sinking tick by tick, the floor
+walk and the straight swim at its underwater speed, trident throws by
+distribution, daytime targeting, equipment by distribution and the zombie's
+and husk's conversions on BDS's tick. A navigation that can swim paths over
+water cells while the mob is in water (`entity::navigation::swim`), and the
+swimmer has no gravity (decision 0065). Transformations run with a delay, a
+sound, a spawn event (`ActorReference`) and kept equipment.
+
+The polar bear (`sweep.py polar-bear --client-capture`: hostile bears chasing the
+player, a baby's anger reaching an adult, bears knocked across a pool, distilled
+by `tools/bds-sweep/mob_fixture.py` into
+`src/entity/mob/ai/testdata/bds-1.26.51-polar_bear.json`) is replayed by
+`src/entity/mob/tests/polar_bear.rs`: its summon, the stomp goal's rear-ups,
+stand-downs and hits on BDS's ticks, and its horizontal drag in water.
+`behavior.stomp_attack` is a reach of the one melee goal (`MeleeAttackGoal`),
+judged after the physics step (decision 0068). `water_movement` sets the
+horizontal drag in water.
+
+The bat (`sweep.py bat --client-capture`: bats under the open sky, resting in
+one-block rooms, hurt, unroofed and approached, distilled by
+`tools/bds-sweep/mob_fixture.py` into
+`src/entity/mob/ai/testdata/bds-1.26.51-bat.json`) is replayed by
+`src/entity/mob/tests/bat.rs`: its summon, its pushes tick by tick, its wander
+lengths and idle draws by distribution, and its resting (born resting,
+settling about once in 100 ticks under a roof, waking by roof, player and
+hurt). A float-navigating mob flies straight at the point its goal wants, with
+no path search and no gravity (`mob::ai::fly`, decision 0069); the bat's
+resting is native (`mob::ai::roost`).
+
+The vex (`sweep.py vex --client-capture`: wandering, charging a survival player,
+beside a cow, and decaying, distilled into
+`src/entity/mob/ai/testdata/bds-1.26.51-vex.json`) is replayed by
+`src/entity/mob/tests/vex.rs`: its summon, its wanders and charges tick by tick,
+its waits by distribution, its hits and its decay. The vex class flies through
+one held course, steered before its goals: no gravity, no block collision, a
+push of 0.05 × speed a tick at the point and half its velocity on arrival
+(`mob::ai::vex`, decision 0070). `behavior.charge_attack` hits after the move
+(`tick_charge_hits`), and `damage_over_time` hurts with no cause.
 
 ### Measured item and falling-block motion
 
