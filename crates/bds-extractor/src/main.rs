@@ -82,6 +82,12 @@ struct Args {
     #[arg(long, default_value = "1500", requires = "capture_dir")]
     command_wait: u64,
 
+    /// Capture mode: log in with this UUID (the client's self-signed id)
+    /// instead of a random one, so BDS knows the player again in a later
+    /// session (offline mode keys player records by it)
+    #[arg(long, requires = "capture_dir")]
+    uuid: Option<uuid::Uuid>,
+
     /// Capture mode: a JSON object of login ClientData fields (as the client
     /// sends them, e.g. `SkinData`, `PersonaPieces`) replacing jolyne's defaults
     #[arg(long, requires = "capture_dir")]
@@ -202,6 +208,7 @@ async fn run(args: Args) -> Result<()> {
             summon_wait: Duration::from_secs(args.summon_wait),
             commands,
             command_wait: Duration::from_millis(args.command_wait),
+            uuid: args.uuid,
             client_data,
             blob_cache: args.blob_cache,
             input: args.input,

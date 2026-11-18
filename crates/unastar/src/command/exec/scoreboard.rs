@@ -30,7 +30,8 @@
 //!   or `…list.player.empty [name]` for a holder without scores.
 //!
 //! A name that is not an online player is a fake player. The score shown
-//! under player names (`belowname`) is not sent as actor data yet.
+//! under player names (`belowname`) is sent as each player's `SCORE` actor
+//! data ([`crate::world::scoreboard::sync_score_tags`]).
 
 use crate::command::args::Operation;
 use crate::command::prelude::*;
@@ -43,7 +44,8 @@ use jolyne::valentine::types::{
     SetScorePacketScoreInfoItem,
 };
 use jolyne::valentine::{
-    RemoveObjectivePacket, SetDisplayObjectivePacket, SetScorePacket, UpdateSoftEnumPacket,
+    McpePacket, RemoveObjectivePacket, SetDisplayObjectivePacket, SetScorePacket,
+    UpdateSoftEnumPacket,
 };
 use rand::Rng;
 
@@ -143,6 +145,12 @@ overloads! {
 }
 
 pub fn run(ctx: &mut CommandContext<'_>, args: ScoreboardArgs) -> CommandResult {
+    let result = run_subcommand(ctx, args);
+    crate::world::scoreboard::sync_score_tags(ctx.world);
+    result
+}
+
+fn run_subcommand(ctx: &mut CommandContext<'_>, args: ScoreboardArgs) -> CommandResult {
     ctx.world.get_resource_or_insert_with(Scoreboard::default);
     use ScoreboardArgs as S;
     match args {
@@ -399,7 +407,9 @@ fn holders(
 }
 
 /// Players by name, fake players by their name, other actors by their
-/// unique id (measured: a cow is listed as "-4294967276").
+/// unique id (measured: a cow is listed as "-4294967276"); an actor that is
+/// not loaded by its saved unique id, a player that is offline by
+/// [`OFFLINE_PLAYER_NAME`].
 fn holder_name(ctx: &CommandContext<'_>, holder: &ScoreHolder) -> String {
     match holder {
         ScoreHolder::Entity(entity) if ctx.world.get::<Player>(*entity).is_some() => {
@@ -409,18 +419,72 @@ fn holder_name(ctx: &CommandContext<'_>, holder: &ScoreHolder) -> String {
             .unwrap_or_default()
             .to_string(),
         ScoreHolder::Fake(name) => name.clone(),
+        ScoreHolder::UnloadedActor(id) => id.to_string(),
+        ScoreHolder::OfflinePlayer(_) => OFFLINE_PLAYER_NAME.to_owned(),
     }
 }
+
+/// The name a player who is offline is listed by (measured on BDS 1.26.51,
+/// a second player listing the scores while the first was offline): the key
+/// itself where a holder's scores are listed, `%` and the key (translated
+/// by the client) in `players list`.
+pub const OFFLINE_PLAYER_NAME: &str = "commands.scoreboard.players.offlinePlayerName";
 
 /// Sets a score and sends it when the objective is shown.
 fn set_score(ctx: &mut CommandContext<'_>, holder: &ScoreHolder, objective: &str, value: i32) {
     let id = board_mut(ctx).set_score(holder, objective, value);
-    if shown(ctx, objective) {
-        let entry = change_entry(ctx.world, id, holder, objective, value);
+    if shown(ctx, objective)
+        && let Some(entry) = change_entry(ctx.world, id, holder, objective, value)
+    {
         ctx.broadcast(SetScorePacket {
             score_info: vec![entry],
         });
     }
+}
+
+/// What a joining player is sent for the displayed objectives (measured on
+/// BDS 1.26.51, `tools/bds-sweep/level_data.py`'s rejoin): per slot in list,
+/// sidebar, belowname order, `SetDisplayObjective` and then one `SetScore`
+/// with every score of the objective in its order. The `belowname` slot
+/// sent no `SetScore` for an objective scoring only a fake player.
+/// [INFERENCE] Holders that are offline or not loaded are left out.
+pub fn join_packets(world: &World) -> Vec<McpePacket> {
+    let Some(board) = world.get_resource::<Scoreboard>() else {
+        return Vec::new();
+    };
+    let mut packets = Vec::new();
+    for slot in DisplaySlot::ALL {
+        let Some(display) = board.display(slot) else {
+            continue;
+        };
+        let Some(objective) = board.objective(&display.objective) else {
+            continue;
+        };
+        packets.push(McpePacket::from(SetDisplayObjectivePacket {
+            display_slot_name: slot.name().into(),
+            objective_name: objective.name.as_str().into(),
+            objective_display_name: objective.display_name.as_str().into(),
+            criteria_name: objective.criteria.as_str().into(),
+            sort_order: display.order.wire(),
+        }));
+        let entries: Vec<SetScorePacketScoreInfoItem> = objective
+            .scores()
+            .iter()
+            .filter_map(|(id, score)| {
+                let holder = board.holder(*id)?;
+                if slot == DisplaySlot::BelowName && matches!(holder, ScoreHolder::Fake(_)) {
+                    return None;
+                }
+                change_entry(world, *id, holder, &objective.name, *score)
+            })
+            .collect();
+        if !entries.is_empty() {
+            packets.push(McpePacket::from(SetScorePacket {
+                score_info: entries,
+            }));
+        }
+    }
+    packets
 }
 
 fn change(
@@ -644,7 +708,13 @@ fn list_holders(ctx: &mut CommandContext<'_>) -> CommandResult {
     if holders.is_empty() {
         return failure!("commands.scoreboard.players.list.empty");
     }
-    let names: Vec<String> = holders.iter().map(|h| holder_name(ctx, h)).collect();
+    let names: Vec<String> = holders
+        .iter()
+        .map(|h| match h {
+            ScoreHolder::OfflinePlayer(_) => format!("%{OFFLINE_PLAYER_NAME}"),
+            _ => holder_name(ctx, h),
+        })
+        .collect();
     let mut output = CommandOutput::success(
         "§a%commands.scoreboard.players.list.count",
         vec![names.len().to_string()],
@@ -718,16 +788,16 @@ fn remove_entry(id: i64, objective: &str) -> SetScorePacketScoreInfoItem {
 }
 
 /// A `SetScore` change entry: players by unique id, other actors by actor
-/// id, fake players by name.
+/// id, fake players by name; none for a holder that is not in the world.
 fn change_entry(
     world: &World,
     id: i64,
     holder: &ScoreHolder,
     objective: &str,
     value: i32,
-) -> SetScorePacketScoreInfoItem {
+) -> Option<SetScorePacketScoreInfoItem> {
     let scoreboard_id = ScoreboardId { scoreboard_id: id };
-    match holder {
+    Some(match holder {
         ScoreHolder::Fake(name) => {
             SetScorePacketScoreInfoItem::ChangeFakePlayerScore(ChangeFakePlayerScorejson {
                 action: "changefakeplayer".into(),
@@ -761,14 +831,17 @@ fn change_entry(
                 })
             }
         }
-    }
+        ScoreHolder::OfflinePlayer(_) | ScoreHolder::UnloadedActor(_) => return None,
+    })
 }
 
 /// Replays of the committed BDS 1.26.51 command capture
 /// (`crates/bds-extractor/captures/1.26.51/operator-commands`).
 #[cfg(test)]
 mod bds_capture {
-    use crate::command::exec::evidence::{Replay, assert_same_packets, packet_name};
+    use crate::command::exec::evidence::{
+        Replay, assert_same_packets, assert_same_score_tags, packet_name,
+    };
     use jolyne::valentine::McpePacketData;
     use jolyne::valentine::types::SetScorePacketScoreInfoItem;
 
@@ -862,6 +935,8 @@ mod bds_capture {
             ],
             &[],
         );
+        // The score under the player's name (`belowname`).
+        assert_same_score_tags(&steps);
         for step in &steps {
             let theirs: Vec<McpePacketData> = step
                 .captured

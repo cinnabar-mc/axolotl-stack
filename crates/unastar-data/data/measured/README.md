@@ -10,8 +10,8 @@ behaviour, not copies of Mojang data files; the raw per-run logs
 `manifest.json` lists every artefact with its SHA-256, the BDS version, the
 harness revision, the sweep runs (start time, status, seconds, item count) and
 the measurement method. The capture-derived tables (`recipe_legacy_identities.json`,
-`builtin_recipes.json`, `potion_types.json`, `block_name_keys.json`,
-`actor_pick_items.json`) are not
+`builtin_recipes.json`, `potion_types.json`, `block_name_keys.json`, `give_items.json`,
+`pack_stack.json`, `actor_pick_items.json`) are not
 sweep artefacts and record their source capture's SHA-256 inside the file
 instead.
 `enchantments.json` is not a sweep artefact either; it records its provenance in
@@ -57,6 +57,8 @@ $py = 'C:/Users/jvigu/orca/bds-runtime/venv/Scripts/python.exe'
 | `enchantments.json` | `{source, enchantments: {name: {lang_key, max_level, weight, primary_slots, secondary_slots, min_cost, exclusive_group, excludes, list, treasure, discoverable}}}`: the rules of every enchantment, keyed by the bare names of the BDS 1.26.51 `Enchant` command enum; slots are `0x` bit masks (`source.slot_bits` names them) | moved unchanged from the random-enchanting table in `unastar-rules` and the `/enchant` lang keys (provenance in `source`); not a sweep artefact. `unastar-rules/build.rs` generates the `Enchantment` type from it (decision 0052) |
 | `potion_types.json` | lowercase pack potion type identifier to measured aux | unique labelled-graph solution against all captured brewing edges; source SHA-256 included |
 | `block_name_keys.json` | block identifier to the translation key command feedback names it by (`minecraft:dirt` → `tile.dirt.default.name`); blocks the `Block` command enum refuses are absent | `capture.py --commands` session of `/testforblock 8 199 8 <block>` for every palette block (default state) against stone, `--command-wait 150`, answers paired in order; `commands.testforblock.failed.tile` names the expected block; source SHA-256 of the session's `command-outputs.json` included |
+| `give_items.json` | item name to the item `/give` gives (the block state its stack carries is `item_blocks.json`'s); `not_found`: names the command's item list has that BDS answers with `commands.give.item.notFound` | `/give @s <item>` for every native registry item, hotbar slot 0 of the inventory BDS resent (`crates/unastar/src/command/exec/testdata/bds-give.json`), cut by the ignored test `writes_the_give_table` in `crates/unastar/src/command/exec/give.rs`; source SHA-256 of that file included |
+| `pack_stack.json` | the server and client pack stacks `/packstack` lists (name, UUID, type, version), in order | command probe (`tools/bds-sweep/command_probe.py`): `/packstack server verbose` on the console, `/packstack client verbose` from an operator player, a dedicated server without added packs; source SHA-256 of `crates/unastar/src/command/exec/testdata/bds-command-probe.json` included |
 
 `loot_table` uses the behaviour-pack loot-table schema (`pools`, `rolls`,
 `entries` of `type` `item`/`empty`, `weight`, `functions` `set_count` and

@@ -18,7 +18,7 @@ pub(crate) mod client_packets;
 mod command_order_tests;
 #[cfg(test)]
 mod command_tests;
-mod commands;
+pub(crate) mod commands;
 mod containers;
 pub mod durability;
 pub mod effects;
@@ -130,6 +130,9 @@ pub struct StorageShutdown {
     /// Chunks with something to write that storage refused; their unsaved
     /// edits are lost when the process exits.
     pub chunks_failed: usize,
+    /// The level data (`level.dat` and the level records) saved, or there
+    /// was none to save.
+    pub level_saved: bool,
     /// Every attached provider closed (and so flushed) without error.
     pub closed: bool,
 }
@@ -137,7 +140,7 @@ pub struct StorageShutdown {
 impl StorageShutdown {
     /// Every save succeeded and every provider closed.
     pub fn is_clean(&self) -> bool {
-        self.players_failed == 0 && self.chunks_failed == 0 && self.closed
+        self.players_failed == 0 && self.chunks_failed == 0 && self.level_saved && self.closed
     }
 }
 
@@ -212,6 +215,9 @@ pub(crate) fn player_record(world: &World, entity: Entity) -> Option<(uuid::Uuid
             unlocked_recipes: world
                 .get::<crate::command::exec::UnlockedRecipes>(entity)
                 .map(|recipes| recipes.0.clone()),
+            unique_id: world
+                .get::<crate::world::scoreboard::PlayerUniqueId>(entity)
+                .map(|id| id.0),
             air: world
                 .get::<crate::entity::player_life::breath::PlayerBreath>(entity)
                 .filter(|_| !dead)
@@ -474,6 +480,7 @@ impl GameServer {
         .expect("vanilla player definition");
 
         ecs.world_mut().add_observer(on_block_changed);
+        crate::world::scoreboard::install(ecs.world_mut());
         ecs.world_mut()
             .init_resource::<containers::BlockContainers>();
         ecs.world_mut()
@@ -769,6 +776,7 @@ impl GameServer {
         ecs.schedule_mut().add_systems(
             (
                 effects::sync_visible_effects,
+                crate::world::scoreboard::sync_score_tags,
                 crate::entity::player_life::actor_data::sync_players,
                 attributes::sync_player_attributes,
                 books::sync_interact_text,
@@ -972,6 +980,18 @@ impl GameServer {
     pub async fn save_and_close_storage(&mut self) -> StorageShutdown {
         let players = self.save_all_players().await;
         let chunks = self.save_all_chunks().await;
+        // After the chunks, so every saved mob has its unique id for the
+        // scoreboard; before the world database closes.
+        let mut level_saved = true;
+        if let Some(save) = crate::world::level_data::capture(self.ecs.world_mut()) {
+            match save.write().await {
+                Ok(()) => info!("Level data saved"),
+                Err(error) => {
+                    error!(%error, "Failed to save the level data");
+                    level_saved = false;
+                }
+            }
+        }
         let mut closed = true;
         let world_provider = self
             .ecs
@@ -1000,6 +1020,7 @@ impl GameServer {
             players_failed: players.failed,
             chunks_saved: chunks.saved,
             chunks_failed: chunks.failed,
+            level_saved,
             closed,
         }
     }
@@ -1131,13 +1152,14 @@ impl GameServer {
         let mut health = crate::entity::components::Health::default();
         let mut hunger = crate::entity::components::Hunger::default();
         let mut experience = crate::entity::components::Experience::default();
-        let (spawn_point, tags, unlocked_recipes) = saved_data
+        let (spawn_point, tags, unlocked_recipes, unique_id) = saved_data
             .as_mut()
             .map(|saved| {
                 (
                     saved.spawn_point,
                     std::mem::take(&mut saved.tags),
                     saved.unlocked_recipes.take(),
+                    saved.unique_id,
                 )
             })
             .unwrap_or_default();
@@ -1271,6 +1293,12 @@ impl GameServer {
         if let Some(recipes) = unlocked_recipes {
             player.insert(crate::command::exec::UnlockedRecipes(recipes));
         }
+        // The id its scores are saved under: inserting it gives the player
+        // back the scores it had when it left.
+        player.insert(unique_id.map_or_else(
+            crate::world::scoreboard::PlayerUniqueId::fresh,
+            crate::world::scoreboard::PlayerUniqueId,
+        ));
 
         if let Some(mut session_map) = self.ecs.world_mut().get_resource_mut::<SessionEntityMap>() {
             session_map.insert(data.session_id, entity);
@@ -1736,6 +1764,7 @@ mod tests {
                 players_failed: 1,
                 chunks_saved: 0,
                 chunks_failed: 1,
+                level_saved: true,
                 closed: true,
             }
         );
@@ -1826,6 +1855,7 @@ mod tests {
                 players_failed: 0,
                 chunks_saved: 1,
                 chunks_failed: 0,
+                level_saved: true,
                 closed: true,
             }
         );

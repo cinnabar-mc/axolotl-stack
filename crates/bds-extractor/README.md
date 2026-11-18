@@ -66,7 +66,10 @@ prints `@@console@@ COMMAND` for the harness that owns BDS's stdin
 and `!join NAME` / `!leave NAME` log a second client in and out (it answers
 latency probes and records its own packets to `clients/NAME.jsonl` on the
 session's clock). Every step prints `@@step@@ INDEX` first and is listed in
-`steps.json` (index, kind, line, start `seq` and time).
+`steps.json` (index, kind, line, start `seq` and time). `--uuid UUID` logs in
+with that self-signed id instead of a random one: an offline BDS keys player
+records by it, so the same id finds the same player (scores, tags, inventory)
+in a later session (`tools/bds-sweep/level_data.py`).
 
 Lines starting with `!` are client actions instead of commands: `!wait MS`,
 `!interact`, `!pick-actor`, `!emote`, `!emote-list`, `!animate`, `!book`,
