@@ -329,10 +329,7 @@ fn explosions_hurt_mobs_like_bds() {
     for hit in hits() {
         let target = round2::target(&bodies, &hit.kind, hit.mob);
         let cell = hit_cell(&hit.name);
-        let centre = blast_centre(hit.tnt, TNT_HEIGHT);
-        let seen = exposure(&cell, centre, &target.aabb);
-        let impact = impact(target.distance(centre), TNT_POWER, seen);
-        let dealt = f64::from(damage(impact, TNT_POWER));
+        let (impact, dealt) = round2::predicted(&cell, hit.tnt, &target);
         let (before, after) = hit.health;
         let lost = before - after;
         compared += 1;
@@ -346,7 +343,7 @@ fn explosions_hurt_mobs_like_bds() {
         }
         if off >= NEAR {
             failures.push(format!(
-                "{}: BDS lost {lost} ({before} -> {after}), unastar deals {dealt:.2} (exposure {seen:.3})",
+                "{}: BDS lost {lost} ({before} -> {after}), unastar deals {dealt:.2} (impact {impact:.3})",
                 hit.name
             ));
         }

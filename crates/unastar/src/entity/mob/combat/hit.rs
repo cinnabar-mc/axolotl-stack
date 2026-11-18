@@ -317,12 +317,11 @@ fn apply_knockback(world: &mut World, target: Entity, from: DVec3, power: Knockb
     }
     // A resistance of 1 or more stops the knockback altogether: the old
     // velocity is not even halved (the BDS 1.26.51 iron golem).
-    let power = match world.get::<crate::entity::mob::attributes::KnockbackResistance>(target) {
-        Some(resistance) => match resistance.resist(power) {
-            Some(power) => power,
-            None => return,
-        },
-        None => power,
+    let power = match crate::entity::mob::attributes::worn_knockback_resistance(world, target)
+        .resist(power)
+    {
+        Some(power) => power,
+        None => return,
     };
     if let Some(mut velocity) = world.get_mut::<Velocity>(target) {
         velocity.0 = knockback_velocity(velocity.0, away.normalize(), power);

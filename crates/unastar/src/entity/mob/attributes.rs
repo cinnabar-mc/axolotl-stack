@@ -76,6 +76,33 @@ impl KnockbackResistance {
     }
 }
 
+/// The knockback resistance `mob` has with what it wears: its own (base and
+/// spawn bonus) plus each worn armour piece's (BDS 1.26.51
+/// `data/measured/explosions/tnt_knock.json`: husks in two and four pieces
+/// of netherite resist 0.21 and 0.41-0.44 of a hurt knockback, 0.1 a piece
+/// over their own spawn bonus below 0.05).
+pub fn worn_knockback_resistance(
+    world: &bevy_ecs::world::World,
+    mob: bevy_ecs::entity::Entity,
+) -> KnockbackResistance {
+    use super::gear::{GearSlot, MobEquipment};
+    let own = world
+        .get::<KnockbackResistance>(mob)
+        .copied()
+        .unwrap_or(KnockbackResistance::NONE);
+    let armour: f32 = world.get::<MobEquipment>(mob).map_or(0.0, |equipment| {
+        GearSlot::ARMOUR
+            .iter()
+            .filter_map(|slot| unastar_data::armour::armour_values(equipment.get(*slot).item_id()))
+            .map(|values| values.knockback_resistance)
+            .sum()
+    });
+    KnockbackResistance {
+        base: own.base + armour,
+        ..own
+    }
+}
+
 /// A mob's follow range: the definition's base and the spawn bonus of its
 /// native class.
 #[derive(Component, Debug, Clone, Copy, PartialEq)]

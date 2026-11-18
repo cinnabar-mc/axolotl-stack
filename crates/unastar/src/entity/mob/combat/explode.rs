@@ -83,6 +83,7 @@ fn explode_actor(world: &mut World, actor: Entity) {
     let griefing = rules.mob_griefing;
     let blast = Blast {
         centre: blast_centre(feet, body.height),
+        damage_centre: feet + glam::DVec3::Y * (body.height / 2.0),
         power: config.power,
         source: Some(source),
         breaks_blocks: config.breaks_blocks && (!config.destroy_affected_by_griefing || griefing),

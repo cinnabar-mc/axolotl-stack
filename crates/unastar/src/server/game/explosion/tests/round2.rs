@@ -100,6 +100,16 @@ struct HitRow {
     damage_events: Vec<DamageEvent>,
     #[serde(default)]
     player_motions: Vec<Point>,
+    #[serde(default)]
+    knockbacks: Vec<Knockback>,
+}
+
+/// A knockback BDS reported: the velocity change.
+#[derive(Debug, Deserialize)]
+struct Knockback {
+    #[serde(rename = "type")]
+    kind: String,
+    knockback: Point,
 }
 
 /// A blast cube cell (`tnt_logged`, `tnt_drops`, `tnt_decay`).
@@ -368,10 +378,17 @@ pub(super) fn target(
 }
 
 /// Impact and damage unastar gives `target`.
-fn predicted(cell: &Cell, centre: DVec3, target: &super::super::Target) -> (f64, f64) {
-    let seen = exposure(cell, centre, &target.aabb);
-    let impact = impact(target.distance(centre), TNT_POWER, seen);
+/// Impact and damage unastar gives `target` from a TNT standing at `tnt`
+/// (rays from its blast centre, the distance from its middle).
+pub(super) fn predicted(cell: &Cell, tnt: DVec3, target: &super::super::Target) -> (f64, f64) {
+    let seen = exposure(cell, blast_centre(tnt, TNT_HEIGHT), &target.aabb);
+    let impact = impact(target.distance(tnt_middle(tnt)), TNT_POWER, seen);
     (impact, f64::from(damage(impact, TNT_POWER)))
+}
+
+/// A TNT's middle, the point targets' distances are measured from.
+pub(super) fn tnt_middle(tnt: DVec3) -> DVec3 {
+    tnt + DVec3::Y * (TNT_HEIGHT / 2.0)
 }
 
 /// The hurt knockback of a still target away from `from`.
@@ -415,7 +432,7 @@ fn explosions_hurt_and_push_like_bds() {
                 }
                 let cell = hit_cell(feet);
                 let ours = target(&bodies, &kind, feet);
-                let (impact, dealt) = predicted(&cell, centre, &ours);
+                let (impact, dealt) = predicted(&cell, tnt, &ours);
                 let event = row.damage_events.iter().find(|e| e.kind == kind);
                 if let Some(event) = event.filter(|_| !armoured) {
                     compared.0 += 1;
@@ -485,7 +502,7 @@ fn tnt_in_water_breaks_nothing_and_deals_no_damage_like_bds() {
         let centre = blast_centre(tnt, TNT_HEIGHT);
         let theirs = pig.moved.unwrap().0;
         let pig = target(&bodies, "pig", feet);
-        let (impact, _) = predicted(&Cell::new(), centre, &pig);
+        let (impact, _) = predicted(&Cell::new(), tnt, &pig);
         let ours = hurt_knockback(feet, tnt) + push(centre, pig.eyes, impact, 0.0);
         // The pig floats: its first move also carries the water's lift.
         assert!(
@@ -535,6 +552,7 @@ fn lit_tnt_names_its_igniter_like_bds() {
     let tnt = world.spawn_empty().id();
     let blast = Blast {
         centre: DVec3::new(0.5, 0.06, 0.5),
+        damage_centre: DVec3::new(0.5, 0.49, 0.5),
         power: TNT_POWER,
         source: Some(super::super::BlastSource {
             entity: tnt,
@@ -757,4 +775,146 @@ fn flint_and_steel_and_fire_charges_light_tnt() {
             assert!(!held.is_empty());
         }
     }
+}
+
+/// Husks in netherite resist a hurt knockback by 0.1 a piece over their own
+/// spawn bonus (BDS `tnt_knock.json`, 0, 2 and 4 pieces): the horizontal
+/// knockback BDS gave leaves a spawn bonus within the zombies' range once
+/// the worn pieces' resistance is taken off, and unastar adds the pieces to
+/// a husk's own resistance.
+#[test]
+fn worn_armour_resists_knockback_like_bds() {
+    use crate::entity::mob::constants::ZOMBIE_KNOCKBACK_RESISTANCE_BONUS;
+    use crate::entity::mob::gear::{GearSlot, MobEquipment};
+    const PIECES: [&str; 4] = [
+        "minecraft:netherite_helmet",
+        "minecraft:netherite_chestplate",
+        "minecraft:netherite_leggings",
+        "minecraft:netherite_boots",
+    ];
+    let piece = |item: &str| {
+        unastar_data::armour::armour_values(item)
+            .unwrap_or_else(|| panic!("{item}"))
+            .knockback_resistance
+    };
+    let mut compared = 0;
+    for row in table::<HitRow>("tnt_knock") {
+        if row.name[0][0] != "husk" {
+            continue;
+        }
+        let pieces = row.name[0][2].as_u64().unwrap() as usize;
+        let armour: f32 = PIECES[..pieces].iter().map(|item| piece(item)).sum();
+        let kb = row
+            .knockbacks
+            .iter()
+            .find(|k| k.kind == "husk")
+            .unwrap()
+            .knockback
+            .0;
+        let resisted = 1.0 - DVec2::new(kb.x, kb.z).length() / 0.4;
+        let bonus = resisted - f64::from(armour);
+        assert!(
+            (-1e-3..ZOMBIE_KNOCKBACK_RESISTANCE_BONUS + 1e-3).contains(&bonus),
+            "{:?}: resisted {resisted:.4} with {armour} of armour",
+            row.name
+        );
+        compared += 1;
+    }
+    assert_eq!(compared, 6);
+    // unastar: a husk's resistance with four pieces on.
+    let mut server = crate::GameServer::with_config(crate::ServerConfig {
+        world: crate::world::WorldConfig::void_spawn_platform(1),
+        ..crate::ServerConfig::default()
+    });
+    let world = server.ecs.world_mut();
+    let husk = crate::entity::mob::spawn_mob(
+        world,
+        "minecraft:husk",
+        DVec3::new(0.5, 64.0, 0.5),
+        0.0,
+        crate::entity::mob::SpawnCause::Spawned,
+    )
+    .expect("a husk");
+    let own = crate::entity::mob::attributes::worn_knockback_resistance(world, husk).value();
+    let mut equipment = world.get::<MobEquipment>(husk).cloned().unwrap_or_default();
+    for (slot, item) in GearSlot::ARMOUR.into_iter().zip(PIECES) {
+        equipment.set(slot, stack(item, 1), false);
+    }
+    world.entity_mut(husk).insert(equipment);
+    let worn = crate::entity::mob::attributes::worn_knockback_resistance(world, husk).value();
+    let armour: f32 = PIECES.iter().map(|item| piece(item)).sum();
+    assert!(
+        (worn - own - armour).abs() < 1e-6,
+        "{own} + {armour} != {worn}"
+    );
+}
+
+/// How much of a pig standing on a block sees the TNT (BDS `tnt_raised.json`
+/// and `tnt_edge.json`): from each damage event, with the distance from the
+/// TNT's middle, the number of its 27 exposure points that see the blast
+/// centre; unastar sees as many. Left out, as known gaps: a pig on a bottom
+/// slab (BDS sees points on the slab's top face that the exact segment
+/// test blocks), a pig on a block two blocks away (BDS sees fewer), and
+/// cells whose damage does not give a whole number of points (the TNT or
+/// the pig moved after the last read).
+#[test]
+fn targets_on_blocks_see_the_blast_like_bds() {
+    let bodies = bodies();
+    let (mut compared, mut failures) = (0, Vec::new());
+    for family in ["tnt_raised", "tnt_edge"] {
+        for row in table::<HitRow>(family) {
+            let (Some(Point(tnt)), Some(pig)) = (row.tnt, row.targets.first()) else {
+                continue;
+            };
+            let name = &row.name[0];
+            let feet = pig.feet.0;
+            let mut cell = Cell::new();
+            cell.set(IVec3::new(0, 0, -1), "redstone_block");
+            if family == "tnt_raised" {
+                match name[0].as_str().unwrap() {
+                    "bottom_slab" => continue,
+                    "stone" | "top_slab" if name[1] == 2 => continue,
+                    "stone" => cell.set(feet.floor().as_ivec3() - IVec3::Y, "stone"),
+                    "top_slab" => cell.set(feet.floor().as_ivec3() - IVec3::Y, "stone"),
+                    _ => {}
+                }
+            } else if name[0] == "x" {
+                for x in 3..7 {
+                    cell.set(IVec3::new(x, 0, 0), "stone");
+                }
+            } else {
+                for x in 3..7 {
+                    for z in 0..3 {
+                        cell.set(IVec3::new(x, 0, z), "stone");
+                    }
+                }
+            }
+            let event = row.damage_events.iter().find(|e| e.kind == "pig").unwrap();
+            let target = target(&bodies, "pig", feet);
+            let bds_impact = (-1.0 + (1.0 + 4.0 * (event.damage - 1.0) / 28.0).sqrt()) / 2.0;
+            let reach = 1.0 - target.distance(tnt_middle(tnt)) / (2.0 * f64::from(TNT_POWER));
+            let bds_points = 27.0 * bds_impact / reach;
+            if (bds_points - bds_points.round()).abs() > 0.1 {
+                continue;
+            }
+            let ours = 27.0 * exposure(&cell, blast_centre(tnt, TNT_HEIGHT), &target.aabb);
+            compared += 1;
+            if (ours - bds_points).abs() > 0.1 {
+                failures.push(format!(
+                    "{family} {name}: BDS {bds_points:.2}, unastar {ours:.2}"
+                ));
+            }
+        }
+    }
+    assert!(compared >= 60, "compared {compared}");
+    assert!(
+        failures.len() <= 3,
+        "{} of {compared}:
+{}",
+        failures.len(),
+        failures.join(
+            "
+"
+        )
+    );
 }
