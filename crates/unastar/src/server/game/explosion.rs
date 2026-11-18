@@ -371,19 +371,44 @@ impl Blast {
 
 /// A target of the actor pass: where it stands, its box and the point the
 /// push aims at (a player's eyes, [`PUSH_HEIGHT_RATIO`] of a mob's height).
-struct Target {
-    entity: Entity,
-    feet: DVec3,
-    eyes: DVec3,
+pub(crate) struct Target {
+    pub(crate) entity: Entity,
+    pub(crate) feet: DVec3,
+    pub(crate) eyes: DVec3,
     width: f64,
-    aabb: Aabb,
+    pub(crate) aabb: Aabb,
     player: bool,
 }
 
 impl Target {
+    /// The player `entity` with its eyes at `eyes` (its `Position`).
+    pub(crate) fn player(entity: Entity, eyes: DVec3) -> Self {
+        let feet = eyes - DVec3::Y * PLAYER_EYE_HEIGHT;
+        Self {
+            entity,
+            feet,
+            eyes,
+            width: PLAYER_BOX_WIDTH,
+            aabb: Aabb::from_feet(feet, PLAYER_BOX_WIDTH, PLAYER_BOX_HEIGHT),
+            player: true,
+        }
+    }
+
+    /// The mob `entity` standing at `feet` with `body`.
+    pub(crate) fn mob(entity: Entity, feet: DVec3, body: &PhysicsBody) -> Self {
+        Self {
+            entity,
+            feet,
+            eyes: feet + DVec3::Y * body.height * PUSH_HEIGHT_RATIO,
+            width: body.width,
+            aabb: Aabb::from_feet(feet, body.width, body.height),
+            player: false,
+        }
+    }
+
     /// Its distance for the impact: a player's plain distance to its feet
     /// (BDS 1.26.51 `tnt_player.json`), a mob's less half its width.
-    fn distance(&self, centre: DVec3) -> f64 {
+    pub(crate) fn distance(&self, centre: DVec3) -> f64 {
         if self.player {
             centre.distance(self.feet)
         } else {
@@ -402,27 +427,12 @@ fn targets(world: &mut World, centre: DVec3, reach: f64) -> Vec<Target> {
         if mode.is_some_and(|mode| !mode.allows_damage()) {
             continue;
         }
-        let feet = position.0 - DVec3::Y * PLAYER_EYE_HEIGHT;
-        out.push(Target {
-            entity,
-            feet,
-            eyes: position.0,
-            width: PLAYER_BOX_WIDTH,
-            aabb: Aabb::from_feet(feet, PLAYER_BOX_WIDTH, PLAYER_BOX_HEIGHT),
-            player: true,
-        });
+        out.push(Target::player(entity, position.0));
     }
     let mut mobs =
         world.query_filtered::<(Entity, &Position, &PhysicsBody), (With<MobKind>, Without<Dead>)>();
     for (entity, position, body) in mobs.iter(world) {
-        out.push(Target {
-            entity,
-            feet: position.0,
-            eyes: position.0 + DVec3::Y * body.height * PUSH_HEIGHT_RATIO,
-            width: body.width,
-            aabb: Aabb::from_feet(position.0, body.width, body.height),
-            player: false,
-        });
+        out.push(Target::mob(entity, position.0, body));
     }
     out.retain(|target| {
         target.feet.is_finite() && target.feet.distance(centre) <= reach + target.width

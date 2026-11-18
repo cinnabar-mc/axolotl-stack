@@ -11,16 +11,14 @@ use rand::rngs::StdRng;
 use serde::Deserialize;
 
 use super::super::{
-    Blast, ExplosionBlocks, GatheredDrops, blast_centre, blasted_blocks, damage, distance,
-    exposure, impact, push,
+    Blast, ExplosionBlocks, GatheredDrops, blast_centre, blasted_blocks, damage, exposure, impact,
+    push,
 };
 use super::{BLAST_FEET, Cell, TNT_HEIGHT, TNT_POWER, frequencies, registry};
 use crate::entity::PLAYER_EYE_HEIGHT;
 use crate::entity::mob::combat::knockback_velocity;
 use crate::entity::mob::components::KnockbackPower;
-use crate::entity::mob::constants::{PLAYER_BOX_HEIGHT, PLAYER_BOX_WIDTH};
 use crate::item::test_support::stack;
-use crate::registry::collision::Aabb;
 
 #[derive(Debug, Deserialize)]
 struct Table<R> {
@@ -326,37 +324,54 @@ fn hit_cell(feet: DVec3) -> Cell {
     cell
 }
 
-/// Box size of the measured kinds.
-fn size(kind: &str) -> (f64, f64) {
-    match kind {
-        "pig" => (0.9, 0.9),
-        "husk" => (0.6, 1.9),
-        "iron_golem" => (1.4, 2.9),
-        "player" => (PLAYER_BOX_WIDTH, PLAYER_BOX_HEIGHT),
-        other => panic!("{other}"),
-    }
+/// The boxes of the measured mobs: their vanilla definitions'
+/// `minecraft:collision_box` (the iron golem cannot be spawned yet).
+pub(super) fn bodies()
+-> std::collections::HashMap<&'static str, crate::entity::components::PhysicsBody> {
+    let definitions = crate::registry::entity::ActorDefinitionRegistry::vanilla();
+    ["pig", "husk", "iron_golem"]
+        .into_iter()
+        .map(|kind| {
+            let definition = definitions
+                .get(&format!("minecraft:{kind}"))
+                .unwrap_or_else(|| panic!("{kind}"));
+            let collision = definition
+                .components
+                .get("minecraft:collision_box")
+                .unwrap_or_else(|| panic!("{kind}: no collision box"));
+            let size = |key: &str| {
+                collision
+                    .get(key)
+                    .and_then(serde_json::Value::as_f64)
+                    .unwrap()
+            };
+            (
+                kind,
+                crate::entity::components::PhysicsBody::living(size("width"), size("height")),
+            )
+        })
+        .collect()
 }
 
-/// Impact and damage unastar gives `kind` standing at `feet`.
-fn predicted(cell: &Cell, centre: DVec3, kind: &str, feet: DVec3) -> (f64, f64) {
-    let (width, height) = size(kind);
-    let aabb = Aabb::from_feet(feet, width, height);
-    let seen = exposure(cell, centre, &aabb);
-    let reach = if kind == "player" {
-        centre.distance(feet)
-    } else {
-        distance(centre, feet, width)
-    };
-    let impact = impact(reach, TNT_POWER, seen);
-    (impact, f64::from(damage(impact, TNT_POWER)))
-}
-
-fn eyes(kind: &str, feet: DVec3) -> DVec3 {
+/// unastar's explosion target for `kind` standing at `feet`.
+pub(super) fn target(
+    bodies: &std::collections::HashMap<&'static str, crate::entity::components::PhysicsBody>,
+    kind: &str,
+    feet: DVec3,
+) -> super::super::Target {
+    let nobody = bevy_ecs::entity::Entity::PLACEHOLDER;
     if kind == "player" {
-        feet + DVec3::Y * PLAYER_EYE_HEIGHT
+        super::super::Target::player(nobody, feet + DVec3::Y * PLAYER_EYE_HEIGHT)
     } else {
-        feet + DVec3::Y * size(kind).1 * super::super::PUSH_HEIGHT_RATIO
+        super::super::Target::mob(nobody, feet, &bodies[kind])
     }
+}
+
+/// Impact and damage unastar gives `target`.
+fn predicted(cell: &Cell, centre: DVec3, target: &super::super::Target) -> (f64, f64) {
+    let seen = exposure(cell, centre, &target.aabb);
+    let impact = impact(target.distance(centre), TNT_POWER, seen);
+    (impact, f64::from(damage(impact, TNT_POWER)))
 }
 
 /// The hurt knockback of a still target away from `from`.
@@ -375,6 +390,7 @@ fn hurt_knockback(feet: DVec3, from: DVec3) -> DVec3 {
 /// modelled), as are pigs raised on a block (exposure gap).
 #[test]
 fn explosions_hurt_and_push_like_bds() {
+    let bodies = bodies();
     let mut compared = (0, 0);
     let mut failures = Vec::new();
     for family in ["tnt_knock", "tnt_player"] {
@@ -398,7 +414,8 @@ fn explosions_hurt_and_push_like_bds() {
                     continue;
                 }
                 let cell = hit_cell(feet);
-                let (impact, dealt) = predicted(&cell, centre, &kind, feet);
+                let ours = target(&bodies, &kind, feet);
+                let (impact, dealt) = predicted(&cell, centre, &ours);
                 let event = row.damage_events.iter().find(|e| e.kind == kind);
                 if let Some(event) = event.filter(|_| !armoured) {
                     compared.0 += 1;
@@ -413,7 +430,7 @@ fn explosions_hurt_and_push_like_bds() {
                     continue;
                 }
                 let resistance = if kind == "iron_golem" { 1.0 } else { 0.0 };
-                let shove = push(centre, eyes(&kind, feet), impact, resistance);
+                let shove = push(centre, ours.eyes, impact, resistance);
                 let knock = if resistance >= 1.0 {
                     DVec3::ZERO
                 } else {
@@ -452,6 +469,7 @@ fn explosions_hurt_and_push_like_bds() {
 /// its push still moves the pig floating above it (BDS `tnt_water.json`).
 #[test]
 fn tnt_in_water_breaks_nothing_and_deals_no_damage_like_bds() {
+    let bodies = bodies();
     let rows: Vec<HitRow> = table("tnt_water");
     assert_eq!(rows.len(), 4);
     for row in rows {
@@ -465,9 +483,10 @@ fn tnt_in_water_breaks_nothing_and_deals_no_damage_like_bds() {
         let tnt = row.tnt.unwrap().0;
         let feet = pig.feet.0;
         let centre = blast_centre(tnt, TNT_HEIGHT);
-        let (impact, _) = predicted(&Cell::new(), centre, "pig", feet);
-        let ours = hurt_knockback(feet, tnt) + push(centre, eyes("pig", feet), impact, 0.0);
         let theirs = pig.moved.unwrap().0;
+        let pig = target(&bodies, "pig", feet);
+        let (impact, _) = predicted(&Cell::new(), centre, &pig);
+        let ours = hurt_knockback(feet, tnt) + push(centre, pig.eyes, impact, 0.0);
         // The pig floats: its first move also carries the water's lift.
         assert!(
             (ours.x - theirs.x).abs() < 0.05 && (ours.z - theirs.z).abs() < 0.05,
