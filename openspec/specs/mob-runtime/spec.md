@@ -101,3 +101,63 @@ When none lands, the hit goes through.
 - **THEN** the arrow hits it
 
 Evidence: crates/unastar/src/entity/projectile/flight.rs, crates/unastar/src/entity/mob/life/teleport.rs (`dodge_projectile`), crates/unastar/src/entity/mob/tests/enderman.rs (test `arrows_make_the_enderman_teleport_as_on_bds`)
+
+### Requirement: A hopping mob moves only through its hop control
+A mob with `minecraft:movement.jump` SHALL never follow a path: its goals only set the yaw it
+wants and whether it moves, and the hop control turns it, counts its hop delay down on the
+ground and jumps. Goals that path (strolling, panicking) MUST NOT move such a mob.
+
+#### Scenario: A calm slime
+- **WHEN** a slime with no target stands on the ground
+- **THEN** it waits a delay drawn from its `jump_delay`, cut to whole ticks, then hops along its body yaw
+
+Evidence: crates/unastar/src/entity/mob/ai/hop.rs, crates/unastar/src/entity/mob/tests/slime.rs (test `hop_delays_and_random_turns_match_bds_by_distribution`)
+
+### Requirement: A swimming mob moves through its swim path
+A mob whose navigation can swim SHALL, while in water, path over water cells (and land cells
+when it can walk) and push along the line to its waypoint, pitch included, by its underwater
+movement attribute, with no gravity while it swims. Out of water, or with a navigation that
+cannot swim, it MUST use its land path.
+
+#### Scenario: A drowned hunting a player above it
+- **WHEN** a hunting drowned on a pool floor targets a player standing at the surface
+- **THEN** it rises along the straight line to the player's feet at its underwater speed, with no gravity
+
+Evidence: crates/unastar/src/entity/navigation/swim.rs, crates/unastar/src/entity/mob/tests/drowned.rs (test `a_hunting_drowned_swims_straight_at_a_target_above_it`)
+
+### Requirement: A stomp reach is judged after the mob moved
+A melee goal with the stomp reach SHALL judge its hit, its rear-up and its cooldown restart
+once a tick, after the physics step, from the mob's feet after that tick's move and its
+target's feet at that point (a player's are its last reported position). A box-reach melee
+goal MUST keep deciding inside the AI tick.
+
+#### Scenario: A hostile polar bear next to its target
+- **WHEN** a hostile polar bear's target stands within its stomp reach
+- **THEN** the bear raises `STANDING` before its cooldown runs out, then hits and lowers it, once per cooldown
+
+Evidence: crates/unastar/src/entity/mob/ai/melee.rs (`StompClock`, `tick_stomp_attacks`), crates/unastar/src/entity/mob/tests/polar_bear.rs (test `a_hostile_polar_bear_rears_up_then_stomps_its_target`)
+
+### Requirement: A float-navigating mob moves only through its float control
+A mob with `minecraft:navigation.float` SHALL never follow a path. Its goals only set the
+point it flies at, and its float control adds its movement speed times the unit vector from
+its feet to that point to its velocity. Its body MUST have no gravity, whatever its
+`minecraft:physics` authors.
+
+#### Scenario: A wandering bat
+- **WHEN** a bat's wander point lies beyond a wall
+- **THEN** it pushes straight at the point every tick of the wander and bumps into the wall, and it never falls
+
+Evidence: crates/unastar/src/entity/mob/ai/fly.rs, crates/unastar/src/entity/mob/tests/bat.rs (test `a_flying_bat_pushes_at_its_point_like_bds`)
+
+### Requirement: The vex flies through one held course
+A vex SHALL never follow a path. Its move control MUST hold one point until its feet come
+closer to it than its box size, and on that tick keep half its velocity and drop the point.
+On every other tick it MUST add `0.05 × speed × movement` times the unit vector from its feet
+to the point. The control steers before the goals think, so a course a goal sets is first
+flown on the next tick.
+
+#### Scenario: A charging vex
+- **WHEN** a vex's charge starts on a survival player
+- **THEN** it pushes at the player from the next tick on and hits on the tick of the move that makes their boxes touch
+
+Evidence: crates/unastar/src/entity/mob/ai/vex.rs, crates/unastar/src/entity/mob/tests/vex.rs (tests `a_wandering_vex_flies_its_course_like_bds`, `a_vex_charges_and_hits_a_survival_player`)

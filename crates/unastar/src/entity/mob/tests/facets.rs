@@ -36,7 +36,7 @@ use crate::world::rules::Difficulty;
 
 /// Top of the floor: feet of a mob standing on it.
 pub(super) const SURFACE: f64 = 64.0;
-const MIDNIGHT: u64 = 18_000;
+const MIDNIGHT: i64 = 18_000;
 
 /// The mobs these tests cover, in the order the lists below use.
 const HUSK: &str = "minecraft:husk";
@@ -55,6 +55,8 @@ const SILVERFISH: &str = "minecraft:silverfish";
 const SPIDER: &str = "minecraft:spider";
 const ENDERMAN: &str = "minecraft:enderman";
 const CAVE_SPIDER: &str = "minecraft:cave_spider";
+const SLIME: &str = "minecraft:slime";
+const MAGMA_CUBE: &str = "minecraft:magma_cube";
 
 pub(super) fn block(name: &str) -> u32 {
     BlockRegistry::vanilla()
@@ -75,6 +77,17 @@ pub(super) fn arena(
     seed: u64,
     difficulty: Difficulty,
     mode: GameMode,
+    build: impl Fn(IVec3) -> Option<u32>,
+) -> Arena {
+    arena_of(seed, difficulty, mode, 1, build)
+}
+
+/// [`arena`] over chunks `-chunks..=chunks` on x and z.
+pub(super) fn arena_of(
+    seed: u64,
+    difficulty: Difficulty,
+    mode: GameMode,
+    chunks: i32,
     build: impl Fn(IVec3) -> Option<u32>,
 ) -> Arena {
     let mut server = GameServer::with_config(ServerConfig {
@@ -105,8 +118,8 @@ pub(super) fn arena(
         ))
         .id();
     let grass = block("minecraft:grass_block");
-    for cx in -1..=1 {
-        for cz in -1..=1 {
+    for cx in -chunks..=chunks {
+        for cz in -chunks..=chunks {
             let mut column = Chunk::new(cx, cz);
             for lx in 0u8..16 {
                 for lz in 0u8..16 {
@@ -450,8 +463,10 @@ fn listed_mobs_float_up_in_water() {
                 _ => None,
             },
         );
+        // Rising at most 0.1 a tick (`v = 0.8 v − 0.02` plus the 0.04
+        // impulse, as BDS's floating slime rises).
         let mob = a.adult(identifier, DVec3::new(0.5, 56.0, 0.5));
-        a.ticks(80);
+        a.ticks(120);
         let feet = a.feet(mob);
         assert!(feet.y > 61.5, "{identifier} still sunk at {feet}");
     }
@@ -555,6 +570,8 @@ fn listed_mobs_despawn_far_from_players_and_stay_near_them() {
         SPIDER,
         CAVE_SPIDER,
         ENDERMAN,
+        SLIME,
+        MAGMA_CUBE,
     ] {
         let mut a = floor(15, Difficulty::Normal, GameMode::Creative);
         let near = a.adult(identifier, DVec3::new(0.5, SURFACE, 0.5));
@@ -572,7 +589,7 @@ fn listed_mobs_despawn_far_from_players_and_stay_near_them() {
 /// definition gives it, and not for a family it lacks.
 #[test]
 fn listed_mobs_belong_to_their_authored_families() {
-    let cases: [(&str, &[&str], &str); 14] = [
+    let cases: [(&str, &[&str], &str); 16] = [
         (SKELETON, &["skeleton", "undead", "monster", "mob"], "stray"),
         (
             STRAY,
@@ -631,6 +648,8 @@ fn listed_mobs_belong_to_their_authored_families() {
             &["cavespider", "monster", "arthropod", "mob"],
             "spider",
         ),
+        (SLIME, &["slime", "monster", "mob"], "magmacube"),
+        (MAGMA_CUBE, &["magmacube", "monster", "mob"], "slime"),
     ];
     let mut a = floor(17, Difficulty::Normal, GameMode::Creative);
     for (identifier, families, absent) in cases {
@@ -888,6 +907,8 @@ fn listed_hostile_mobs_ignore_creative_players() {
         SILVERFISH,
         SPIDER,
         CAVE_SPIDER,
+        SLIME,
+        MAGMA_CUBE,
     ] {
         let mut a = floor(25, Difficulty::Hard, GameMode::Creative);
         a.move_player(DVec3::new(4.5, SURFACE, 0.5));
@@ -1274,7 +1295,7 @@ fn a_zoglin_is_hit_on_its_hit_box_beyond_its_collision_box() {
 /// A zombie villager in the open at noon, a one-layer oak-leaf canopy over
 /// x 4..=8, z -2..=2 (sky light 14 under it), with its idle goals removed;
 /// `from_village` gives it `behavior.flee_sun` when `flee`.
-fn sunlit_zombie_villager(seed: u64, flee: bool, time: u64) -> (Arena, Entity) {
+fn sunlit_zombie_villager(seed: u64, flee: bool, time: i64) -> (Arena, Entity) {
     let leaves = block("minecraft:oak_leaves");
     let mut a = arena(seed, Difficulty::Normal, GameMode::Creative, move |pos| {
         ((4..=8).contains(&pos.x) && (-2..=2).contains(&pos.z) && pos.y == 66).then_some(leaves)
@@ -1309,7 +1330,7 @@ fn under_canopy(feet: DVec3) -> bool {
 #[test]
 fn a_burning_zombie_villager_flees_the_sun_under_cover() {
     use crate::entity::mob::combat::fire::is_burning;
-    const NOON: u64 = 6_000;
+    const NOON: i64 = 6_000;
     for (flee, time, takes_cover) in [
         (true, NOON, true),
         (false, NOON, false),

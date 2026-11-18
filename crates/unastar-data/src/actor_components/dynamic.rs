@@ -17,6 +17,22 @@ use super::generated::body::{
 use super::provisional as p;
 use super::{ActorComponent, ComponentBody, FilterJson, decode};
 
+/// `minecraft:underwater_movement`: the movement speed in water (the
+/// `minecraft:underwater_movement` attribute).
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct UnderwaterMovement {
+    pub value: f32,
+}
+
+/// `minecraft:water_movement`: the drag a mob's motion keeps in water.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct WaterMovement {
+    #[serde(default = "drag_factor")]
+    pub drag_factor: f32,
+}
+
 /// An event reference: a bare event name or a trigger object.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(untagged)]
@@ -56,6 +72,20 @@ macro_rules! defaults {
 }
 
 defaults! {
+    explode_allow_underwater -> bool = p::EXPLODE_ALLOW_UNDERWATER;
+    explode_breaks_blocks -> bool = p::EXPLODE_BREAKS_BLOCKS;
+    explode_causes_fire -> bool = p::EXPLODE_CAUSES_FIRE;
+    explode_damage_scaling -> f32 = p::EXPLODE_DAMAGE_SCALING;
+    explode_destroy_affected_by_griefing -> bool = p::EXPLODE_DESTROY_AFFECTED_BY_GRIEFING;
+    explode_fire_affected_by_griefing -> bool = p::EXPLODE_FIRE_AFFECTED_BY_GRIEFING;
+    explode_fuse_lit -> bool = p::EXPLODE_FUSE_LIT;
+    explode_knockback_scaling -> f32 = p::EXPLODE_KNOCKBACK_SCALING;
+    explode_max_resistance -> f32 = p::EXPLODE_MAX_RESISTANCE;
+    explode_negates_fall_damage -> bool = p::EXPLODE_NEGATES_FALL_DAMAGE;
+    explode_particle_effect -> String = p::EXPLODE_PARTICLE_EFFECT.to_owned();
+    explode_power -> f32 = p::EXPLODE_POWER;
+    explode_sound_effect -> String = p::EXPLODE_SOUND_EFFECT.to_owned();
+    explode_toggles_blocks -> bool = p::EXPLODE_TOGGLES_BLOCKS;
     ageable_duration -> f32 = p::AGEABLE_DURATION;
     ambient_event_name -> String = p::AMBIENT_SOUND_INTERVAL_EVENT_NAME.to_owned();
     ambient_range -> f32 = p::AMBIENT_SOUND_INTERVAL_RANGE;
@@ -136,6 +166,9 @@ defaults! {
     preset_spring_type -> LeashSpringType = p::LEASH_PRESET_SPRING_TYPE;
     can_retrieve_from -> bool = p::LEASHABLE_TO_CAN_RETRIEVE_FROM;
     max_turn -> f32 = p::MOVEMENT_BASIC_MAX_TURN;
+    sway_amplitude -> f32 = p::MOVEMENT_SWAY_AMPLITUDE;
+    sway_frequency -> f32 = p::MOVEMENT_SWAY_FREQUENCY;
+    drag_factor -> f32 = p::WATER_MOVEMENT_DRAG_FACTOR;
     allow_name_tag_renaming -> bool = p::NAMEABLE_ALLOW_NAME_TAG_RENAMING;
     always_show -> bool = p::NAMEABLE_ALWAYS_SHOW;
     avoid_damage_blocks -> bool = p::NAVIGATION_AVOID_DAMAGE_BLOCKS;
@@ -628,6 +661,53 @@ pub enum DealsDamageMode {
     NoButEntityEffectsApply,
 }
 
+/// `minecraft:explode`: a fuse that ends in an explosion.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Explode {
+    /// The explosion also affects blocks and actors under water.
+    #[serde(default = "explode_allow_underwater")]
+    pub allow_underwater: bool,
+    #[serde(default = "explode_breaks_blocks")]
+    pub breaks_blocks: bool,
+    #[serde(default = "explode_causes_fire")]
+    pub causes_fire: bool,
+    /// Factor on the damage actors take.
+    #[serde(default = "explode_damage_scaling")]
+    pub damage_scaling: f32,
+    /// `breaks_blocks` only applies while the `mobGriefing` game rule is on.
+    #[serde(default = "explode_destroy_affected_by_griefing")]
+    pub destroy_affected_by_griefing: bool,
+    /// `causes_fire` only applies while the `mobGriefing` game rule is on.
+    #[serde(default = "explode_fire_affected_by_griefing")]
+    pub fire_affected_by_griefing: bool,
+    /// Seconds the fuse burns (fixed or random); absent explodes at once.
+    pub fuse_length: Option<ValueOrRange<f32>>,
+    /// The fuse is lit as soon as the component is added.
+    #[serde(default = "explode_fuse_lit")]
+    pub fuse_lit: bool,
+    /// Factor on the knockback actors take.
+    #[serde(default = "explode_knockback_scaling")]
+    pub knockback_scaling: f32,
+    /// Cap on a block's explosion resistance.
+    #[serde(default = "explode_max_resistance")]
+    pub max_resistance: f32,
+    #[serde(default = "explode_negates_fall_damage")]
+    pub negates_fall_damage: bool,
+    /// `explosion`, `wind_burst` or `breeze_wind_burst`.
+    #[serde(default = "explode_particle_effect")]
+    pub particle_effect: String,
+    #[serde(default = "explode_power")]
+    pub power: f32,
+    /// The level sound played when the explosion happens.
+    #[serde(default = "explode_sound_effect")]
+    pub sound_effect: String,
+    /// The explosion toggles blocks (doors, trapdoors) instead of breaking
+    /// them.
+    #[serde(default = "explode_toggles_blocks")]
+    pub toggles_blocks: bool,
+}
+
 /// `minecraft:despawn`.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -781,6 +861,30 @@ pub struct MovementBasic {
     pub max_turn: f32,
 }
 
+/// `minecraft:movement.generic`: the move control of a mob that walks,
+/// swims and flies (the drowned).
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct MovementGeneric {
+    /// Maximum turn per tick, in degrees.
+    #[serde(default = "max_turn")]
+    pub max_turn: f32,
+}
+
+/// `minecraft:movement.sway`: the move control of a mob that sways from
+/// side to side as it swims (the fish and the tadpole).
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct MovementSway {
+    /// Maximum turn per tick, in degrees.
+    #[serde(default = "max_turn")]
+    pub max_turn: f32,
+    #[serde(default = "sway_amplitude")]
+    pub sway_amplitude: f32,
+    #[serde(default = "sway_frequency")]
+    pub sway_frequency: f32,
+}
+
 /// `minecraft:nameable`.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -857,6 +961,19 @@ pub struct NavigationWalk {
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(transparent)]
 pub struct NavigationClimb(pub NavigationWalk);
+
+/// `minecraft:navigation.generic`: the path permissions of
+/// `minecraft:navigation.walk`, read by a navigation that can also swim.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(transparent)]
+pub struct NavigationGeneric(pub NavigationWalk);
+
+/// `minecraft:navigation.float`: the path permissions of
+/// `minecraft:navigation.walk`, read by a navigation through the air (the
+/// bat).
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(transparent)]
+pub struct NavigationFloat(pub NavigationWalk);
 
 /// `minecraft:offspring` (1.26): the offspring half of the old breedable
 /// fields.
@@ -1701,6 +1818,52 @@ defaults! {
     auto_step_jump_prevented -> f32 = p::VARIABLE_MAX_AUTO_STEP_JUMP_PREVENTED;
 }
 
+/// `minecraft:movement.jump`: the hopping move control (slimes, magma
+/// cubes): the mob moves only while it hops and waits `jump_delay` seconds
+/// on the ground before each hop.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct MovementJump {
+    /// Seconds to wait on the ground before the next hop, drawn per hop.
+    pub jump_delay: FloatRange,
+    /// Degrees the body turns per tick at most.
+    #[serde(default = "movement_jump_max_turn")]
+    pub max_turn: f32,
+}
+
+/// `minecraft:area_attack`: damage dealt to every matching actor near the
+/// mob's box.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AreaAttack {
+    pub cause: Option<ActorDamageCause>,
+    /// Seconds before the mob can hurt again.
+    #[serde(default = "area_attack_damage_cooldown")]
+    pub damage_cooldown: f32,
+    #[serde(default = "area_attack_damage_per_tick")]
+    pub damage_per_tick: f32,
+    /// How close (blocks) an actor must be.
+    #[serde(default = "area_attack_damage_range")]
+    pub damage_range: f32,
+    pub entity_filter: Option<FilterJson>,
+    /// The death message a kill shows instead of the cause's (the sulfur
+    /// cube).
+    pub death_message_override: Option<String>,
+    /// Whether the mob is the damage source (the sulfur cube authors
+    /// `false`); absent means the published default.
+    pub use_self_as_damage_source: Option<bool>,
+    #[serde(default = "area_attack_play_attack_sound")]
+    pub play_attack_sound: bool,
+}
+
+defaults! {
+    movement_jump_max_turn -> f32 = p::MOVEMENT_JUMP_MAX_TURN;
+    area_attack_damage_per_tick -> f32 = p::AREA_ATTACK_DAMAGE_PER_TICK;
+    area_attack_damage_range -> f32 = p::AREA_ATTACK_DAMAGE_RANGE;
+    area_attack_damage_cooldown -> f32 = p::AREA_ATTACK_DAMAGE_COOLDOWN;
+    area_attack_play_attack_sound -> bool = p::AREA_ATTACK_PLAY_ATTACK_SOUND;
+}
+
 macro_rules! dynamic_bodies {
     ($($name:ident),* $(,)?) => {
         $(impl ComponentBody for $name {
@@ -1728,6 +1891,7 @@ dynamic_bodies!(
     Angry,
     AnnotationBreakDoor,
     AmbientSoundInterval,
+    AreaAttack,
     Attack,
     Balloonable,
     BehaviorPanic,
@@ -1744,6 +1908,7 @@ dynamic_bodies!(
     EnvironmentSensor,
     EquipItem,
     Equipment,
+    Explode,
     FollowRange,
     Health,
     HurtOnCondition,
@@ -1758,8 +1923,13 @@ dynamic_bodies!(
     MobEffectImmunity,
     Movement,
     MovementBasic,
+    MovementGeneric,
+    MovementJump,
+    MovementSway,
     Nameable,
     NavigationClimb,
+    NavigationFloat,
+    NavigationGeneric,
     NavigationWalk,
     Offspring,
     PushableByBlock,
@@ -1776,6 +1946,8 @@ dynamic_bodies!(
     Transformation,
     Timer,
     TypeFamily,
+    UnderwaterMovement,
     VariableMaxAutoStep,
     Variant,
+    WaterMovement,
 );

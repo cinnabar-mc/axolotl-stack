@@ -22,8 +22,8 @@ use crate::world::ecs::{ChunkManager, ChunkPosition, ChunkStateFlags};
 use crate::world::rules::{Difficulty, WorldTime};
 
 /// Noon and midnight on the world clock.
-const NOON: u64 = 6_000;
-const MIDNIGHT: u64 = 18_000;
+const NOON: i64 = 6_000;
+const MIDNIGHT: i64 = 18_000;
 
 /// The ground layer of the test terrain.
 const GROUND_Y: i16 = 63;
@@ -380,13 +380,13 @@ fn watch_zombies(
     herds
 }
 
-fn monster_server(terrain: &Terrain, time: u64, difficulty: Difficulty) -> TestServer {
+fn monster_server(terrain: &Terrain, time: i64, difficulty: Difficulty) -> TestServer {
     monster_server_seeded(terrain, time, difficulty, 7)
 }
 
 fn monster_server_seeded(
     terrain: &Terrain,
-    time: u64,
+    time: i64,
     difficulty: Difficulty,
     seed: u64,
 ) -> TestServer {

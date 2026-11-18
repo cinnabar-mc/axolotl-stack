@@ -2,8 +2,9 @@
 //! ([`breeding`]), egg laying ([`spawn_entity`]), environment sensors and
 //! timers ([`sensors`]), anger ([`anger`]), natural despawning
 //! ([`despawn`]), transformations ([`transformation`]), silverfish
-//! hiding in and leaving infested blocks ([`infested`]), the enderman's
-//! stare ([`looked_at`]) and teleports ([`teleport`]).
+//! hiding in and leaving infested blocks ([`infested`]), slimes splitting
+//! when they die ([`split`]), the enderman's stare ([`looked_at`]) and
+//! teleports ([`teleport`]).
 
 pub mod ageing;
 pub mod anger;
@@ -13,5 +14,6 @@ pub mod infested;
 pub mod looked_at;
 pub mod sensors;
 pub mod spawn_entity;
+pub mod split;
 pub mod teleport;
 pub mod transformation;

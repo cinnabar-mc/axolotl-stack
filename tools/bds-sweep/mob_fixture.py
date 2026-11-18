@@ -1,43 +1,74 @@
-"""Distil `sweep.py spider` / `sweep.py enderman` runs (`--client-capture`)
-into a committed mob fixture.
+"""Distil `sweep.py --client-capture` mob runs into a committed mob fixture.
 
-    python tools/bds-sweep/mob_fixture.py OUT.json [--skip PREFIX,...] LABEL=SWEEP_DIR [LABEL=SWEEP_DIR ...]
+Two kinds of run, two fixture shapes:
 
+    python tools/bds-sweep/mob_fixture.py tracked [--only KIND,...] [--events-only KIND,...] OUT.json SWEEP_DIR [SWEEP_DIR ...]
+    python tools/bds-sweep/mob_fixture.py events OUT.json [--skip PREFIX,...] LABEL=SWEEP_DIR [LABEL=SWEEP_DIR ...]
+
+Both decode each run's `client/packets.jsonl` with `bds-extractor --decode`
+(cargo build -p bds-extractor first; `BDS_EXTRACTOR` overrides the binary)
+and put every packet on the tick of the `bds-sweep:mark` before it. Only
+observed values are kept: no packet bytes, no login data.
+
+`tracked`: the generic per-tick job with `track` (`bat`, `ghast`,
+`polar-bear`, `tadpole`, `vex`, `goat`), e.g.
+`crates/unastar/src/entity/mob/ai/testdata/bds-1.26.51-polar_bear.json`. An
+item of a later sweep replaces one of the same name; `--only` keeps the
+items whose name (without the trailing `-<n>`) is listed; `--events-only`
+keeps the items of those kinds without their actors' per-tick rows (a long
+run that only its damage, flags, events and sounds are wanted from). Per
+item it keeps the item's spec (where the player stood, the setup commands
+and the actions) and:
+
+- the player's feet every tick it moved (`t`, x, y, z);
+- per tracked actor, in order of first appearance: its type, the first tick
+  it was sampled and every tick (`t`, feet, body yaw, pitch, velocity,
+  ground contact, health);
+- every damage event (tick, actor type, amount, cause);
+- per tracked actor, its actor flags at `AddActor` (the high word signed,
+  as sent) and every flag that changed afterwards, every `ActorEvent` and
+  every `LevelSoundEvent` it made.
+
+`events`: the one-mob jobs (`spider`, `enderman`), e.g.
+`crates/unastar/src/entity/mob/ai/testdata/bds-1.26.51-enderman.json`.
 `LABEL` names the run (its difficulty, say: `normal`); items are keyed
 `<label>/<item>` and a later run's item replaces one of the same key.
 `--skip` leaves out the items whose name starts with one of the prefixes.
-Decodes each run's `client/packets.jsonl` with `bds-extractor --decode`
-(cargo build -p bds-extractor first). Per item it keeps the spec (where the
-mob and the player stood, whether the mob was frozen, the setup commands and
-the timed actions), the mob's feet and ground contact on every tick it moved,
-the player's feet whenever they changed, and the observed events, each with
-its tick (`t`, the sample whose `bds-sweep:mark` precedes the packet): the
-mob's `TARGET` (whether it is the player), every change of its flag bits and
-of its other actor data, its sounds and actor events, its `RemoveActor`, the
-player's `MobEffect`s, the block updates, the items that appeared, the level
-events and the damage the job recorded; also the mob's `MobEquipment` (the
+Per item it keeps the spec (where the mob and the player stood, whether the
+mob was frozen, the setup commands and the timed actions), the mob's feet
+and ground contact on every tick it moved, the player's feet whenever they
+changed, and the observed events, each with its tick: the mob's `TARGET`
+(whether it is the player), every change of its flag bits and of its other
+actor data, its sounds and actor events, its `RemoveActor`, the player's
+`MobEffect`s, the block updates, the items that appeared, the level events
+and the damage the job recorded; also the mob's `MobEquipment` (the
 enderman's carried block), its forced moves (a `MoveActorDelta` with
 `force_move`: a teleport), the generic level events (the teleport trail; not
 the sleep counter, 9801) and the other actors added and removed (arrows).
 The player's timed `tp` actions are also kept as structured turns (feet,
-yaw, pitch). Only observed values are kept: no packet bytes, no login data.
+yaw, pitch).
 """
 
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
-EXTRACTOR = REPO / 'target' / 'debug' / ('bds-extractor.exe' if sys.platform == 'win32' else 'bds-extractor')
+EXTRACTOR = Path(os.environ.get('BDS_EXTRACTOR') or REPO / 'target' / 'debug' / (
+    'bds-extractor.exe' if sys.platform == 'win32' else 'bds-extractor'))
 PACKETS = ['TextPacket', 'SetActorDataPacket', 'AddActorPacket', 'LevelSoundEventPacket', 'LevelEventPacket',
            'RemoveActorPacket', 'MobEffectPacket', 'ActorEventPacket', 'UpdateBlockPacket', 'AddItemActorPacket',
            'MobEquipmentPacket', 'LevelEventGenericPacket', 'MoveActorDeltaPacket']
+# The two actor-flag words of the actor data.
+FLAG_WORDS = (0, 92)
 TARGET = 6
-# Actor data that changes on its own every tick or two and says nothing here:
-# the flag words (kept as bit changes), the air supply and the target.
+# Actor data that changes on its own every tick or two and says nothing in
+# an `events` fixture: the flag words (kept as bit changes), the air supply
+# and the target.
 SKIPPED_DATA = {0, 7, TARGET, 92}
 
 
@@ -49,7 +80,7 @@ def decoded(capture: Path) -> list[dict]:
 
 
 def marked(records: list[dict]) -> dict[str, list[tuple[int, dict]]]:
-    """Every record after the first chat mark, grouped by the mark's item."""
+    """Every record after a chat mark, grouped by the mark's item."""
     out: dict[str, list[tuple[int, dict]]] = {}
     key, t = None, None
     for record in records:
@@ -73,17 +104,156 @@ def data_items(entries: list[dict]) -> dict[int, object]:
     return out
 
 
+def flags_of(items: dict[int, object], previous: int | None) -> int | None:
+    """The 128 actor flags after `items`, a word missing from them taken
+    from `previous`; the high word keeps its sign, as sent."""
+    if not any(word in items for word in FLAG_WORDS):
+        return previous
+    low = items.get(0, (previous or 0) & 0xFFFFFFFFFFFFFFFF)
+    high = items.get(92, (previous or 0) >> 64)
+    return (int(high) << 64) | (int(low) & 0xFFFFFFFFFFFFFFFF)
+
+
 def flag_word(items: dict[int, object]) -> int | None:
-    if 0 not in items and 92 not in items:
-        return None
-    return (items.get(0, 0) & (2**64 - 1)) | ((items.get(92, 0) & (2**64 - 1)) << 64)
+    """The 128 actor flags `items` set, unsigned (a missing word is 0)."""
+    flags = flags_of(items, None)
+    return None if flags is None else flags & (2**128 - 1)
 
 
-def rounded(values, digits=4):
+def rounded(values, digits=4) -> list[float]:
     return [round(v, digits) for v in values]
 
 
-def distil(result: dict, rows: list[tuple[int, dict]], label: str) -> dict:
+# --- tracked ----------------------------------------------------------------
+
+
+def added_flags(records: list[dict]) -> dict[int, int | None]:
+    """The actor flags of every AddActor of a capture, by runtime id: an
+    item's AddActor can arrive before its first mark, after the previous
+    item's last one."""
+    return {record['packet']['target_runtime_id']['actor_runtime_id']:
+            flags_of(data_items(record['packet']['actor_data']['data']), None)
+            for record in records if record['name'] == 'AddActorPacket'}
+
+
+def actor_packets(rows: list[tuple[int, dict]], runtime_ids: set[int],
+                  adds: dict[int, int | None]) -> dict[int, dict]:
+    """Per tracked runtime id: flags at AddActor, flag changes, actor events
+    and sounds."""
+    out: dict[int, dict] = {rid: {'flags': adds.get(rid), 'flag_changes': [], 'events': [], 'sounds': []}
+                            for rid in runtime_ids}
+    unique: dict[int, int] = {}
+    for t, record in rows:
+        packet, name = record['packet'], record['name']
+        if name == 'AddActorPacket':
+            rid = packet['target_runtime_id']['actor_runtime_id']
+            if rid in out:
+                unique[packet['target_actor_id']['actor_unique_id']] = rid
+                out[rid]['flags'] = flags_of(data_items(packet['actor_data']['data']), None)
+                out[rid]['added'] = t
+        elif name == 'SetActorDataPacket':
+            rid = packet['target_runtime_id']['actor_runtime_id']
+            if rid not in out:
+                continue
+            entry = out[rid]
+            previous = entry.get('current', entry['flags'])
+            now = flags_of(data_items(packet['actor_data']['data']), previous)
+            if previous is not None and now is not None and now != previous:
+                changed = previous ^ now
+                for bit in range(128):
+                    if changed >> bit & 1:
+                        entry['flag_changes'].append({'t': t, 'flag': bit, 'set': bool(now >> bit & 1)})
+            entry['current'] = now
+        elif name == 'ActorEventPacket':
+            rid = packet['target_runtime_id']['actor_runtime_id']
+            if rid in out:
+                out[rid]['events'].append({'t': t, 'event': packet['event_id'], 'data': packet['data']})
+        elif name == 'LevelSoundEventPacket':
+            rid = unique.get(packet['actor_unique_id'])
+            if rid is not None:
+                out[rid]['sounds'].append({'t': t, 'sound': packet['sound_event']})
+    for entry in out.values():
+        entry.pop('current', None)
+        if entry['flags'] is not None:
+            entry['flags'] = str(entry['flags'])
+    return out
+
+
+def distil_tracked(result: dict, rows: list[tuple[int, dict]], adds: dict[int, int | None]) -> dict:
+    spec = result['spec']
+    actors: dict[int, dict] = {}
+    for sample in result['samples']:
+        for actor in sample.get('tracked', []):
+            entry = actors.setdefault(actor['id'], {'type': actor['type'], 'first': sample['t'], 'ticks': []})
+            entry['ticks'].append([sample['t'], *rounded(actor['pos']), round(actor['rot'][1], 3),
+                                   round(actor['rot'][0], 3), *rounded(actor['vel']), int(bool(actor['ground'])),
+                                   actor.get('health')])
+    packets = actor_packets(rows, set(actors), adds)
+    player, last = [], None
+    for sample in result['samples']:
+        feet = rounded(sample['player']['pos'])
+        if feet != last:
+            player.append([sample['t'], *feet])
+            last = feet
+    return {
+        'key': result['key'].split('|', 1)[1],
+        'player': rounded(spec['player']),
+        'setup': spec['setup'],
+        'actions': spec['actions'],
+        'ticks': spec['ticks'],
+        'player_ticks': player,
+        'damage': [{'t': d[0] - result['first_tick'], 'type': d[1], 'amount': d[2], 'cause': d[3]}
+                   for d in result['damage']],
+        'actors': [{**actors[rid], **packets[rid]} for rid in sorted(actors, key=lambda r: actors[r]['first'])],
+    }
+
+
+def run_tracked(args: list[str]) -> int:
+    only, events_only = None, set()
+    while args[:1] in (['--only'], ['--events-only']) and len(args) > 1:
+        kinds = set(args[1].split(','))
+        if args[0] == '--only':
+            only = kinds
+        else:
+            events_only = kinds
+        args = args[2:]
+    if len(args) < 2:
+        print(__doc__)
+        return 2
+    out = Path(args[0])
+    items: dict[str, dict] = {}
+    sources = []
+    for directory in map(Path, args[1:]):
+        records = decoded(directory / 'client' / 'packets.jsonl')
+        rows, adds = marked(records), added_flags(records)
+        job = json.loads((directory / 'job.json').read_text(encoding='utf-8'))
+        sources.append(job['items'][0]['key'].split('|', 1)[0])
+        for line in (directory / 'results.jsonl').read_text(encoding='utf-8').splitlines():
+            result = json.loads(line)
+            kind = result['key'].split('|', 1)[1].rsplit('-', 1)[0]
+            if only is not None and kind not in only and kind not in events_only:
+                continue
+            item = distil_tracked(result, rows.get(result['key'], []), adds)
+            if kind in events_only:
+                for actor in item['actors']:
+                    actor['ticks'] = []
+            items[result['key']] = item
+    kinds = ', '.join(sorted(set(sources)))
+    fixture = {
+        'source': f'BDS 1.26.51, sweep.py {kinds} --client-capture (tools/bds-sweep/mob_fixture.py)',
+        'columns': ['t', 'x', 'y', 'z', 'yaw', 'pitch', 'vx', 'vy', 'vz', 'ground', 'health'],
+        'items': sorted(items.values(), key=lambda item: item['key']),
+    }
+    out.write_text(json.dumps(fixture, separators=(',', ':')).replace('{"key"', '\n{"key"') + '\n',
+                   encoding='utf-8', newline='\n')
+    print(f'{len(items)} items -> {out}')
+    return 0
+
+
+# --- events -----------------------------------------------------------------
+
+
+def distil_events(result: dict, rows: list[tuple[int, dict]], label: str) -> dict:
     runtime_id = result['runtime_id']
     player_id = result['player_runtime_id']
     unique_id = None
@@ -201,12 +371,12 @@ def distil(result: dict, rows: list[tuple[int, dict]], label: str) -> dict:
     }
 
 
-def main() -> int:
-    if len(sys.argv) < 3:
+def run_events(args: list[str]) -> int:
+    if len(args) < 2:
         print(__doc__)
         return 2
-    out = Path(sys.argv[1])
-    args = sys.argv[2:]
+    out = Path(args[0])
+    args = args[1:]
     skip: tuple[str, ...] = ()
     if args[:1] == ['--skip']:
         skip, args = tuple(args[1].split(',')), args[2:]
@@ -219,7 +389,7 @@ def main() -> int:
             result = json.loads(line)
             if result['key'].split('|')[1].startswith(skip):
                 continue
-            item = distil(result, rows.get(result['key'], []), label)
+            item = distil_events(result, rows.get(result['key'], []), label)
             items[item['key']] = item
     fixture = {'source': 'BDS 1.26.51, tools/bds-sweep/sweep.py --client-capture, distilled by '
                          'tools/bds-sweep/mob_fixture.py',
@@ -229,6 +399,14 @@ def main() -> int:
     text = text.replace('{"key"', '\n{"key"').replace('{"t"', '\n{"t"').replace('],[', '],\n[')
     out.write_text(text + '\n', encoding='utf-8', newline='\n')
     return 0
+
+
+def main() -> int:
+    modes = {'tracked': run_tracked, 'events': run_events}
+    if len(sys.argv) < 2 or sys.argv[1] not in modes:
+        print(__doc__)
+        return 2
+    return modes[sys.argv[1]](sys.argv[2:])
 
 
 if __name__ == '__main__':

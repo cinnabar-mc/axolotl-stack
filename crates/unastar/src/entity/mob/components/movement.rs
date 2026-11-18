@@ -1,5 +1,6 @@
 //! Movement and navigation components: `minecraft:navigation.walk`,
-//! `minecraft:navigation.climb`, `minecraft:movement.basic`,
+//! `minecraft:navigation.climb` and `minecraft:navigation.generic`,
+//! `minecraft:movement.basic` and `minecraft:movement.generic`,
 //! `minecraft:jump.static` and `minecraft:variable_max_auto_step`.
 
 use bevy_ecs::prelude::*;
@@ -8,7 +9,9 @@ use unastar_data::actor_components::body;
 use super::common::insert_infallible;
 use crate::entity::definition::{ComponentKindsBuilder, DefinitionError};
 
-/// `minecraft:navigation.walk`: path permissions.
+/// `minecraft:navigation.walk` or `minecraft:navigation.generic`: path
+/// permissions. A navigation that can swim paths through water while the
+/// mob is in it (`navigation::swim`).
 ///
 /// The door fields shape path search the way BDS classifies door nodes (see
 /// `mob::ai::path`). `can_break_doors` is not kept: BDS parses it but no
@@ -32,6 +35,10 @@ pub struct WalkNavigationConfig {
     /// `minecraft:navigation.climb`: the mob climbs the walls it walks into
     /// (`mob::ai::climb`).
     pub climbs_walls: bool,
+    /// The mob swims toward its waypoints while in water.
+    pub can_swim: bool,
+    /// A swimming body may rise out of the water up to its lowest row.
+    pub can_breach: bool,
 }
 
 impl From<&body::NavigationWalk> for WalkNavigationConfig {
@@ -47,11 +54,14 @@ impl From<&body::NavigationWalk> for WalkNavigationConfig {
             can_open_doors: b.can_open_doors,
             can_open_iron_doors: b.can_open_iron_doors,
             climbs_walls: false,
+            can_swim: b.can_swim,
+            can_breach: b.can_breach,
         }
     }
 }
 
-/// `minecraft:movement.basic`: the move control's turn limit, degrees/tick.
+/// `minecraft:movement.basic` or `minecraft:movement.generic`: the move
+/// control's turn limit, degrees/tick.
 #[derive(Component, Debug, Clone, Copy, PartialEq)]
 pub struct BasicMovementConfig {
     pub max_turn: f32,
@@ -82,12 +92,18 @@ pub fn register_component_kinds(
         climbs_walls: true,
         ..WalkNavigationConfig::from(&b.0)
     })?;
+    insert_infallible(builder, |b: body::NavigationGeneric| {
+        WalkNavigationConfig::from(&b.0)
+    })?;
     // `controlled_value` needs a rider and `jump_prevented_value` a block
     // that prevents jumping (honey); neither exists on the server.
     insert_infallible(builder, |b: body::VariableMaxAutoStep| AutoStepConfig {
         base: b.base_value,
     })?;
     insert_infallible(builder, |b: body::MovementBasic| BasicMovementConfig {
+        max_turn: b.max_turn,
+    })?;
+    insert_infallible(builder, |b: body::MovementGeneric| BasicMovementConfig {
         max_turn: b.max_turn,
     })?;
     insert_infallible(builder, |b: body::JumpStatic| JumpConfig {

@@ -24,6 +24,8 @@ pub mod damage_sensor;
 pub mod despawn;
 pub mod doors;
 pub mod equipment;
+pub mod explode;
+pub mod flight;
 pub mod goals;
 pub mod hostile;
 pub mod hurt_on_condition;
@@ -37,12 +39,14 @@ pub mod ranged;
 pub mod sensors;
 pub mod shearing;
 pub mod silverfish;
+pub mod slime;
 pub mod spawn_entity;
 pub mod stats;
 pub mod target_triggers;
 pub mod teleport;
 pub mod transformation;
 pub mod variant;
+pub mod vex;
 
 use std::sync::Arc;
 
@@ -60,12 +64,14 @@ pub use despawn::DespawnConfig;
 pub use equipment::{
     EquipItemConfig, EquipItemGoal, EquipmentConfig, PickupItemsGoal, ShareablesConfig,
 };
+pub use flight::{FloatNavigation, FloatWanderGoal};
 pub use goals::{
     BreedGoal, EatBlockGoal, EatBlockPair, FleeSunGoal, FloatGoal, FollowParentGoal, GoalBase,
-    LookAtPlayerGoal, PanicGoal, RandomLookAroundGoal, RandomStrollGoal, TemptGoal,
+    LookAtEntityGoal, LookAtPlayerGoal, PanicGoal, RandomLookAroundGoal, RandomStrollGoal,
+    TemptGoal,
 };
 pub use hostile::{
-    AttackConfig, BurnsInDaylightConfig, HurtByTargetGoal, MeleeBoxAttackGoal,
+    AttackConfig, BurnsInDaylightConfig, HurtByTargetGoal, MeleeAttackGoal, MeleeReach,
     NearestAttackableTargetGoal, SwellGoal,
 };
 pub use hurt_on_condition::{HurtCondition, HurtOnConditionConfig};
@@ -80,10 +86,15 @@ pub use movement::{AutoStepConfig, BasicMovementConfig, JumpConfig, WalkNavigati
 pub use ranged::{AvoidEntry, AvoidMobTypeGoal, RangedAttackGoal, ShooterConfig};
 pub use sensors::{EnvironmentSensorConfig, TargetNearbySensorConfig, TargetZone, Timer};
 pub use silverfish::{InfestedBlocks, MergeWithStoneGoal, WakeUpFriendsGoal};
-pub use spawn_entity::{SpawnEntityConfig, SpawnEntityTimers, SpawnRule, SpawnTimer};
+pub use slime::{
+    AreaAttackConfig, HopAttackGoal, HopFloatGoal, HopKeepJumpingGoal, HopMovementConfig,
+    HopRandomDirectionGoal,
+};
+pub use spawn_entity::{SpawnEntityConfig, SpawnEntityTimers, SpawnRule, SpawnTimer, Spawned};
 pub use target_triggers::{OnFriendlyAnger, OnTargetAcquired, OnTargetEscape, TargetTrigger};
 pub use teleport::TeleportConfig;
-pub use transformation::TransformationConfig;
+pub use transformation::{TransformationConfig, TransformationDue};
+pub use vex::{ChargeAttackGoal, DamageOverTime};
 
 use crate::entity::definition::{ComponentKindsBuilder, DefinitionError};
 use crate::registry::ItemRegistry;
@@ -127,14 +138,11 @@ pub const ACCEPTED_WITHOUT_BEHAVIOUR: &[(ActorComponent, &str)] = &[
     ),
     (
         ActorComponent::Transformation,
-        "only a transformation naming nothing but its target runs (the \
-         mooshroom's into a cow); one with a delay, sounds, added groups, a \
-         spawn event or carry-over flags has no behaviour: the pig gains it \
-         only when struck by lightning (not implemented); the zombie gains it \
-         after 30 s underwater, but its target, the drowned, is not spawnable \
-         yet (it needs swim navigation, the trident ranged attack and \
-         target_nearby_sensor), so an underwater zombie (and husk) shakes \
-         (is_shaking) without converting",
+        "a transformation with added component groups, a delay nearby blocks \
+         shorten (zombie villager curing), a starting sound or the \
+         drop/keep flags has no behaviour: what BDS keeps across those is \
+         not measured; the pig gains its transformation only when struck by \
+         lightning (not implemented)",
     ),
     (
         ActorComponent::BehaviorStompTurtleEgg,
@@ -172,6 +180,11 @@ pub const ACCEPTED_WITHOUT_BEHAVIOUR: &[(ActorComponent, &str)] = &[
          freezing behaviour on the server: no actor freezes",
     ),
     (
+        ActorComponent::FreezingVulnerable,
+        "makes freezing hurt the mob more, and powder snow has no freezing \
+         behaviour on the server: no actor freezes",
+    ),
+    (
         ActorComponent::Addrider,
         "riding is not implemented: a spider jockey (one spider in a hundred, \
          at night or underground) spawns without its skeleton rider",
@@ -196,10 +209,12 @@ pub fn register_component_kinds(
     items: &Arc<ItemRegistry>,
 ) -> Result<(), DefinitionError> {
     goals::register_component_kinds(builder)?;
+    flight::register_component_kinds(builder)?;
     movement::register_component_kinds(builder)?;
     body::register_component_kinds(builder)?;
     hurt_on_condition::register_component_kinds(builder)?;
     despawn::register_component_kinds(builder)?;
+    explode::register_component_kinds(builder)?;
     doors::register_component_kinds(builder)?;
     breeding::register_component_kinds(builder)?;
     loot::register_component_kinds(builder)?;
@@ -222,6 +237,7 @@ pub fn register_component_kinds(
     inert::<bodies::BlockClimber>(builder)?;
     inert::<bodies::CanStandOnPowderSnow>(builder)?;
     inert::<bodies::FreezingImmune>(builder)?;
+    inert::<bodies::FreezingVulnerable>(builder)?;
     inert::<bodies::Addrider>(builder)?;
     inert::<bodies::BlockMovementSlowdownImmunity>(builder)?;
     ranged::register_component_kinds(builder)?;
@@ -230,6 +246,7 @@ pub fn register_component_kinds(
     color::register_component_kinds(builder)?;
     shearing::register_component_kinds(builder)?;
     silverfish::register_component_kinds(builder)?;
+    slime::register_component_kinds(builder)?;
     damage_sensor::register_component_kinds(builder)?;
     ambient::register_component_kinds(builder)?;
     spawn_entity::register_component_kinds(builder, items)?;
@@ -242,5 +259,6 @@ pub fn register_component_kinds(
     teleport::register_component_kinds(builder)?;
     looked_at::register_component_kinds(builder)?;
     carry::register_component_kinds(builder)?;
+    vex::register_component_kinds(builder)?;
     angry::register_component_kinds(builder)
 }

@@ -43,12 +43,32 @@ documents and still appear in code comments and research docs; the table maps th
 | [0030](0030-use-26x-world-clocks.md) | Sync time with 26.x world clocks | 2026-10-24 | accepted | WD5 |
 | [0031](0031-parallel-chunk-generation-is-allowed.md) | Parallel chunk generation is allowed | 2026-10-24 | accepted | world §1.3 |
 | [0032](0032-two-worldgen-numeric-backends.md) | Two worldgen numeric backends | 2026-10-27 | accepted | |
-| [0033](0033-persist-block-states-by-name.md) | Save block states on disk by name and states | 2026-11-04 | proposed | |
+| [0033](0033-persist-block-states-by-name.md) | Save block states on disk by name and states | 2026-11-04 | accepted | |
 | [0034](0034-bound-the-java-native-session.md) | Bound the Java-style native session without changing its output | 2026-11-05 | proposed | |
 | [0035](0035-disable-a-plugin-after-it-traps.md) | Disable a plugin after it traps | 2026-11-05 | accepted | |
-| [0042](0042-one-effect-system-for-mobs-and-players.md) | One status effect system for mobs and players | 2026-11-11 | proposed | |
+| [0036](0036-run-a-command-before-its-players-later-inputs.md) | Run a command before the inputs its player sent after it | 2026-11-10 | accepted | |
+| [0039](0039-fail-the-column-on-damaged-sub-chunks.md) | Fail the column load on damaged sub-chunk data | 2026-11-10 | proposed | |
+| [0040](0040-judge-player-movement-with-a-shared-simulation.md) | Judge player movement with a simulation shared with the measuring client | 2026-11-11 | proposed | |
+| [0041](0041-run-redstone-as-a-two-tick-circuit-update.md) | Run redstone as one circuit update every other tick, in BDS's phases | 2026-11-10 | accepted | |
+| [0042](0042-one-effect-system-for-mobs-and-players.md) | One status effect system for mobs and players | 2026-11-11 | accepted | |
+| [0044](0044-send-pre-start-game-roster-packets-after-start-game.md) | Send the roster packets BDS sends before StartGame right after it | 2026-11-11 | proposed | |
+| [0046](0046-resolve-a-pvp-hit-with-the-attacker-state-passed-in.md) | Resolve a PvP hit with the attacker's state passed in, from before its first input of the tick | 2026-11-11 | proposed | |
+| [0050](0050-move-pistons-from-the-circuit-update.md) | Move pistons from the circuit update, with measured per-block movement | 2026-11-11 | proposed | |
+| [0051](0051-tick-liquids-per-chunk-in-a-random-chunk-order.md) | Tick liquids per chunk in a random chunk order | 2026-11-11 | proposed | |
+| [0052](0052-generate-one-enchantment-type.md) | Generate one canonical Enchantment type from source-attributed data | 2026-11-12 | accepted | |
+| [0053](0053-bedrock-terrain-uses-java-exact-noise.md) | Bedrock-style terrain uses the Java-exact noise backend | 2026-11-12 | proposed | |
+| [0054](0054-measure-bds-movement-through-a-far-reporting-client.md) | Measure BDS's own movement with a client that reports a far position | 2026-11-12 | proposed | |
+| [0056](0056-guarded-block-breaking.md) | Guard survival block breaking by default, keep BDS's breaking as an option | 2026-11-12 | accepted | |
 | [0059](0059-infested-blocks-are-a-measured-table.md) | Infested blocks are a measured table | 2026-11-12 | proposed | |
+| [0060](0060-validate-the-movement-harness-against-bds-itself.md) | Validate the movement harness against BDS itself | 2026-11-12 | proposed | |
 | [0061](0061-wall-climbers-head-straight-for-an-unreachable-goal.md) | Wall climbers head straight for an unreachable goal | 2026-11-12 | proposed | |
+| [0062](0062-hopping-mobs-move-through-a-hop-control.md) | Hopping mobs move through a hop control, not the path follower | 2026-11-12 | proposed | |
+| [0063](0063-move-actors-with-measured-piston-pushes.md) | Move actors with measured piston pushes, not moving-block collision | 2026-11-12 | proposed | |
+| [0065](0065-swimming-mobs-follow-a-pulled-swim-path.md) | Swimming mobs follow a pulled swim path with no gravity | 2026-11-12 | proposed | |
 | [0066](0066-the-enderman-carries-blocks-in-its-main-hand.md) | The enderman carries blocks in its main hand | 2026-11-12 | proposed | |
+| [0067](0067-find-movement-rules-from-random-seeds-and-probes.md) | Find movement rules from random seeds and targeted probes, and lay the fixtures out a tick a line | 2026-11-12 | proposed | |
+| [0068](0068-stomp-is-a-melee-reach-judged-after-the-move.md) | The stomp attack is a reach of the one melee goal, judged after the move | 2026-11-12 | proposed | |
+| [0069](0069-flyers-push-straight-at-their-point.md) | Float-navigating flyers push straight at their point, with no path and no gravity | 2026-11-12 | proposed | |
+| [0070](0070-the-vex-flies-one-held-course.md) | The vex flies one held course, steered before its goals | 2026-11-13 | proposed | |
 
 Proposed records await the owner's approval; their work is an open OpenSpec change anyone can pick up.

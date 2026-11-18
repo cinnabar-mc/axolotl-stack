@@ -389,7 +389,7 @@ fn leaps(seed: u64, distance: f64) -> bool {
     a.ticks(3);
     a.world()
         .entity_mut(mob)
-        .remove::<crate::entity::mob::components::MeleeBoxAttackGoal>();
+        .remove::<crate::entity::mob::components::MeleeAttackGoal>();
     a.world().get_mut::<Position>(mob).unwrap().0 = spot;
     a.world().get_mut::<Velocity>(mob).unwrap().0 = DVec3::ZERO;
     let mut last = spot;

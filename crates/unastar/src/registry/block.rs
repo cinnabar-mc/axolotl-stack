@@ -16,20 +16,10 @@ static VANILLA_BLOCK_REGISTRY: LazyLock<BlockRegistry> = LazyLock::new(|| {
     registry
 });
 
-/// Native liquid material identity, resolved once when the registry loads.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum LiquidKind {
-    Water,
-    Lava,
-}
-
-/// Cached per-state facts used by actor liquid motion without string lookups.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct LiquidState {
-    pub kind: LiquidKind,
-    /// Native `liquid_depth`, including the falling states 8 through 15.
-    pub depth: u8,
-}
+/// The liquid of a block state (material and `liquid_depth`), resolved once
+/// from the block data (`unastar_data::motion`); the movement simulation's
+/// own types.
+pub use unastar_rules::movement::{LiquidKind, LiquidState};
 
 /// Runtime block entry in the registry.
 #[derive(Debug, Clone)]
@@ -99,6 +89,56 @@ impl RegistryEntry for BlockEntry {
     fn string_id(&self) -> &str {
         &self.string_id
     }
+}
+
+/// A block-state property value as saved worlds store it: one field of a
+/// palette entry's `states` compound, borrowed from the bytes it was read from.
+/// Fixtures spell it `{"byte": 1}`, `{"int": 0}` or `{"str": "bottom"}`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum SavedStateValue<'a> {
+    /// `TAG_Byte` (booleans such as `open_bit`).
+    Byte(u8),
+    /// `TAG_Int`.
+    Int(i32),
+    /// `TAG_String`.
+    Str(#[serde(borrow)] &'a str),
+}
+
+impl SavedStateValue<'_> {
+    /// Same value and same NBT type as the registry's `value`.
+    fn is(self, value: StateValue) -> bool {
+        match (self, value) {
+            (Self::Byte(saved), StateValue::Byte(known)) => saved == known,
+            (Self::Int(saved), StateValue::Int(known)) => saved == known,
+            (Self::Str(saved), StateValue::Str(known)) => saved == known,
+            _ => false,
+        }
+    }
+}
+
+/// A saved `{name, states}` pair that names no canonical block state.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum UnknownBlockState {
+    /// No block has this name.
+    #[error("unknown block `{0}`")]
+    Block(String),
+    /// The block exists but has no state with exactly these properties.
+    #[error("block `{name}` has no state {states}")]
+    State { name: String, states: String },
+}
+
+/// `{key=value, ...}` in the saved order, values tagged with their NBT type.
+fn describe_states(states: &[(&str, SavedStateValue<'_>)]) -> String {
+    let fields: Vec<String> = states
+        .iter()
+        .map(|(key, value)| match value {
+            SavedStateValue::Byte(byte) => format!("{key}={byte}b"),
+            SavedStateValue::Int(int) => format!("{key}={int}"),
+            SavedStateValue::Str(text) => format!("{key}={text:?}"),
+        })
+        .collect();
+    format!("{{{}}}", fields.join(", "))
 }
 
 /// Block registry with O(1) runtime_id -> block lookup.
@@ -229,17 +269,6 @@ impl BlockRegistry {
         self.liquid_states = vec![None; self.runtime_id_map.len()];
         self.network_hashes = vec![0; self.runtime_id_map.len()];
         self.runtime_by_hash.clear();
-        let material = |identifier| {
-            ALL_BLOCKS
-                .iter()
-                .find(|block| block.identifier == identifier)
-                .expect("native liquid archetype")
-                .material
-        };
-        let water_material = material("minecraft:water");
-        let lava_material = material("minecraft:lava");
-        assert_ne!(water_material, lava_material, "distinct native liquids");
-
         for block in ALL_BLOCKS.iter() {
             let entry = BlockEntry {
                 id: block.id,
@@ -271,32 +300,8 @@ impl BlockRegistry {
                 );
             }
 
-            let kind = if block.liquid && block.material == water_material {
-                Some(LiquidKind::Water)
-            } else if block.liquid && block.material == lava_material {
-                Some(LiquidKind::Lava)
-            } else {
-                None
-            };
-            if let Some(kind) = kind {
-                let column = block
-                    .properties
-                    .iter()
-                    .position(|property| property.name == "liquid_depth")
-                    .expect("native water/lava depth property");
-                let property = &block.properties[column];
-                for rid in block.min_state_id..=block.max_state_id {
-                    let row = (rid - block.min_state_id) as usize * block.properties.len();
-                    let index = usize::from(block.state_values[row + column]);
-                    let StateValue::Int(value) = property.values[index] else {
-                        panic!("native liquid depth must be an integer");
-                    };
-                    let depth = u8::try_from(value)
-                        .ok()
-                        .filter(|depth| *depth <= 15)
-                        .expect("native liquid depth must be in 0..=15");
-                    self.liquid_states[rid as usize] = Some(LiquidState { kind, depth });
-                }
+            for rid in block.min_state_id..=block.max_state_id {
+                self.liquid_states[rid as usize] = unastar_data::motion::liquid(rid);
             }
 
             // Registry IDs are unique first-palette ordinals.
@@ -351,6 +356,57 @@ impl BlockRegistry {
     /// Get a block's default runtime state ID by string ID.
     pub fn default_state_id_by_name(&self, name: &str) -> Option<u32> {
         self.get_by_name(name).map(|block| block.default_state_id)
+    }
+
+    /// Canonical runtime state of block `name` whose state properties are
+    /// exactly `states`: every property of the block once, each with its value
+    /// and its NBT type, as saved worlds store them (`{name, states}`).
+    ///
+    /// No property may be missing, extra, repeated or of another type; this
+    /// never substitutes a default state.
+    pub fn state_by_properties(
+        &self,
+        name: &str,
+        states: &[(&str, SavedStateValue<'_>)],
+    ) -> Result<u32, UnknownBlockState> {
+        let block = self
+            .get_by_name(name)
+            .ok_or_else(|| UnknownBlockState::Block(name.to_owned()))?;
+        let data = block.data;
+        let unknown = || UnknownBlockState::State {
+            name: name.to_owned(),
+            states: describe_states(states),
+        };
+        let width = data.properties.len();
+        if states.len() != width {
+            return Err(unknown());
+        }
+        let mut columns: Vec<Option<u8>> = vec![None; width];
+        for &(key, value) in states {
+            let column = data
+                .properties
+                .iter()
+                .position(|property| property.name == key)
+                .ok_or_else(unknown)?;
+            let index = data.properties[column]
+                .values
+                .iter()
+                .position(|&candidate| value.is(candidate))
+                .ok_or_else(unknown)?;
+            let slot = &mut columns[column];
+            if slot.is_some() {
+                return Err(unknown());
+            }
+            *slot = Some(u8::try_from(index).map_err(|_| unknown())?);
+        }
+        // Equal lengths and no repeats: every column is set.
+        let wanted: Vec<u8> = columns.into_iter().map(Option::unwrap).collect();
+        (data.min_state_id..=data.max_state_id)
+            .find(|&state| {
+                let start = (state - data.min_state_id) as usize * width;
+                data.state_values.get(start..start + width) == Some(wanted.as_slice())
+            })
+            .ok_or_else(unknown)
     }
 
     /// Iterate over all entries.
@@ -502,6 +558,58 @@ mod tests {
                 .unwrap()
                 .string_id,
             grass.string_id
+        );
+    }
+
+    /// Every canonical state resolves from its own name and typed properties,
+    /// in any property order; a near miss names the block and the states.
+    #[test]
+    fn every_state_resolves_from_its_name_and_properties() {
+        let registry = BlockRegistry::vanilla();
+        let mut checked = 0;
+        for block in registry.iter() {
+            for id in block.min_state_id..=block.max_state_id {
+                let states: Vec<(&str, SavedStateValue<'_>)> = block
+                    .data
+                    .properties
+                    .iter()
+                    .rev()
+                    .map(|property| {
+                        let value = match block.state_value(id, property.name).unwrap() {
+                            StateValue::Byte(byte) => SavedStateValue::Byte(byte),
+                            StateValue::Int(int) => SavedStateValue::Int(int),
+                            StateValue::Str(text) => SavedStateValue::Str(text),
+                        };
+                        (property.name, value)
+                    })
+                    .collect();
+                assert_eq!(
+                    registry.state_by_properties(&block.string_id, &states),
+                    Ok(id)
+                );
+                checked += 1;
+            }
+        }
+        assert_eq!(checked, 22_091);
+        assert_eq!(
+            registry.state_by_properties(
+                "minecraft:oak_log",
+                &[("pillar_axis", SavedStateValue::Int(0))]
+            ),
+            Err(UnknownBlockState::State {
+                name: "minecraft:oak_log".to_owned(),
+                states: "{pillar_axis=0}".to_owned(),
+            })
+        );
+        assert_eq!(
+            registry.state_by_properties("minecraft:stone", &[]),
+            Ok(registry
+                .default_state_id_by_name("minecraft:stone")
+                .unwrap())
+        );
+        assert_eq!(
+            registry.state_by_properties("stone", &[]),
+            Err(UnknownBlockState::Block("stone".to_owned()))
         );
     }
 

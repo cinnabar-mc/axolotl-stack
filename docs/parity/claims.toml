@@ -47,7 +47,7 @@ ids = [
 ]
 
 [[claim]]
-area = "Block behaviour families, gravity, fire and redstone"
+area = "Block behaviour families, gravity, fire, redstone and random ticks"
 owner = "lane BLOCKS"
 since = 2026-10-29
 domain = "blocks"
@@ -55,11 +55,13 @@ families = [
     "attached_lights",
     "beds",
     "buttons",
+    "copper_oxidising",
     "crops_growing",
     "doors",
     "falling",
     "fence_gates",
     "fences",
+    "leaves",
     "panes_bars",
     "pressure_plates",
     "redstone",
@@ -69,27 +71,26 @@ families = [
     "trapdoors",
     "walls",
 ]
-ids = ["minecraft:fire", "minecraft:soul_fire"]
+ids = ["minecraft:farmland", "minecraft:fire", "minecraft:grass_block", "minecraft:soul_fire"]
 
 [[claim]]
-area = "Gravity, fire and redstone"
+area = "Gravity, fire, redstone, block updates and random ticks"
 owner = "lane BLOCKS"
 since = 2026-10-29
 domain = "systems"
-ids = ["world.falling_blocks", "world.fire", "world.pistons", "world.redstone"]
+ids = ["world.block_updates", "world.falling_blocks", "world.fire", "world.pistons", "world.random_ticks", "world.redstone"]
 
 [[claim]]
-area = "Liquids: water and lava flow, waterlogging, sponges"
-owner = "a contributor"
-since = 2026-10-29
+area = "Liquids: water and lava flow, mixing, the liquid layer"
+owner = "lane LIQUIDS"
+since = 2026-11-11
 domain = "blocks"
 families = ["liquids"]
-ids = ["minecraft:sponge", "minecraft:wet_sponge"]
 
 [[claim]]
-area = "Liquids: water and lava flow, waterlogging, sponges"
-owner = "a contributor"
-since = 2026-10-29
+area = "Liquids: water and lava flow, mixing, the liquid layer"
+owner = "lane LIQUIDS"
+since = 2026-11-11
 domain = "systems"
 ids = ["world.liquids"]
 
@@ -155,6 +156,13 @@ ids = [
     "crafting.smithing",
     "crafting.stonecutter_loom_cartography",
 ]
+
+[[claim]]
+area = "Survival block breaking"
+owner = "lane ITEMS"
+since = 2026-11-10
+domain = "systems"
+ids = ["player.block_breaking"]
 
 [[claim]]
 area = "Commands"

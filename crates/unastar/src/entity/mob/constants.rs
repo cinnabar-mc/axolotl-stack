@@ -23,7 +23,8 @@ pub const MOVE_ARRIVAL_FLOOR: f32 = 0.5;
 pub const MOVE_DESCEND_CAP: f32 = 0.25;
 /// The travel step's forward input is the move control's speed × this
 /// (BDS 1.26.51: a walking cow at speed `s` gains `0.98 s²` per tick on
-/// grass, through every step of its 10 %/tick speed ramp).
+/// grass, through every step of its 10 %/tick speed ramp). Measured on
+/// land and in the air only; it is applied in liquids too, unmeasured.
 pub const MOVE_INPUT_DECAY: f32 = 0.98;
 /// Vertical velocity of a living mob with gravity when it spawns or is born
 /// (80 of the 112 BDS 1.26.51 summon captures: every living actor with
@@ -111,7 +112,8 @@ pub const WATER_DRAG: f64 = 0.8;
 pub const LIQUID_GRAVITY: f64 = 0.02;
 /// Lava drag; provisional (the Java Edition value).
 pub const LAVA_DRAG: f64 = 0.5;
-/// Acceleration input while swimming (underwater movement attribute).
+/// Push per unit of forward input in water of a mob without an
+/// `minecraft:underwater_movement` attribute row (the native default).
 pub const WATER_MOVE_SPEED: f32 = 0.02;
 /// Native chicken wing-flap drag: travelling through air with a negative
 /// vertical velocity after gravity and drag, that velocity is multiplied by
@@ -200,6 +202,11 @@ pub const MOB_HEAD_DISGUISES: [(&str, &str); 5] = [
     ("minecraft:piglin", "minecraft:piglin_head"),
     ("minecraft:piglin_brute", "minecraft:piglin_head"),
 ];
+/// `behavior.stomp_attack`: the mob rears up (`STANDING`) this many ticks
+/// before its cooldown runs out while its target is in the no-damage range
+/// (measured: BDS 1.26.51 polar bears stood ten ticks before every hit).
+pub const STOMP_WARNING_TICKS: i32 = 10;
+
 /// `behavior.melee_box_attack` `can_spread_on_fire`: a burning attacker with
 /// an empty main hand sets the target alight with probability
 /// `U(0, 1) < this[difficulty]` (peaceful, easy, normal, hard) for
@@ -289,9 +296,10 @@ pub const XP_ORB_SIZES: [u32; 11] = [2477, 1237, 617, 307, 149, 73, 37, 17, 7, 3
 /// (before the cap), so a grounded mob leaves at the 0.4 cap.
 pub const KNOCKBACK_VERTICAL_SCALE: f64 = 1.2;
 /// Farthest a player's eye may be from the nearest point of a mob's box to
-/// land a melee hit (provisional: the client reaches 3 blocks in survival
-/// and 5 in creative per the Minecraft Wiki "Reach" page; this bound adds
-/// latency tolerance on top).
+/// land a melee hit. BDS 1.26.51 landed a survival sword hit on a pig whose
+/// box was 5.55 blocks from the eye and refused one at 6.55 (spear capture,
+/// `docs/quirks/bds.md` Entities / melee); the exact limit between the two
+/// is not measured.
 pub const MELEE_REACH: f64 = 6.0;
 /// A mob counts as "last hit by a player" (loot `killed_by_player`,
 /// `query.last_hit_by_player`) for this many ticks after a player's hit
@@ -346,7 +354,8 @@ pub const PROJECTILE_VISIBLE_TICK: u64 = 2;
 /// them a sound).
 pub const DISAPPEARED_SOUND: &str = "disappeared";
 pub const REAPPEARED_SOUND: &str = "reappeared";
-/// `grant_xp`: the potion-splash level event at the hit …
+/// Level event of a splash where a potion, a lingering potion or an
+/// experience bottle breaks (`grant_xp` at the hit), its data the colour …
 pub const POTION_SPLASH_LEVEL_EVENT: i32 = 2002;
 /// … with the default potion colour (ARGB `0xFF385DC6`) as its data: BDS
 /// 1.26.51 sends data -13083194 where an xp bottle breaks.
@@ -364,9 +373,16 @@ pub const SNOWBALLPOOF_PARTICLE: i32 = 15;
 pub const ICONCRACK_ITEM_SHIFT: u32 = 16;
 /// Level sound of a player throwing a projectile item.
 pub const THROW_SOUND: &str = "throw";
-/// The throw sound plays at the player's drop attach point, this far below
-/// the eyes. Provisional: the height thrown item drops spawn at.
-pub const THROW_SOUND_EYE_DROP: f64 = 0.5;
+/// The throw sound plays this far below the eyes and [`THROW_SOUND_AHEAD`]
+/// ahead along the yaw, whatever the pitch (BDS 1.26.51 capture of
+/// `tools/bds-sweep/scripts/throwables.txt`: thrown level and straight
+/// down, facing east, it played at the eyes - 0.3 and + 0.15 east).
+pub const THROW_SOUND_EYE_DROP: f64 = 0.3;
+pub const THROW_SOUND_AHEAD: f64 = 0.15;
+/// How many item-crack particles of the splash potion item a splash
+/// potion makes where it breaks (BDS 1.26.51 throwables capture: five,
+/// though its definition has no `particle_on_hit`).
+pub const SPLASH_POTION_ICONCRACKS: u32 = 5;
 /// Items that throw a `minecraft:egg` actor when used (a native item
 /// class, not item components), with the egg's climate variant.
 pub const THROWN_EGG_ITEMS: [(&str, &str); 3] = [
@@ -434,10 +450,29 @@ pub const LEGACY_BUCKET_ITEMS: [(i16, &str); 11] = [
 /// regard to case, as item names are. Provisional: pmmp's
 /// BedrockItemUpgradeSchema, which agrees with the identity BDS reports for
 /// its own `muttonRaw` furnace recipe input.
-pub const LEGACY_ITEM_NAMES: [(&str, &str); 1] = [("minecraft:muttonRaw", "minecraft:mutton")];
+pub const LEGACY_ITEM_NAMES: [(&str, &str); 2] = [
+    ("minecraft:muttonRaw", "minecraft:mutton"),
+    // `entities/wither_boss` (measured: `/loot … loot "entities/wither_boss"`
+    // drops a nether star).
+    ("minecraft:netherStar", "minecraft:nether_star"),
+];
 /// The legacy loot item name that picks its wool item by data value
 /// (the palette colour): `minecraft:wool` with data 14 is red wool.
 pub const LEGACY_WOOL: &str = "minecraft:wool";
+/// The legacy loot item name that picks its head item by data value: the
+/// vanilla wither skeleton table drops `minecraft:skull` with data 1.
+pub const LEGACY_SKULL: &str = "minecraft:skull";
+/// Head item of each legacy skull data value. Provisional: pmmp's
+/// BedrockItemUpgradeSchema, as for [`LEGACY_ITEM_NAMES`].
+pub const SKULL_ITEMS: [&str; 7] = [
+    "minecraft:skeleton_skull",
+    "minecraft:wither_skeleton_skull",
+    "minecraft:zombie_head",
+    "minecraft:player_head",
+    "minecraft:creeper_head",
+    "minecraft:dragon_head",
+    "minecraft:piglin_head",
+];
 
 // --- Palette colours ------------------------------------------------------------
 
@@ -763,9 +798,6 @@ pub const GEAR_LOOTING_DROP_BONUS: f32 = 0.01;
 /// (`Damage`) `max_damage - r`, `r` uniform in `0..=k` with `k` uniform in
 /// `0..max(max_damage, this) - 3`, so it keeps `r` durability (confirmed).
 pub const GEAR_DROP_MIN_MAX_DAMAGE: i32 = 4;
-/// Bedrock's Curse of Binding enchantment id: armour carrying it is never
-/// swapped for a picked-up piece (confirmed).
-pub const BINDING_CURSE_ID: i16 = 27;
 /// `MobEquipment` container id of a mob's off hand in the inventory send
 /// (confirmed).
 pub const GEAR_OFFHAND_CONTAINER: u8 = 119;
@@ -840,18 +872,18 @@ pub const SHOT_DAMAGE_PER_DIFFICULTY: f32 = 0.05;
 /// / normal / hard, uniform width 0.45; a gaussian of sd 0.13 fits 1.5 log
 /// units worse, so the shape of the draw is provisional).
 pub const SHOT_DAMAGE_SPREAD: f32 = 0.225;
-/// Tipped arrows mobs shoot, by aux value (potion id + 1): the effect a hit
-/// gives, level 0, for an eighth of the potion's duration (measured: BDS
-/// 1.26.51 stray, bogged and parched hits on the sweep player sent these
-/// `MobEffect` adds on every difficulty).
-pub const TIPPED_ARROW_EFFECTS: [(u8, crate::entity::components::EffectType, u32); 3] = [
-    // Long slowness (stray).
-    (19, crate::entity::components::EffectType::SLOWNESS, 600),
-    // Poison (bogged).
-    (26, crate::entity::components::EffectType::POISON, 112),
-    // Weakness (parched).
-    (35, crate::entity::components::EffectType::WEAKNESS, 225),
-];
+/// The tipped arrows mobs shoot whose hit was measured, by aux value
+/// (potion data value + 1): long slowness (stray), poison (bogged) and
+/// weakness (parched). Their effects are the potion's
+/// ([`potion_effects`](crate::server::game::item_use::food::potion_effects))
+/// for a [`TIPPED_ARROW_DURATION_DIVISOR`]th of its duration; a shooter
+/// with any other aux is refused.
+pub const MEASURED_TIPPED_ARROWS: [u8; 3] = [19, 26, 35];
+/// A tipped arrow's hit lasts this fraction of its potion's duration
+/// (measured: BDS 1.26.51 stray, bogged and parched hits on the sweep
+/// player sent `MobEffect` adds of 600, 112 and 225 ticks on every
+/// difficulty: 4800, 900 and 1800 divided by 8, rounded down).
+pub const TIPPED_ARROW_DURATION_DIVISOR: u32 = 8;
 /// A shot plays this unnamed sound (no actor) at the centre of the
 /// shooter's box, before the shooter's own `sound` (measured: BDS 1.26.51
 /// sends `undefined` with an empty actor identifier on every shot).
@@ -959,3 +991,85 @@ pub const PROJECTILE_DODGE_ATTEMPTS: u32 = 64;
 /// axis; provisional: Java Edition's enderman (4, 8 and 4). BDS 1.26.51
 /// landed its six aimed teleports within 3.4 blocks of the aim sideways.
 pub const TELEPORT_TOWARD_JITTER: glam::DVec3 = glam::DVec3::new(4.0, 8.0, 4.0);
+
+// --- Slimes and magma cubes (`mob::ai::hop`, `mob::life::split`) ------------------
+
+/// A dying slime or magma cube bigger than the smallest size leaves this
+/// many children at least and at most (BDS 1.26.51, `sweep.py slime
+/// --items split`: 18, 26 and 16 of 60 splits left 2, 3 and 4 children, and
+/// none any other number).
+pub const SPLIT_MIN_CHILDREN: u32 = 2;
+pub const SPLIT_MAX_CHILDREN: u32 = 4;
+/// Split children stand this far above the floor of the block the body
+/// ended in, at its centre on x and z (BDS 1.26.51: every child `AddActor`
+/// of the split sweeps).
+pub const SPLIT_CHILD_RISE: f64 = 0.5;
+/// A chunk's slime-chunk generator is seeded with
+/// `chunk_x × SLIME_CHUNK_SEED_MULTIPLIER ^ chunk_z`, and the chunk is a
+/// slime chunk when its first output is a multiple of
+/// [`SLIME_CHUNK_CHANCE`] (`entity::spawning::slime_chunk`; every slime of
+/// the BDS 1.26.51 `sweep.py slime-spawn` runs stood in such a chunk).
+pub const SLIME_CHUNK_SEED_MULTIPLIER: u32 = 0x1f1f_1f1f;
+pub const SLIME_CHUNK_CHANCE: u32 = 10;
+/// The slime's native spawn check passes in a slime chunk only for feet
+/// below this height (provisional: the superflat floor the spawn sweep
+/// measured is far below it; the bound itself is not measured).
+pub const SLIME_CHUNK_MAX_FEET_Y: i32 = 40;
+/// A magma cube's jump impulse grows by this per size step (`VARIANT`) above
+/// the authored `jump.static` power (BDS 1.26.51, `sweep.py slime --items
+/// hop`: first-tick rises 0.52, 0.62 and 0.82 for sizes 1, 2 and 4).
+pub const MAGMA_CUBE_JUMP_PER_SIZE: f64 = 0.1;
+/// `CLIENT_EVENT` values a slime class sends: on the tick it leaves the
+/// ground, and on the tick it lands (BDS 1.26.51: every hop of the hop
+/// sweeps; 0 in the summon).
+pub const SLIME_CLIENT_EVENT_LEFT_GROUND: i8 = 2;
+pub const SLIME_CLIENT_EVENT_LANDED: i8 = 1;
+/// The magma cube class starts with this `FALL_DAMAGE_MULTIPLIER` (BDS
+/// 1.26.51: the native magma cube summon; its definition's fall damage
+/// sensor deals none either way).
+pub const MAGMA_CUBE_FALL_DAMAGE_MULTIPLIER: f32 = 0.0;
+
+// --- Flyers (`mob::ai::fly`, the bat) -------------------------------------------
+
+/// The bat class's vertical air drag is this times the 0.91 every axis of a
+/// float-navigating flyer keeps (BDS 1.26.51, `sweep.py bat`: the bat's
+/// vertical motion kept 0.546 a tick on every tick it did not push).
+pub const BAT_FLIGHT_VERTICAL_FACTOR: f64 = 0.6;
+/// The chance per tick that a flying bat under a solid block starts resting
+/// (BDS 1.26.51, `sweep.py bat --items low`: 21 bats in a room one block
+/// tall settled after 3 to 288 ticks, and two had not after 280; the rate
+/// they fit is about 1 in 90).
+pub const BAT_REST_CHANCE: f32 = 0.01;
+/// A resting bat wakes when a player's eyes come closer than this to its
+/// feet (BDS 1.26.51, `sweep.py bat --items wake,canopy`).
+pub const BAT_WAKE_RANGE: f64 = 4.0;
+// --- The vex (`mob::ai::vex`) -----------------------------------------------
+
+/// The vex's move control pushes movement x speed multiplier x this a tick
+/// toward its point (BDS 1.26.51, `sweep.py vex`: 0.0125 while it wanders,
+/// 0.05 while it charges, with `minecraft:movement` 1).
+pub const VEX_PUSH_SCALE: f64 = 0.05;
+/// The speed multiplier of the vex's native wander (0.0125 / 0.05).
+pub const VEX_WANDER_SPEED: f64 = 0.25;
+/// The chance per tick that a vex with no point starts a wander (BDS
+/// 1.26.51: 44 waits after an arrival averaged 7.6 samples, from 1 to 35).
+pub const VEX_WANDER_CHANCE: f32 = 1.0 / 7.0;
+/// A wander point is the centre of a block within this many blocks of the
+/// vex's block on x and z (BDS 1.26.51: every measured point within 7).
+pub const VEX_WANDER_XZ: i32 = 7;
+/// ... and on y (every measured point within 5).
+pub const VEX_WANDER_Y: i32 = 5;
+/// The vex's move control lets its velocity drop to this share on the tick
+/// it arrives (BDS 1.26.51: 0.455 = 0.5 x 0.91 of the last move).
+pub const VEX_ARRIVAL_SLOWDOWN: f64 = 0.5;
+/// A charging vex steers again at its target's eyes while their feet are
+/// within this distance (3 blocks).
+pub const VEX_CHARGE_STEER_DIST: f64 = 3.0;
+/// A charging vex flies at this far below its target's eyes (BDS 1.26.51:
+/// 1.52 above a player's feet in 33 charges, `sweep.py vex --items charge`).
+pub const VEX_CHARGE_AIM_DROP: f64 = 0.1;
+
+/// The bat class starts with this `FALL_DAMAGE_MULTIPLIER` (BDS 1.26.51:
+/// the native bat summon; its definition's fall damage sensor deals none
+/// either way).
+pub const BAT_FALL_DAMAGE_MULTIPLIER: f32 = 0.0;

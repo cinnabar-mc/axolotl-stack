@@ -130,18 +130,66 @@ pub fn use_spawn_egg_on_block(world: &mut World, player: Entity, adjacent: IVec3
         f64::from(adjacent.y),
         f64::from(adjacent.z) + 0.5,
     );
+    // BDS 1.26.51 (capture of tools/bds-sweep/scripts/buckets-eggs.txt): on a
+    // peaceful world a monster's egg is used up and nothing spawns.
+    let monster = world
+        .get_resource::<crate::entity::mob::MobRegistry>()
+        .and_then(|registry| registry.get(&actor))
+        .is_some_and(|archetype| {
+            archetype.source.description.spawn_category.as_deref() == Some("monster")
+        });
+    if monster
+        && world.get_resource::<crate::world::rules::Difficulty>()
+            == Some(&crate::world::rules::Difficulty::Peaceful)
+    {
+        use_held_item(world, player, None);
+        return true;
+    }
     let yaw = world
         .resource_mut::<EntityRandom>()
         .0
         .gen_range(0.0f32..360.0);
     match spawn_mob(world, &actor, feet, yaw, SpawnCause::Spawned) {
-        Ok(_) => use_held_item(world, player, None),
+        Ok(_) => {
+            spawned_mob_event(world, player, &actor);
+            use_held_item(world, player, None);
+        }
         Err(error) => {
             warn!(%actor, %error, "spawn egg could not spawn its actor");
             resend_held(world, player);
         }
     }
     true
+}
+
+/// `ActorEvent` PlayerSpawnedMob to the player who spawned a mob from an
+/// egg, its data the actor's numeric id shifted left 16 bits, plus 1 (BDS
+/// 1.26.51 sent 720897 for a cow, 786433 for a pig and 655361 for a
+/// chicken, in survival and creative).
+fn spawned_mob_event(world: &World, player: Entity, actor: &str) {
+    let Some(rid) = unastar_data::actor_identifiers::vanilla()
+        .iter()
+        .find(|row| row.id == actor)
+        .map(|row| row.rid)
+    else {
+        return;
+    };
+    let (Some(runtime_id), Some(session)) = (
+        world.get::<crate::entity::components::RuntimeEntityId>(player),
+        world.get::<crate::entity::components::PlayerSession>(player),
+    ) else {
+        return;
+    };
+    let _ = session.send(jolyne::valentine::McpePacket::from(
+        jolyne::valentine::ActorEventPacket {
+            target_runtime_id: jolyne::valentine::types::ActorRuntimeId {
+                actor_runtime_id: runtime_id.0 as u64,
+            },
+            event_id: jolyne::valentine::types::EnumsActorEvent::PlayerSpawnedMob,
+            data: ((rid << 16) | 1) as i32,
+            fire_at_position: None,
+        },
+    ));
 }
 
 /// `minecraft:spawn_egg_interaction`: the mob's own spawn egg spawns a baby
@@ -327,7 +375,7 @@ fn authored_interaction(world: &mut World, player: Entity, target: Entity) -> bo
         use_held_item_with(world, player, row.use_item, results);
     }
     if row.hurt_item > 0 {
-        hurt_held_item(world, player, row.hurt_item);
+        crate::server::game::durability::wear_held(world, player, row.hurt_item);
     }
     if let Some(spawn) = &row.spawn_items {
         spawn_interaction_loot(world, target, spawn);
@@ -364,50 +412,6 @@ fn authored_interaction(world: &mut World, player: Entity, target: Entity) -> bo
         }
     }
     true
-}
-
-/// Wear the held item by `amount` durability: creative players and
-/// unbreakable items take none, unbreaking level `n` spares it with
-/// probability `n / (n + 1)`, and an item worn to its maximum breaks.
-fn hurt_held_item(world: &mut World, player: Entity, amount: i32) {
-    use crate::item::enchant::{
-        Enchantment, durability_damage, enchantment_level, with_durability_damage,
-    };
-    if world.get::<GameMode>(player) == Some(&GameMode::Creative) {
-        return;
-    }
-    let Some(held) = held_item(world, player).cloned() else {
-        return;
-    };
-    let Some(max_damage) = held
-        .item()
-        .map(|item| item.tool_info().max_damage)
-        .filter(|max| *max > 0)
-    else {
-        return;
-    };
-    let unbreaking = enchantment_level(&held, Enchantment::Unbreaking);
-    let roll = world
-        .resource_mut::<EntityRandom>()
-        .0
-        .gen_range(0..=unbreaking);
-    // Level `n` applies wear with probability `1 / (n + 1)`.
-    if unbreaking > 0 && roll > 0 {
-        return;
-    }
-    let damage = durability_damage(&held) + amount;
-    let worn = if damage >= max_damage {
-        ItemStack::empty()
-    } else {
-        with_durability_damage(&held, damage)
-    };
-    let slot = world.get::<HeldSlot>(player).map_or(0, |slot| slot.0);
-    if let Some(mut inventory) = world.get_mut::<MainInventory>(player)
-        && let Some(stack) = inventory.hotbar_mut(slot)
-    {
-        *stack = worn.clone();
-    }
-    send_slot(world, player, usize::from(slot), &worn);
 }
 
 /// `particle_on_start`: one particle level event at the middle of `mob`'s
@@ -451,8 +455,9 @@ fn swing_arm(world: &World, player: Entity) {
     }));
 }
 
-/// Roll an interaction's `spawn_items` table for `mob` and drop the items
-/// at its feet raised by the row's offset.
+/// Roll an interaction's `spawn_items` table for `mob` (its colour and fire
+/// state are the THIS actor's) and drop the items at its feet raised by the
+/// row's offset.
 fn spawn_interaction_loot(
     world: &mut World,
     mob: Entity,

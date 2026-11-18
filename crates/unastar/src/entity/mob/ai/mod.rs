@@ -16,13 +16,16 @@ mod climb;
 mod control;
 mod eat_block;
 mod flee_sun;
+pub mod fly;
 mod goals;
+pub mod hop;
 mod leap;
 mod melee;
 mod nearby;
 mod path;
 mod pickup;
 mod ranged;
+pub mod roost;
 pub mod sensing;
 pub mod silverfish;
 mod targeting;
@@ -31,10 +34,13 @@ pub(crate) use targeting::{Candidate, untargetable_player};
 
 #[cfg(test)]
 mod tests;
+pub mod vex;
 
 pub(crate) use self::break_door::stop_breaking_doors;
 pub use self::climb::sync_wall_climbing;
+pub use self::melee::{StompClock, StompStep, tick_stomp_attacks};
 pub use self::path::PathBlockTable;
+pub use self::vex::tick_charge_hits;
 
 use bevy_ecs::prelude::*;
 use glam::DVec3;
@@ -45,10 +51,13 @@ use self::goals::{Effects, GoalContext, GoalStates, goal_specs};
 use self::nearby::{ItemView, MobView, Nearby, PlayerView};
 use self::path::WalkPolicy;
 use super::MobKind;
-use super::components::{BasicMovementConfig, JumpConfig, Pushable, WalkNavigationConfig};
+use super::components::{
+    BasicMovementConfig, FloatNavigation, HopMovementConfig, JumpConfig, Pushable,
+    WalkNavigationConfig,
+};
 use super::constants::{
     DEFAULT_JUMP_POWER, DEFAULT_MAX_TURN, ENTITY_PUSH_MIN_DISTANCE, ENTITY_PUSH_REACH,
-    ENTITY_PUSH_STRENGTH, PLAYER_BOX_HEIGHT, PLAYER_BOX_WIDTH,
+    ENTITY_PUSH_STRENGTH, PLAYER_BOX_HEIGHT, PLAYER_BOX_WIDTH, WATER_MOVE_SPEED,
 };
 use super::state::{AttackTarget, Dead, InLove, MateRequest, Persistent};
 use crate::ecs::TickCounter;
@@ -62,7 +71,7 @@ use crate::entity::definition::flags::ActorFlags;
 use crate::entity::definition::metadata::EntityMetadata;
 use crate::entity::goal_selector::{GoalSelector, GoalSpec};
 use crate::entity::item_drop::PLAYER_EYE_HEIGHT;
-use crate::entity::systems::physics::{living_block_friction, living_liquid};
+use crate::entity::systems::physics::{Swimming, living_block_friction, living_liquid};
 use crate::registry::collision::Aabb;
 
 /// Per-mob AI state: the goal selector over the authored goals, their
@@ -82,6 +91,18 @@ impl MobBrain {
     /// Whether the mob currently follows a path.
     pub fn is_navigating(&self) -> bool {
         !self.nav.is_done()
+    }
+
+    /// The float control's state (tests).
+    #[cfg(test)]
+    pub fn fly(&self) -> &fly::FlyState {
+        &self.states.fly
+    }
+
+    /// The float control's state, to pin a wander (tests).
+    #[cfg(test)]
+    pub fn fly_mut(&mut self) -> &mut fly::FlyState {
+        &mut self.states.fly
     }
 }
 
@@ -254,6 +275,8 @@ struct Output {
     yaw: f32,
     head_yaw: f32,
     velocity: DVec3,
+    /// The mob swims toward a waypoint this tick (no gravity in water).
+    swimming: bool,
     effects: Effects,
 }
 
@@ -292,6 +315,7 @@ fn think(
         on_ground,
         liquid: living_liquid(world, Aabb::from_feet(feet, physics.width, physics.height)),
         movement: movement_speed(mob, kind),
+        underwater: underwater_speed(mob, kind),
     };
     let policy = WalkPolicy::new(
         mob.get::<WalkNavigationConfig>(),
@@ -309,12 +333,36 @@ fn think(
         movement,
         look,
     } = brain;
+    let mut effects = Effects::default();
+    // The vex's move control steers before its goals think, whatever its
+    // navigation says (`vex`): a course a goal sets is first flown on the
+    // next tick.
+    let vex = kind.0.native.vex;
+    let vex_flight = vex.filter(|_| turn != Turn::Die).map(|class| {
+        movement.wanted = None;
+        // With a target its body faces the target, else its motion.
+        let facing = states
+            .targets
+            .target
+            .and_then(|target| targeting::Candidate::of(world, target))
+            .map(|target| target.pos);
+        states.fly.steer(
+            feet,
+            vex::arrival_distance(physics.width, physics.height),
+            class.arrival_slowdown,
+            rotation.yaw,
+            max_turn,
+            facing,
+            velocity,
+        )
+    });
     if turn == Turn::Think(true) {
         // A rebuilt composition rebuilds the native goals.
-        states.melee.reset();
+        if states.melee.reset() {
+            effects.standing = Some(false);
+        }
         states.targets.reset();
     }
-    let mut effects = Effects::default();
     let mut ctx = GoalContext {
         world,
         table,
@@ -346,6 +394,7 @@ fn think(
                 yaw: rotation.yaw,
                 head_yaw: rotation.head_yaw,
                 velocity,
+                swimming: false,
                 effects,
             });
         }
@@ -357,9 +406,106 @@ fn think(
         }
         Turn::Think(false) => {}
     }
+    let bat = kind.0.native.bat;
+    let resting = bat.is_some()
+        && mob
+            .get::<ActorFlags>()
+            .is_some_and(|f| f.get(actor_flags::RESTING).unwrap_or(false));
+    if let (Some(class), true) = (bat, resting) {
+        // A resting bat neither thinks nor moves; it only checks whether
+        // to wake (`roost`).
+        let velocity = match roost::rest(world, nearby, &class, &ctx.body) {
+            roost::Rest::Hold(velocity) => velocity,
+            roost::Rest::Wake => {
+                ctx.effects.resting = Some(false);
+                DVec3::ZERO
+            }
+        };
+        return Some(Output {
+            yaw: rotation.yaw,
+            head_yaw: rotation.head_yaw,
+            velocity,
+            swimming: false,
+            effects,
+        });
+    }
     ctx.check_unheld_target();
     selector.tick(&mut ctx);
+    if let Some(class) = &vex {
+        ctx.vex_wander(class);
+    }
     let goal_jump = ctx.jump;
+
+    if let Some(flight) = vex_flight {
+        return Some(Output {
+            yaw: flight.yaw,
+            head_yaw: flight.yaw,
+            velocity: flight.velocity,
+            swimming: false,
+            effects,
+        });
+    }
+
+    if let Some(hop) = mob.get::<HopMovementConfig>() {
+        // A hopping mob never paths: its control turns, waits and jumps.
+        // A slime class jumps higher the bigger it is.
+        let jump_power = kind.0.native.slime.map_or(jump_power, |slime| {
+            let size = mob
+                .get::<EntityMetadata>()
+                .and_then(|metadata| {
+                    super::components::variant::appearance_id(
+                        metadata,
+                        jolyne::valentine::actor_data_i_ds::VARIANT,
+                    )
+                })
+                .unwrap_or(0);
+            (f64::from(jump_power) + slime.jump_per_size * f64::from(size)) as f32
+        });
+        let hop = states
+            .hop
+            .control(hop, rotation.yaw, on_ground, body.movement, &mut rng.0);
+        movement.wanted = None;
+        movement.speed = hop.speed;
+        let velocity = travel(
+            &body,
+            movement,
+            goal_jump || hop.jump,
+            false,
+            jump_power,
+            hop.yaw,
+            living_block_friction(world, feet),
+            velocity,
+        );
+        return Some(Output {
+            yaw: hop.yaw,
+            head_yaw: hop.yaw,
+            velocity,
+            swimming: false,
+            effects,
+        });
+    }
+
+    if mob.contains::<FloatNavigation>() {
+        // A float-navigating mob never paths: its control pushes it at the
+        // point its goal wants.
+        movement.wanted = None;
+        let flight = states
+            .fly
+            .control(f64::from(body.movement), feet, rotation.yaw, velocity);
+        if let Some(class) = bat
+            && roost::settles(world, &class, feet, &mut rng.0)
+        {
+            effects.resting = Some(true);
+            states.fly.reset();
+        }
+        return Some(Output {
+            yaw: flight.yaw,
+            head_yaw: flight.yaw,
+            velocity: flight.velocity,
+            swimming: false,
+            effects,
+        });
+    }
 
     let door_hold = nav.current().is_some_and(|(index, path)| {
         break_door::held_by_breakable_door(
@@ -376,10 +522,12 @@ fn think(
     let move_jump = movement.tick(&body, &mut yaw, max_turn);
     let mut head_yaw = rotation.head_yaw;
     look.tick(feet + DVec3::Y * body.height, yaw, &mut head_yaw);
+    let swimming = movement.swimming(&body);
     let velocity = travel(
         &body,
         movement,
         goal_jump || move_jump,
+        control::blocked_ahead(feet, movement.wanted, velocity, yaw, body.width),
         jump_power,
         yaw,
         living_block_friction(world, feet),
@@ -391,6 +539,7 @@ fn think(
         yaw,
         head_yaw,
         velocity,
+        swimming,
         effects,
     })
 }
@@ -406,6 +555,20 @@ fn movement_speed(mob: EntityRef<'_>, kind: &MobKind) -> f32 {
     mob.get::<crate::entity::definition::attributes::ActorAttributes>()
         .and_then(|attributes| attributes.get(id).ok())
         .map_or(authored, |value| value.current)
+}
+
+/// The mob's underwater speed: its `minecraft:underwater_movement`
+/// attribute, else the native default.
+fn underwater_speed(mob: EntityRef<'_>, kind: &MobKind) -> f32 {
+    kind.0
+        .underwater_attribute
+        .as_ref()
+        .and_then(|(id, _)| {
+            mob.get::<crate::entity::definition::attributes::ActorAttributes>()?
+                .get(id)
+                .ok()
+        })
+        .map_or(WATER_MOVE_SPEED, |value| value.current)
 }
 
 /// A change of a mob's target this tick.
@@ -424,6 +587,7 @@ fn apply(world: &mut World, entity: Entity, output: Output, deferred: &mut Defer
         yaw,
         head_yaw,
         velocity,
+        swimming,
         effects,
     } = output;
     // The target as viewers see it: its actor id in the `TARGET` actor data,
@@ -442,6 +606,13 @@ fn apply(world: &mut World, entity: Entity, output: Output, deferred: &mut Defer
         && current.0 != velocity
     {
         current.0 = velocity;
+    }
+    if swimming != mob.contains::<Swimming>() {
+        if swimming {
+            mob.insert(Swimming);
+        } else {
+            mob.remove::<Swimming>();
+        }
     }
     if effects.persistent && !mob.contains::<Persistent>() {
         mob.insert(Persistent);
@@ -477,6 +648,15 @@ fn apply(world: &mut World, entity: Entity, output: Output, deferred: &mut Defer
     }
     if let Some(tempted) = effects.tempted {
         set_flag(&mut mob, actor_flags::TEMPTED, tempted);
+    }
+    if let Some(charging) = effects.charging {
+        set_flag(&mut mob, actor_flags::CHARGING, charging);
+    }
+    if let Some(standing) = effects.standing {
+        set_flag(&mut mob, actor_flags::STANDING, standing);
+    }
+    if let Some(resting) = effects.resting {
+        set_flag(&mut mob, actor_flags::RESTING, resting);
     }
     if let Some(request) = effects.mate
         && let Some(mut messages) = world.get_resource_mut::<Messages<MateRequest>>()
@@ -679,7 +859,7 @@ pub(crate) fn wire_actor_id(world: &World, actor: Entity) -> i64 {
 
 /// Set one actor flag and mirror the flag words into the metadata the
 /// viewers receive.
-fn set_flag(mob: &mut EntityWorldMut<'_>, flag: u32, on: bool) {
+pub(crate) fn set_flag(mob: &mut EntityWorldMut<'_>, flag: u32, on: bool) {
     use jolyne::valentine::actor_data_i_ds as ids;
     let Some(mut flags) = mob.get_mut::<ActorFlags>() else {
         return;

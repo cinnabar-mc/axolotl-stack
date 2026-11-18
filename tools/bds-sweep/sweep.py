@@ -4,6 +4,8 @@
     python tools/bds-sweep/sweep.py drops --blocks all --states all --out DIR
     python tools/bds-sweep/sweep.py armor-slots --out DIR
     python tools/bds-sweep/sweep.py fuel --out DIR
+    python tools/bds-sweep/sweep.py scenarios --family pilot --out DIR
+    python tools/bds-sweep/sweep.py placements --out DIR
 
 Starts BDS 1.26.51 under Endstone on a fresh superflat creative world
 (`bds-sweep-1.26.51`, peaceful, operators by default), launches
@@ -23,6 +25,7 @@ import argparse
 import datetime as dt
 import json
 import math
+import os
 import re
 import shutil
 import subprocess
@@ -32,20 +35,53 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import bds_runtime  # noqa: E402
+import circuits  # noqa: E402
+import coral  # noqa: E402
+import liquids  # noqa: E402
 import native  # noqa: E402
+import placements  # noqa: E402
+import pvp_items  # noqa: E402
+import random_ticks  # noqa: E402
+import scenarios  # noqa: E402
+import tnt  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
 LEVEL = 'bds-sweep-1.26.51'
 PLAYER = 'BDSSweep'
+# The second scripted player of the `placements` job: it watches every click
+# from outside the arena and records what another player is sent.
+WATCHER = 'BDSWatch'
 # The second client of `--observer` (a second viewer of the job's actors).
 OBSERVER_NAME = 'BDSOther'
+# The lockstep clients of `pvp` after the sweep player (B, then C).
+PVP_OTHERS = ['BDSOther', 'BDSThird']
+PVP_SETUP = ['gamerule pvp true', 'gamerule keepinventory true', 'gamerule naturalregeneration false',
+             'gamerule doimmediaterespawn true', 'gamerule falldamage true']
 STOP_REQUEST = 'stop.request'
 # Superflat: grass top at y=-61, so the player stands at y=-60.
 # `miner` = x, y, z, yaw, pitch: facing east (yaw -90) at the west face (4) of
 # `mine_block`, which is at eye level (eyes at y + 1.62).
 ARENA = {'player': [0.5, -60, 0.5], 'block': [3, -60, 0], 'furnaces': [-8, -60, 6],
          'miner': [0.5, -60, 0.5, -90, 0], 'mine_block': [1, -59, 0], 'mine_face': 4,
-         'target': [2.0, -60, 0.5]}
+         'target': [2.0, -60, 0.5],
+         # Block scenarios: 8 x 8 cells, 6 blocks apart, east of the player and
+         # inside its ticking range.
+         'scenarios': {'origin': [8, -60, -24], 'spacing': 6, 'columns': 8},
+         # Survival block clicks: cleared box (offsets) around the origin; the
+         # watcher stands west of the box, looking at it.
+         'placements': {'origin': [4, -60, 4], 'clear': [[-3, -1, -4], [5, 4, 13]],
+                        'watcher': [-6.5, 0, 2.5, -90, 10]}}
+# Scenario cell layouts (`scenarios.layout`): the 8 x 8 cells above, and the
+# long redstone circuit cells of `circuits.py`, with the server properties
+# each needs (circuits reach farther from the player than tick distance 4).
+ARENAS = {'cells': (ARENA['scenarios'], {}), 'circuits': (circuits.LAYOUT, circuits.PROPERTIES),
+          'fields': (random_ticks.LAYOUT, random_ticks.PROPERTIES), 'coral': (coral.LAYOUT, coral.PROPERTIES),
+          'blast': (tnt.LAYOUT, tnt.PROPERTIES),
+          'liquids': (liquids.LAYOUT, liquids.PROPERTIES),
+          'liquid_blocks': (liquids.BLOCKS_LAYOUT, liquids.BLOCKS_PROPERTIES),
+          'liquids_nether': (liquids.NETHER_LAYOUT, liquids.PROPERTIES),
+          'liquids_chunks': (liquids.CHUNK_LAYOUT, liquids.PROPERTIES),
+          'liquids_world': (liquids.WORLD_LAYOUT, liquids.WORLD_PROPERTIES)}
 SETUP = [
     'gamerule domobspawning false',
     'gamerule dodaylightcycle false',
@@ -148,9 +184,104 @@ def item_names(spec: str, slice_: list[str]) -> list[str]:
     return spec.split(',')
 
 
+HELD_BLOCKS = ['minecraft:dirt', 'minecraft:netherrack', 'minecraft:oak_leaves']
+# Per block, the effects measured on the empty hand: stone resolves the haste
+# multipliers (150 ticks by hand), dirt the mining fatigue ones (15 ticks).
+EFFECT_CELLS = {'minecraft:stone': ['haste1', 'haste2', 'haste3'],
+                'minecraft:dirt': ['mining_fatigue1', 'mining_fatigue2']}
+
+
+def block_cells(names: list[str]) -> list[tuple[str, dict]]:
+    first = native.default_states()
+    return [(name, SLICE_BLOCKS.get(name, first[name])) for name in names]
+
+
+def non_tool_diggers() -> list[str]:
+    """Items the parity catalog gives a `digger` facet through their native
+    mining class alone (no `minecraft:digger` tag and no digger or shears
+    class): armour, bows, bundles, spears, music discs, ... Education
+    Edition items (glow sticks, sparklers) are skipped."""
+    rows = json.loads((REPO / 'crates' / 'unastar-data' / 'src' / 'items.json').read_text(encoding='utf-8'))
+    return sorted(row['identifier'] for row in rows
+                  if row['mine_block_type'] in (1, 2) and 'minecraft:digger' not in row.get('tags', [])
+                  and row['identifier'] not in ('minecraft:glow_stick', 'minecraft:sparkler'))
+
+
+def wear_tools() -> list[str]:
+    """Every tier of every digger and sword, shears, trident and mace."""
+    return ([f'minecraft:{tier}_{kind}' for kind in DIGGERS for tier in TIERS]
+            + ['minecraft:shears', 'minecraft:trident', 'minecraft:mace'])
+
+
+def held_mining_items(args) -> list[dict]:
+    """The empty hand (3 trials) and every held item (`--trials` trials) on
+    each block: whether a non-tool item mines like the hand, and what one
+    break costs its durability. The default set also breaks dirt and
+    netherrack (cells the tool slice does not have) with every tool, for the
+    wear a break costs each tool."""
+    default = args.items in ('slice', 'non-tool-diggers')
+    names = non_tool_diggers() if default else args.items.split(',')
+    blocks = HELD_BLOCKS if args.blocks == 'slice' else args.blocks.split(',')
+    items = []
+    for block, states in block_cells(blocks):
+        held = names + (wear_tools() if default and block != 'minecraft:oak_leaves' else [])
+        for spec, repeats in [(None, 3)] + [({'item': name}, args.trials) for name in held]:
+            items.append({'key': f'{state_key(block, states)}|{tool_key(spec)}', 'block': block,
+                          'states': states, 'tool': spec, 'commands': [], 'max_ticks': args.mine_ticks,
+                          'repeats': repeats})
+    return items
+
+
+def effect_mining_items(args) -> list[dict]:
+    """Haste and mining fatigue levels on the empty hand (`EFFECT_CELLS`),
+    `--trials` trials each, keyed like the slice's `+haste1` variants."""
+    items = []
+    for block, states in block_cells(list(EFFECT_CELLS)):
+        for effect in EFFECT_CELLS[block]:
+            name, level = effect.rstrip('0123456789'), int(effect[len(effect.rstrip('0123456789')):])
+            items.append({'key': f'{state_key(block, states)}|hand+{effect}', 'block': block, 'states': states,
+                          'tool': None, 'commands': [f'effect {{player}} {name} 1000 {level - 1} true'],
+                          'max_ticks': args.mine_ticks, 'repeats': args.trials})
+    return items
+
+
+def capture_mining_items(args) -> list[dict]:
+    """One trial of each breaking situation, for packet captures of the whole
+    flow (run with `--client-capture`): a break BDS completes itself (dirt by
+    hand, stone with a diamond pickaxe, Haste II, a block above, a tool that
+    wears), an instant break (short grass), a client prediction on time and
+    early, and an abort after 5 ticks."""
+    dirt = ('minecraft:dirt', {})
+    cells = [
+        ('hand', dirt, None, {}),
+        ('diamond_pickaxe', ('minecraft:stone', {}), {'item': 'minecraft:diamond_pickaxe'}, {}),
+        ('iron_shovel', dirt, {'item': 'minecraft:iron_shovel'}, {}),
+        ('hand+instant', ('minecraft:short_grass', {}), None, {}),
+        ('hand+predict14', dirt, None, {'predict_after': 14}),
+        ('hand+predict10', dirt, None, {'predict_after': 10, 'max_ticks': 40}),
+        ('hand+abort5', dirt, None, {'max_ticks': 5}),
+        ('hand+haste2', dirt, None, {'commands': ['effect {player} haste 1000 1 true']}),
+        ('hand+stone_above', dirt, None, {'commands': ['setblock 1 -58 0 stone'],
+                                          'cleanup': ['setblock 1 -58 0 air']}),
+    ]
+    items = []
+    for variant, (block, states), spec, extra in cells:
+        items.append({'key': f'{state_key(block, states)}|{variant}', 'block': block, 'states': states,
+                      'tool': spec, 'commands': [], 'max_ticks': args.mine_ticks, 'repeats': 1, **extra})
+    return items
+
+
 def mining_items(args) -> list[dict]:
     """Hand, every tier of each correct digger, shears, efficiency I-V on the
-    diamond correct tool, and haste I/II and mining fatigue I with it."""
+    diamond correct tool, and haste I/II and mining fatigue I with it
+    (`--variants tools`); see `held_mining_items`, `effect_mining_items` and
+    `capture_mining_items` for the other variant sets."""
+    if args.variants == 'held':
+        return held_mining_items(args)
+    if args.variants == 'effects':
+        return effect_mining_items(args)
+    if args.variants == 'capture':
+        return capture_mining_items(args)
     facts = native.mining()
     cells = list(SLICE_BLOCKS.items()) if args.blocks == 'slice' else [
         (name, native.default_states()[name]) for name in args.blocks.split(',')]
@@ -212,16 +343,33 @@ def armor_value_items(args) -> list[dict]:
     return items
 
 
+SPEARS = [f'minecraft:{tier}_spear' for tier in TIERS]
+
+
+# One hit of each amount per piece: wear rules round the damage per 4 points.
+ARMOR_WEAR_AMOUNTS = [1, 3, 4, 5, 7, 8, 12, 16, 40]
+
+
+def armor_wear_items(args) -> list[dict]:
+    """Every item with the native tag `minecraft:is_armor` (or `--items`), in
+    the slot the measured `armor_slots.json` assigns, like `armor-values`."""
+    return [item for item in armor_value_items(args) if item['item']]
+
+
 def attack_items(args) -> list[dict]:
     """Hand, every tier of every digger and sword, trident and mace, and
-    sharpness I-V on the diamond sword."""
+    sharpness I-V on the diamond sword; `--items` adds held items (`spears`:
+    every spear tier), spaced `--gap` extra ticks apart (spears declare a
+    0.65 s attack cooldown)."""
     tools: list[dict | None] = [None]
     tools += [tool(kind, tier) for kind in DIGGERS for tier in TIERS]
     tools += [{'item': 'minecraft:trident'}, {'item': 'minecraft:mace'}]
     tools += [tool('sword', 'diamond', sharpness=level) for level in range(1, 6)]
+    items = [{'key': tool_key(spec), 'tool': spec} for spec in tools]
     if args.items not in ('slice', 'all'):
-        tools += [{'item': name} for name in args.items.split(',')]
-    return [{'key': tool_key(spec), 'tool': spec} for spec in tools]
+        names = SPEARS if args.items == 'spears' else args.items.split(',')
+        items += [{'key': tool_key({'item': name}), 'tool': {'item': name}, 'gap': args.gap} for name in names]
+    return items
 
 
 def knockback_items(args) -> list[dict]:
@@ -1181,6 +1329,500 @@ def enderman_round_two(item, target: str, protect: list[str], look) -> list[dict
     return items
 
 
+SLIMES = ('slime', 'magma_cube')
+SLIME_SIZES = ('small', 'medium', 'large')
+
+
+def slime_items(args) -> list[dict]:
+    """`slime`: the slime and the magma cube, summoned at a size with
+    `summon <mob> x y z 0 0 spawn_<size>`; every slime and magma cube is
+    sampled every tick (`track`), and `--client-capture` holds their
+    AddActors, motion and the damage they deal. `--items` picks a set:
+    `hop` (a calm mob of each size, no target: the creative player stands
+    24 blocks away, 600 ticks, three times), `attack` (the survival
+    player, kept alive by Health Boost X and Regeneration V in a barrier
+    wall behind it, and the mob 5 blocks east, 400 ticks), `split`
+    (a medium or large mob killed by `/damage` from the player on tick 10,
+    twelve times, and by `/kill` three times; 80 ticks), `float` (a slime
+    in water, a magma cube in lava, 200 ticks) or `all`."""
+    target = f'"{PLAYER}"'
+    track = [f'minecraft:{mob}' for mob in SLIMES]
+    # The job removes the tracked mobs without killing them (a killed slime
+    # splits into the next item).
+    clean = ['kill @e[type=minecraft:item]', 'kill @e[type=minecraft:xp_orb]']
+
+    def summon(mob, size, at):
+        return f'summon minecraft:{mob} {at[0]} {at[1]} {at[2]} {at[3]} 0 spawn_{size}'
+
+    def row(key, mob, size, at, player, ticks, setup=(), cleanup=(), actions=()):
+        return {'key': f'{mob}|{key}', 'mob': None, 'at': None, 'player': player, 'frozen': False,
+                'ticks': ticks, 'setup': list(setup) + [summon(mob, size, at)],
+                'cleanup': list(cleanup) + clean, 'actions': list(actions), 'track': track}
+
+    far = [0.5, -60, -24.5, 0]
+    sets = {}
+    sets['hop'] = [row(f'hop-{size}-{n}', mob, size, [6.5, -60, 6.5, 0], far, 600)
+                   for mob in SLIMES for size in SLIME_SIZES for n in range(3)]
+    # A barrier wall behind the player (west) keeps the slime's knockback
+    # from pushing it away; nothing at the sides, so a big slime can touch.
+    pen = ['fill -1 -60 -3 -1 -57 3 barrier']
+    unpen = [line.replace(' barrier', ' air') for line in pen]
+    alive = [f'gamemode survival {target}', f'effect {target} health_boost 100000 9 true',
+             f'effect {target} regeneration 100000 4 true']
+    heal = {'t': 0, 'commands': [f'effect {target} instant_health 1 9 true']}
+    sets['attack'] = [row(f'attack-{size}', mob, size, [5.5, -60, 0.5, 90], [0.5, -60, 0.5, -90], 400,
+                          setup=pen + alive, cleanup=[f'effect {target} clear', f'gamemode creative {target}'] + unpen,
+                          actions=[heal])
+                      for mob in SLIMES for size in SLIME_SIZES]
+    split = []
+    for mob in SLIMES:
+        for size in ('medium', 'large'):
+            hit = f'damage @e[type=minecraft:{mob}] 100 entity_attack entity {target}'
+            split += [row(f'split-{size}-{n}', mob, size, [4.5, -60, 0.5, 30], far, 80,
+                          actions=[{'t': 10, 'commands': [hit]}]) for n in range(12)]
+            split += [row(f'kill-{size}-{n}', mob, size, [4.5, -60, 0.5, 30], far, 80,
+                          actions=[{'t': 10, 'commands': [f'kill @e[type=minecraft:{mob}]']}]) for n in range(3)]
+    sets['split'] = split
+    pool = {'slime': 'water', 'magma_cube': 'lava'}
+    sets['float'] = [row(f'float-{size}', mob, size, [6.5, -62, 0.5, 0], far, 200,
+                         setup=[f'fill 3 -63 -3 9 -61 3 {pool[mob]}'],
+                         cleanup=['fill 3 -63 -3 9 -62 3 dirt', 'fill 3 -61 -3 9 -61 3 grass_block'])
+                     for mob in SLIMES for size in ('small', 'large')]
+    if args.items == 'all':
+        return [item for name in ('hop', 'attack', 'split', 'float') for item in sets[name]]
+    if args.items not in sets:
+        raise SystemExit(f'slime --items must be all or one of {sorted(sets)}')
+    return sets[args.items]
+
+
+def slime_spawn_items(args) -> list[dict]:
+    """`slime-spawn`: natural spawning on the superflat floor (y -61, below
+    the slime-chunk height) on normal difficulty at midnight: the creative
+    player stands still at the origin and every slime that appears is
+    recorded and removed (`spawn_watch`), every other monster removed; two
+    items of `--samples` × 100 ticks."""
+    monsters = ['zombie', 'zombie_villager', 'husk', 'skeleton', 'stray', 'bogged', 'creeper', 'spider',
+                'cave_spider', 'enderman', 'witch', 'phantom', 'drowned', 'parched']
+    setup = ['difficulty normal', 'time set 18000', 'gamerule domobspawning true']
+    cleanup = ['gamerule domobspawning false', 'kill @e[type=minecraft:slime]']
+    return [{'key': f'slime|spawn-{n}', 'player': [0.5, -60, 0.5, 0], 'setup': setup, 'cleanup': cleanup,
+             'ticks': args.samples * 100, 'every': 5, 'watch': ['minecraft:slime'],
+             'clear': [f'minecraft:{mob}' for mob in monsters]} for n in range(2)]
+
+
+# A glass pool east of the player, water x 3..19, y -60..-54, z -7..7 (the
+# surface at y -53), and glass land east of it, level with the surface.
+POOL = ['fill 2 -61 -8 30 -54 8 glass', 'fill 3 -60 -7 19 -54 7 water']
+UNPOOL = ['fill 2 -61 -8 30 -50 8 air', 'fill 2 -63 -8 30 -62 8 dirt', 'fill 2 -61 -8 30 -61 8 grass_block']
+
+
+def drowned_items(args) -> list[dict]:
+    """`drowned`: the drowned in a glass pool (`POOL`), every drowned,
+    zombie, husk and thrown trident sampled every tick (`track`), summoned
+    with a spawn event (`summon … minecraft:as_adult`). `--items` picks a
+    set: `sink` (no target: the creative player stands outside), `hunt`
+    (the survival player on the pool floor, on a pillar at the surface, or
+    on the land east of the pool), `trident` (a ranged drowned and the
+    player in the water or on the land, no Resistance), `day` (noon, the
+    player in the water or on the land), `equipment` (200 drowned summoned
+    with their natural spawn event, on land), `convert` (a zombie, a baby
+    zombie and a husk held under water until they turn) or `all`."""
+    target = f'"{PLAYER}"'
+    track = ['minecraft:drowned', 'minecraft:zombie', 'minecraft:husk', 'minecraft:thrown_trident']
+    clean = ['kill @e[type=minecraft:item]', 'kill @e[type=minecraft:xp_orb]',
+             'kill @e[type=minecraft:thrown_trident]']
+    alive = [f'gamemode survival {target}', f'effect {target} health_boost 100000 9 true',
+             f'effect {target} regeneration 100000 4 true', f'effect {target} water_breathing 100000 0 true']
+    tough = alive + [f'effect {target} resistance 100000 4 true']
+    restore = [f'effect {target} clear', f'gamemode creative {target}']
+    heal = {'t': 0, 'commands': [f'effect {target} instant_health 1 9 true']}
+    far = [0.5, -60, -24.5, 0]
+    floor = [4.5, -60, 0.5, -90]
+    surface = [4.5, -54, 0.5, -90]
+    land = [25.5, -53, 0.5, 90]
+    pillar = ['fill 4 -60 0 4 -55 0 glass']
+
+    def summon(mob, event, at):
+        return f'summon minecraft:{mob} {at[0]} {at[1]} {at[2]} {at[3]} 0 minecraft:{event}'
+
+    def row(key, mob, event, at, player, ticks, setup=(), cleanup=(), actions=()):
+        return {'key': f'drowned|{key}', 'mob': None, 'at': None, 'player': player, 'frozen': False,
+                'ticks': ticks, 'setup': POOL + list(setup) + [summon(mob, event, at)],
+                'cleanup': clean + list(cleanup) + UNPOOL, 'actions': list(actions), 'track': track}
+
+    sets = {}
+    sets['sink'] = [row(f'sink-{n}', 'drowned', 'as_adult', [11.5, -56, 0.5, 90], far, 400) for n in range(3)]
+    hunt = []
+    for n in range(3):
+        hunt.append(row(f'hunt-floor-{n}', 'drowned', 'as_adult', [16.5, -60, 0.5, 90], floor, 300,
+                        setup=tough, cleanup=restore, actions=[heal]))
+        hunt.append(row(f'hunt-surface-{n}', 'drowned', 'as_adult', [16.5, -60, 0.5, 90], surface, 300,
+                        setup=pillar + tough, cleanup=restore, actions=[heal]))
+        hunt.append(row(f'hunt-land-{n}', 'drowned', 'as_adult', [8.5, -60, 0.5, 270], land, 400,
+                        setup=tough, cleanup=restore, actions=[heal]))
+    sets['hunt'] = hunt
+    trident = []
+    for n in range(4):
+        trident.append(row(f'trident-water-{n}', 'drowned', 'as_ranged_adult', [14.5, -60, 0.5, 90], floor, 600,
+                           setup=alive, cleanup=restore, actions=[heal]))
+    for n in range(2):
+        trident.append(row(f'trident-land-{n}', 'drowned', 'as_ranged_adult', [10.5, -60, 0.5, 270], land, 600,
+                           setup=alive, cleanup=restore, actions=[heal]))
+    sets['trident'] = trident
+    noon = ['time set 6000']
+    night = ['time set 18000']
+    sets['day'] = [row(f'day-{where}-{n}', 'drowned', 'as_adult', [16.5, -60, 0.5, 90], spot, 300,
+                       setup=noon + tough, cleanup=night + restore,
+                       actions=[heal])
+                   for n in range(2) for where, spot in (('water', floor), ('land', land))]
+    # 50 drowned a batch on the land west of the player, each with its
+    # natural spawn event; the capture holds their equipment.
+    batch = [f'summon minecraft:drowned {-6.5 - (k % 10) * 2} -60 {-8.5 + (k // 10) * 4} 0 0'
+             for k in range(50)]
+    sets['equipment'] = [{'key': f'drowned|equipment-{n}', 'mob': None, 'at': None, 'player': far,
+                          'frozen': False, 'ticks': 20, 'setup': batch, 'cleanup': clean, 'actions': [],
+                          'track': ['minecraft:drowned']} for n in range(4)]
+    gear = ['replaceitem entity @e[type=minecraft:zombie] slot.weapon.mainhand 0 minecraft:iron_sword',
+            'replaceitem entity @e[type=minecraft:zombie] slot.armor.head 0 minecraft:golden_helmet']
+    convert = [row(f'convert-zombie-{n}', 'zombie', 'as_adult', [11.5, -60, 0.5, 90], far, 1100, setup=[],
+                   actions=[{'t': 1, 'commands': gear}]) for n in range(3)]
+    convert.append(row('convert-baby-0', 'zombie', 'as_baby', [11.5, -60, 0.5, 90], far, 1100))
+    convert += [row(f'convert-husk-{n}', 'husk', 'as_adult', [11.5, -60, 0.5, 90], far, 1100) for n in range(2)]
+    sets['convert'] = convert
+    if args.items == 'all':
+        return [item for name in ('sink', 'hunt', 'trident', 'day', 'equipment', 'convert') for item in sets[name]]
+    if args.items not in sets:
+        raise SystemExit(f'drowned --items must be all or one of {sorted(sets)}')
+    return sets[args.items]
+
+
+# Barrier walls west, north and south of the player's block at the origin,
+# open to the east: a push from the east cannot move the player.
+PEN = ['fill -1 -60 -1 -1 -59 1 barrier', 'fill 0 -60 -1 0 -59 -1 barrier', 'fill 0 -60 1 0 -59 1 barrier']
+UNPEN = ['fill -1 -60 -1 0 -59 1 air']
+# A closed glass room east of the arena (inside x 11..29, y -60..-51,
+# z -9..9) and how to take it down again.
+ROOM = ['fill 10 -61 -10 30 -50 10 glass hollow']
+UNROOM = ['fill 10 -61 -10 30 -50 10 air', 'fill 10 -61 -10 30 -61 10 grass_block']
+# A closed stone room east of the arena (inside x 11..17, y -60..-58,
+# z -3..3): dark, with a ceiling three blocks over the floor.
+CAVE = ['fill 10 -61 -4 18 -57 4 stone hollow']
+UNCAVE = ['fill 10 -61 -4 18 -57 4 air', 'fill 10 -61 -4 18 -61 4 grass_block']
+# Stone rooms one block tall (inside y -60, the ceiling at y -59): `LOW`
+# (inside x 11..17, z -3..3) and `NARROW` (inside x 13..16, z -1..1, so a
+# player outside its east wall stands 3.8 blocks from its middle).
+LOW = ['fill 10 -61 -4 18 -59 4 stone hollow']
+UNLOW = ['fill 10 -61 -4 18 -59 4 air', 'fill 10 -61 -4 18 -61 4 grass_block']
+# A stone roof over the floor with a gap two blocks tall under it (y -58,
+# x 8..20, z -3..3): a bat at y -59 rests under it in a player's sight.
+CANOPY = ['fill 8 -58 -3 20 -58 3 stone']
+UNCANOPY = ['fill 8 -58 -3 20 -58 3 air']
+NARROW = ['fill 12 -61 -2 17 -59 2 stone hollow']
+UNNARROW = ['fill 12 -61 -2 17 -59 2 air', 'fill 12 -61 -2 17 -61 2 grass_block']
+
+
+def track_row(kind: str, key: str, mob: str, event: str | None, at, player, ticks: int, setup=(), cleanup=(),
+              actions=(), track=None) -> dict:
+    """One item of the generic per-tick job: `mob` summoned at `at` (x, y, z,
+    yaw), with the spawn `event` when given (`minecraft:` is added unless
+    the name has a namespace or starts with `:`, for an event named without
+    one), and every actor of a `track` type (the mob's by default) sampled
+    every tick."""
+    summon = f'summon minecraft:{mob} {at[0]} {at[1]} {at[2]} {at[3]} 0'
+    if event:
+        summon += ' ' + (event[1:] if event.startswith(':') else
+                         event if ':' in event else f'minecraft:{event}')
+    clean = ['kill @e[type=minecraft:item]', 'kill @e[type=minecraft:xp_orb]']
+    return {'key': f'{kind}|{key}', 'mob': None, 'at': None, 'player': list(player), 'frozen': False,
+            'ticks': ticks, 'setup': list(setup) + [summon], 'cleanup': clean + list(cleanup),
+            'actions': list(actions), 'track': track or [f'minecraft:{mob}']}
+
+
+def pick_set(kind: str, sets: dict, items: str, default: str = 'all') -> list[dict]:
+    choice = default if items == 'slice' else items
+    if choice == 'all':
+        return [item for name in sets for item in sets[name]]
+    if choice not in sets:
+        raise SystemExit(f'{kind} --items must be all or one of {sorted(sets)}')
+    return sets[choice]
+
+
+def bat_items(args) -> list[dict]:
+    """`bat`: a bat summoned (its definition has no events) and sampled
+    every tick while the creative player stands outside. `--items room`
+    (a closed glass room, `ROOM`, 1,200 ticks, four times), `open` (the
+    open sky over the floor, 600 ticks, twice), `cave` (a dark stone room
+    three blocks tall, `CAVE`, 2,400 ticks, three times), `wake` (the cave
+    with the player teleported into its middle on tick 1,500, creative
+    then survival), `low` (a stone room one block tall, `LOW`, the bat
+    hurt by 1 on ticks 20, 120, 220 and 320 so it wakes and settles again,
+    eight times), `near` (the bat resting in a narrower one-block room and
+    the creative or survival player teleported beside it on tick 40, 3.85
+    to 6 blocks east of it), `unroof` (the block over a resting bat removed
+    on tick 40), `canopy` (the bat resting under a stone roof two blocks
+    over the floor, `CANOPY`, the player teleported on tick 40 to 3.75 to
+    4.1 blocks east of it, in clear sight) or `all`."""
+    far = [0.5, -60, -24.5, 0]
+    target = f'"{PLAYER}"'
+    inside = f'tp {target} 14.5 -60 0.5'
+    sets = {
+        'room': [track_row('bat', f'room-{n}', 'bat', None, [20.5, -56, 0.5, 0], far, 1200,
+                           setup=ROOM, cleanup=UNROOM) for n in range(4)],
+        'open': [track_row('bat', f'open-{n}', 'bat', None, [20.5, -52, 0.5, 0], far, 600)
+                 for n in range(2)],
+        'cave': [track_row('bat', f'cave-{n}', 'bat', None, [14.5, -59, 0.5, 0], far, 2400,
+                           setup=CAVE, cleanup=UNCAVE) for n in range(3)],
+        'wake': [track_row('bat', f'wake-{mode}', 'bat', None, [14.5, -59, 0.5, 0], far, 2400,
+                           setup=CAVE + [f'gamemode {mode} {target}'],
+                           cleanup=UNCAVE + [f'gamemode creative {target}'],
+                           actions=[{'t': 1500, 'commands': [inside]}])
+                 for mode in ('creative', 'survival')],
+        'low': [track_row('bat', f'low-{n}', 'bat', None, [14.5, -60, 0.5, 0], far, 400,
+                          setup=LOW, cleanup=UNLOW,
+                          actions=[{'t': t, 'commands': ['damage @e[type=minecraft:bat] 1']}
+                                   for t in (20, 120, 220, 320)]) for n in range(8)],
+        'near': [track_row('bat', f'near-{mode}-{d}', 'bat', None, [14.5, -60, 0.5, 0], far, 160,
+                           setup=NARROW + [f'gamemode {mode} {target}'],
+                           cleanup=UNNARROW + [f'gamemode creative {target}'],
+                           actions=[{'t': 40, 'commands': [f'tp {target} {14.5 + d / 100} -60 0.5']}])
+                 for mode in ('creative', 'survival') for d in (385, 395, 405, 450, 600)],
+        'canopy': [track_row('bat', f'canopy-{mode}-{d}', 'bat', None, [14.5, -59, 0.5, 0], far, 100,
+                             setup=CANOPY + [f'gamemode {mode} {target}'],
+                             cleanup=UNCANOPY + [f'gamemode creative {target}'],
+                             actions=[{'t': 40, 'commands': [f'tp {target} {14.5 + d / 100} -60 0.5']}])
+                   for mode, d in (('survival', 375), ('survival', 390), ('survival', 398), ('survival', 410),
+                                   ('creative', 390), ('creative', 410))],
+        'unroof': [track_row('bat', f'unroof-{n}', 'bat', None, [14.5, -60, 0.5, 0], far, 100,
+                             setup=LOW, cleanup=UNLOW,
+                             actions=[{'t': 40, 'commands': ['setblock 14 -59 0 air']}]) for n in range(2)],
+    }
+    return pick_set('bat', sets, args.items)
+
+
+def polar_bear_items(args) -> list[dict]:
+    """`polar-bear`: polar bears summoned with a spawn event (an adult with
+    `minecraft:ageable_grow_up`, a baby with `minecraft:entity_born`) and
+    sampled every tick. `--items stroll` (an adult alone, the creative
+    player far away, 600 ticks, three times), `attack` (an adult the survival
+    player hits (`/damage` by the player) on tick 5 from three blocks away, 300 ticks, three times;
+    Health Boost X and Regeneration V, no Resistance), `stomp` (the player
+    held by barrier walls, `PEN`, and an angered adult frozen 1.4 to 5
+    blocks east of it, 200 ticks each), `baby` (a baby and an
+    adult, the survival player six blocks from the baby; the baby takes it
+    as a target and its anger reaches the adult, 300 ticks, three times),
+    `swim` (an adult in a pool, 300 ticks, twice), `swim-push` (an adult in
+    the pool hit by the far player, 120 ticks, three times) or `all`."""
+    target = f'"{PLAYER}"'
+    alive = [f'gamemode survival {target}', f'effect {target} health_boost 100000 9 true',
+             f'effect {target} regeneration 100000 4 true']
+    restore = [f'effect {target} clear', f'gamemode creative {target}']
+    heal = {'t': 0, 'commands': [f'effect {target} instant_health 1 9 true']}
+    far = [0.5, -60, -24.5, 0]
+    track = ['minecraft:polar_bear']
+    adult = 'ageable_grow_up'
+    # The summoned bear has no runtime id in the job, so the player's hit is
+    # a `/damage` with the player as the attacker.
+    hit = f'damage @e[type=minecraft:polar_bear] 1 entity_attack entity {target}'
+    freeze = 'effect @e[type=minecraft:polar_bear] slowness 100000 255 true'
+    sets = {
+        'stroll': [track_row('polar_bear', f'stroll-{n}', 'polar_bear', adult, [20.5, -60, 0.5, 0], far, 600)
+                   for n in range(3)],
+        'attack': [track_row('polar_bear', f'attack-{n}', 'polar_bear', adult, [3.5, -60, 0.5, 90],
+                             [0.5, -60, 0.5, -90], 300, setup=alive, cleanup=restore,
+                             actions=[heal, {'t': 5, 'commands': [hit]}]) for n in range(3)],
+        'baby': [track_row('polar_bear', f'baby-{n}', 'polar_bear', 'entity_born', [6.5, -60, 0.5, 90],
+                           [0.5, -60, 0.5, -90], 300,
+                           setup=alive + ['summon minecraft:polar_bear 10.5 -60 4.5 90 0 minecraft:ageable_grow_up'],
+                           cleanup=restore, actions=[heal], track=track) for n in range(3)],
+        # The player held by barrier walls, an angered adult frozen (hidden
+        # Slowness 255) at a fixed distance east: when it hits and rears.
+        'stomp': [track_row('polar_bear', f'stomp-{d}', 'polar_bear', adult, [0.5 + d / 10, -60, 0.5, 90],
+                            [0.5, -60, 0.5, -90], 200, setup=alive + PEN,
+                            cleanup=restore + UNPEN,
+                            actions=[heal, {'t': 1, 'commands': [freeze]}, {'t': 5, 'commands': [hit]}])
+                  for d in (14, 18, 22, 26, 30, 34, 40, 50)],
+        'swim': [track_row('polar_bear', f'swim-{n}', 'polar_bear', adult, [11.5, -56, 0.5, 90], far, 300,
+                           setup=POOL, cleanup=UNPOOL) for n in range(2)],
+        # Knocked east across the pool by the far player's hit on tick 40:
+        # how fast the push dies away in water.
+        'swim-push': [track_row('polar_bear', f'swim-push-{n}', 'polar_bear', adult, [8.5, -58, 0.5, 90], far, 120,
+                                setup=POOL, cleanup=UNPOOL, actions=[{'t': 40, 'commands': [hit]}])
+                      for n in range(3)],
+    }
+    return pick_set('polar-bear', sets, args.items)
+
+
+def tadpole_items(args) -> list[dict]:
+    """`tadpole`: a tadpole summoned in the glass pool (`POOL`) and sampled
+    every tick while the creative player stands outside: `--items swim`
+    (600 ticks, four times), `grow` (summoned with `ageable_grow_up`, the
+    tadpole and the frog it turns into sampled, 60 ticks, three times) or
+    `all`."""
+    far = [0.5, -60, -24.5, 0]
+    sets = {'swim': [track_row('tadpole', f'swim-{n}', 'tadpole', None, [11.5, -57, 0.5, 90], far, 600,
+                               setup=POOL, cleanup=UNPOOL) for n in range(4)],
+            'grow': [track_row('tadpole', f'grow-{n}', 'tadpole', ':ageable_grow_up', [11.5, -57, 0.5, 90], far,
+                               60, setup=POOL, cleanup=['kill @e[type=minecraft:frog]'] + UNPOOL,
+                               track=['minecraft:tadpole', 'minecraft:frog']) for n in range(3)]}
+    return pick_set('tadpole', sets, args.items)
+
+
+def ghast_items(args) -> list[dict]:
+    """`ghast`: a ghast summoned high over the floor and sampled every tick
+    while the creative player stands far away (`--items open`, 600 ticks,
+    twice, or `all`): how a second `navigation.float` flyer drags."""
+    far = [0.5, -60, -24.5, 0]
+    sets = {'open': [track_row('ghast', f'open-{n}', 'ghast', None, [20.5, -30, 0.5, 0], far, 600)
+                     for n in range(2)]}
+    return pick_set('ghast', sets, args.items)
+
+
+def vex_items(args) -> list[dict]:
+    """`vex`: a vex summoned and sampled every tick. `--items idle` (in the
+    closed glass room, `ROOM`, the creative player outside, 400 ticks,
+    twice), `charge` (the survival player 8 blocks away, Health Boost X and
+    Regeneration V, no Resistance, 300 ticks, six times), `decay` (summoned
+    with `minecraft:add_damage_timer`, the creative player teleported four
+    blocks over the vex every 40 ticks so it stays in view, 2,800 ticks,
+    twice: when its hurting starts and how often it hurts), `look` (a frozen
+    cow four blocks below the vex, the player far away, 400 ticks, twice)
+    or `all`."""
+    target = f'"{PLAYER}"'
+    alive = [f'gamemode survival {target}', f'effect {target} health_boost 100000 9 true',
+             f'effect {target} regeneration 100000 4 true']
+    restore = [f'effect {target} clear', f'gamemode creative {target}']
+    heal = {'t': 0, 'commands': [f'effect {target} instant_health 1 9 true']}
+    far = [0.5, -60, -24.5, 0]
+    sets = {
+        'idle': [track_row('vex', f'idle-{n}', 'vex', None, [20.5, -56, 0.5, 0], far, 400,
+                           setup=ROOM, cleanup=UNROOM) for n in range(2)],
+        'charge': [track_row('vex', f'charge-{n}', 'vex', None, [8.5, -58, 0.5, 90], [0.5, -60, 0.5, -90], 300,
+                             setup=alive, cleanup=restore, actions=[heal]) for n in range(6)],
+        # A frozen cow beside the vex, the player far: what
+        # `look_at_entity` looks at.
+        'look': [track_row('vex', f'look-{n}', 'vex', None, [20.5, -56, 0.5, 0], far, 400,
+                           setup=['summon minecraft:cow 20.5 -60 2.5 0 0',
+                                  'effect @e[type=minecraft:cow] slowness 100000 255 true'],
+                           cleanup=['kill @e[type=minecraft:cow]'], track=['minecraft:vex', 'minecraft:cow'])
+                 for n in range(2)],
+        # The vex flies through walls: the player follows it to stay in view.
+        'decay': [track_row('vex', f'decay-{n}', 'vex', 'add_damage_timer', [20.5, -56, 0.5, 0], far, 2800,
+                            setup=ROOM, cleanup=UNROOM,
+                            actions=[{'t': t, 'commands': [f'execute at @e[type=minecraft:vex] run tp {target} ~ ~4 ~']}
+                                     for t in range(40, 2800, 40)])
+                  for n in range(2)],
+    }
+    return pick_set('vex', sets, args.items)
+
+
+def goat_items(args) -> list[dict]:
+    """`goat`: adult goats (summoned with `minecraft:ageable_grow_up`, then
+    given their variant with `/event … minecraft:born_screamer` or
+    `born_default` on tick 0) sampled every tick. `--items ram` (a screamer
+    8 blocks east of the survival player, Health Boost X and Regeneration V,
+    no Resistance, 600 ticks, three times), `ram-default` (the same with a
+    default goat, twice), `horn` (a screamer 9 blocks east of the player
+    behind a one-block wall of stone, packed ice, an oak log or glass at
+    x 3, items tracked too, 400 ticks, twice each: which blocks a ram that
+    hits them snaps a horn off on), `jump` (a default goat in a stone well
+    three blocks deep, the creative player far away, 1,200 ticks, twice),
+    `fall` (a goat summoned 8, 12, 16 and 24 blocks over the floor, 100
+    ticks) or `all`."""
+    target = f'"{PLAYER}"'
+    alive = [f'gamemode survival {target}', f'effect {target} health_boost 100000 9 true',
+             f'effect {target} regeneration 100000 4 true']
+    restore = [f'effect {target} clear', f'gamemode creative {target}']
+    heal = {'t': 0, 'commands': [f'effect {target} instant_health 1 9 true']}
+    far = [0.5, -60, -24.5, 0]
+    adult = 'ageable_grow_up'
+
+    def variant(name: str) -> dict:
+        return {'t': 0, 'commands': [f'event entity @e[type=minecraft:goat] minecraft:born_{name}']}
+
+    def wall(block: str) -> list[str]:
+        return [f'fill 3 -60 -4 3 -60 4 {block}']
+
+    unwall = ['fill 3 -60 -4 3 -60 4 air']
+    well = ['fill 9 -60 -2 13 -58 2 stone', 'fill 10 -60 -1 12 -58 1 air']
+    unwell = ['fill 9 -60 -2 13 -58 2 air']
+    sets = {
+        'ram': [track_row('goat', f'ram-{n}', 'goat', adult, [8.5, -60, 0.5, 90], [0.5, -60, 0.5, -90], 600,
+                          setup=alive, cleanup=restore,
+                          actions=[{'t': 0, 'commands': heal['commands'] + variant('screamer')['commands']}])
+                for n in range(3)],
+        'ram-default': [track_row('goat', f'ram-default-{n}', 'goat', adult, [8.5, -60, 0.5, 90],
+                                  [0.5, -60, 0.5, -90], 600, setup=alive, cleanup=restore,
+                                  actions=[{'t': 0, 'commands': heal['commands'] + variant('default')['commands']}])
+                        for n in range(2)],
+        'horn': [track_row('goat', f'horn-{block}-{n}', 'goat', adult, [9.5, -60, 0.5, 90], [1.5, -60, 0.5, -90],
+                           400, setup=alive + wall(block), cleanup=restore + unwall,
+                           actions=[{'t': 0, 'commands': heal['commands'] + variant('screamer')['commands']}],
+                           track=['minecraft:goat', 'minecraft:item'])
+                 for block in ('stone', 'packed_ice', 'oak_log', 'glass') for n in range(2)],
+        'jump': [track_row('goat', f'jump-{n}', 'goat', adult, [11.5, -60, 0.5, 0], far, 1200,
+                           setup=well, cleanup=unwell, actions=[variant('default')]) for n in range(2)],
+        'fall': [track_row('goat', f'fall-{h}', 'goat', adult, [11.5, -60 + h, 0.5, 0], far, 100,
+                           actions=[variant('default')]) for h in (8, 12, 16, 24)],
+    }
+    return pick_set('goat', sets, args.items)
+
+
+def witch_items(args) -> list[dict]:
+    """`witch`: a frozen witch (hidden Slowness 255) and the survival player
+    in a barrier pen open towards it, kept alive by Health Boost X and
+    Regeneration (no Resistance, so the potions land); the witch, the
+    splash potions it throws and the player are sampled every tick.
+    `--items throw` (the player 3, 6, 9 and 10 blocks away, twice),
+    `drink` (the witch under water, standing in fire, hurt by `/damage`, and
+    with its target moved from 6 to 14 blocks), `resist` (`/damage` of
+    several causes and instant damage on a witch with no target) or `all`."""
+    target = f'"{PLAYER}"'
+    track = ['minecraft:witch', 'minecraft:splash_potion']
+    alive = [f'gamemode survival {target}', f'effect {target} health_boost 100000 9 true',
+             f'effect {target} regeneration 100000 4 true']
+    restore = [f'effect {target} clear', f'gamemode creative {target}']
+    clean = ['kill @e[type=minecraft:splash_potion]', 'kill @e[type=minecraft:item]',
+             'kill @e[type=minecraft:xp_orb]']
+    pen = ['fill -1 -60 -1 -1 -58 1 barrier', 'fill 0 -60 -1 1 -58 -1 barrier', 'fill 0 -60 1 1 -58 1 barrier']
+    unpen = [line.replace(' barrier', ' air') for line in pen]
+    heal = {'t': 0, 'commands': [f'effect {target} instant_health 1 9 true']}
+    player = [0.5, -60, 0.5, -90]
+    far = [0.5, -60, -24.5, 0]
+
+    def row(key, at, spot, ticks, setup=(), cleanup=(), actions=(), frozen=True):
+        return {'key': f'witch|{key}', 'mob': 'minecraft:witch', 'at': at, 'player': spot, 'frozen': frozen,
+                'ticks': ticks, 'setup': list(setup), 'cleanup': clean + list(cleanup),
+                'actions': list(actions), 'track': track}
+
+    sets = {}
+    sets['throw'] = [row(f'throw-{d}-{n}', [0.5 + d, -60, 0.5, 90], player, 600, setup=pen + alive,
+                         cleanup=restore + unpen, actions=[heal])
+                     for d in (3, 6, 9, 10) for n in range(2)]
+    fire = ['setblock 6 -60 0 fire']
+    hurt = 'damage @e[type=minecraft:witch] 12 entity_attack'
+    move = f'tp {target} -7.5 -60 0.5 -90'
+    sets['drink'] = (
+        [row(f'drink-water-{n}', [11.5, -58, 0.5, 90], far, 400, setup=POOL, cleanup=UNPOOL) for n in range(2)]
+        + [row(f'drink-fire-{n}', [6.5, -60, 0.5, 90], far, 300, setup=fire, cleanup=['setblock 6 -60 0 air'])
+           for n in range(2)]
+        + [row(f'drink-heal-{n}', [6.5, -60, 0.5, 90], far, 400, actions=[{'t': 20, 'commands': [hurt]}])
+           for n in range(2)]
+        + [row(f'drink-swift-{n}', [6.5, -60, 0.5, 90], player, 400, setup=alive, cleanup=restore,
+               actions=[heal, {'t': 80, 'commands': [move]}]) for n in range(2)])
+    who = '@e[type=minecraft:witch]'
+    sets['resist'] = [row('resist-0', [6.5, -60, 0.5, 90], far, 200, actions=[
+        {'t': 10, 'commands': [f'damage {who} 20 magic']},
+        {'t': 40, 'commands': [f'effect {who} instant_damage 1 1 true']},
+        {'t': 70, 'commands': [f'damage {who} 5 entity_attack']},
+        {'t': 100, 'commands': [f'damage {who} 10 wither']},
+        {'t': 130, 'commands': [f'effect {who} poison 4 1 true']}])]
+    if args.items == 'all':
+        return [item for name in ('throw', 'drink', 'resist') for item in sets[name]]
+    if args.items not in sets:
+        raise SystemExit(f'witch --items must be all or one of {sorted(sets)}')
+    return sets[args.items]
+
+
 def melee_effect_items(args) -> list[dict]:
     """`melee-effects`: a husk spawned two blocks east of the sweep player
     (survival) walks up and hits it for 200 ticks; the player lives through
@@ -1260,6 +1902,16 @@ def reload_items(args) -> list[dict]:
              'from': [-2.0, 0.0], 'yaw': -90, 'phase': args.items} for index in range(3)]
 
 
+def log_since(path: Path, offset: int) -> str:
+    """The text appended to `path` after byte `offset` ('' while missing)."""
+    try:
+        with path.open('rb') as log:
+            log.seek(offset)
+            return log.read().decode('utf-8', errors='replace')
+    except FileNotFoundError:
+        return ''
+
+
 def build_job(args, out: Path) -> dict:
     job = {'kind': args.kind.replace('-', '_'), 'player': PLAYER, 'output_dir': str(out),
            'arena': ARENA, 'setup_commands': SETUP}
@@ -1271,8 +1923,22 @@ def build_job(args, out: Path) -> dict:
         job['items'] = [{'key': name, 'item': name} for name in item_names(args.items, SLICE_ITEMS)]
     elif args.kind == 'armor-values':
         job.update(max_health=2000, damage=ARMOR_DAMAGE, items=armor_value_items(args))
+    elif args.kind == 'armor-wear':
+        job.update(max_health=2000, amounts=ARMOR_WEAR_AMOUNTS, items=armor_wear_items(args))
     elif args.kind == 'attack':
         job.update(target='minecraft:pig', items=attack_items(args))
+        if args.gamemode:
+            job['gamemode'] = args.gamemode
+    elif args.kind == 'scenarios':
+        job['items'] = scenarios.items(args.family)
+        job['arena'] = {**ARENA, 'scenarios': ARENAS[scenarios.layout(args.family)][0]}
+    elif args.kind == 'placements':
+        job['items'] = placements.items(args.cases)
+        if not args.no_watcher:
+            job['watcher'] = WATCHER
+    elif args.kind == 'item-blocks':
+        job['items'] = [{'key': name.removeprefix('minecraft:'), 'item': name}
+                        for name in item_names(args.items, native.items())]
     elif args.kind == 'fuel':
         job.update(furnace='furnace', lit_furnace='minecraft:lit_furnace', input='cobblestone',
                    max_ticks=args.max_ticks,
@@ -1288,7 +1954,8 @@ def build_job(args, out: Path) -> dict:
         # Zombies need a difficulty above peaceful and burn in daylight.
         job['setup_commands'] = SETUP + [f'difficulty {args.difficulty}', 'time set 18000']
         job['items'] = effect_items(args)
-    elif args.kind in ('ranged', 'mooshroom', 'melee-effects', 'silverfish', 'creeper', 'spider', 'enderman'):
+    elif args.kind in ('ranged', 'mooshroom', 'melee-effects', 'silverfish', 'creeper', 'spider', 'enderman',
+                       'slime', 'drowned', 'witch', 'bat', 'polar-bear', 'tadpole', 'ghast', 'vex', 'goat'):
         # The generic per-tick job of `effects`; hostile mobs need a
         # difficulty above peaceful and skeletons burn in daylight.
         job['kind'] = 'effects'
@@ -1296,7 +1963,13 @@ def build_job(args, out: Path) -> dict:
         job['items'] = {'ranged': ranged_items, 'mooshroom': mooshroom_items,
                         'melee-effects': melee_effect_items, 'silverfish': silverfish_items,
                         'creeper': creeper_items, 'spider': spider_items,
-                        'enderman': enderman_items}[args.kind](args)
+                        'enderman': enderman_items, 'slime': slime_items, 'drowned': drowned_items,
+                        'witch': witch_items, 'bat': bat_items, 'polar-bear': polar_bear_items,
+                        'tadpole': tadpole_items, 'ghast': ghast_items, 'vex': vex_items,
+                        'goat': goat_items}[args.kind](args)
+    elif args.kind == 'slime-spawn':
+        job['kind'] = 'spawn_watch'
+        job['items'] = slime_spawn_items(args)
     elif args.kind == 'entity-loot':
         # Hostile mobs need a difficulty above peaceful.
         job['setup_commands'] = SETUP + [f'difficulty {args.difficulty}', 'time set 18000']
@@ -1312,6 +1985,9 @@ def build_job(args, out: Path) -> dict:
             raise SystemExit('range needs --observer')
         job['kind'] = 'send_range'
         job['items'] = range_items(args)
+    elif args.kind == 'pvp':
+        job.update(others=PVP_OTHERS, pvp_setup=PVP_SETUP,
+                   items=pvp_items.pvp_items(args.items, args.repeats, args.entity_interactions_strict))
     if args.observer:
         job['observer'] = OBSERVER_NAME
     return job
@@ -1319,21 +1995,37 @@ def build_job(args, out: Path) -> dict:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('kind', choices=['drops', 'mining', 'armor-slots', 'armor-values', 'attack', 'fuel',
-                                         'knockback', 'knockback-reload', 'range', 'bonus', 'walk',
-                                         'effects', 'entity-loot', 'ranged', 'mooshroom', 'melee-effects',
-                                         'silverfish', 'creeper', 'spider', 'enderman'])
+    parser.add_argument('kind', choices=['drops', 'mining', 'armor-slots', 'armor-values', 'armor-wear', 'attack',
+                                         'fuel', 'scenarios', 'placements', 'item-blocks', 'knockback',
+                                         'knockback-reload', 'range', 'bonus', 'walk', 'effects', 'entity-loot',
+                                         'ranged', 'mooshroom', 'melee-effects', 'pvp', 'silverfish', 'creeper',
+                                         'spider', 'enderman', 'slime', 'slime-spawn', 'drowned', 'witch', 'bat',
+                                         'polar-bear', 'tadpole', 'ghast', 'vex', 'goat'])
     parser.add_argument('--out', type=Path)
     parser.add_argument('--blocks', default='slice', help="'slice', 'all' or comma-separated identifiers")
     parser.add_argument('--states', default='first', choices=['first', 'all'])
     parser.add_argument('--items', default='slice', help="'slice' or comma-separated identifiers")
     parser.add_argument('--samples', type=int, default=200)
+    parser.add_argument('--family', default='pilot', help="scenarios: 'all' or comma-separated families")
+    parser.add_argument('--cases', default='all',
+                        help="placements: 'all' or comma-separated case groups (placements.GROUPS)")
+    parser.add_argument('--no-watcher', action='store_true',
+                        help='placements: run without the second (watching) scripted player')
     parser.add_argument('--max-ticks', type=int, default=24000, help='fuel: longest burn to wait for')
     parser.add_argument('--mine-ticks', type=int, default=600, help='mining: longest break to wait for')
+    parser.add_argument('--variants', default='tools', choices=['tools', 'held', 'effects', 'capture'],
+                        help="mining: 'tools' (every tier, efficiency, effects with the diamond tool), "
+                             "'held' (--items held on --blocks; default every non-tool digger on dirt, "
+                             "netherrack and leaves), 'effects' (haste/mining fatigue levels by hand) or 'capture' "
+                             "(one trial of each breaking situation, for --client-capture)")
+    parser.add_argument('--trials', type=int, default=3, help='mining held/effects: trials per item')
+    parser.add_argument('--gamemode', choices=['survival', 'creative'],
+                        help='attack: the player game mode (survival shows wear per hit)')
+    parser.add_argument('--gap', type=int, default=0, help='attack: extra ticks between trials of --items')
+    parser.add_argument('--client-capture', action='store_true',
+                        help="record the client's packets to <out>/client-capture/packets.jsonl")
     parser.add_argument('--client', type=Path, default=REPO / 'target' / 'debug' / 'bds-sweep-client.exe')
     parser.add_argument('--timeout', type=float, default=6 * 3600, help='seconds for the whole job')
-    parser.add_argument('--client-capture', action='store_true',
-                        help="record the sweep player's packets to <out>/client/packets.jsonl")
     parser.add_argument('--observer', action='store_true',
                         help=f'add a second client, {OBSERVER_NAME}, recording to <out>/observer/packets.jsonl')
     parser.add_argument('--view-distance', type=int, default=6, help='server view distance in chunks')
@@ -1341,6 +2033,9 @@ def main() -> int:
     parser.add_argument('--difficulty', default='easy', choices=['easy', 'normal', 'hard'],
                         help='knockback, knockback-reload, bonus, effects, entity-loot: the difficulty set '
                              'before the job')
+    parser.add_argument('--repeats', type=int, default=3, help='pvp: runs of each item')
+    parser.add_argument('--entity-interactions-strict', action='store_true',
+                        help='pvp: run BDS with server-authoritative-entity-interactions-strict=true')
     parser.add_argument('--keep-world', action='store_true',
                         help='copy the world to <out>/world after BDS stops (it is deleted otherwise)')
     parser.add_argument('--world-from', type=Path,
@@ -1375,19 +2070,45 @@ def main() -> int:
         shutil.copytree(args.world_from, world)
     # A world with zombies in it must load above peaceful, which removes them.
     difficulty = args.difficulty if args.kind in ('knockback-reload', 'bonus') else 'peaceful'
+    # A layout's properties may also replace the level type (a natural world).
+    overrides = {'view_distance': args.view_distance, 'tick_distance': args.tick_distance,
+                 'level_type': 'FLAT'}
+    if args.kind == 'scenarios':
+        overrides.update(ARENAS[scenarios.layout(args.family)][1])
     properties = bds_runtime.base_properties(
-        LEVEL, level_type='FLAT', gamemode='creative', force_gamemode='true', difficulty=difficulty,
-        default_player_permission_level='operator', view_distance=args.view_distance,
-        tick_distance=args.tick_distance)
-    # The plugin's jobs come from this checkout, ahead of the editable
-    # install in the shared venv (which may point at another worktree).
-    env = {'BDS_SWEEP_JOB': str(job_path), 'CLIENT_DIFF_CAPTURE_DIR': str(out / 'client-diff-plugin'),
-           'PYTHONPATH': str(REPO / 'tools' / 'bds-sweep' / 'endstone-sweep' / 'src')}
+        LEVEL, gamemode='creative', force_gamemode='true', difficulty=difficulty,
+        default_player_permission_level='operator', **overrides)
+    if args.kind == 'pvp':
+        # Three lockstep clients; strict entity interactions on request.
+        properties['max-players'] = 1 + len(PVP_OTHERS)
+        properties['server-authoritative-entity-interactions-strict'] = str(
+            args.entity_interactions_strict).lower()
+    env = {'BDS_SWEEP_JOB': str(job_path),
+           # One capture folder per run: the capture plugin stops BDS when its
+           # files exist, which would end every resumed run.
+           'CLIENT_DIFF_CAPTURE_DIR': str(out / 'client-diff-plugin' / stamp),
+           # This checkout's plugin source wins over the shared venv's editable
+           # install, so a worktree runs its own jobs without reinstalling it.
+           'PYTHONPATH': os.pathsep.join(filter(None, [
+               str(REPO / 'tools' / 'bds-sweep' / 'endstone-sweep' / 'src'), os.environ.get('PYTHONPATH')]))}
     started = time.monotonic()
     status = 'timeout'
+    # Earlier runs of a resumed sweep wrote to the same log.
+    log_start = (out / 'bds.log').stat().st_size if (out / 'bds.log').exists() else 0
     client_command = [str(args.client), '--addr', bds_runtime.ADDR, '--name', PLAYER]
-    if args.client_capture:
-        client_command += ['--capture-dir', str(out / 'client')]
+    if (args.client_capture or args.kind in ('placements', 'item-blocks')
+            or job['arena'].get('scenarios', {}).get('tick_marks')):
+        # The client records both directions: BDS's answer to every click,
+        # the stack descriptors BDS sends.
+        client_command += ['--capture-dir', str(out / 'client-capture')]
+    if args.kind == 'pvp':
+        # One process for all three, so the plugin orders their packets.
+        for other in PVP_OTHERS:
+            client_command += ['--also', other]
+    watcher_command = None
+    if job.get('watcher'):
+        watcher_command = [str(args.client), '--addr', bds_runtime.ADDR, '--name', job['watcher'],
+                           '--capture-dir', str(out / 'watcher-capture')]
     observer_command = [str(args.client), '--addr', bds_runtime.ADDR, '--name', OBSERVER_NAME,
                         '--capture-dir', str(out / 'observer')]
     observer = None
@@ -1398,6 +2119,13 @@ def main() -> int:
             with ((out / 'client.log').open('a', encoding='utf-8') as log,
                   (out / 'observer.log').open('a', encoding='utf-8') as observer_log):
                 client = subprocess.Popen(client_command, cwd=REPO, stdout=log, stderr=subprocess.STDOUT)
+                # BDS refuses a second login from the same address right after
+                # the first ("ip recently connected"): the watcher joins once
+                # the player has spawned, and retries.
+                watcher = None
+                watcher_logins = 0
+                watcher_next = 0.0
+                watcher_log = (out / 'watcher.log').open('a', encoding='utf-8') if watcher_command else None
                 logins = 1
                 try:
                     while time.monotonic() - started < args.timeout:
@@ -1422,6 +2150,11 @@ def main() -> int:
                         if (out / 'error.txt').exists():
                             status = 'error'
                             break
+                        # A plugin that fails to import (a syntax error in
+                        # this checkout's jobs) leaves BDS idle forever.
+                        if "load plugin from entry point 'bds_sweep'" in log_since(out / 'bds.log', log_start):
+                            status = 'plugin failed to load (see bds.log)'
+                            break
                         # Handover: `stop.request` in the output directory stops BDS
                         # gracefully; finished items stay in results.jsonl.
                         if (out / STOP_REQUEST).exists():
@@ -1438,11 +2171,24 @@ def main() -> int:
                                 continue
                             status = f'client exited {client.returncode}'
                             break
+                        if watcher_command and (watcher is None or watcher.poll() is not None):
+                            spawned = 'spawned as' in (out / 'client.log').read_text(encoding='utf-8',
+                                                                                     errors='replace')
+                            if watcher is not None and (watcher.returncode == 0 or watcher_logins >= 6):
+                                status = f'watcher exited {watcher.returncode}'
+                                break
+                            if spawned and time.monotonic() >= watcher_next:
+                                watcher_logins += 1
+                                watcher_next = time.monotonic() + 15
+                                watcher = subprocess.Popen(watcher_command, cwd=REPO, stdout=watcher_log,
+                                                           stderr=subprocess.STDOUT)
                         time.sleep(1)
                 finally:
-                    for process in (client, observer):
+                    for process in (client, observer, watcher):
                         if process is not None and process.poll() is None:
                             process.kill()
+                    if watcher_log is not None:
+                        watcher_log.close()
     finally:
         if world.exists():
             if args.keep_world:

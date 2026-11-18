@@ -13,7 +13,8 @@
 //! client: the native `AddActor` attribute list has no row for them.
 //!
 //! Every knockback push reads [`KnockbackResistance::resist`]
-//! (`mob::combat::hit`): push and lift scaled by `1 − resistance` (the lift
+//! (`mob::combat::hit`; a player's worn armour gives one too,
+//! `player_life::hurt`): push and lift scaled by `1 − resistance` (the lift
 //! before its cap) while the old velocity is still halved, and no knockback
 //! at all once the resistance reaches 1 (BDS 1.26.51 knockback captures:
 //! zombies with their spawn bonus, the zoglin's and hoglin's 0.6, the iron

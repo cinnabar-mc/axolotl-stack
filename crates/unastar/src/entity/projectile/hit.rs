@@ -17,7 +17,7 @@ use crate::entity::mob::combat::{Hit, hurt_mob, knockback_power_of};
 use crate::entity::mob::constants::{
     DEFAULT_POTION_COLOUR_ARGB, ICONCRACK_ITEM_SHIFT, POTION_SPLASH_LEVEL_EVENT,
     PROJECTILE_PARTICLE_LEVEL_EVENT, SHOT_DAMAGE_PER_DIFFICULTY, SHOT_DAMAGE_SPREAD,
-    TIPPED_ARROW_EFFECTS,
+    TIPPED_ARROW_DURATION_DIVISOR,
 };
 use crate::entity::mob::events::{MobFacts, fire_event};
 use crate::entity::mob::net::sound::{level_event, queue_synced_sound};
@@ -40,6 +40,9 @@ pub(super) fn on_hit(
     target: Target,
 ) -> bool {
     let mut removed = false;
+    if rules.douse_fire {
+        super::potion::douse_fire(world, projectile, at);
+    }
     if let Some(range) = rules.grant_xp {
         grant_xp(world, range, at);
     }
@@ -68,6 +71,9 @@ pub(super) fn on_hit(
     if let Some(spawn) = &rules.spawn_chance {
         spawn_on_hit(world, projectile, spawn, at);
     }
+    if rules.thrown_potion_effect {
+        super::potion::splash(world, projectile, owner, at, target);
+    }
     let sound = match target {
         Target::Actor(actor) => rules
             .hit_sound
@@ -77,15 +83,19 @@ pub(super) fn on_hit(
     };
     // Not attributed to the projectile (no actor identifier, unique id -1)
     // and sent on the next tick, as BDS 1.26.51 sends an xp bottle's
-    // `glass`.
-    if let Some(sound) = sound {
-        queue_synced_sound(world, None, at, sound, -1);
+    // `glass`. A projectile without a hit sound hitting a block sends the
+    // sound `undefined` (throwables capture: snowballs and eggs on the
+    // floor).
+    match (sound, target) {
+        (Some(sound), _) => queue_synced_sound(world, None, at, sound, -1),
+        (None, Target::Block) => queue_synced_sound(world, None, at, "undefined", -1),
+        (None, Target::Actor(_)) => {}
     }
     removed
 }
 
 /// `arrow_effect`: a tipped arrow gives the actor it hit its potion's
-/// effect (the measured table [`TIPPED_ARROW_EFFECTS`]), hurt or not
+/// effect (its potion's, for an eighth of the time: [`TIPPED_ARROW_DURATION_DIVISOR`]), hurt or not
 /// (BDS 1.26.51: a player under Resistance V got it from 0-damage hits).
 fn arrow_effect(world: &mut World, potion: super::ArrowPotion, actor: Entity) {
     if world
@@ -94,18 +104,28 @@ fn arrow_effect(world: &mut World, potion: super::ArrowPotion, actor: Entity) {
     {
         return;
     }
-    let Some(&(_, effect, ticks)) = TIPPED_ARROW_EFFECTS
-        .iter()
-        .find(|(aux, _, _)| *aux == potion.0)
-    else {
-        return;
-    };
-    crate::entity::effects::give(
-        world,
-        actor,
-        effect,
-        crate::entity::components::ActiveEffect::new(0, ticks),
-    );
+    for &(effect, amplifier, duration) in tipped_arrow_effects(potion) {
+        crate::entity::effects::give(
+            world,
+            actor,
+            effect,
+            crate::entity::components::ActiveEffect::new(
+                amplifier,
+                duration / TIPPED_ARROW_DURATION_DIVISOR,
+            ),
+        );
+    }
+}
+
+/// The potion effects of a tipped arrow: its aux value is the potion's
+/// data value plus one; aux 0 (a plain arrow) has none.
+fn tipped_arrow_effects(
+    potion: super::ArrowPotion,
+) -> &'static [(crate::entity::components::EffectType, u8, u32)] {
+    match potion.0.checked_sub(1) {
+        Some(data) => crate::server::game::item_use::food::potion_effects(i16::from(data)),
+        None => &[],
+    }
 }
 
 /// `grant_xp`: the potion-splash level event in the default potion colour
@@ -119,6 +139,8 @@ fn grant_xp(world: &mut World, (min, max): (i32, i32), at: DVec3) {
         POTION_SPLASH_LEVEL_EVENT,
         DEFAULT_POTION_COLOUR_ARGB,
     );
+    // In i64: pack data may span the whole i32 range.
+    let (min, max) = (i64::from(min), i64::from(max));
     let amount = if max > min {
         min + world
             .get_resource_or_init::<EntityRandom>()
@@ -213,7 +235,7 @@ fn impact_damage(
         attacker,
         by_player: attacker.is_some_and(|owner| world.get::<Player>(owner).is_some()),
         knockback_from: impact.knockback.then_some(at),
-        knockback_power: knockback_power_of(world, projectile),
+        knockback_power: knockback_power_of(world, projectile, actor),
     };
     // Players take hits through the player hurt path (game mode, armour,
     // death); mobs through the mob one.

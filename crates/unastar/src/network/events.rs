@@ -26,6 +26,8 @@ pub enum NetworkEvent {
         runtime_id: i64,
         initial_position: DVec3,
         saved_data: Option<Box<crate::storage::PlayerData>>,
+        /// The validated login client data (skin, platform); `None` in tests.
+        client_data: Option<Box<jolyne::auth::ClientData>>,
         /// The chunk radius granted to the client (`ChunkRadiusUpdated`).
         chunk_radius: i32,
         /// Bounded channel to send packets to this player.
@@ -33,6 +35,9 @@ pub enum NetworkEvent {
         outbound_tx: mpsc::Sender<McpePacket>,
         /// This session's inbound packet queue.
         inbound_rx: mpsc::Receiver<InboundPacket>,
+        /// Bytes the transport has queued towards this player, when it
+        /// tracks them; chunk streaming stays under the transport's limit.
+        send_queue: Option<jolyne::stream::transport::SendQueueProbe>,
     },
 
     /// Player disconnected (network task exiting).

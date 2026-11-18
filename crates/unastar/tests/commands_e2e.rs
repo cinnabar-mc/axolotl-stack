@@ -46,6 +46,8 @@ fn operator_commands_answer_like_bds_over_loopback() {
     config.server.bind_address = addr.to_string();
     config.server.online_mode = false;
     config.server.max_players = 2;
+    // The view this test was written for (the client asks for 16).
+    config.server.max_chunk_radius = 4;
     config.server.operators = vec![BOT.into()];
     config.server.default_gamemode = unastar::entity::components::GameMode::Survival;
     config.players.data_dir = dir.path().join("playerdata");
@@ -259,7 +261,7 @@ async fn run_client(addr: SocketAddr) {
     assert!(
         side.iter()
             .any(|p| matches!(p, McpePacketData::MovePlayerPacket(m)
-        if (m.position.x, m.position.y, m.position.z) == (0.5, 101.62, 0.5)))
+        if (m.position.x, m.position.y, m.position.z) == (0.5, 101.620_01, 0.5)))
     );
     assert!(
         texts(&side)

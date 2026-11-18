@@ -32,6 +32,10 @@ const UP: u8 = 1;
 /// Use the held item on the clicked block. Returns whether the item did
 /// something (then nothing is placed).
 pub fn use_on_block(world: &mut World, player: Entity, clicked: IVec3, face: u8) -> bool {
+    // A jukebox takes a disc or gives one back, also to an empty hand.
+    if crate::server::game::jukebox::use_jukebox(world, player, clicked, face) {
+        return true;
+    }
     let Some((slot, stack)) = held(world, player) else {
         return false;
     };
@@ -140,6 +144,16 @@ fn convert(world: &mut World, ctx: &Use, new_state: u32) {
         "item.use.on",
         wire as i32,
     );
+}
+
+/// Where a bucket's sound plays: at the player's feet, not at the block
+/// (BDS 1.26.51 capture of `tools/bds-sweep/scripts/buckets-eggs.txt`).
+fn feet(world: &World, player: Entity) -> DVec3 {
+    world
+        .get::<crate::entity::components::Position>(player)
+        .map_or(DVec3::ZERO, |eye| {
+            eye.0 - DVec3::Y * crate::entity::PLAYER_EYE_HEIGHT
+        })
 }
 
 fn sound(world: &World, player: Entity, at: DVec3, name: &str, data: i32) {
@@ -370,19 +384,102 @@ fn ignite(world: &mut World, ctx: &Use) -> bool {
             (target, state)
         }
     };
-    set_block(world, pos, state, false);
+    crate::server::game::blocks::set_block_batched(world, pos, state);
+    click_corrections(world, ctx);
+    if matches!(
+        ctx.block_name(),
+        "minecraft:campfire" | "minecraft:soul_campfire"
+    ) && pos == ctx.clicked
+    {
+        announce_campfire(world, pos);
+    }
     let sound_name = if flint {
         "ignite"
     } else {
         "mob.ghast.fireball"
     };
-    sound(world, ctx.player, centre(pos), sound_name, -1);
+    // BDS plays it at the corner of a block lit where it stands and at the
+    // centre of new fire (`tools/bds-sweep/scripts/containers-flint.txt`).
+    let at = if pos == ctx.clicked {
+        pos.as_dvec3()
+    } else {
+        centre(pos)
+    };
+    sound(world, ctx.player, at, sound_name, -1);
     if flint {
-        wear_held(world, ctx.player, 1);
+        crate::server::game::durability::wear_held_predicted(world, ctx.player, 1);
     } else {
         use_one(world, ctx);
     }
     true
+}
+
+/// A relit campfire's actor data, as BDS sends it to the block's viewers
+/// (`{BlockEntityVersion, ItemTime1-4, id, x, y, z}`, all 0 but the id and
+/// position; `tools/bds-sweep/scripts/containers-flint.txt`).
+fn announce_campfire(world: &World, pos: IVec3) {
+    use std::collections::HashMap;
+    use zuri_nbt::{NBTTag, tag};
+    let mut fields: HashMap<String, NBTTag> = HashMap::new();
+    fields.insert("id".into(), NBTTag::String(tag::String("Campfire".into())));
+    for (name, value) in [
+        ("BlockEntityVersion", 0),
+        ("ItemTime1", 0),
+        ("ItemTime2", 0),
+        ("ItemTime3", 0),
+        ("ItemTime4", 0),
+        ("x", pos.x),
+        ("y", pos.y),
+        ("z", pos.z),
+    ] {
+        fields.insert(name.into(), NBTTag::Int(tag::Int(value)));
+    }
+    let Ok(actor) =
+        crate::world::block_entity::BlockEntity::from_bedrock_compound(tag::Compound(fields))
+    else {
+        return;
+    };
+    let packet = jolyne::valentine::McpePacket::from(jolyne::valentine::BlockActorDataPacket {
+        block_position: jolyne::valentine::types::BlockPos {
+            x: pos.x,
+            y: pos.y,
+            z: pos.z,
+        },
+        actor_data_tags: actor.network_nbt().clone(),
+    });
+    let (cx, cz) = crate::world::ecs::world_to_chunk_coords(pos.x, pos.z);
+    let Some(viewers) = world
+        .get_resource::<crate::world::ecs::ChunkManager>()
+        .and_then(|chunks| chunks.get_by_coords(cx, cz))
+        .and_then(|chunk| world.get::<crate::world::ecs::ChunkViewers>(chunk))
+    else {
+        return;
+    };
+    for viewer in viewers.iter() {
+        if let Some(session) = world.get::<crate::entity::components::PlayerSession>(viewer) {
+            let _ = session.send(packet.clone());
+        }
+    }
+}
+
+/// What BDS 1.26.51 sends the clicking player after flint and steel lit a
+/// candle or campfire or set fire on netherrack or stone
+/// (`tools/bds-sweep/scripts/containers-flint.txt`): the clicked block, the
+/// block on the clicked face, the block under the clicked one, the block on
+/// the face again, the block above it and the clicked block again, as they
+/// now are (the same updates as after a placement).
+fn click_corrections(world: &World, ctx: &Use) {
+    let (clicked, target) = (ctx.clicked, ctx.target());
+    for pos in [
+        clicked,
+        target,
+        clicked - IVec3::Y,
+        target,
+        target + IVec3::Y,
+        clicked,
+    ] {
+        crate::server::game::blocks::correct_block(world, ctx.player, (pos.x, pos.y, pos.z));
+    }
 }
 
 /// Growth stages a crop with `growth` 0..=7 advances by from bone meal.
@@ -490,7 +587,12 @@ fn grow_grass(world: &mut World, ctx: &Use) {
 /// An empty bucket on a still water or lava source, or on powder snow,
 /// takes it.
 fn fill_bucket(world: &mut World, ctx: &Use) -> bool {
-    let filled = match ctx.registry.liquid_state(ctx.state) {
+    // Water in a block's liquid layer (a waterlogged block) counts too.
+    let liquid = ctx.registry.liquid_state(ctx.state).or_else(|| {
+        crate::server::game::blocks::layer_at(world, ctx.clicked)
+            .and_then(|layer| ctx.registry.liquid_state(layer))
+    });
+    let filled = match liquid {
         Some(liquid) if liquid.depth == 0 => match liquid.kind {
             LiquidKind::Water => ("minecraft:water_bucket", "bucket.fill.water"),
             LiquidKind::Lava => ("minecraft:lava_bucket", "bucket.fill.lava"),
@@ -507,8 +609,14 @@ fn fill_bucket(world: &mut World, ctx: &Use) -> bool {
     let Some(bucket) = crate::server::game::world_stack(world, filled.0, 1) else {
         return false;
     };
-    set_block(world, ctx.clicked, air, false);
-    sound(world, ctx.player, centre(ctx.clicked), filled.1, -1);
+    if liquid.is_some() {
+        if crate::server::game::liquids::take_source(world, ctx.clicked).is_none() {
+            return false;
+        }
+    } else {
+        set_block(world, ctx.clicked, air, false);
+    }
+    sound(world, ctx.player, feet(world, ctx.player), filled.1, -1);
     if world.get::<GameMode>(ctx.player) != Some(&GameMode::Creative) {
         let rest = ctx.stack.grow(-1);
         if rest.is_empty() {
@@ -522,14 +630,30 @@ fn fill_bucket(world: &mut World, ctx: &Use) -> bool {
 }
 
 /// A filled bucket places its source block in the clicked block when that
-/// is a liquid or replaceable, else next to the clicked face, and becomes
-/// an empty bucket.
+/// is a liquid or replaceable (water: into a block that holds water), else
+/// next to the clicked face, and becomes an empty bucket. Liquids go
+/// through [`crate::server::game::liquids::place_source`], so they flow.
 fn empty_bucket(world: &mut World, ctx: &Use) -> bool {
-    let (block, sound_name) = match ctx.stack.item_id() {
-        "minecraft:water_bucket" => ("minecraft:water", "bucket.empty.water"),
-        "minecraft:lava_bucket" => ("minecraft:lava", "bucket.empty.lava"),
-        _ => ("minecraft:powder_snow", "bucket.empty.powder_snow"),
+    let (kind, sound_name) = match ctx.stack.item_id() {
+        "minecraft:water_bucket" => (Some(LiquidKind::Water), "bucket.empty.water"),
+        "minecraft:lava_bucket" => (Some(LiquidKind::Lava), "bucket.empty.lava"),
+        _ => (None, "bucket.empty.powder_snow"),
     };
+    if let Some(kind) = kind {
+        let Some(empty) = crate::server::game::world_stack(world, "minecraft:bucket", 1) else {
+            return false;
+        };
+        let place = crate::server::game::liquids::place_source;
+        // The clicked block takes the liquid (waterlogging) before the face.
+        if !place(world, ctx.clicked, kind) && !place(world, ctx.target(), kind) {
+            return false;
+        }
+        sound(world, ctx.player, feet(world, ctx.player), sound_name, -1);
+        if world.get::<GameMode>(ctx.player) != Some(&GameMode::Creative) {
+            set_slot(world, ctx.player, ctx.slot, empty);
+        }
+        return true;
+    }
     let replaceable = |pos: IVec3| {
         block_at(world, (pos.x, pos.y, pos.z))
             .and_then(|id| Some((id, ctx.registry.get_by_runtime_id(id)?)))
@@ -544,14 +668,14 @@ fn empty_bucket(world: &mut World, ctx: &Use) -> bool {
     } else {
         return false;
     };
-    let Some(state) = ctx.default_state(block) else {
+    let Some(state) = ctx.default_state("minecraft:powder_snow") else {
         return false;
     };
     let Some(empty) = crate::server::game::world_stack(world, "minecraft:bucket", 1) else {
         return false;
     };
     set_block(world, pos, state, false);
-    sound(world, ctx.player, centre(pos), sound_name, -1);
+    sound(world, ctx.player, feet(world, ctx.player), sound_name, -1);
     if world.get::<GameMode>(ctx.player) != Some(&GameMode::Creative) {
         set_slot(world, ctx.player, ctx.slot, empty);
     }
@@ -743,6 +867,35 @@ mod tests {
         assert!(use_on_block(&mut world, player, IVec3::new(1, 64, 1), UP));
         assert_eq!(block(&world, chunk, 65), "minecraft:lava");
         assert_eq!(held_stack(&world, player).item_id(), "minecraft:bucket");
+    }
+
+    /// A water bucket on a fence fills the fence's liquid layer (BDS 1.26.51,
+    /// `liquids/liquids_logged.json` `bucket_on`); an empty bucket takes it back.
+    #[test]
+    fn buckets_fill_and_empty_a_block_that_holds_water() {
+        let layer = |world: &World| {
+            let state = crate::server::game::blocks::layer_at(world, IVec3::new(1, 64, 1)).unwrap();
+            BlockRegistry::vanilla()
+                .get_by_runtime_id(state)
+                .unwrap()
+                .string_id
+                .clone()
+        };
+        let (mut world, player, chunk) =
+            world_with("minecraft:oak_fence", "minecraft:water_bucket", 1);
+        assert!(use_on_block(&mut world, player, IVec3::new(1, 64, 1), UP));
+        assert_eq!(block(&world, chunk, 64), "minecraft:oak_fence");
+        assert_eq!(block(&world, chunk, 65), "minecraft:air");
+        assert_eq!(layer(&world), "minecraft:water");
+        assert_eq!(held_stack(&world, player).item_id(), "minecraft:bucket");
+
+        assert!(use_on_block(&mut world, player, IVec3::new(1, 64, 1), UP));
+        assert_eq!(block(&world, chunk, 64), "minecraft:oak_fence");
+        assert_eq!(layer(&world), "minecraft:air");
+        assert_eq!(
+            held_stack(&world, player).item_id(),
+            "minecraft:water_bucket"
+        );
     }
 
     #[test]

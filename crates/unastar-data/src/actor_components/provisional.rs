@@ -252,6 +252,37 @@ pub const DESPAWN_MAX_DISTANCE: i32 = 128;
 /// ML `minecraftcomponent_despawn`: `despawn_from_distance.min_distance` 32.
 pub const DESPAWN_MIN_DISTANCE: i32 = 32;
 
+// minecraft:explode
+
+/// ML `minecraftcomponent_explode`: `allow_underwater` false.
+pub const EXPLODE_ALLOW_UNDERWATER: bool = false;
+/// ML `minecraftcomponent_explode`: `breaks_blocks` true.
+pub const EXPLODE_BREAKS_BLOCKS: bool = true;
+/// ML `minecraftcomponent_explode`: `causes_fire` false.
+pub const EXPLODE_CAUSES_FIRE: bool = false;
+/// ML `minecraftcomponent_explode`: `damage_scaling` 1.
+pub const EXPLODE_DAMAGE_SCALING: f32 = 1.0;
+/// ML `minecraftcomponent_explode`: `destroy_affected_by_griefing` false.
+pub const EXPLODE_DESTROY_AFFECTED_BY_GRIEFING: bool = false;
+/// ML `minecraftcomponent_explode`: `fire_affected_by_griefing` false.
+pub const EXPLODE_FIRE_AFFECTED_BY_GRIEFING: bool = false;
+/// ML `minecraftcomponent_explode`: `fuse_lit` false.
+pub const EXPLODE_FUSE_LIT: bool = false;
+/// ML `minecraftcomponent_explode`: `knockback_scaling` 1.
+pub const EXPLODE_KNOCKBACK_SCALING: f32 = 1.0;
+/// ML `minecraftcomponent_explode`: `max_resistance` 3.40282e+38 (no cap).
+pub const EXPLODE_MAX_RESISTANCE: f32 = f32::MAX;
+/// ML `minecraftcomponent_explode`: `negates_fall_damage` false.
+pub const EXPLODE_NEGATES_FALL_DAMAGE: bool = false;
+/// ML `minecraftcomponent_explode`: `particle_effect` "explosion".
+pub const EXPLODE_PARTICLE_EFFECT: &str = "explosion";
+/// ML `minecraftcomponent_explode`: `power` 3.
+pub const EXPLODE_POWER: f32 = 3.0;
+/// ML `minecraftcomponent_explode`: `sound_effect` "explode".
+pub const EXPLODE_SOUND_EFFECT: &str = "explode";
+/// ML `minecraftcomponent_explode`: `toggles_blocks` false.
+pub const EXPLODE_TOGGLES_BLOCKS: bool = false;
+
 // minecraft:health
 
 /// ML `minecraftcomponent_health`: `value` 20 (the Mojang form says 100).
@@ -312,6 +343,18 @@ pub const LEASHABLE_TO_CAN_RETRIEVE_FROM: bool = false;
 
 /// ML `minecraftcomponent_movement.basic`: `max_turn` 30.
 pub const MOVEMENT_BASIC_MAX_TURN: f32 = 30.0;
+
+// minecraft:movement.sway
+
+/// ML `minecraftcomponent_movement.sway`: `sway_amplitude` 0.05.
+pub const MOVEMENT_SWAY_AMPLITUDE: f32 = 0.05;
+/// ML `minecraftcomponent_movement.sway`: `sway_frequency` 0.5.
+pub const MOVEMENT_SWAY_FREQUENCY: f32 = 0.5;
+
+// minecraft:water_movement
+
+/// ML `minecraftcomponent_water_movement`: `drag_factor` 0.8.
+pub const WATER_MOVEMENT_DRAG_FACTOR: f32 = 0.8;
 
 // minecraft:nameable
 
@@ -520,3 +563,19 @@ pub const VARIABLE_MAX_AUTO_STEP_BASE: f32 = 0.5625;
 pub const VARIABLE_MAX_AUTO_STEP_CONTROLLED: f32 = 0.5625;
 /// `jump_prevented_value` 0.5625 blocks.
 pub const VARIABLE_MAX_AUTO_STEP_JUMP_PREVENTED: f32 = 0.5625;
+
+// minecraft:movement.jump (Mojang form `minecraft_movement_jump.form.json`)
+
+/// `max_turn` 30 degrees per tick.
+pub const MOVEMENT_JUMP_MAX_TURN: f32 = 30.0;
+
+// minecraft:area_attack (Mojang form `minecraft_area_attack.form.json`)
+
+/// `damage_per_tick` 2.
+pub const AREA_ATTACK_DAMAGE_PER_TICK: f32 = 2.0;
+/// `damage_range` 0.2 blocks.
+pub const AREA_ATTACK_DAMAGE_RANGE: f32 = 0.2;
+/// `damage_cooldown` 0 seconds.
+pub const AREA_ATTACK_DAMAGE_COOLDOWN: f32 = 0.0;
+/// `play_attack_sound` true.
+pub const AREA_ATTACK_PLAY_ATTACK_SOUND: bool = true;

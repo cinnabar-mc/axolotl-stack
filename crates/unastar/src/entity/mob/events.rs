@@ -146,10 +146,6 @@ impl MobFacts<'_> {
         Some(position + DVec3::Y * height * super::constants::MOB_EYE_HEIGHT_RATIO)
     }
 
-    /// `is_underwater`: the block at the breathing point (the actor's own x
-    /// and z) is water and the point lies below that water's surface (see
-    /// [`UNDERWATER_LEVEL_STEPS`](super::constants::UNDERWATER_LEVEL_STEPS)).
-    /// Only the block itself counts: water a block is logged with does not.
     /// `in_block`: a block named `name` overlaps the actor's box (measured:
     /// a BDS 1.26.51 skeleton shakes in powder snow at its feet and with
     /// powder snow at its head only).
@@ -217,24 +213,9 @@ impl MobFacts<'_> {
         Some(climate.temperature < super::constants::SNOW_TEMPERATURE)
     }
 
+    /// `is_underwater`: [`under_water_at`] the breathing point.
     fn under_water(&self, entity: Entity) -> Option<bool> {
-        let point = self.breathing_point(entity)?;
-        let block = point.floor().as_ivec3();
-        let state = self.world.block_at(block)?;
-        let Some(liquid) = self.world.registry().liquid_state(state) else {
-            return Some(false);
-        };
-        if !matches!(liquid.kind, crate::registry::block::LiquidKind::Water) {
-            return Some(false);
-        }
-        let level = if liquid.depth < 8 {
-            liquid.depth + 1
-        } else {
-            1
-        };
-        let surface = f64::from(block.y) + 1.0
-            - f64::from(level - 1) / super::constants::UNDERWATER_LEVEL_STEPS;
-        Some(point.y < surface)
+        under_water_at(self.world, self.breathing_point(entity)?)
     }
 
     /// `distance_to_nearest_player`: from the actor's block position (its
@@ -283,6 +264,32 @@ impl MobFacts<'_> {
     }
 }
 
+/// Whether `point` is under water: the block holding it is water and the
+/// point lies below that water's surface (see
+/// [`UNDERWATER_LEVEL_STEPS`](super::constants::UNDERWATER_LEVEL_STEPS)).
+/// Only the block itself counts: water a block is logged with does not.
+/// `None` while the block's chunk is not loaded. The `is_underwater` filter
+/// and the player's breath (`player_life::breath`) test it at the breathing
+/// point.
+pub(crate) fn under_water_at(world: &World, point: DVec3) -> Option<bool> {
+    let block = point.floor().as_ivec3();
+    let state = world.block_at(block)?;
+    let Some(liquid) = world.registry().liquid_state(state) else {
+        return Some(false);
+    };
+    if !matches!(liquid.kind, crate::registry::block::LiquidKind::Water) {
+        return Some(false);
+    }
+    let level = if liquid.depth < 8 {
+        liquid.depth + 1
+    } else {
+        1
+    };
+    let surface =
+        f64::from(block.y) + 1.0 - f64::from(level - 1) / super::constants::UNDERWATER_LEVEL_STEPS;
+    Some(point.y < surface)
+}
+
 impl FilterContext for MobFacts<'_> {
     fn fact(&self, subject: Subject, test: &FilterTest) -> Option<Fact> {
         let entity = self.subject(subject)?;
@@ -327,6 +334,8 @@ impl FilterContext for MobFacts<'_> {
             },
             // Riding is not implemented: no actor ever has a rider.
             BuiltinTest::RiderCount => Fact::Number(0.0),
+            // Riding is not implemented: no mob rides anything.
+            BuiltinTest::IsRiding => Fact::Bool(false),
             BuiltinTest::HasComponent => {
                 let component = ActorComponent::from_name(test.value.as_str()?)?;
                 Fact::Matches(
@@ -374,6 +383,7 @@ impl FilterContext for MobFacts<'_> {
             }
             BuiltinTest::InBlock => Fact::Matches(self.in_block(entity, test.value.as_str()?)?),
             BuiltinTest::IsUnderground => Fact::Bool(self.underground(entity)?),
+            BuiltinTest::IsDaytime => Fact::Bool(crate::world::clock::is_daytime(self.world)),
             // A ranged weapon in the main hand (`constants::RANGED_WEAPONS`).
             BuiltinTest::HasRangedWeapon => {
                 let held = if self.world.get::<MobKind>(entity).is_some() {
