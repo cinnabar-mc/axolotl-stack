@@ -8,8 +8,9 @@
 //! drops only when a player killed the mob or the chance is at least 1
 //! (guaranteed), on a uniform roll below the chance. A non-guaranteed
 //! damageable, breakable drop is worn down: `k` uniform in
-//! `0..max(max_damage, GEAR_DROP_MIN_MAX_DAMAGE) - 3`, `r` uniform in
-//! `0..=k`, and the item drops with wear `max_damage - r`. Drops pop at the
+//! `0..max(max, GEAR_DROP_MIN_MAX_DAMAGE) - 3`, `r` uniform in `0..=k`, and
+//! the item drops with wear `max - r`, `max` its durability
+//! ([`max_durability`]: a spear's is its pack component). Drops pop at the
 //! mob's feet like block drops (10-tick pickup delay) and leave the slot.
 
 use bevy_ecs::prelude::*;
@@ -27,6 +28,7 @@ use crate::entity::mob::state::LastHurt;
 use crate::entity::{EntityRandom, spawn_item_drop};
 use crate::item::ItemStack;
 use crate::item::enchant::{is_unbreakable, with_durability_damage};
+use crate::server::game::durability::max_durability;
 
 /// The item the actor that dealt `mob`'s last hit holds (a player's
 /// selected hotbar stack, a mob's main hand).
@@ -38,13 +40,13 @@ fn killer_weapon(world: &World, mob: Entity) -> Option<&ItemStack> {
 /// The wear a non-guaranteed drop of `stack` keeps; `None` when the item
 /// takes no wear.
 fn worn_down(stack: &ItemStack, rng: &mut impl Rng) -> Option<i32> {
-    let max_damage = stack.item()?.tool_info().max_damage;
-    if max_damage <= 0 || is_unbreakable(stack) {
+    let max = max_durability(stack.item()?);
+    if max <= 0 || is_unbreakable(stack) {
         return None;
     }
-    let k = rng.gen_range(0..max_damage.max(GEAR_DROP_MIN_MAX_DAMAGE) - 3);
+    let k = rng.gen_range(0..max.max(GEAR_DROP_MIN_MAX_DAMAGE) - 3);
     let r = rng.gen_range(0..=k);
-    Some(max_damage - r)
+    Some(max - r)
 }
 
 /// Drop `mob`'s equipment at its feet (`killed_by_player`: the death
@@ -134,6 +136,81 @@ mod tests {
             assert!((4..=max).contains(&wear), "{wear}");
         }
         assert!(worn_down(&stack("minecraft:dirt", 1), &mut rng).is_none());
+    }
+
+    /// The spears husks dropped on BDS 1.26.51
+    /// (`server/game/item_use/testdata/bds-tool-use-wear.json`, cut by
+    /// `tools/bds-sweep/tool_use_fixture.py table` from the `drops` part of
+    /// `tools/bds-sweep/scripts/tool-use.txt`): husks given an iron spear by
+    /// `/replaceitem` and killed by the player.
+    #[derive(serde::Deserialize)]
+    struct BdsDrops {
+        drops: Drops,
+    }
+
+    /// Husks killed and every item they dropped, `[network id, Damage]`.
+    #[derive(serde::Deserialize)]
+    struct Drops {
+        husks: u32,
+        items: Vec<(i32, i32)>,
+    }
+
+    /// A spear's durability is its pack component (250 for iron), not its
+    /// native `maxDamage`: BDS dropped a quarter of the husks' spears, each
+    /// worn to `250 - r`. Ours, from a seeded RNG, drop as often and keep as
+    /// much: every BDS wear is one ours can roll and the mean wear agrees
+    /// within four standard errors.
+    #[test]
+    fn worn_spears_keep_their_component_durability_like_bds() {
+        let bds: BdsDrops = serde_json::from_str(include_str!(
+            "../../../server/game/item_use/testdata/bds-tool-use-wear.json"
+        ))
+        .unwrap();
+        let spear = stack("minecraft:iron_spear", 1);
+        let id = spear.item().unwrap().network_id();
+        let theirs: Vec<i32> = bds
+            .drops
+            .items
+            .iter()
+            .filter(|(item, _)| *item == id)
+            .map(|(_, damage)| *damage)
+            .collect();
+        assert!(theirs.len() > 20, "{}", theirs.len());
+        assert!(crate::server::game::durability::same_share(
+            (GEAR_DEFAULT_DROP_CHANCE * 10_000.0) as u32,
+            10_000,
+            theirs.len() as u32,
+            bds.drops.husks
+        ));
+        let max = max_durability(spear.item().unwrap());
+        assert_eq!(max, 250);
+        let mut rng = StdRng::seed_from_u64(9);
+        let ours: Vec<i32> = (0..20_000)
+            .map(|_| worn_down(&spear, &mut rng).unwrap())
+            .collect();
+        let (low, high) = (ours.iter().min().unwrap(), ours.iter().max().unwrap());
+        for wear in &theirs {
+            assert!(
+                (low..=high).contains(&wear),
+                "BDS wear {wear} outside {low}..={high}"
+            );
+        }
+        let mean = |values: &[i32]| {
+            values.iter().map(|v| f64::from(*v)).sum::<f64>() / values.len() as f64
+        };
+        let ours_mean = mean(&ours);
+        let spread = (ours
+            .iter()
+            .map(|v| (f64::from(*v) - ours_mean).powi(2))
+            .sum::<f64>()
+            / ours.len() as f64)
+            .sqrt();
+        let error = spread / (theirs.len() as f64).sqrt();
+        assert!(
+            (mean(&theirs) - ours_mean).abs() <= 4.0 * error,
+            "BDS mean {} ours {ours_mean} (error {error})",
+            mean(&theirs)
+        );
     }
 
     #[test]

@@ -15,7 +15,7 @@ Each domain's first line is its headline: the rows its family table, gap list an
 | [Entities](#entities): actor rows (summon and replication) | 137 | 110 | 2 | 2 | 19 | 4 | 15.8% |
 | Entities: behaviour sub-rows (components, spawn rules) | 4082 | 998 | 2648 | 329 | 61 | 46 | 9.7% |
 | [Blocks](#blocks) | 1477 | 0 | 408 | 511 | 391 | 167 | 68.9% |
-| [Items](#items): behaviour sub-rows (food, durability, placement, ...) | 2347 | 99 | 832 | 619 | 620 | 177 | 57.1% |
+| [Items](#items): behaviour sub-rows (food, durability, placement, ...) | 2347 | 99 | 811 | 619 | 641 | 177 | 58.1% |
 | Items: registered (exists in the registry, no behaviour) | 2076 | 0 | 0 | 2076 | 0 | 0 | 100.0% |
 | [Commands](#commands) | 82 | 8 | 35 | 2 | 36 | 1 | 46.9% |
 | [Protocol](#protocol) | 231 | 124 | 28 | 42 | 22 | 15 | 29.6% |
@@ -65,11 +65,11 @@ Add a `[[claim]]` to [claims.toml](claims.toml) in your first pull request for t
 | Liquids: water and lava flow, mixing, the liquid layer | lane LIQUIDS | 2026-11-11 | 5 |
 | Workstation blocks | lane ITEMS | 2026-10-29 | 10 |
 
-**Items**: 0 open rows free, 931 claimed.
+**Items**: 0 open rows free, 910 claimed.
 
 | Claimed area | Claimed by | Since | Open |
 |---|---|---|---:|
-| Item use | lane ITEMS | 2026-10-29 | 931 |
+| Item use | lane ITEMS | 2026-10-29 | 910 |
 
 **Commands**: 0 open rows free, 43 claimed.
 
@@ -426,7 +426,7 @@ The family table and gaps below count sub-rows; top-level rows are counted in th
 | ranged_weapons | 8 | 0 | 2 | 2 | 4 | 0 | 75.0% |
 | spawn_eggs | 91 | 0 | 85 | 1 | 4 | 1 | 5.6% |
 | throwables | 16 | 6 | 2 | 0 | 8 | 0 | 50.0% |
-| tools | 280 | 31 | 54 | 1 | 190 | 4 | 69.2% |
+| tools | 280 | 31 | 33 | 1 | 211 | 4 | 76.8% |
 
 Sub-rows by facet, most incomplete first (25 of 25):
 
@@ -434,9 +434,9 @@ Sub-rows by facet, most incomplete first (25 of 25):
 |---|---:|---:|---:|---:|---:|---:|---:|
 | block_placer | 1504 | 28 | 692 | 615 | 0 | 169 | 46.1% |
 | spawn_egg | 91 | 0 | 85 | 1 | 4 | 1 | 5.6% |
-| durability | 83 | 3 | 30 | 2 | 46 | 2 | 59.3% |
 | entity_placer | 33 | 31 | 0 | 0 | 0 | 2 | 0.0% |
 | bundle | 17 | 17 | 0 | 0 | 0 | 0 | 0.0% |
+| durability | 83 | 3 | 9 | 2 | 67 | 2 | 85.2% |
 | kinetic_weapon | 7 | 0 | 7 | 0 | 0 | 0 | 0.0% |
 | piercing_weapon | 7 | 0 | 7 | 0 | 0 | 0 | 0.0% |
 | repairable | 7 | 7 | 0 | 0 | 0 | 0 | 0.0% |
@@ -517,12 +517,11 @@ Sub-rows by facet, most incomplete first (25 of 25):
 
 **tools**
 
-- `minecraft:copper_axe/durability`, `minecraft:copper_hoe/durability`, `minecraft:copper_shovel/durability`, `minecraft:diamond_axe/durability`, `minecraft:diamond_hoe/durability`, `minecraft:diamond_shovel/durability`, `minecraft:golden_axe/durability`, `minecraft:golden_hoe/durability`, `minecraft:golden_shovel/durability`, `minecraft:iron_axe/durability`, `minecraft:iron_hoe/durability`, `minecraft:iron_shovel/durability` and 9 more: wear from use on blocks (tilling, stripping, making paths) is not measured
 - `minecraft:brewing_stand/block_placer`, `minecraft:cake/block_placer`, `minecraft:campfire/block_placer`, `minecraft:cauldron/block_placer`, `minecraft:flower_pot/block_placer`, `minecraft:kelp/block_placer`, `minecraft:nether_sprouts/block_placer`, `minecraft:red_shrub/block_placer`, `minecraft:shelf_mushroom/block_placer`, `minecraft:soul_campfire/block_placer`: non-cube block: support and attachment rules are not checked and its placement has no test
 - `minecraft:copper_spear/durability`, `minecraft:diamond_spear/durability`, `minecraft:golden_spear/durability`, `minecraft:iron_spear/durability`, `minecraft:netherite_spear/durability`, `minecraft:stone_spear/durability`, `minecraft:wooden_spear/durability`: the charge attack is not implemented; whether a jab that hits nothing wears the spear is not measured
 - `minecraft:copper_spear/kinetic_weapon`, `minecraft:diamond_spear/kinetic_weapon`, `minecraft:golden_spear/kinetic_weapon`, `minecraft:iron_spear/kinetic_weapon`, `minecraft:netherite_spear/kinetic_weapon`, `minecraft:stone_spear/kinetic_weapon`, `minecraft:wooden_spear/kinetic_weapon`: the charge is not implemented: no kinetic damage, knockback or dismount from the relative speed while the spear is held
 - `minecraft:copper_spear/piercing_weapon`, `minecraft:diamond_spear/piercing_weapon`, `minecraft:golden_spear/piercing_weapon`, `minecraft:iron_spear/piercing_weapon`, `minecraft:netherite_spear/piercing_weapon`, `minecraft:stone_spear/piercing_weapon`, `minecraft:wooden_spear/piercing_weapon`: a jab that hits several entities in a line is not implemented: BDS damaged only the hit target, never the entities behind it, in every form the scripted client sent a jab (UseAsAttack alone or packed into the input, a hit with the camera orientation, three hits in one input); what the vanilla client sends for a piercing jab is not captured
-- 2 more partial rows with other gaps (see [items.toml](items.toml))
+- `minecraft:frame/block_placer`, `minecraft:glow_frame/block_placer`: facing_direction is not set from the click or look
 - missing: `minecraft:black_bundle/bundle`, `minecraft:blue_bundle/bundle`, `minecraft:brown_bundle/bundle`, `minecraft:brush/brush`, `minecraft:brush/durability`, `minecraft:bundle/bundle`, `minecraft:carrot_on_a_stick/durability`, `minecraft:copper_spear/repairable`, `minecraft:cyan_bundle/bundle`, `minecraft:diamond_spear/repairable`, `minecraft:golden_spear/repairable`, `minecraft:gray_bundle/bundle` and 19 more
 
 ## Commands

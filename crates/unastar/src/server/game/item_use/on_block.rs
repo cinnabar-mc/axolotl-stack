@@ -1,15 +1,20 @@
-//! Using the held item on a block: hoes, shovels, axes, shears, flint and
-//! steel, fire charges, bone meal and buckets.
+//! Using the held item on a block: hoes, shovels, axes, honeycomb, shears,
+//! flint and steel, fire charges, bone meal and buckets.
 //!
 //! The behaviour pack has no data for what these items do to blocks, so the
-//! rules are written here. Block
-//! identities come from the block registry (stripped logs are the
-//! registered `stripped_*` blocks, copper ageing follows the registered
-//! `exposed_`/`weathered_`/`oxidized_`/`waxed_` names) so no conversion
-//! table is retyped. Which blocks a hoe tills and a shovel flattens, the
-//! bone meal growth amounts and the sound names follow public references
-//! and are recorded in `docs/quirks/bds.md` until a BDS capture of block clicks
-//! confirms them.
+//! rules are written here. Block identities come from the block registry
+//! (stripped logs are the registered `stripped_*` blocks, copper ageing and
+//! wax follow the registered `exposed_`/`weathered_`/`oxidized_`/`waxed_`
+//! names, [`super::copper`]) so no conversion table is retyped.
+//!
+//! What hoes, shovels, axes, honeycomb and shears do (blocks, sounds, level
+//! events, drops), their wear (1 per use, with Unbreaking's tool chance)
+//! and what BDS sends the player match a BDS 1.26.51 capture
+//! (`tools/bds-sweep/scripts/tool-use.txt`, `item_use/tool_use_tests.rs`):
+//! a survival use that did something is answered like a placement, with
+//! the click corrections and the player's inventory (which shows the wear
+//! or count); a creative one with neither. Bone meal growth amounts follow
+//! public references, recorded in `docs/quirks/bds.md`.
 
 use bevy_ecs::prelude::*;
 use glam::{DVec3, IVec3};
@@ -18,16 +23,18 @@ use rand::Rng;
 use super::{give_or_drop, held, set_slot};
 use crate::entity::EntityRandom;
 use crate::entity::components::GameMode;
+use crate::entity::mob::constants::{
+    LEVEL_EVENT_COPPER_SCRAPE, LEVEL_EVENT_COPPER_WAX_OFF, LEVEL_EVENT_COPPER_WAX_ON,
+};
 use crate::item::ItemStack;
 use crate::registry::BlockRegistry;
 use crate::registry::block::{BlockEntry, LiquidKind, StateValue};
 use crate::server::game::blocks::{block_at, set_block};
-use crate::server::game::durability::wear_held;
+use crate::server::game::durability::wear_held_predicted;
 use crate::server::game::types::BlockRegistryResource;
 
-/// Faces of a block click, in protocol order.
+/// The bottom face of a block click (protocol order).
 const DOWN: u8 = 0;
-const UP: u8 = 1;
 
 /// Use the held item on the clicked block. Returns whether the item did
 /// something (then nothing is placed).
@@ -76,6 +83,7 @@ pub fn use_on_block(world: &mut World, player: Entity, clicked: IVec3, face: u8)
     }
     match id {
         "minecraft:shears" => carve(world, &ctx),
+        "minecraft:honeycomb" => wax(world, &ctx),
         "minecraft:flint_and_steel" | "minecraft:fire_charge" => ignite(world, &ctx),
         "minecraft:bone_meal" => fertilize(world, &ctx),
         "minecraft:bucket" => fill_bucket(world, &ctx),
@@ -160,6 +168,24 @@ fn sound(world: &World, player: Entity, at: DVec3, name: &str, data: i32) {
     crate::entity::mob::net::sound::play_level_sound(world, Some(player), at, name, data);
 }
 
+/// How BDS answers a survival use that changed the clicked block, as it
+/// answers a placement: the click corrections and the player's inventory,
+/// which carries the item's new wear or count (the client predicts both, so
+/// no slot update is sent). Creative uses get neither.
+fn answer(world: &World, ctx: &Use) {
+    if world.get::<GameMode>(ctx.player) == Some(&GameMode::Creative) {
+        return;
+    }
+    crate::server::game::blocks::click_corrections(world, ctx.player, ctx.clicked, ctx.face);
+    crate::server::game::inventory::resync_inventory(world, ctx.player);
+}
+
+/// One point of wear on the held tool, then [`answer`].
+fn wear_and_answer(world: &mut World, ctx: &Use) {
+    wear_held_predicted(world, ctx.player, 1);
+    answer(world, ctx);
+}
+
 /// Use up one of the held item outside creative.
 fn use_one(world: &mut World, ctx: &Use) {
     if world.get::<GameMode>(ctx.player) != Some(&GameMode::Creative) {
@@ -170,13 +196,7 @@ fn use_one(world: &mut World, ctx: &Use) {
 /// The state of block `to` that keeps every property `from_state` (of
 /// `from`) shares with it, such as a log's `pillar_axis` or a copper
 /// stair's facing.
-fn carry_states(
-    registry: &BlockRegistry,
-    from: &BlockEntry,
-    from_state: u32,
-    to: &str,
-) -> Option<u32> {
-    let target = registry.get_by_name(to)?;
+fn carry_states(from: &BlockEntry, from_state: u32, target: &BlockEntry) -> Option<u32> {
     let mut state = target.default_state_id;
     for property in from.data.properties {
         if let Some(value) = from.state_value(from_state, property.name)
@@ -210,7 +230,7 @@ fn till(world: &mut World, ctx: &Use) -> bool {
     if let Some(drop) = drop.and_then(|name| crate::server::game::world_stack(world, name, 1)) {
         crate::server::game::block_drops::pop_resource(world, ctx.clicked + IVec3::Y, drop);
     }
-    wear_held(world, ctx.player, 1);
+    wear_and_answer(world, ctx);
     true
 }
 
@@ -229,16 +249,30 @@ fn flatten(world: &mut World, ctx: &Use) -> bool {
         else {
             return false;
         };
+        // BDS sends the lit campfire once more before putting it out, and
+        // plays the sound at the block's corner (tool-use capture).
+        crate::server::game::blocks::correct_block(
+            world,
+            ctx.player,
+            (ctx.clicked.x, ctx.clicked.y, ctx.clicked.z),
+        );
         set_block(world, ctx.clicked, out, false);
         sound(
             world,
             ctx.player,
-            centre(ctx.clicked),
+            ctx.clicked.as_dvec3(),
             "extinguish.fire",
             -1,
         );
-        wear_held(world, ctx.player, 1);
+        wear_and_answer(world, ctx);
         return true;
+    }
+    if ctx
+        .registry
+        .get_by_name("minecraft:snow_layer")
+        .is_some_and(|snow| snow.id == ctx.block.id)
+    {
+        return dig_snow(world, ctx);
     }
     if ctx.face == DOWN
         || !ctx.is_air(world, ctx.clicked + IVec3::Y)
@@ -258,92 +292,123 @@ fn flatten(world: &mut World, ctx: &Use) -> bool {
         return false;
     };
     convert(world, ctx, state);
-    wear_held(world, ctx.player, 1);
+    wear_and_answer(world, ctx);
     true
 }
 
-/// The copper block one oxidation stage younger than `name`.
-fn younger_copper(name: &str) -> Option<String> {
-    let base = name.strip_prefix("minecraft:")?;
-    let (stage, rest) = base.split_once('_')?;
-    let younger = match stage {
-        "exposed" if rest == "copper" => "copper_block".to_owned(),
-        "exposed" => rest.to_owned(),
-        "weathered" => format!("exposed_{rest}"),
-        "oxidized" => format!("weathered_{rest}"),
-        _ => return None,
+/// Shovel on a snow layer: the layer goes, dropping what it drops when
+/// broken with the shovel, with the item-use-on sound of the layer (BDS
+/// tool-use capture: a one-layer cover dropped one snowball).
+fn dig_snow(world: &mut World, ctx: &Use) -> bool {
+    let Some(air) = ctx.default_state("minecraft:air") else {
+        return false;
     };
-    Some(format!("minecraft:{younger}"))
+    let drops = crate::server::game::block_drops::block_drops(world, ctx.state, Some(ctx.stack));
+    set_block(world, ctx.clicked, air, false);
+    for drop in drops {
+        crate::server::game::block_drops::pop_resource(world, ctx.clicked, drop);
+    }
+    let wire = crate::server::game::types::block_network_ids(world).to_wire(ctx.state);
+    sound(
+        world,
+        ctx.player,
+        centre(ctx.clicked),
+        "item.use.on",
+        wire as i32,
+    );
+    wear_and_answer(world, ctx);
+    true
+}
+
+/// Replace the clicked copper block with the block `into` (keeping the
+/// states they share) and play `event`.
+fn change_copper(world: &mut World, ctx: &Use, into: u32, event: i32) -> bool {
+    let Some(state) = ctx
+        .registry
+        .get(into)
+        .and_then(|target| carry_states(ctx.block, ctx.state, target))
+    else {
+        return false;
+    };
+    set_block(world, ctx.clicked, state, false);
+    crate::entity::mob::net::sound::level_event(world, centre(ctx.clicked), event, 0);
+    true
+}
+
+/// Honeycomb: wax a copper block that is not waxed yet, using one.
+fn wax(world: &mut World, ctx: &Use) -> bool {
+    let Some(waxed) = super::copper::wax(ctx.block.id) else {
+        return false;
+    };
+    if !change_copper(world, ctx, waxed, LEVEL_EVENT_COPPER_WAX_ON) {
+        return false;
+    }
+    use_one(world, ctx);
+    answer(world, ctx);
+    true
 }
 
 /// Axe: strip a log or wood, remove wax, or scrape one oxidation stage.
 fn strip_or_scrape(world: &mut World, ctx: &Use) -> bool {
     let name = ctx.block_name().to_owned();
-    let stripped = name
-        .strip_prefix("minecraft:")
-        .map(|base| format!("minecraft:stripped_{base}"))
-        .filter(|stripped| ctx.registry.get_by_name(stripped).is_some());
+    let stripped = name.strip_prefix("minecraft:").and_then(|base| {
+        ctx.registry
+            .get_by_name(&format!("minecraft:stripped_{base}"))
+    });
     if let Some(stripped) = stripped {
-        let Some(state) = carry_states(ctx.registry, ctx.block, ctx.state, &stripped) else {
+        let Some(state) = carry_states(ctx.block, ctx.state, stripped) else {
             return false;
         };
         convert(world, ctx, state);
-        wear_held(world, ctx.player, 1);
+        wear_and_answer(world, ctx);
         return true;
     }
-    let (into, sound_name) = if let Some(unwaxed) = name
-        .strip_prefix("minecraft:waxed_")
-        .map(|rest| format!("minecraft:{rest}"))
-        .filter(|n| ctx.registry.get_by_name(n).is_some())
-    {
-        (unwaxed, "wax.off")
-    } else if let Some(younger) =
-        younger_copper(&name).filter(|n| ctx.registry.get_by_name(n).is_some())
-    {
-        (younger, "scrape")
-    } else {
+    let Some(scrape) = super::copper::scrape(ctx.block.id) else {
         return false;
     };
-    let Some(state) = carry_states(ctx.registry, ctx.block, ctx.state, &into) else {
-        return false;
+    let event = match scrape {
+        super::copper::Scrape::WaxOff(_) => LEVEL_EVENT_COPPER_WAX_OFF,
+        super::copper::Scrape::Deoxidize(_) => LEVEL_EVENT_COPPER_SCRAPE,
     };
-    set_block(world, ctx.clicked, state, false);
-    sound(world, ctx.player, centre(ctx.clicked), sound_name, -1);
-    wear_held(world, ctx.player, 1);
+    if !change_copper(world, ctx, scrape.into_block(), event) {
+        return false;
+    }
+    wear_and_answer(world, ctx);
     true
 }
 
-/// Shears on a pumpkin carve it facing the clicked side and drop four
-/// pumpkin seeds there.
+/// Shears on a pumpkin carve it facing the clicked side, or as the carved
+/// pumpkin's default state (facing south) from the top or bottom, and drop
+/// one pumpkin seed there (BDS tool-use capture, the player looking east).
 fn carve(world: &mut World, ctx: &Use) -> bool {
-    if ctx.block_name() != "minecraft:pumpkin" || ctx.face <= UP {
+    if ctx.block_name() != "minecraft:pumpkin" {
         return false;
     }
-    let direction = match ctx.face {
-        2 => "north",
-        3 => "south",
-        4 => "west",
-        _ => "east",
+    let Some(pumpkin) = ctx.registry.get_by_name("minecraft:carved_pumpkin") else {
+        return false;
     };
-    let Some(carved) = ctx
-        .registry
-        .get_by_name("minecraft:carved_pumpkin")
-        .and_then(|b| {
-            b.with_state_value(
-                b.default_state_id,
-                "minecraft:cardinal_direction",
-                StateValue::Str(direction),
-            )
-        })
-    else {
+    let direction = match ctx.face {
+        2 => Some("north"),
+        3 => Some("south"),
+        4 => Some("west"),
+        5 => Some("east"),
+        _ => None,
+    };
+    let Some(carved) = direction.map_or(Some(pumpkin.default_state_id), |direction| {
+        pumpkin.with_state_value(
+            pumpkin.default_state_id,
+            "minecraft:cardinal_direction",
+            StateValue::Str(direction),
+        )
+    }) else {
         return false;
     };
     set_block(world, ctx.clicked, carved, false);
-    if let Some(seeds) = crate::server::game::world_stack(world, "minecraft:pumpkin_seeds", 4) {
+    if let Some(seeds) = crate::server::game::world_stack(world, "minecraft:pumpkin_seeds", 1) {
         crate::server::game::block_drops::pop_resource(world, ctx.target(), seeds);
     }
     sound(world, ctx.player, centre(ctx.clicked), "pumpkin.carve", -1);
-    wear_held(world, ctx.player, 1);
+    wear_and_answer(world, ctx);
     true
 }
 
@@ -385,7 +450,6 @@ fn ignite(world: &mut World, ctx: &Use) -> bool {
         }
     };
     crate::server::game::blocks::set_block_batched(world, pos, state);
-    click_corrections(world, ctx);
     if matches!(
         ctx.block_name(),
         "minecraft:campfire" | "minecraft:soul_campfire"
@@ -407,9 +471,10 @@ fn ignite(world: &mut World, ctx: &Use) -> bool {
     };
     sound(world, ctx.player, at, sound_name, -1);
     if flint {
-        crate::server::game::durability::wear_held_predicted(world, ctx.player, 1);
+        wear_and_answer(world, ctx);
     } else {
         use_one(world, ctx);
+        answer(world, ctx);
     }
     true
 }
@@ -459,26 +524,6 @@ fn announce_campfire(world: &World, pos: IVec3) {
         if let Some(session) = world.get::<crate::entity::components::PlayerSession>(viewer) {
             let _ = session.send(packet.clone());
         }
-    }
-}
-
-/// What BDS 1.26.51 sends the clicking player after flint and steel lit a
-/// candle or campfire or set fire on netherrack or stone
-/// (`tools/bds-sweep/scripts/containers-flint.txt`): the clicked block, the
-/// block on the clicked face, the block under the clicked one, the block on
-/// the face again, the block above it and the clicked block again, as they
-/// now are (the same updates as after a placement).
-fn click_corrections(world: &World, ctx: &Use) {
-    let (clicked, target) = (ctx.clicked, ctx.target());
-    for pos in [
-        clicked,
-        target,
-        clicked - IVec3::Y,
-        target,
-        target + IVec3::Y,
-        clicked,
-    ] {
-        crate::server::game::blocks::correct_block(world, ctx.player, (pos.x, pos.y, pos.z));
     }
 }
 
@@ -693,6 +738,9 @@ mod tests {
     use crate::world::ChunkManager;
     use crate::world::ecs::{ChunkData, ChunkPosition};
 
+    /// The top face of a block click.
+    const UP: u8 = 1;
+
     /// A chunk with `block` at (1, 64, 1) and air above, and a survival
     /// player holding `item`.
     fn world_with(block: &str, item: &str, count: u8) -> (World, Entity, Entity) {
@@ -899,47 +947,14 @@ mod tests {
     }
 
     #[test]
-    fn copper_scrapes_one_stage_younger() {
-        assert_eq!(
-            younger_copper("minecraft:exposed_copper").as_deref(),
-            Some("minecraft:copper_block")
-        );
-        assert_eq!(
-            younger_copper("minecraft:oxidized_cut_copper_stairs").as_deref(),
-            Some("minecraft:weathered_cut_copper_stairs")
-        );
-        assert_eq!(
-            younger_copper("minecraft:exposed_cut_copper").as_deref(),
-            Some("minecraft:cut_copper")
-        );
-        assert_eq!(younger_copper("minecraft:copper_block"), None);
-    }
-
-    #[test]
-    fn every_copper_stage_and_waxed_block_resolves_in_the_registry() {
-        let registry = BlockRegistry::vanilla();
-        let mut checked = 0;
-        for entry in registry.iter() {
-            if let Some(younger) = younger_copper(&entry.string_id) {
-                assert!(
-                    registry.get_by_name(&younger).is_some(),
-                    "{} -> {younger}",
-                    entry.string_id
-                );
-                checked += 1;
-            }
-        }
-        assert!(checked > 20, "{checked}");
-    }
-
-    #[test]
     fn stripping_keeps_the_log_axis() {
         let registry = BlockRegistry::vanilla();
         let log = registry.get_by_name("minecraft:oak_log").unwrap();
         let sideways = log
             .with_state_value(log.default_state_id, "pillar_axis", StateValue::Str("x"))
             .unwrap();
-        let stripped = carry_states(registry, log, sideways, "minecraft:stripped_oak_log").unwrap();
+        let target = registry.get_by_name("minecraft:stripped_oak_log").unwrap();
+        let stripped = carry_states(log, sideways, target).unwrap();
         let entry = registry.get_by_runtime_id(stripped).unwrap();
         assert_eq!(entry.string_id, "minecraft:stripped_oak_log");
         assert_eq!(

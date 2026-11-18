@@ -10,6 +10,7 @@
 //! has in the selected hotbar slot; the client's item description is not
 //! trusted.
 
+pub mod copper;
 pub mod food;
 pub mod on_block;
 pub mod ranged;
@@ -536,3 +537,5 @@ mod food_tests;
 mod tests;
 #[cfg(test)]
 mod throw_tests;
+#[cfg(test)]
+mod tool_use_tests;

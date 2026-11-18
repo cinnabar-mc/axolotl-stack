@@ -257,6 +257,22 @@ fn item_broke(world: &mut World, player: Entity) {
     }
 }
 
+/// Whether `ours` of `n` and `theirs` of `m` can be the same share: their
+/// difference within four standard errors of the pooled share (sampled wear
+/// against a BDS sweep).
+#[cfg(test)]
+pub(crate) fn same_share(ours: u32, n: u32, theirs: u32, m: u32) -> bool {
+    let (ours, n, theirs, m) = (
+        f64::from(ours),
+        f64::from(n),
+        f64::from(theirs),
+        f64::from(m),
+    );
+    let pooled = (ours + theirs) / (n + m);
+    let error = (pooled * (1.0 - pooled) * (1.0 / n + 1.0 / m)).sqrt();
+    (ours / n - theirs / m).abs() <= 4.0 * error.max(1e-9)
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::BTreeMap;
@@ -414,20 +430,6 @@ mod tests {
 
     fn bds() -> BdsUnbreaking {
         serde_json::from_str(include_str!("durability/testdata/bds-unbreaking.json")).unwrap()
-    }
-
-    /// Whether `ours` of `n` and `theirs` of `m` can be the same share: their
-    /// difference within four standard errors of the pooled share.
-    fn same_share(ours: u32, n: u32, theirs: u32, m: u32) -> bool {
-        let (ours, n, theirs, m) = (
-            f64::from(ours),
-            f64::from(n),
-            f64::from(theirs),
-            f64::from(m),
-        );
-        let pooled = (ours + theirs) / (n + m);
-        let error = (pooled * (1.0 - pooled) * (1.0 / n + 1.0 / m)).sqrt();
-        (ours / n - theirs / m).abs() <= 4.0 * error.max(1e-9)
     }
 
     /// Unbreaking against the BDS sweeps, at levels 0-III, rolled from a
