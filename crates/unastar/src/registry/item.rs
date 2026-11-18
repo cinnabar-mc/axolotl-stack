@@ -247,6 +247,19 @@ impl ItemRegistry {
         self.name_map.get(name).and_then(|id| self.get(*id))
     }
 
+    /// The one item whose native `descriptionId` is `item.<legacy>`, for a
+    /// legacy item name such as `minecraft:record_stal` (the item
+    /// `minecraft:music_disc_stal`); `None` when no item or several carry it.
+    /// Pack items resolve legacy identifiers the same way.
+    pub fn by_legacy_name(&self, name: &str) -> Option<&ItemEntry> {
+        let legacy = name.split_once(':').map_or(name, |(_, legacy)| legacy);
+        let mut found = self
+            .iter()
+            .filter(|entry| entry.data().description_id.strip_prefix("item.") == Some(legacy));
+        let entry = found.next()?;
+        found.next().is_none().then_some(entry)
+    }
+
     /// Compile a canonical name or measured legacy name/aux spelling.
     ///
     /// Exact registered names win, including numeric addon paths. Short names

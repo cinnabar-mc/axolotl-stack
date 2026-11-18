@@ -28,7 +28,7 @@ pub enum HostileError {
     #[error("attack_types {0:?}: actor-category attack filters are not implemented")]
     AttackTypes(String),
     #[error(
-        "melee_attack reach_multiplier {0}: only 0 (chase without hitting, the creeper's) is          implemented, the goal's reach is not measured"
+        "melee_attack reach_multiplier {0}: only 0 (chase without hitting, the creeper's) is implemented, the goal's reach is not measured"
     )]
     MeleeReachMultiplier(f32),
     #[error("burns_in_daylight protection slot {0:?} is not a head, chest, legs or feet slot")]

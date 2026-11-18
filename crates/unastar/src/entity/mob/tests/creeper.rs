@@ -8,7 +8,7 @@
 
 use bevy_ecs::prelude::*;
 use glam::{DVec3, IVec3};
-use jolyne::valentine::{McpePacketData, actor_flags};
+use jolyne::valentine::{McpePacketData, actor_data_i_ds, actor_flags};
 use serde::Deserialize;
 use unastar_data::actor_components::body;
 
@@ -18,6 +18,7 @@ use crate::entity::components::{
     ActiveEffect, EffectType, GameMode, Health, MainInventory, Position, Rotation,
 };
 use crate::entity::definition::flags::ActorFlags;
+use crate::entity::definition::metadata::EntityMetadata;
 use crate::entity::mob::components::sensors::compile_target_nearby;
 use crate::entity::mob::components::{TargetNearbySensorConfig, TargetZone};
 use crate::entity::mob::state::AttackTarget;
@@ -70,6 +71,8 @@ struct Event {
     data: Option<i32>,
     #[serde(default)]
     at: Option<[f64; 3]>,
+    #[serde(default)]
+    value: Option<i32>,
 }
 
 fn fixture() -> Fixture {
@@ -271,6 +274,15 @@ impl Item {
         )
     }
 
+    /// Every `FUSE_TIME` BDS sent after the spawn (its first, -1, left out).
+    fn fuse_time(&self) -> Vec<(u32, i32)> {
+        self.events
+            .iter()
+            .filter(|e| e.event == "fuse_time" && e.t > 0)
+            .map(|e| (e.t, e.value.expect("fuse time value")))
+            .collect()
+    }
+
     /// The tick the creeper first left its spawn point.
     fn first_move(&self) -> u32 {
         let spawn = self.spawn_at();
@@ -307,6 +319,8 @@ struct Run {
     feet: Vec<DVec3>,
     targeted: Option<u32>,
     ignited: Vec<(u32, bool)>,
+    /// Every change of `FUSE_TIME` after the spawn.
+    fuse_time: Vec<(u32, i32)>,
     powered: bool,
     sounds: Vec<(u32, &'static str, DVec3)>,
     explosion: Option<(u32, i32, DVec3)>,
@@ -409,6 +423,15 @@ fn record(
             if now != lit {
                 run.ignited.push((t, now));
                 lit = now;
+            }
+            let fuse = entity
+                .get::<EntityMetadata>()
+                .and_then(|data| data.int(actor_data_i_ds::FUSE_TIME));
+            if let Some(fuse) = fuse
+                && run.fuse_time.last().map(|f| f.1) != Some(fuse)
+                && (fuse != -1 || !run.fuse_time.is_empty())
+            {
+                run.fuse_time.push((t, fuse));
             }
         }
         for packet in a.packets() {
@@ -518,6 +541,16 @@ fn an_approaching_creeper_walks_in_lights_and_explodes_like_bds() {
                 item.key
             );
         }
+        // `FUSE_TIME` counts 29 down to 0 from the light, a step a tick.
+        let shift = |fuse: &[(u32, i32)], from: u32| -> Vec<(u32, i32)> {
+            fuse.iter().map(|&(t, v)| (t - from, v)).collect()
+        };
+        assert_eq!(
+            shift(&run.fuse_time, lit),
+            shift(&item.fuse_time(), bds_lit),
+            "{}: FUSE_TIME",
+            item.key
+        );
         let (boom, power, at) = run.explosion.expect("explodes");
         assert_eq!((boom - lit, power), (30, bds_power), "{}", item.key);
         // BDS sent the creeper's removal and the `explode` sound the tick
@@ -583,6 +616,16 @@ fn a_lit_creeper_puts_its_fuse_out_like_bds() {
         // on absolute ticks.
         assert_eq!(ours[0], theirs[0], "{key}: lit with the target");
         assert_eq!(&run.ignited[1..], &bds[1..], "{key}");
+        // A fuse put out keeps its last `FUSE_TIME`; lit again it counts
+        // from 29. From the first change on the commands' ticks are fixed.
+        let after = |fuse: Vec<(u32, i32)>| -> Vec<(u32, i32)> {
+            fuse.into_iter().filter(|&(t, _)| t > 15).collect()
+        };
+        assert_eq!(
+            after(run.fuse_time.clone()),
+            after(item.fuse_time()),
+            "{key}: FUSE_TIME"
+        );
         match item.explosion() {
             Some((boom, power, _)) => {
                 assert_eq!(run.explosion.map(|e| (e.0, e.1)), Some((boom, power)));
@@ -716,4 +759,40 @@ fn a_creeper_shot_dead_by_a_skeleton_drops_a_music_disc() {
         discs += records.len();
     }
     assert_eq!(discs, 10);
+}
+
+/// The fuse burns in the actor's own ticks, of which a new actor has none
+/// in the tick it spawned: a TNT lit with flint and steel (a new primed
+/// TNT, its fuse 80) explodes 81 ticks after the use, as BDS's did
+/// (`tnt_lit.json`: lit by the click on tick 12, which reached BDS a tick
+/// later, exploded on tick 94), where a creeper lit by the same use
+/// explodes 30 ticks after it.
+#[test]
+fn a_tnt_lit_with_flint_and_steel_burns_from_its_next_tick() {
+    let mut a = floor(29, Difficulty::Normal, GameMode::Creative);
+    let tnt = IVec3::new(14, 64, 12);
+    a.set_block(tnt, "minecraft:tnt");
+    // What flint and steel used on the block does (the item use itself is
+    // covered by the explosion tests).
+    let player = a.player;
+    assert!(crate::server::game::explosion::light_tnt(
+        a.world(),
+        tnt,
+        player
+    ));
+    a.packets();
+    let mut exploded = None;
+    for t in 0..120u32 {
+        a.ticks(1);
+        let boom = a.packets().into_iter().any(|packet| {
+            matches!(packet, McpePacketData::LevelEventPacket(event)
+                if event.event_id == EXPLOSION_PARTICLES)
+        });
+        if boom {
+            exploded = Some(t);
+            break;
+        }
+    }
+    // Ticks count from 0, the tick of the use.
+    assert_eq!(exploded, Some(81));
 }

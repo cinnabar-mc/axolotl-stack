@@ -17,9 +17,9 @@ Prior art: neither PR #71 nor the `Jviguy/*` branches implement the creeper.
 - `minecraft:behavior.melee_attack` compiles into the melee goal with `MeleeReach::Never`
   when `reach_multiplier` is 0 (the creeper's: chase, never hit); other multipliers are
   refused, as the goal's reach is not measured.
-- A fuse lit before the tick's fuse burn burns that tick (`FuseClock`): the creeper explodes
-  30 ticks after it lights and `FUSE_TIME` counts 29 to 0; TNT primed by redstone keeps its
-  81 ticks. `minecraft:explode` raises `IGNITED` when it is added and lowers it when it is
+- A fuse burns once in each of the actor's ticks, and a new actor has none in the tick it
+  spawned (`Fuse::remaining`): the creeper explodes 30 ticks after it lights and `FUSE_TIME`
+  counts 29 to 0; TNT primed by redstone or flint and steel keeps its 81 ticks. `minecraft:explode` raises `IGNITED` when it is added and lowers it when it is
   removed, so the swell goal stops the creeper on the tick it lights; the hiss (`fuse`) comes
   on the goal's second tick.
 - The creeper class explodes at its feet (`NativeTraits::explodes_at_feet`).

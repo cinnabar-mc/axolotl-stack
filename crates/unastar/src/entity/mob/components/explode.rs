@@ -9,7 +9,6 @@ use rand::Rng;
 use thiserror::Error;
 use unastar_data::actor_components::body::{self, ValueOrRange};
 
-use crate::ecs::resources::TickCounter;
 use crate::entity::EntityRandom;
 use crate::entity::definition::{
     ComponentCompileError, ComponentError, ComponentKindsBuilder, DefinitionError,
@@ -74,26 +73,20 @@ pub struct Explode {
     pub config: Arc<ExplodeConfig>,
 }
 
-/// A burning fuse: the actor explodes at tick `explode_at`
-/// (`TickCounter::current`).
+/// A burning fuse: the ticks it still burns before the actor explodes.
+///
+/// It burns once in each of the actor's ticks (`mob::combat::explode::
+/// tick_fuses`) and the actor explodes on the burn after it reached 0. An
+/// actor has no tick of its own in the tick it spawned: BDS 1.26.51's
+/// creepers, lit by their sensor or by flint and steel, sent `FUSE_TIME` 29
+/// on the tick they lit and exploded 30 ticks later (`sweep.py creeper`),
+/// and its TNT, primed by redstone or flint and steel as a new actor,
+/// exploded 81 ticks after with a fuse of 80 (`tnt_prime.json`,
+/// `tnt_lit.json`).
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
 #[component(storage = "SparseSet")]
 pub struct Fuse {
-    pub explode_at: u64,
-}
-
-/// The last tick the fuses burned (`mob::combat::explode::tick_fuses`).
-///
-/// A fuse burns once a tick and the actor explodes on the burn after the
-/// fuse runs out. A fuse lit before that tick's burn (a creeper lit by its
-/// sensor or by flint and steel) burns the same tick: BDS 1.26.51's
-/// creepers sent `FUSE_TIME` 29 on the tick they lit and exploded 30 ticks
-/// later (`sweep.py creeper`). One lit after it (TNT primed by redstone)
-/// first burns on the next tick: BDS's TNT exploded 81 ticks after it was
-/// powered (`tnt_prime.json`).
-#[derive(Resource, Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub struct FuseClock {
-    pub burned: Option<u64>,
+    pub remaining: u32,
 }
 
 /// Register the `minecraft:explode` component kind.
@@ -175,18 +168,12 @@ fn light_fuse(config: &Arc<ExplodeConfig>, entity: &mut EntityWorldMut<'_>) {
     if !config.fuse_lit {
         return;
     }
-    let explode_at = entity.world_scope(|world| {
-        let now = world.resource::<TickCounter>().current;
-        let ticks = config
+    let remaining = entity.world_scope(|world| {
+        config
             .fuse
-            .draw(&mut world.get_resource_or_init::<EntityRandom>().0);
-        let burned = world
-            .get_resource::<FuseClock>()
-            .is_some_and(|clock| clock.burned == Some(now));
-        let first_burn = if burned { now + 1 } else { now };
-        first_burn + u64::from(ticks)
+            .draw(&mut world.get_resource_or_init::<EntityRandom>().0)
     });
-    entity.insert(Fuse { explode_at });
+    entity.insert(Fuse { remaining });
     // Lit at once: BDS 1.26.51's creeper stopped walking (its swell goal
     // ran) on the tick its fuse lit.
     crate::entity::mob::ai::set_flag(entity, jolyne::valentine::actor_flags::IGNITED, true);

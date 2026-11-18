@@ -150,11 +150,21 @@ impl unastar_rules::loot::LootContext for LootContext<'_> {
         self.color_index
     }
 
+    /// A listed legacy name, else the item whose `descriptionId` names it
+    /// (the music discs: `minecraft:record_stal` is `item.record_stal`,
+    /// `minecraft:music_disc_stal`).
     fn item_alias(&self, name: &str) -> Option<&str> {
         LEGACY_ITEM_NAMES
             .iter()
             .find(|(legacy, _)| legacy.eq_ignore_ascii_case(name))
             .map(|(_, modern)| *modern)
+            .or_else(|| {
+                let items = self.items?;
+                if items.get_by_name(name).is_some() {
+                    return None;
+                }
+                items.by_legacy_name(name).map(|entry| entry.identifier())
+            })
     }
 
     fn data_alias(&self, name: &str, data: i16) -> Option<&str> {

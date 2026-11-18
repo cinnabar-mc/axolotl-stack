@@ -690,8 +690,8 @@ chases and never hits), the sensor lighting and putting out its fuse (ranges
 between the collision boxes; the sensor reads before the AI), the stop on the
 tick it lights, the hiss two ticks later, flint and steel, and the explosion
 30 ticks after the light at its feet (power 3, charged 6, no blocks without
-mobGriefing). A fuse lit before the tick's burn burns that tick
-(`FuseClock`), so primed TNT keeps its 81 ticks.
+mobGriefing). A fuse burns in each of the actor's ticks and a new actor has
+none in the tick it spawned, so primed TNT keeps its 81 ticks.
 
 The slime and the magma cube (`sweep.py slime --client-capture`: calm hops of
 each size, attacks on a survival player, splits and floats, and

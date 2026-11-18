@@ -3,7 +3,7 @@
 ## 1. Implement
 
 - [x] 1.1 `behavior.melee_attack` with `MeleeReach::Never`
-- [x] 1.2 `FuseClock`, `IGNITED` raised and lowered with `minecraft:explode`, the swell hiss
+- [x] 1.2 Fuses burn in the actor's own ticks, `IGNITED` raised and lowered with `minecraft:explode`, the swell hiss
 - [x] 1.3 `NativeTraits::explodes_at_feet`
 - [x] 1.4 The target-nearby sensor before the AI
 - [x] 1.5 `killed_by_entity`

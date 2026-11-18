@@ -3,12 +3,13 @@
 ## When a fuse burns
 
 BDS's creepers sent `FUSE_TIME` 29 on the sample they lit and exploded 30 samples later,
-whether the sensor or flint and steel lit them. Primed TNT, powered at tick t, exploded at
-t + 81 with a fuse of 80 (`tnt_prime.json`). One rule fits both: a fuse burns once a tick in
-the actor's update and the actor explodes on the burn after it reaches 0; a fuse lit before
-that tick's burn burns the same tick. The creeper is lit in its AI or by a packet, before
-the burn; redstone primes TNT after it. `FuseClock` records the last tick the fuses burned,
-and a fuse lit after that first burns on the next tick.
+whether the sensor or flint and steel lit them. Primed TNT, powered at tick t or lit with
+flint and steel, exploded 81 ticks later with a fuse of 80 (`tnt_prime.json`,
+`tnt_lit.json`). One rule fits both: a fuse burns once in each of the actor's own ticks and
+the actor explodes on the burn after it reaches 0, and an actor has no tick of its own in the
+tick it spawned. The creeper already exists when it lights; a primed TNT is a new actor. A
+first try (a clock of "has the burn run this tick") fitted the creeper and redstone TNT but
+gave flint-lit TNT 80 ticks; review caught it.
 
 ## When the sensor reads
 

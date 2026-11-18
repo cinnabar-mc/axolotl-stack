@@ -582,9 +582,6 @@ fn chained_fuses_spread_like_bds() {
     });
     let world = server.ecs.world_mut();
     world.insert_resource(crate::entity::EntityRandom::seeded(5));
-    let now = world
-        .resource::<crate::ecs::resources::TickCounter>()
-        .current;
     let mut ours = Vec::new();
     for n in 0..400 {
         let tnt = super::super::prime_tnt(world, IVec3::new(n, 64, 0), Some("from_explosion"))
@@ -593,7 +590,7 @@ fn chained_fuses_spread_like_bds() {
             .get::<crate::entity::mob::components::explode::Fuse>(tnt)
             .expect("a lit fuse");
         // It explodes the tick after its fuse runs out.
-        ours.push((fuse.explode_at - now + 1) as f64);
+        ours.push(f64::from(fuse.remaining) + 1.0);
         world.despawn(tnt);
     }
     let (bds_min, bds_max) = min_max(&bds);
