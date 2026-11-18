@@ -6305,11 +6305,11 @@
    "files": [
     {
      "path": "candles/candles_lit.json",
-     "rows": 40,
-     "sha256": "4481871459b3967ebe35eb0dd414841dcbd9bf27d21281e5c03d403819515cda"
+     "rows": 42,
+     "sha256": "07b767b83907172b4d83cde3056d69cbec582525e61efcd98ef3c8e0619a7f99"
     }
    ],
-   "harness": "tools/bds-sweep (sweep.py scenarios, endstone-sweep plugin) at a55afb127305c9b3805cb7c138564239a9cedd91",
+   "harness": "tools/bds-sweep (sweep.py scenarios, endstone-sweep plugin) at a55afb127305c9b3805cb7c138564239a9cedd91; tools/bds-sweep (sweep.py scenarios, endstone-sweep plugin) at a75e8dae3b522d8a05997ca46792536dc71aa0b6",
    "method": "sweep.py scenarios --family candles_lit --client-capture (tools/bds-sweep/candles.py): the scripted player (creative) two blocks south of a candle or candle cake set at the cell origin clicks its top face with flint and steel or a fire charge; `after` is the block read afterwards, `sounds` and `events` the LevelSoundEvent and LevelEvent packets it got ([name or id, [dx, dy, dz] from the block's corner, data]).",
    "source": "bds_sweep",
    "sweeps": [
@@ -6321,6 +6321,18 @@
        "items": 40,
        "seconds": 126.2,
        "started": "20261117T182743Z",
+       "status": "done"
+      }
+     ]
+    },
+    {
+     "dir": "r6-candles-2",
+     "items": 42,
+     "runs": [
+      {
+       "items": 42,
+       "seconds": 108.2,
+       "started": "20261118T155903Z",
        "status": "done"
       }
      ]

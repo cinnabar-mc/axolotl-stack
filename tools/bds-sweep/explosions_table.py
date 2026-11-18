@@ -124,6 +124,8 @@ def player_motions(sweep: Path, rows: list[dict]) -> dict[str, list]:
     player waits between items (`sweep.ARENA['player']`)."""
     capture = sweep / 'client-capture' / 'packets.jsonl'
     if not capture.exists():
+        if any(row.get('solo') for row in rows):
+            raise SystemExit(f'{sweep}: solo items need the client capture (run with --client-capture)')
         return {}
     dump = subprocess.run([str(DUMP), str(capture), '--dir', 's2c', '--name', 'SetActorMotion,MovePlayer'],
                           capture_output=True, text=True, check=True).stdout

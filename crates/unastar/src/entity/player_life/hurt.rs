@@ -506,6 +506,24 @@ pub(crate) fn push_player(world: &mut World, player: Entity, push: DVec3) {
     set_pushed_velocity(world, player, velocity, 1);
 }
 
+/// The hurt knockback of a player hurt by its own act (the TNT it lit): the
+/// lift only, no sideways push (BDS 1.26.51
+/// `data/measured/explosions/tnt_lit.json`: (0, 0.4, 0)).
+pub(crate) fn lift_player(world: &mut World, player: Entity) {
+    let Some(power) = worn_knockback_resistance(world, player).resist(KnockbackPower::DEFAULT)
+    else {
+        return;
+    };
+    let velocity = bounded_knockback(knockback_velocity(
+        world
+            .get::<PlayerInput>(player)
+            .map_or(DVec3::ZERO, |input| input.velocity),
+        DVec2::ZERO,
+        power,
+    ));
+    set_pushed_velocity(world, player, velocity, 1);
+}
+
 /// Make `velocity` the player's velocity and send it `count` times.
 fn set_pushed_velocity(world: &mut World, player: Entity, velocity: DVec3, count: usize) {
     if let Some(mut input) = world.get_mut::<PlayerInput>(player) {

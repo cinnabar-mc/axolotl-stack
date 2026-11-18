@@ -12,7 +12,8 @@
 //!   (`tnt_logged.json`). An explosion whose source actor is in water
 //!   breaks nothing (`tnt_water.json`).
 //! - **Drops.** Every broken block drops what it drops by hand, without
-//!   the correct tool, each drop kept with a chance of one in the power (a
+//!   the correct tool, each dropped stack kept with a chance of one in the
+//!   power (one per block for single-drop blocks like dirt; a
 //!   TNT's always, unless `tntExplosionDropDecay` is on: `tnt_decay.json`).
 //!   The drops are gathered over the whole explosion first: a drop joins
 //!   the first gathered stack of its item with room, where room is 16 items
@@ -478,7 +479,12 @@ pub(crate) fn explode(world: &mut World, blast: &Blast) {
 /// 0 damage event with its knockback).
 fn hit_for(world: &World, blast: &Blast, distance: f64, seen: f64) -> (Hit, f64) {
     let impact = impact(distance, blast.power, seen);
-    let igniter = blast.source.and_then(|source| source.igniter);
+    // A player who lit the TNT and has left since is no attacker: the TNT
+    // then hurts as one nobody lit.
+    let igniter = blast
+        .source
+        .and_then(|source| source.igniter)
+        .filter(|igniter| world.get::<Player>(*igniter).is_some());
     let knockback_from = blast.source.map(|source| {
         igniter
             .and_then(|igniter| crate::entity::geometry::feet_position(world, igniter))
@@ -496,7 +502,7 @@ fn hit_for(world: &World, blast: &Blast, distance: f64, seen: f64) -> (Hit, f64)
             ActorDamageCause::BlockExplosion
         },
         attacker: igniter,
-        by_player: igniter.is_some_and(|igniter| world.get::<Player>(igniter).is_some()),
+        by_player: igniter.is_some(),
         knockback_from,
         knockback_power: KnockbackPower::DEFAULT,
     };
@@ -518,10 +524,20 @@ fn hurt_actors(world: &mut World, blast: &Blast) {
             continue;
         }
         let seen = exposure(&*world, blast.centre, &target.aabb);
-        let (hit, impact) = hit_for(world, blast, distance, seen);
+        let (mut hit, impact) = hit_for(world, blast, distance, seen);
+        // The igniter hurt by its own TNT is only lifted, not pushed
+        // sideways (BDS 1.26.51 `tnt_lit.json`: its hurt knockback is
+        // (0, 0.4, 0)).
+        let own = hit.attacker == Some(target.entity);
+        if own {
+            hit.knockback_from = None;
+        }
         let resistance = if target.player {
             if !spares_players {
                 crate::entity::player_life::hurt::hurt_player(world, target.entity, &hit);
+                if own && world.get::<Dead>(target.entity).is_none() {
+                    crate::entity::player_life::hurt::lift_player(world, target.entity);
+                }
             }
             crate::entity::player_life::hurt::worn_knockback_resistance(world, target.entity)
         } else {

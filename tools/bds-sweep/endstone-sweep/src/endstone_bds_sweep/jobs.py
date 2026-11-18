@@ -1227,10 +1227,11 @@ def run_event(ctx: Context, at, event: list, touched: set, failures: list) -> No
 
 
 def read_actors(ctx: Context, wave: list, index: int, bases: list, out: list, last: list, tick: int) -> None:
-    """The actors (the scripted player too) inside each cell's `actors` box (the
+    """The actors inside each cell's `actors` box (the
     timeline's optional sixth element, `{'box': [[lx, ly, lz], [hx, hy, hz]]}`
     in cell offsets, inclusive): `[tick, [[id, type, dx, dy, dz, vx, vy, vz,
-    health(, count)], ...]]` recorded when the list changes (`count`: an
+    health(, count)], ...]]` recorded when the list changes (players are
+    not among a dimension's actors; `count`: an
     item actor's stack size). Positions are relative to the cell origin,
     rounded to 1/1000 (velocities to 1/10000)."""
     actors = list(ctx.dimension.actors)

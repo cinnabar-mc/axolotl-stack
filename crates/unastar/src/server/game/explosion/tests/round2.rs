@@ -482,6 +482,9 @@ fn tnt_in_water_breaks_nothing_and_deals_no_damage_like_bds() {
 /// `tnt_knock.json`).
 #[test]
 fn lit_tnt_names_its_igniter_like_bds() {
+    // The player hurt by its own TNT is only lifted: its first motion is
+    // the lift unastar gives it (`lift_player`).
+    let lift = knockback_velocity(DVec3::ZERO, DVec2::ZERO, KnockbackPower::DEFAULT);
     for row in table::<HitRow>("tnt_lit") {
         for event in &row.damage_events {
             if event.cause == "entity_explosion" {
@@ -489,6 +492,12 @@ fn lit_tnt_names_its_igniter_like_bds() {
                 assert_eq!(event.damaging.as_deref(), Some("tnt"));
             }
         }
+        let first = row.player_motions.first().expect("the player's motions").0;
+        assert!(
+            (first - lift).abs().max_element() < 1e-3,
+            "{:?}: {first}",
+            row.name
+        );
     }
     for row in table::<HitRow>("tnt_knock") {
         for event in &row.damage_events {

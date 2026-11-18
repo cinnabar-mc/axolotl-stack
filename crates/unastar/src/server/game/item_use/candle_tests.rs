@@ -2,7 +2,8 @@
 //! (`crates/unastar-data/data/measured/candles/candles_lit.json`, the
 //! `candles_lit` family of `tools/bds-sweep/candles.py`): a creative player
 //! clicks the top of every candle colour and candle cake, one to four
-//! candles, with flint and steel or a fire charge, and a candle already lit.
+//! candles, with flint and steel or a fire charge, a candle already lit and
+//! a waterlogged one.
 //! The block afterwards, the sounds and the level events are compared.
 
 use glam::IVec3;
@@ -23,6 +24,7 @@ struct Table {
 struct Row {
     block: String,
     item: String,
+    variant: serde_json::Value,
     before: serde_json::Map<String, serde_json::Value>,
     after: (String, serde_json::Map<String, serde_json::Value>),
     sounds: Vec<(String, [f64; 3], i32)>,
@@ -57,7 +59,7 @@ fn candles_light_like_bds() {
     );
     let text = std::fs::read_to_string(&path).unwrap();
     let rows = serde_json::from_str::<Table>(&text).unwrap().rows;
-    assert_eq!(rows.len(), 40);
+    assert_eq!(rows.len(), 42);
     let mut h = Replay::new();
     let player = h.player;
     *h.world().get_mut::<GameMode>(player).unwrap() = GameMode::Creative;
@@ -75,6 +77,12 @@ fn candles_light_like_bds() {
             state(&row.block, &row.before),
             false,
         );
+        let water = if row.variant == "waterlogged" {
+            BlockRegistry::vanilla().default_state_id_by_name("minecraft:water")
+        } else {
+            BlockRegistry::vanilla().default_state_id_by_name("minecraft:air")
+        };
+        crate::server::game::blocks::store_layer(h.world(), CLICKED, water.unwrap());
         h.tick();
         h.drain();
         super::on_block::use_on_block(h.world(), player, CLICKED, 1);
