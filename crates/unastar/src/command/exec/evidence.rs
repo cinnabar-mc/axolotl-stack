@@ -25,7 +25,7 @@ use std::sync::LazyLock;
 
 /// One record BDS printed on its console (`[… INFO] text`), timestamp
 /// dropped; a multi-line message is one record.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize)]
 pub struct ConsoleRecord {
     /// `INFO` or `ERROR`.
     pub level: String,
@@ -114,7 +114,7 @@ fn decode_hex(hex: &str) -> Vec<u8> {
 }
 
 /// Decodes one packet (header and payload, as the capture stores it).
-fn decode(bytes: &[u8]) -> McpePacketData {
+pub fn decode(bytes: &[u8]) -> McpePacketData {
     let mut framed = Vec::with_capacity(bytes.len() + 5);
     let mut length = bytes.len() as u32;
     while length >= 0x80 {
@@ -442,6 +442,34 @@ pub fn assert_same_packets(steps: &[Step], kinds: &[&str], except: &[&str]) {
                 step.captured.command
             );
         }
+    }
+}
+
+/// The `SetActorData` packets among `packets` that carry a score tag (the
+/// `SCORE` row shown under player names).
+pub fn score_tags(packets: Vec<&McpePacketData>) -> Vec<&McpePacketData> {
+    packets
+        .into_iter()
+        .filter(|packet| match packet {
+            McpePacketData::SetActorDataPacket(data) => data
+                .actor_data
+                .data
+                .iter()
+                .any(|entry| entry.id == jolyne::valentine::actor_data_i_ds::SCORE),
+            _ => false,
+        })
+        .collect()
+}
+
+/// Asserts unastar sent the player BDS's score tags, command by command.
+pub fn assert_same_score_tags(steps: &[Step]) {
+    for step in steps {
+        assert_eq!(
+            score_tags(step.sent_named("SetActorDataPacket")),
+            score_tags(step.captured.named("SetActorDataPacket")),
+            "{}: score tags differ from the BDS capture",
+            step.captured.command
+        );
     }
 }
 

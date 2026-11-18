@@ -17,7 +17,7 @@ Each domain's first line is its headline: the rows its family table, gap list an
 | [Blocks](#blocks) | 1477 | 0 | 408 | 511 | 391 | 167 | 68.9% |
 | [Items](#items): behaviour sub-rows (food, durability, placement, ...) | 2347 | 99 | 832 | 619 | 620 | 177 | 57.1% |
 | Items: registered (exists in the registry, no behaviour) | 2076 | 0 | 0 | 2076 | 0 | 0 | 100.0% |
-| [Commands](#commands) | 82 | 8 | 35 | 2 | 36 | 1 | 46.9% |
+| [Commands](#commands) | 82 | 1 | 38 | 2 | 40 | 1 | 51.9% |
 | [Protocol](#protocol) | 231 | 112 | 33 | 40 | 31 | 15 | 32.9% |
 | [World generation](#world-generation) | 1275 | 87 | 430 | 642 | 9 | 107 | 55.7% |
 | [Gameplay systems](#gameplay-systems) | 72 | 29 | 39 | 4 | 0 | 0 | 5.6% |
@@ -71,11 +71,11 @@ Add a `[[claim]]` to [claims.toml](claims.toml) in your first pull request for t
 |---|---|---|---:|
 | Item use | lane ITEMS | 2026-10-29 | 931 |
 
-**Commands**: 0 open rows free, 43 claimed.
+**Commands**: 0 open rows free, 39 claimed.
 
 | Claimed area | Claimed by | Since | Open |
 |---|---|---|---:|
-| Commands | lane COMMANDS | 2026-10-29 | 43 |
+| Commands | lane COMMANDS | 2026-10-29 | 39 |
 
 **Protocol**: 145 open rows free, 0 claimed.
 
@@ -530,22 +530,20 @@ One row per command BDS 1.26.51 advertises in `AvailableCommands`: syntax, permi
 
 | Family | Rows | Missing | Partial | Done | Verified | N/A | Done+verified |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| admin | 7 | 3 | 1 | 1 | 2 | 0 | 42.9% |
-| any | 4 | 1 | 0 | 0 | 3 | 0 | 75.0% |
-| gamedirectors | 60 | 2 | 31 | 0 | 27 | 0 | 45.0% |
+| admin | 7 | 0 | 4 | 1 | 2 | 0 | 42.9% |
+| any | 4 | 0 | 0 | 0 | 4 | 0 | 100.0% |
+| gamedirectors | 60 | 1 | 31 | 0 | 28 | 0 | 46.7% |
 | host | 1 | 0 | 1 | 0 | 0 | 0 | 0.0% |
-| owner | 10 | 2 | 2 | 1 | 4 | 1 | 55.6% |
+| owner | 10 | 0 | 2 | 1 | 6 | 1 | 77.8% |
 
 ### Commands gaps
 
 **admin**
 
 - `permission`: visitor is applied as member (no visitor abilities); with an XUID the answer of set is not measured (unastar prints nothing, as BDS does without one)
-- missing: `place`, `script`, `wsserver`
-
-**any**
-
-- missing: `packstack`
+- `place`: nothing is placed: jigsaw structures, jigsaw pools, features and feature rules answer a not-implemented failure
+- `script`: unastar runs no behaviour-pack scripts: diagnostics stopcapture (which writes and names a capture file on BDS) answers a not-implemented failure
+- `wsserver`: no websocket connection is made
 
 **gamedirectors**
 
@@ -555,7 +553,7 @@ One row per command BDS 1.26.51 advertises in `AvailableCommands`: syntax, permi
 - `damage`: the hurt ActorEvent carries no damage cause (BDS sends the cause id, -1 for none)
 - `dialogue`: no actor has the NPC component and no dialogue scenes are loaded, so open and change always answer noNpcComponent (or noTargetMatch and npcNotFound without a target)
 - 26 more partial rows with other gaps (see [commands.toml](commands.toml))
-- missing: `locate`, `ride`
+- missing: `ride`
 
 **host**
 
@@ -565,7 +563,6 @@ One row per command BDS 1.26.51 advertises in `AvailableCommands`: syntax, permi
 
 - `changesetting`: the settings are only stored: BDS sends nothing when they change and their effect on the running world is not measured
 - `save`: hold does not pause the world's writes, and query lists unastar's own world files (worlds/default)
-- missing: `reloadconfig`, `reloadpacketlimitconfig`
 
 ## Protocol
 

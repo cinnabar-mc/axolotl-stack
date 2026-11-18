@@ -46,6 +46,11 @@ impl LevelDBWorldProvider {
 
         Ok(Self { db: Arc::new(db) })
     }
+
+    /// The database handle, for the level records (`storage::level`).
+    pub(crate) fn database(&self) -> Arc<DB> {
+        self.db.clone()
+    }
 }
 
 #[async_trait]
