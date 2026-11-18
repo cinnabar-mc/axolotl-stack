@@ -30,6 +30,12 @@ pub trait LootContext {
     fn this_mark_variant(&self) -> Option<i32> {
         None
     }
+    /// Whether the killer is an actor with the namespaced identifier
+    /// `entity_type` (for a projectile kill, its shooter); false without a
+    /// killer.
+    fn killed_by(&self, _entity_type: &str) -> bool {
+        false
+    }
     /// Whether the THIS actor rides an actor with the namespaced identifier
     /// `entity_type`; false without a THIS actor or vehicle.
     fn vehicle_is(&self, _entity_type: &str) -> bool {
@@ -161,6 +167,7 @@ fn condition_passes(
         LootCondition::IsBaby => ctx.is_baby(),
         LootCondition::HasMarkVariant { value } => ctx.this_mark_variant() == Some(*value),
         LootCondition::PassengerOfEntity { entity_type } => ctx.vehicle_is(entity_type),
+        LootCondition::KilledByEntity { entity_type } => ctx.killed_by(entity_type),
         LootCondition::RandomDifficultyChance { chances } => {
             let roll = rng.r#gen::<f32>();
             let difficulty = ctx

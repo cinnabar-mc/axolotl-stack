@@ -682,11 +682,11 @@ fn apply(world: &mut World, entity: Entity, output: Output, deferred: &mut Defer
     if let Some(work) = effects.silverfish {
         deferred.silverfish.push((entity, work));
     }
-    if effects.swell_started
+    if effects.swell_hiss
         && let Some(head) = super::life::anger::head(world, entity)
     {
-        // Heard one tick after the goal starts: two ticks after the creeper
-        // lit, as BDS 1.26.51 sends `fuse`.
+        // Sent with the next tick's sounds: two ticks after the creeper lit,
+        // as BDS 1.26.51 sends `fuse`.
         super::net::sound::queue_synced_sound(world, Some(entity), head, "fuse", -1);
     }
 }

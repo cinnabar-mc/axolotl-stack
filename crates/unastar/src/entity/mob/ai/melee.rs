@@ -120,7 +120,7 @@ impl MeleeReach {
     /// `no_damage_range_multiplier`. `None` for the box reach.
     pub fn stomp_ranges(&self, width: f64, target_width: f64) -> Option<(f64, f64)> {
         match *self {
-            MeleeReach::Box { .. } => None,
+            MeleeReach::Box { .. } | MeleeReach::Never => None,
             MeleeReach::Stomp {
                 reach_multiplier,
                 no_damage_range_multiplier,
@@ -244,7 +244,8 @@ impl GoalContext<'_> {
         let dx = target.pos.x - self.body.feet.x;
         let dz = target.pos.z - self.body.feet.z;
         let MeleeReach::Box { horizontal: reach } = goal.reach else {
-            // The stomp reach decides after the move (`tick_stomp_attacks`).
+            // The stomp reach decides after the move (`tick_stomp_attacks`);
+            // a goal that never hits only chases.
             self.move_toward_target(goal, &target, false, dx * dx + dz * dz);
             return;
         };

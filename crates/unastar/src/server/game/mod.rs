@@ -572,8 +572,13 @@ impl GameServer {
                 .after(movement::apply_movement),
         );
 
+        // Target-nearby sensors read where the targets stand before the
+        // mobs' AI and their group changes apply at once: BDS 1.26.51's
+        // creeper lit the tick after it took its target and put its fuse
+        // out on the tick its target left (`sweep.py creeper`).
         ecs.schedule_mut().add_systems(
             (
+                crate::entity::mob::life::sensors::tick_target_nearby_sensors,
                 crate::entity::definition::apply_pending_definitions,
                 crate::entity::mob::derive_mob_state,
                 tick_physics,
@@ -797,14 +802,12 @@ impl GameServer {
                 .after(despawn_dead)
                 .before(tick_block_breaking),
         );
-        // Environment sensors, target-nearby sensors, timers, then anger.
-        // Their group changes apply at the next tick's definition barrier
-        // (`PhysicsSet`), which is when anger that spread this tick starts
-        // on its receivers.
+        // Environment sensors, timers, then anger. Their group changes
+        // apply at the next tick's definition barrier (`PhysicsSet`), which
+        // is when anger that spread this tick starts on its receivers.
         ecs.schedule_mut().add_systems(
             (
                 crate::entity::mob::life::sensors::tick_environment_sensors,
-                crate::entity::mob::life::sensors::tick_target_nearby_sensors,
                 crate::entity::mob::life::sensors::tick_timers,
                 crate::entity::mob::life::anger::tick_anger,
             )

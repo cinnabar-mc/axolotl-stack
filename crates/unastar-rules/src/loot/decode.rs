@@ -109,6 +109,15 @@ fn specific_enchant(v: &Value, path: &str) -> Result<SpecificEnchant> {
     })
 }
 
+/// An actor identifier with its namespace (`chicken` is `minecraft:chicken`).
+fn namespaced(entity_type: &str) -> String {
+    if entity_type.contains(':') {
+        entity_type.to_owned()
+    } else {
+        format!("minecraft:{entity_type}")
+    }
+}
+
 fn condition(v: &Value, path: &str) -> Result<LootCondition> {
     let name = text(&v["condition"], path)?;
     Ok(match bare(name) {
@@ -185,16 +194,12 @@ fn condition(v: &Value, path: &str) -> Result<LootCondition> {
         "has_mark_variant" if v.get("value").is_some() => LootCondition::HasMarkVariant {
             value: int_or(v, "value", 0, path)?,
         },
-        "passenger_of_entity" => {
-            let entity_type = text(&v["entity_type"], path)?;
-            LootCondition::PassengerOfEntity {
-                entity_type: if entity_type.contains(':') {
-                    entity_type.to_owned()
-                } else {
-                    format!("minecraft:{entity_type}")
-                },
-            }
-        }
+        "passenger_of_entity" => LootCondition::PassengerOfEntity {
+            entity_type: namespaced(text(&v["entity_type"], path)?),
+        },
+        "killed_by_entity" => LootCondition::KilledByEntity {
+            entity_type: namespaced(text(&v["entity_type"], path)?),
+        },
         "random_difficulty_chance" => {
             let default = float_or(v, "default_chance", 0.0, path)?;
             let mut chances = [default; 4];

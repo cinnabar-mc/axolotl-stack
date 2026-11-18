@@ -16,13 +16,14 @@ use jolyne::valentine::types::EnumsActorEvent;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 use tracing::warn;
+use unastar_data::actor_identifiers::ActorType;
 use unastar_rules::molang::eval::{MolangContext, Value as MolangValue, evaluate_num};
 use unastar_rules::molang::{BuiltinQuery, Expr, QueryId};
 
 use unastar_rules::ids::Enchantment;
 
 use crate::ecs::resources::TickCounter;
-use crate::entity::components::{Health, OnGround, Position};
+use crate::entity::components::{Health, OnGround, Player, Position};
 use crate::entity::definition::flags::ActorFlags;
 use crate::entity::mob::combat::send_actor_event;
 use crate::entity::mob::components::{ExperienceRewardConfig, LootConfig};
@@ -67,6 +68,16 @@ pub fn begin_death(world: &mut World, mob: Entity) {
     drop_loot(world, mob);
     let killed_by_player = last_hit_by_player(world, mob);
     crate::entity::mob::gear::drops::drop_equipment(world, mob, killed_by_player);
+}
+
+/// The type of the actor that killed `mob` (its last attacker: a player, or
+/// a mob, a projectile's shooter for a projectile kill).
+fn killer_type(world: &World, mob: Entity) -> Option<ActorType> {
+    let killer = world.get::<LastHurt>(mob)?.attacker?;
+    if world.get::<Player>(killer).is_some() {
+        return Some(ActorType::Player);
+    }
+    world.get::<MobKind>(killer).map(|kind| kind.0.actor_type)
 }
 
 /// Roll the mob's `minecraft:loot` table and drop the result at its feet.
@@ -116,6 +127,7 @@ fn drop_loot(world: &mut World, mob: Entity) {
         mark_variant: crate::entity::mob::components::variant::mark_variant_of(world, mob),
         // Riding is not implemented: no mob has a vehicle.
         vehicle: None,
+        killer: killer_type(world, mob),
         level: LootLevel::of(world),
         items: world
             .get_resource::<ItemRegistryResource>()

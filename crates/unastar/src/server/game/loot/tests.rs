@@ -271,22 +271,47 @@ fn vanilla_entity_tables_roll_with_looting() {
 }
 
 /// Vanilla features no loot caller implements yet still fail the roll
-/// instead of being skipped (`killed_by_entity` guards the creeper's
-/// music discs).
+/// instead of being skipped (`damaged_by_entity` guards the ghast's
+/// music disc, after `killed_by_entity` names the player).
 #[test]
 fn unsupported_vanilla_features_are_errors_not_skipped() {
     let ctx = LootContext {
         killed_by_player: true,
+        killer: Some(ActorType::Player),
         ..LootContext::default()
     };
     assert_eq!(
-        roll(
-            table("entities/creeper"),
-            &ctx,
-            &mut StdRng::seed_from_u64(3)
-        ),
-        Err(LootError::Unsupported("killed_by_entity".into()))
+        roll(table("entities/ghast"), &ctx, &mut StdRng::seed_from_u64(3)),
+        Err(LootError::Unsupported("damaged_by_entity".into()))
     );
+}
+
+/// `killed_by_entity`: a creeper a skeleton killed drops one music disc
+/// besides its gunpowder; one a player killed drops none.
+#[test]
+fn a_creeper_killed_by_a_skeleton_drops_a_music_disc() {
+    let by_skeleton = LootContext {
+        killer: Some(ActorType::Skeleton),
+        ..LootContext::default()
+    };
+    for drops in counts("entities/creeper", &by_skeleton, 50) {
+        let discs = drops
+            .iter()
+            .filter(|d| d.item_id != "minecraft:gunpowder")
+            .count();
+        assert_eq!(discs, 1, "{drops:?}");
+    }
+    let by_player = LootContext {
+        killed_by_player: true,
+        killer: Some(ActorType::Player),
+        ..LootContext::default()
+    };
+    for drops in counts("entities/creeper", &by_player, 50) {
+        assert!(
+            drops.iter().all(|d| d.item_id == "minecraft:gunpowder"),
+            "{drops:?}"
+        );
+    }
 }
 
 const RARE: [&str; 3] = [

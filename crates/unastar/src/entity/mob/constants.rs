@@ -207,6 +207,11 @@ pub const MOB_HEAD_DISGUISES: [(&str, &str); 5] = [
 /// (measured: BDS 1.26.51 polar bears stood ten ticks before every hit).
 pub const STOMP_WARNING_TICKS: i32 = 10;
 
+/// The swell goal's tick on which the mob hisses (`fuse`), counting its
+/// start tick as 1: BDS 1.26.51's creepers sent the sound two ticks after
+/// they lit, the tick their swell goal started (`sweep.py creeper`).
+pub const SWELL_HISS_TICK: u32 = 2;
+
 /// `behavior.melee_box_attack` `can_spread_on_fire`: a burning attacker with
 /// an empty main hand sets the target alight with probability
 /// `U(0, 1) < this[difficulty]` (peaceful, easy, normal, hard) for
@@ -450,11 +455,31 @@ pub const LEGACY_BUCKET_ITEMS: [(i16, &str); 11] = [
 /// regard to case, as item names are. Provisional: pmmp's
 /// BedrockItemUpgradeSchema, which agrees with the identity BDS reports for
 /// its own `muttonRaw` furnace recipe input.
-pub const LEGACY_ITEM_NAMES: [(&str, &str); 2] = [
+pub const LEGACY_ITEM_NAMES: [(&str, &str); 16] = [
     ("minecraft:muttonRaw", "minecraft:mutton"),
     // `entities/wither_boss` (measured: `/loot … loot "entities/wither_boss"`
     // drops a nether star).
     ("minecraft:netherStar", "minecraft:nether_star"),
+    // The music discs of `entities/creeper` and the dungeon, stronghold,
+    // mansion and bastion chests. Unmeasured; each disc's item data names
+    // it `item.record_<name>` (`unastar-data/output/items.kdl`).
+    ("minecraft:record_11", "minecraft:music_disc_11"),
+    ("minecraft:record_13", "minecraft:music_disc_13"),
+    ("minecraft:record_blocks", "minecraft:music_disc_blocks"),
+    ("minecraft:record_cat", "minecraft:music_disc_cat"),
+    ("minecraft:record_chirp", "minecraft:music_disc_chirp"),
+    ("minecraft:record_far", "minecraft:music_disc_far"),
+    ("minecraft:record_mall", "minecraft:music_disc_mall"),
+    ("minecraft:record_mellohi", "minecraft:music_disc_mellohi"),
+    (
+        "minecraft:record_otherside",
+        "minecraft:music_disc_otherside",
+    ),
+    ("minecraft:record_pigstep", "minecraft:music_disc_pigstep"),
+    ("minecraft:record_stal", "minecraft:music_disc_stal"),
+    ("minecraft:record_strad", "minecraft:music_disc_strad"),
+    ("minecraft:record_wait", "minecraft:music_disc_wait"),
+    ("minecraft:record_ward", "minecraft:music_disc_ward"),
 ];
 /// The legacy loot item name that picks its wool item by data value
 /// (the palette colour): `minecraft:wool` with data 14 is red wool.

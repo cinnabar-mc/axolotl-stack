@@ -12,8 +12,8 @@ Each domain's first line is its headline: the rows its family table, gap list an
 
 | Domain | Rows | Missing | Partial | Done | Verified | N/A | Done+verified |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| [Entities](#entities): actor rows (summon and replication) | 137 | 98 | 2 | 3 | 30 | 4 | 24.8% |
-| Entities: behaviour sub-rows (components, spawn rules) | 4082 | 905 | 2579 | 439 | 113 | 46 | 13.7% |
+| [Entities](#entities): actor rows (summon and replication) | 137 | 97 | 2 | 3 | 31 | 4 | 25.6% |
+| Entities: behaviour sub-rows (components, spawn rules) | 4082 | 903 | 2556 | 452 | 125 | 46 | 14.3% |
 | [Blocks](#blocks) | 1477 | 0 | 408 | 511 | 391 | 167 | 68.9% |
 | [Items](#items): behaviour sub-rows (food, durability, placement, ...) | 2347 | 99 | 832 | 619 | 620 | 177 | 57.1% |
 | Items: registered (exists in the registry, no behaviour) | 2076 | 0 | 0 | 2076 | 0 | 0 | 100.0% |
@@ -30,7 +30,7 @@ Open rows are missing or partial headline rows (the first summary line of each d
 
 Add a `[[claim]]` to [claims.toml](claims.toml) in your first pull request for the area: `area`, `owner` (your `@github-handle`), `since` (the date), `domain`, and the `families`, `ids` or id `prefixes` you are taking, and `change` (the OpenSpec change doing the work, if any); remove it when you stop or when the change is archived. `parity check` rejects unknown families or ids and claims that overlap, so talk to the owner of a claimed area before working inside it. The rest of the workflow is in [CONTRIBUTING.md](../../CONTRIBUTING.md).
 
-**Entities**: 58 open rows free, 42 claimed.
+**Entities**: 58 open rows free, 41 claimed.
 
 | Free family | Open | Missing | Partial |
 |---|---:|---:|---:|
@@ -43,7 +43,7 @@ Add a `[[claim]]` to [claims.toml](claims.toml) in your first pull request for t
 
 | Claimed area | Claimed by | Since | Open |
 |---|---|---|---:|
-| Mobs: hostile, tameable and aquatic (with dolphins, turtles, axolotls and bats) | lane ENT | 2026-10-29 | 42 |
+| Mobs: hostile, tameable and aquatic (with dolphins, turtles, axolotls and bats) | lane ENT | 2026-10-29 | 41 |
 
 **Blocks**: 240 open rows free, 168 claimed.
 
@@ -123,7 +123,7 @@ One row per vanilla actor (`minecraft:cow`): it can be spawned/summoned and is r
 | aquatic | 8 | 8 | 0 | 0 | 0 | 0 | 0.0% |
 | boss | 2 | 2 | 0 | 0 | 0 | 0 | 0.0% |
 | built_in | 9 | 4 | 0 | 0 | 2 | 3 | 33.3% |
-| hostile | 38 | 21 | 0 | 0 | 17 | 0 | 44.7% |
+| hostile | 38 | 20 | 0 | 0 | 18 | 0 | 47.4% |
 | object | 18 | 15 | 1 | 0 | 1 | 1 | 5.9% |
 | passive | 39 | 32 | 0 | 0 | 7 | 0 | 17.9% |
 | player | 1 | 0 | 0 | 1 | 0 | 0 | 100.0% |
@@ -136,30 +136,30 @@ Sub-rows by facet, most incomplete first (30 of 371):
 |---|---:|---:|---:|---:|---:|---:|---:|
 | pushable_by_block | 117 | 2 | 115 | 0 | 0 | 0 | 0.0% |
 | conditional_bandwidth_optimization | 116 | 98 | 12 | 0 | 5 | 1 | 4.3% |
-| type_family | 124 | 1 | 98 | 24 | 0 | 1 | 19.5% |
-| physics | 125 | 0 | 96 | 19 | 9 | 1 | 22.6% |
-| collision_box | 124 | 0 | 94 | 20 | 9 | 1 | 23.6% |
+| type_family | 124 | 1 | 97 | 25 | 0 | 1 | 20.3% |
+| physics | 125 | 0 | 95 | 20 | 9 | 1 | 23.4% |
+| collision_box | 124 | 0 | 93 | 20 | 10 | 1 | 24.4% |
 | nameable | 93 | 0 | 93 | 0 | 0 | 0 | 0.0% |
-| pushable_by_entity | 109 | 0 | 92 | 17 | 0 | 0 | 15.6% |
+| pushable_by_entity | 109 | 0 | 91 | 18 | 0 | 0 | 16.5% |
 | breathable | 84 | 1 | 83 | 0 | 0 | 0 | 0.0% |
-| is_hidden_when_invisible | 92 | 1 | 78 | 0 | 13 | 0 | 14.1% |
-| health | 94 | 1 | 76 | 12 | 4 | 1 | 17.2% |
-| movement | 92 | 0 | 72 | 11 | 9 | 0 | 21.7% |
-| hurt_on_condition | 87 | 0 | 71 | 15 | 0 | 1 | 17.4% |
-| experience_reward | 80 | 0 | 65 | 15 | 0 | 0 | 18.8% |
-| loot | 78 | 0 | 63 | 14 | 0 | 1 | 18.2% |
-| jump.static | 79 | 0 | 62 | 15 | 2 | 0 | 21.5% |
+| is_hidden_when_invisible | 92 | 1 | 77 | 0 | 14 | 0 | 15.2% |
+| health | 94 | 1 | 75 | 12 | 5 | 1 | 18.3% |
+| movement | 92 | 0 | 71 | 11 | 10 | 0 | 22.8% |
+| hurt_on_condition | 87 | 0 | 70 | 16 | 0 | 1 | 18.6% |
+| experience_reward | 80 | 0 | 64 | 16 | 0 | 0 | 20.0% |
+| loot | 78 | 0 | 62 | 15 | 0 | 1 | 19.5% |
+| jump.static | 79 | 0 | 61 | 16 | 2 | 0 | 22.8% |
 | can_climb | 57 | 0 | 57 | 0 | 0 | 0 | 0.0% |
-| despawn | 76 | 0 | 57 | 19 | 0 | 0 | 25.0% |
+| despawn | 76 | 0 | 56 | 20 | 0 | 0 | 26.3% |
 | spawn_rules | 59 | 5 | 50 | 4 | 0 | 0 | 6.8% |
-| behavior.look_at_player | 69 | 0 | 54 | 15 | 0 | 0 | 21.7% |
-| behavior.random_stroll | 64 | 0 | 52 | 12 | 0 | 0 | 18.8% |
-| movement.basic | 65 | 0 | 50 | 15 | 0 | 0 | 23.1% |
-| navigation.walk | 66 | 0 | 49 | 17 | 0 | 0 | 25.8% |
-| behavior.float | 49 | 0 | 43 | 6 | 0 | 0 | 12.2% |
+| behavior.look_at_player | 69 | 0 | 53 | 16 | 0 | 0 | 23.2% |
+| behavior.random_stroll | 64 | 0 | 51 | 13 | 0 | 0 | 20.3% |
+| movement.basic | 65 | 0 | 49 | 15 | 1 | 0 | 24.6% |
+| navigation.walk | 66 | 0 | 48 | 17 | 1 | 0 | 27.3% |
 | leashable | 43 | 38 | 5 | 0 | 0 | 0 | 0.0% |
+| behavior.float | 49 | 0 | 42 | 7 | 0 | 0 | 14.3% |
 | leashable_to | 42 | 37 | 5 | 0 | 0 | 0 | 0.0% |
-| behavior.random_look_around | 55 | 0 | 40 | 15 | 0 | 0 | 27.3% |
+| behavior.random_look_around | 55 | 0 | 39 | 16 | 0 | 0 | 29.1% |
 | attack | 48 | 0 | 37 | 11 | 0 | 0 | 22.9% |
 | damage_sensor | 39 | 0 | 37 | 1 | 1 | 0 | 5.1% |
 | behavior.hurt_by_target | 42 | 0 | 36 | 6 | 0 | 0 | 14.3% |
@@ -183,7 +183,7 @@ Top-level rows only; sub-row gaps are in the status file and rolled up by facet 
 
 **hostile**
 
-- missing: `minecraft:blaze`, `minecraft:breeze`, `minecraft:cave_spider`, `minecraft:creaking`, `minecraft:creeper`, `minecraft:elder_guardian`, `minecraft:enderman`, `minecraft:evocation_illager`, `minecraft:ghast`, `minecraft:guardian`, `minecraft:phantom`, `minecraft:piglin` and 9 more
+- missing: `minecraft:blaze`, `minecraft:breeze`, `minecraft:cave_spider`, `minecraft:creaking`, `minecraft:elder_guardian`, `minecraft:enderman`, `minecraft:evocation_illager`, `minecraft:ghast`, `minecraft:guardian`, `minecraft:phantom`, `minecraft:piglin`, `minecraft:piglin_brute` and 8 more
 
 **object**
 
@@ -741,7 +741,7 @@ Cross-cutting gameplay systems with no data source to enumerate them from; this 
 
 - `crafting.crafting_grid`: shaped and shapeless 2x2/3x3 recipes work; recipe-book auto-craft, ingredient remainders (buckets, bottles) and special/multi recipes (repair, dyeing, fireworks) are rejected
 - `crafting.enchantments`: efficiency, aqua affinity, silk touch, fortune, looting, unbreaking, infinity and feather falling (fall damage, as in the BDS movement capture) act; sharpness (melee on mobs and players), knockback and protection (melee on players) act as in the BDS PvP sweep; smite, bane of arthropods, fire aspect, mending, power, punch, flame and the other armour, trident and crossbow enchantments have no effect, and protection against other causes is unmeasured
-- `crafting.loot_tables`: block, mob and generated-chest tables roll; missing functions enchant_randomly, enchant_with_levels, enchant_book_for_trading, exploration_map, random_aux_value, set_armor_trim, set_banner_details, set_damage, set_ominous_bottle_amplifier, set_potion, set_stew_effect, specific_enchants and conditions biome_has_tag, bool_property, damaged_by_entity, entity_killed, entity_properties, has_mark_variant, has_variant, killed_by_entity fail the roll; no fishing loot
+- `crafting.loot_tables`: block, mob and generated-chest tables roll; missing functions enchant_randomly, enchant_with_levels, enchant_book_for_trading, exploration_map, random_aux_value, set_armor_trim, set_banner_details, set_damage, set_ominous_bottle_amplifier, set_potion, set_stew_effect, specific_enchants and conditions biome_has_tag, bool_property, damaged_by_entity, entity_killed, entity_properties, has_mark_variant, has_variant fail the roll; no fishing loot
 - `crafting.smelting`: furnace, blast furnace and smoker smelt with fuel, XP and hoppers; campfire and soul campfire cooking missing
 - missing: `crafting.anvil`, `crafting.brewing`, `crafting.enchanting`, `crafting.grindstone`, `crafting.recipe_book`, `crafting.smithing`, `crafting.stonecutter_loom_cartography`, `crafting.trading`
 

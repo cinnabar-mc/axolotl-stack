@@ -1,10 +1,13 @@
 //! Fuses (`minecraft:explode`, compiled in `mob::components::explode`).
 //!
 //! While a fuse burns the actor's `IGNITED` flag is set and its `FUSE_TIME`
-//! counts down; the tick after the fuse runs out the actor explodes (a
-//! sixteenth of its height above its feet, `server::game::explosion`) and
-//! is removed without dying. A primed TNT lit at tick t explodes at tick
-//! t + 81 (BDS 1.26.51, `data/measured/explosions/tnt_prime.json`).
+//! counts down to 0; on the next burn the actor explodes (a
+//! sixteenth of its height above its feet, `server::game::explosion`; a
+//! creeper at its feet) and
+//! is removed without dying. A fuse lit before this tick's burn burns this
+//! tick too ([`FuseClock`]): a creeper lit at tick t explodes at t + 30, a
+//! TNT primed by redstone at tick t at t + 81 (BDS 1.26.51, `sweep.py
+//! creeper` and `data/measured/explosions/tnt_prime.json`).
 
 use bevy_ecs::prelude::*;
 use jolyne::valentine::actor_data_i_ds as ids;
@@ -15,7 +18,7 @@ use crate::entity::components::{PhysicsBody, Position};
 use crate::entity::definition::metadata::EntityMetadata;
 use crate::entity::mob::MobKind;
 use crate::entity::mob::ai::set_flag;
-use crate::entity::mob::components::explode::{Explode, Fuse};
+use crate::entity::mob::components::explode::{Explode, Fuse, FuseClock};
 use crate::entity::mob::state::Dead;
 use crate::server::game::explosion::{Blast, blast_centre, explode};
 
@@ -27,6 +30,7 @@ pub fn tick_fuses(
     mut burning: Local<Vec<(Entity, Fuse, bool)>>,
 ) {
     let now = world.resource::<TickCounter>().current;
+    world.get_resource_or_init::<FuseClock>().burned = Some(now);
     burning.extend(
         fuses
             .iter(world)
@@ -37,11 +41,11 @@ pub fn tick_fuses(
             continue;
         };
         set_flag(&mut actor, actor_flags::IGNITED, true);
-        let remaining = fuse.explode_at.saturating_sub(now);
+        let remaining = fuse.explode_at.saturating_sub(now + 1);
         if let Some(mut metadata) = actor.get_mut::<EntityMetadata>() {
             metadata.set_int(ids::FUSE_TIME, i32::try_from(remaining).unwrap_or(i32::MAX));
         }
-        if now > fuse.explode_at && !dead {
+        if now >= fuse.explode_at && !dead {
             explode_actor(world, entity);
         }
     }
@@ -49,6 +53,9 @@ pub fn tick_fuses(
 
 /// Explode `actor` with its `minecraft:explode` and remove it.
 fn explode_actor(world: &mut World, actor: Entity) {
+    let at_feet = world
+        .get::<MobKind>(actor)
+        .is_some_and(|kind| kind.0.native.explodes_at_feet);
     let (Some(config), Some(feet), Some(body)) = (
         world
             .get::<Explode>(actor)
@@ -62,7 +69,11 @@ fn explode_actor(world: &mut World, actor: Entity) {
         .get_resource::<crate::world::rules::GameRules>()
         .is_none_or(|rules| rules.mob_griefing);
     let blast = Blast {
-        centre: blast_centre(feet, body.height),
+        centre: if at_feet {
+            feet
+        } else {
+            blast_centre(feet, body.height)
+        },
         power: config.power,
         source: Some(actor),
         breaks_blocks: config.breaks_blocks && (!config.destroy_affected_by_griefing || griefing),

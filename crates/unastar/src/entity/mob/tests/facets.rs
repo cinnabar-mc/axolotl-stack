@@ -54,6 +54,7 @@ const ZOMBIE_VILLAGER: &str = "minecraft:zombie_villager_v2";
 const SILVERFISH: &str = "minecraft:silverfish";
 const SLIME: &str = "minecraft:slime";
 const MAGMA_CUBE: &str = "minecraft:magma_cube";
+const CREEPER: &str = "minecraft:creeper";
 
 pub(super) fn block(name: &str) -> u32 {
     BlockRegistry::vanilla()
@@ -218,12 +219,49 @@ impl Arena {
         self.world().entity_mut(mob).remove::<T>();
     }
 
+    /// The player holds `count` of `item` in its first hotbar slot.
+    pub(super) fn hold(&mut self, item: &str, count: u8) {
+        let stack = world_stack(self.world(), item, count).expect(item);
+        let player = self.player;
+        self.world()
+            .get_mut::<MainInventory>(player)
+            .unwrap()
+            .0
+            .set_item(0, stack)
+            .unwrap();
+    }
+
+    /// The player uses its held item on `target` (an item-use-on-actor
+    /// interact from its first hotbar slot).
+    pub(super) fn interact(&mut self, target: Entity) {
+        use jolyne::valentine::types::{
+            ActorRuntimeId, EnumsItemUseOnActorInventoryTransactionActionType as ActionType,
+            ItemUseOnActorInventoryTransaction,
+        };
+        let runtime_id = self.world().get::<RuntimeId>(target).unwrap().0;
+        let transaction = ItemUseOnActorInventoryTransaction {
+            runtime_id: ActorRuntimeId {
+                actor_runtime_id: runtime_id as u64,
+            },
+            action_type: ActionType::Interact,
+            slot: 0,
+            ..Default::default()
+        };
+        let player = self.player;
+        crate::entity::mob::interaction::interact::player_interact(
+            self.world(),
+            player,
+            target,
+            &transaction,
+        );
+    }
+
     pub(super) fn packets(&mut self) -> Vec<McpePacketData> {
         std::iter::from_fn(|| self.rx.try_recv().ok().map(|p| p.data)).collect()
     }
 
     /// Every dropped item stack, removing them from the world.
-    fn take_drops(&mut self) -> Vec<(String, u32)> {
+    pub(super) fn take_drops(&mut self) -> Vec<(String, u32)> {
         let world = self.world();
         let drops: Vec<(Entity, String, u32)> = world
             .query_filtered::<(Entity, &ItemEntityStack), With<DroppedItem>>()
@@ -290,6 +328,7 @@ fn listed_mobs_fall_and_stay_on_the_ground() {
         STRAY,
         BOGGED,
         PARCHED,
+        CREEPER,
         ENDERMITE,
         ZOMBIE_PIGMAN,
         ZOGLIN,
@@ -327,6 +366,7 @@ fn listed_mobs_stroll_within_their_range_around_obstacles() {
         STRAY,
         BOGGED,
         PARCHED,
+        CREEPER,
         ENDERMITE,
         ZOMBIE_PIGMAN,
         ZOGLIN,
@@ -380,6 +420,7 @@ fn listed_mobs_jump_a_block_to_reach_a_stroll_target() {
         STRAY,
         BOGGED,
         PARCHED,
+        CREEPER,
         ENDERMITE,
         ZOMBIE_PIGMAN,
         ZOMBIE_VILLAGER,
@@ -414,6 +455,7 @@ fn overlapping_listed_mobs_push_each_other_apart() {
         STRAY,
         BOGGED,
         PARCHED,
+        CREEPER,
         ENDERMITE,
         ZOMBIE_PIGMAN,
         ZOGLIN,
@@ -438,7 +480,7 @@ fn overlapping_listed_mobs_push_each_other_apart() {
 }
 
 /// Mobs with `behavior.float` (the cow's own test is in `ai::tests`).
-const FLOATERS: &[&str] = &[ENDERMITE];
+const FLOATERS: &[&str] = &[ENDERMITE, CREEPER];
 
 /// `behavior.float`: a mob sunk in deep water swims up to the surface.
 #[test]
@@ -476,6 +518,7 @@ fn listed_mobs_turn_their_heads_toward_a_nearby_player() {
         STRAY,
         BOGGED,
         PARCHED,
+        CREEPER,
         ZOMBIE_PIGMAN,
         ZOGLIN,
         ZOMBIE_VILLAGER,
@@ -511,6 +554,7 @@ fn idle_listed_mobs_look_around_within_the_angle_range() {
         STRAY,
         BOGGED,
         PARCHED,
+        CREEPER,
         ZOMBIE_PIGMAN,
         ZOGLIN,
         ZOMBIE_VILLAGER,
@@ -555,6 +599,7 @@ fn listed_mobs_despawn_far_from_players_and_stay_near_them() {
         STRAY,
         BOGGED,
         PARCHED,
+        CREEPER,
         ENDERMITE,
         ZOMBIE_PIGMAN,
         ZOGLIN,
@@ -579,7 +624,8 @@ fn listed_mobs_despawn_far_from_players_and_stay_near_them() {
 /// definition gives it, and not for a family it lacks.
 #[test]
 fn listed_mobs_belong_to_their_authored_families() {
-    let cases: [(&str, &[&str], &str); 13] = [
+    let cases: [(&str, &[&str], &str); 14] = [
+        (CREEPER, &["creeper", "monster", "mob"], "undead"),
         (SKELETON, &["skeleton", "undead", "monster", "mob"], "stray"),
         (
             STRAY,
@@ -660,7 +706,14 @@ fn listed_mobs_belong_to_their_authored_families() {
 fn listed_mobs_drop_their_loot_and_experience_when_killed_by_a_player() {
     // The stray, bogged and parched also drop a tipped arrow on a player
     // kill (`set_potion`), which loot does not implement.
-    let cases: [(&str, &[&str], Option<&str>, u32); 8] = [
+    let cases: [(&str, &[&str], Option<&str>, u32); 9] = [
+        // The music discs need a skeleton kill (`killed_by_entity`).
+        (
+            CREEPER,
+            &["minecraft:gunpowder"],
+            Some("minecraft:gunpowder"),
+            5,
+        ),
         (
             SKELETON,
             &["minecraft:arrow", "minecraft:bone"],
@@ -758,6 +811,7 @@ fn listed_mobs_standing_in_lava_are_hurt_by_it() {
         STRAY,
         BOGGED,
         PARCHED,
+        CREEPER,
         SILVERFISH,
     ] {
         let mut a = floor(21, Difficulty::Normal, GameMode::Creative);
@@ -869,6 +923,7 @@ fn listed_hostile_mobs_ignore_creative_players() {
         SILVERFISH,
         SLIME,
         MAGMA_CUBE,
+        CREEPER,
     ] {
         let mut a = floor(25, Difficulty::Hard, GameMode::Creative);
         a.move_player(DVec3::new(4.5, SURFACE, 0.5));

@@ -102,6 +102,11 @@ pub enum LootCondition {
     HasMarkVariant {
         value: i32,
     },
+    /// The killer is an actor of this identifier (namespaced); a projectile
+    /// kill counts for its shooter.
+    KilledByEntity {
+        entity_type: String,
+    },
     /// The THIS actor rides an actor of this identifier (namespaced).
     PassengerOfEntity {
         entity_type: String,

@@ -89,8 +89,8 @@ pub struct SensingMob {
     target: Option<Entity>,
 }
 
-/// System (exclusive, `EntityLogicSet`): fire the target-nearby sensor
-/// events of every mob whose target moved into another zone.
+/// System (exclusive, `PhysicsSet`, before the definition barrier): fire the
+/// target-nearby sensor events of every mob whose target moved into another zone.
 pub fn tick_target_nearby_sensors(
     world: &mut World,
     mobs: &mut QueryState<SensorQuery, (With<MobKind>, Without<Dead>)>,

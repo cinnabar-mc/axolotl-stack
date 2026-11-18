@@ -29,7 +29,7 @@ use crate::entity::mob::constants::{
     BREED_CHECK_TICKS, BREED_HEAD_TURN, BREED_MAX_PARTNER_DIST, BREED_SEARCH, BREED_TOUCH_DIST,
     FOLLOW_PARENT_MAX_DIST, FOLLOW_PARENT_MIN_DIST, FOLLOW_PARENT_REPATH_TICKS,
     FOLLOW_PARENT_SEARCH, LOOK_AT_PLAYER_HEAD_TURN, LOOK_IDLE_HEAD_TURN, PANIC_RANGE_XZ,
-    PANIC_RANGE_Y, PANIC_RECENT_HURT_TICKS, PANIC_REPATH_TICKS, PLAYER_BOX_WIDTH,
+    PANIC_RANGE_Y, PANIC_RECENT_HURT_TICKS, PANIC_REPATH_TICKS, PLAYER_BOX_WIDTH, SWELL_HISS_TICK,
     TEMPT_COOLDOWN_TICKS, TEMPT_DEFAULT_RADIUS, TEMPT_DEFAULT_STOP_DISTANCE, TEMPT_HEAD_TURN,
     TEMPT_REPATH_TICKS, TEMPT_SCARE_DISTANCE, TEMPT_SCARE_MOVE, TEMPT_SCARE_TURN,
 };
@@ -368,8 +368,8 @@ pub struct Effects {
     pub gear: super::pickup::GearWork,
     /// A silverfish merging into a block or waking its friends.
     pub silverfish: Option<super::silverfish::SilverfishWork>,
-    /// The swell goal started: the mob hisses (`fuse`).
-    pub swell_started: bool,
+    /// The swell goal ran its second tick: the mob hisses (`fuse`).
+    pub swell_hiss: bool,
     /// The `STANDING` flag changes (a stomp goal stopped while reared up).
     pub standing: Option<bool>,
     /// The `RESTING` flag changes (a bat settles or wakes, `super::roost`).
@@ -427,6 +427,8 @@ pub struct GoalStates {
     pub(super) hop: super::hop::HopState,
     pub(super) fly: super::fly::FlyState,
     pub(super) charge: super::vex::ChargeState,
+    /// Ticks the swell goal has run.
+    swell_ticks: u32,
 }
 
 /// Everything a goal reads and writes during one mob's tick.
@@ -1051,7 +1053,7 @@ impl GoalCallbacks for GoalContext<'_> {
             Goal::ChargeAttack => self.charge_start(),
             Goal::Swell => {
                 self.nav.stop(self.movement);
-                self.effects.swell_started = true;
+                self.states.swell_ticks = 0;
             }
         }
     }
@@ -1126,7 +1128,11 @@ impl GoalCallbacks for GoalContext<'_> {
             }
             Goal::RandomStroll | Goal::FleeSun | Goal::MergeWithStone => {}
             Goal::WakeUpFriends => self.wake_tick(),
-            Goal::Swell => self.nav.stop(self.movement),
+            Goal::Swell => {
+                self.nav.stop(self.movement);
+                self.states.swell_ticks += 1;
+                self.effects.swell_hiss = self.states.swell_ticks == SWELL_HISS_TICK;
+            }
             Goal::HopFloat => self.hop_float_tick(),
             Goal::HopAttack => self.hop_attack_tick(),
             Goal::HopRandomDirection => self.hop_direction_tick(),

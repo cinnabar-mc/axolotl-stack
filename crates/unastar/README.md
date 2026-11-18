@@ -682,13 +682,16 @@ they become (the measured table `unastar-data/data/measured/infested_blocks.json
 decision 0059), which faces and how soon by distribution over seeded runs,
 and the wake-up scan's order, range, cadence and stopping coin, the released
 silverfish's position and mobGriefing turning woken blocks back into stone.
-The creeper's fuse (`sweep.py creeper`, distilled by
+The creeper (`sweep.py creeper`, distilled by
 `tools/bds-sweep/creeper_fixture.py` into
-`src/entity/mob/ai/testdata/bds-1.26.51-creeper.json`) is measured; its
-`target_nearby_sensor` decision is replayed on the BDS positions by
-`src/entity/mob/tests/creeper.rs` (ranges between the collision boxes). The
-creeper spawns once `minecraft:explode` (blocks round 4) and
-`behavior.melee_attack` exist.
+`src/entity/mob/ai/testdata/bds-1.26.51-creeper.json`) is replayed by
+`src/entity/mob/tests/creeper.rs`: its walk in (`behavior.melee_attack`, which
+chases and never hits), the sensor lighting and putting out its fuse (ranges
+between the collision boxes; the sensor reads before the AI), the stop on the
+tick it lights, the hiss two ticks later, flint and steel, and the explosion
+30 ticks after the light at its feet (power 3, charged 6, no blocks without
+mobGriefing). A fuse lit before the tick's burn burns that tick
+(`FuseClock`), so primed TNT keeps its 81 ticks.
 
 The slime and the magma cube (`sweep.py slime --client-capture`: calm hops of
 each size, attacks on a survival player, splits and floats, and

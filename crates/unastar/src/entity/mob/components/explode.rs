@@ -82,6 +82,20 @@ pub struct Fuse {
     pub explode_at: u64,
 }
 
+/// The last tick the fuses burned (`mob::combat::explode::tick_fuses`).
+///
+/// A fuse burns once a tick and the actor explodes on the burn after the
+/// fuse runs out. A fuse lit before that tick's burn (a creeper lit by its
+/// sensor or by flint and steel) burns the same tick: BDS 1.26.51's
+/// creepers sent `FUSE_TIME` 29 on the tick they lit and exploded 30 ticks
+/// later (`sweep.py creeper`). One lit after it (TNT primed by redstone)
+/// first burns on the next tick: BDS's TNT exploded 81 ticks after it was
+/// powered (`tnt_prime.json`).
+#[derive(Resource, Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct FuseClock {
+    pub burned: Option<u64>,
+}
+
 /// Register the `minecraft:explode` component kind.
 pub fn register_component_kinds(
     builder: &mut ComponentKindsBuilder,
@@ -95,6 +109,13 @@ pub fn register_component_kinds(
         light_fuse,
         |entity| {
             entity.remove::<(Explode, Fuse)>();
+            // The fuse goes out; `FUSE_TIME` keeps its last value (BDS
+            // 1.26.51: a creeper put out at 18 kept sending 18).
+            crate::entity::mob::ai::set_flag(
+                entity,
+                jolyne::valentine::actor_flags::IGNITED,
+                false,
+            );
         },
     )
 }
@@ -159,7 +180,14 @@ fn light_fuse(config: &Arc<ExplodeConfig>, entity: &mut EntityWorldMut<'_>) {
         let ticks = config
             .fuse
             .draw(&mut world.get_resource_or_init::<EntityRandom>().0);
-        now + u64::from(ticks)
+        let burned = world
+            .get_resource::<FuseClock>()
+            .is_some_and(|clock| clock.burned == Some(now));
+        let first_burn = if burned { now + 1 } else { now };
+        first_burn + u64::from(ticks)
     });
     entity.insert(Fuse { explode_at });
+    // Lit at once: BDS 1.26.51's creeper stopped walking (its swell goal
+    // ran) on the tick its fuse lit.
+    crate::entity::mob::ai::set_flag(entity, jolyne::valentine::actor_flags::IGNITED, true);
 }

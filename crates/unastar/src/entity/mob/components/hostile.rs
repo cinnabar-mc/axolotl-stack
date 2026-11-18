@@ -27,6 +27,10 @@ pub enum HostileError {
     UnknownEffect(String),
     #[error("attack_types {0:?}: actor-category attack filters are not implemented")]
     AttackTypes(String),
+    #[error(
+        "melee_attack reach_multiplier {0}: only 0 (chase without hitting, the creeper's) is          implemented, the goal's reach is not measured"
+    )]
+    MeleeReachMultiplier(f32),
     #[error("burns_in_daylight protection slot {0:?} is not a head, chest, legs or feet slot")]
     ProtectionSlot(EquipmentSlot),
     #[error(transparent)]
@@ -70,6 +74,12 @@ pub enum MeleeReach {
         reach_multiplier: f64,
         no_damage_range_multiplier: f64,
     },
+    /// `behavior.melee_attack` with `reach_multiplier` 0, the creeper's
+    /// ("this prevents creepers from occasionally performing melee
+    /// attacks", its definition says): the mob chases its target and never
+    /// hits it. Other multipliers are refused: the goal's reach is not
+    /// measured.
+    Never,
 }
 
 /// A melee goal (`minecraft:behavior.melee_box_attack` or
@@ -190,6 +200,7 @@ pub fn register_component_kinds(
     insert(builder, compile_attack)?;
     insert(builder, compile_melee_box_attack)?;
     insert(builder, compile_stomp_attack)?;
+    insert(builder, compile_melee_attack)?;
     insert(builder, compile_nearest_attackable_target)?;
     insert(builder, |b: body::BehaviorHurtByTarget| {
         Ok::<_, HostileError>(HurtByTargetGoal {
@@ -284,6 +295,41 @@ fn compile_melee_box_attack(
         reach: MeleeReach::Box {
             horizontal: f64::from(b.horizontal_reach),
         },
+        attack_once: b.attack_once,
+        can_spread_on_fire: b.can_spread_on_fire,
+        cooldown_ticks: seconds_to_ticks(b.cooldown_time),
+        min_path_ticks: seconds_to_ticks(b.min_path_time),
+        max_path_ticks: seconds_to_ticks(b.max_path_time),
+        path_fail_ticks: seconds_to_ticks(b.path_fail_time_increase),
+        inner_boundary_ticks: seconds_to_ticks(b.inner_boundary_time_increase),
+        outer_boundary_ticks: seconds_to_ticks(b.outer_boundary_time_increase),
+        inner_boundary_sq: f64::from(b.path_inner_boundary * b.path_inner_boundary),
+        outer_boundary_sq: f64::from(b.path_outer_boundary * b.path_outer_boundary),
+        melee_fov: Some(b.melee_fov),
+        y_max_head_rotation: b.y_max_head_rotation,
+        on_attack: optional_event(b.on_attack)?,
+        on_kill: optional_event(b.on_kill)?,
+        random_stop_interval: b.random_stop_interval,
+        speed_multiplier: b.speed_multiplier,
+        track_target: b.track_target,
+    })
+}
+
+/// `behavior.melee_attack`: the melee goal that only chases
+/// ([`MeleeReach::Never`]). Its path timers and speed are the box goal's;
+/// BDS 1.26.51's creeper walked in from 6 blocks as the replay in
+/// `mob/tests/creeper.rs` checks.
+fn compile_melee_attack(b: body::BehaviorMeleeAttack) -> Result<MeleeAttackGoal, HostileError> {
+    if !b.attack_types.is_empty() {
+        return Err(HostileError::AttackTypes(b.attack_types));
+    }
+    if b.reach_multiplier != 0.0 {
+        return Err(HostileError::MeleeReachMultiplier(b.reach_multiplier));
+    }
+    Ok(MeleeAttackGoal {
+        priority: b.priority,
+        controls: controls(&b.control_flags, GoalControls::MOVE | GoalControls::LOOK),
+        reach: MeleeReach::Never,
         attack_once: b.attack_once,
         can_spread_on_fire: b.can_spread_on_fire,
         cooldown_ticks: seconds_to_ticks(b.cooldown_time),

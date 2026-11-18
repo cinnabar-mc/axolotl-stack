@@ -57,6 +57,11 @@ pub struct NativeTraits {
     pub bat: Option<BatClass>,
     /// The vex class: see [`VexClass`].
     pub vex: Option<VexClass>,
+    /// The class's `minecraft:explode` goes off at its feet, not a
+    /// sixteenth of its height above them as primed TNT's does
+    /// (`server::game::explosion::blast_centre`): BDS 1.26.51's creepers
+    /// sent their explosion at their feet (`sweep.py creeper`).
+    pub explodes_at_feet: bool,
 }
 
 /// What the vex class does natively, whatever its definition's walk
@@ -155,6 +160,7 @@ impl NativeTraits {
             }),
             _ => None,
         };
+        let explodes_at_feet = matches!(actor_type, ActorType::Creeper);
         let flight_vertical_factor = match actor_type {
             ActorType::Bat => BAT_FLIGHT_VERTICAL_FACTOR,
             _ => 1.0,
@@ -181,6 +187,7 @@ impl NativeTraits {
                 flight_vertical_factor,
                 bat,
                 vex,
+                explodes_at_feet,
             },
             _ => Self {
                 wing_flap_drag: None,
@@ -200,6 +207,7 @@ impl NativeTraits {
                 flight_vertical_factor,
                 bat,
                 vex,
+                explodes_at_feet,
             },
         }
     }

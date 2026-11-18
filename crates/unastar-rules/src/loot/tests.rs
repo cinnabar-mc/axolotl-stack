@@ -271,6 +271,7 @@ struct Mob {
     baby: bool,
     mark_variant: Option<i32>,
     vehicle: Option<&'static str>,
+    killer: Option<&'static str>,
     difficulty: Option<Difficulty>,
     regional: Option<f32>,
     enchanting: Option<crate::enchanting::ItemEnchanting>,
@@ -284,6 +285,7 @@ impl Default for Mob {
             baby: false,
             mark_variant: None,
             vehicle: None,
+            killer: None,
             difficulty: Some(Difficulty::Normal),
             regional: Some(0.0),
             enchanting: None,
@@ -318,6 +320,9 @@ impl LootContext for Mob {
     }
     fn vehicle_is(&self, entity_type: &str) -> bool {
         self.vehicle == Some(entity_type)
+    }
+    fn killed_by(&self, entity_type: &str) -> bool {
+        self.killer == Some(entity_type)
     }
     fn difficulty(&self) -> Option<Difficulty> {
         self.difficulty
@@ -401,6 +406,27 @@ fn baby_and_vehicle_conditions_read_the_this_actor() {
         ..rider
     };
     assert_eq!(hits(&table, walking), 0);
+}
+
+/// The creeper's music disc pools: `killed_by_entity` names the killer's
+/// type, without namespace as vanilla writes it.
+#[test]
+fn killed_by_entity_matches_the_killers_type() {
+    let table =
+        guarded(json!([{"condition": "killed_by_entity", "entity_type": "minecraft:skeleton"}]));
+    let short = guarded(json!([{"condition": "killed_by_entity", "entity_type": "skeleton"}]));
+    let by_skeleton = Mob {
+        killer: Some("minecraft:skeleton"),
+        ..Mob::default()
+    };
+    assert_eq!(hits(&table, by_skeleton), 200);
+    assert_eq!(hits(&short, by_skeleton), 200);
+    let by_stray = Mob {
+        killer: Some("minecraft:stray"),
+        ..Mob::default()
+    };
+    assert_eq!(hits(&table, by_stray), 0);
+    assert_eq!(hits(&table, Mob::default()), 0, "no killer");
 }
 
 #[test]
