@@ -1,0 +1,344 @@
+# Food chances, shields and totems on BDS 1.26.51; printed by tools/bds-sweep/items6_script.py (see there).
+# The player (feet (0.5,-60,0.5), facing east).
+20 /gamerule sendcommandfeedback false
+21 /gamerule domobspawning false
+22 /gamerule dodaylightcycle false
+23 /gamerule randomtickspeed 0
+24 /gamerule naturalregeneration false
+25 /time set 6000
+26 /fill -4 -61 -4 4 -61 4 stone
+27 /fill -4 -60 -4 4 -55 4 air
+28 /gamemode survival @s
+29 /clear @s
+30 /tp @s 0.5 -60 0.5 -90 0
+41 /difficulty easy
+43 /kill @e[type=pig]
+45 /tp @s 0.5 -60 0.5 -90 0
+47 /clear @s
+48 /replaceitem entity @s slot.weapon.offhand 0 air
+49 /replaceitem entity @s slot.weapon.offhand 0 shield
+51 /summon pig 2.5 -60 0.5 0 0 minecraft:spawn_adult shieldpig
+54 /effect @s clear
+55 /effect @s instant_health 1 10 true
+59 /effect @s clear
+61 /say items6 shield front_1
+64 flags Startsneaking,Sneaking,Sneakdown
+65 held-flags Sneaking,Sneakdown
+74 /damage @s 1 entity_attack entity @e[type=pig,c=1]
+82 flags Stopsneaking
+83 held-flags none
+84 /kill @e[type=pig]
+88 /kill @e[type=pig]
+90 /tp @s 0.5 -60 0.5 -90 0
+92 /clear @s
+93 /replaceitem entity @s slot.weapon.offhand 0 air
+94 /replaceitem entity @s slot.weapon.offhand 0 shield
+96 /summon pig 2.5 -60 0.5 0 0 minecraft:spawn_adult shieldpig
+99 /effect @s clear
+100 /effect @s instant_health 1 10 true
+104 /effect @s clear
+106 /say items6 shield front_2
+109 flags Startsneaking,Sneaking,Sneakdown
+110 held-flags Sneaking,Sneakdown
+119 /damage @s 2 entity_attack entity @e[type=pig,c=1]
+127 flags Stopsneaking
+128 held-flags none
+129 /kill @e[type=pig]
+133 /kill @e[type=pig]
+135 /tp @s 0.5 -60 0.5 -90 0
+137 /clear @s
+138 /replaceitem entity @s slot.weapon.offhand 0 air
+139 /replaceitem entity @s slot.weapon.offhand 0 shield
+141 /summon pig 2.5 -60 0.5 0 0 minecraft:spawn_adult shieldpig
+144 /effect @s clear
+145 /effect @s instant_health 1 10 true
+149 /effect @s clear
+151 /say items6 shield front_3
+154 flags Startsneaking,Sneaking,Sneakdown
+155 held-flags Sneaking,Sneakdown
+164 /damage @s 3 entity_attack entity @e[type=pig,c=1]
+172 flags Stopsneaking
+173 held-flags none
+174 /kill @e[type=pig]
+178 /kill @e[type=pig]
+180 /tp @s 0.5 -60 0.5 -90 0
+182 /clear @s
+183 /replaceitem entity @s slot.weapon.offhand 0 air
+184 /replaceitem entity @s slot.weapon.offhand 0 shield
+186 /summon pig 2.5 -60 0.5 0 0 minecraft:spawn_adult shieldpig
+189 /effect @s clear
+190 /effect @s instant_health 1 10 true
+194 /effect @s clear
+196 /say items6 shield front_4
+199 flags Startsneaking,Sneaking,Sneakdown
+200 held-flags Sneaking,Sneakdown
+209 /damage @s 4 entity_attack entity @e[type=pig,c=1]
+217 flags Stopsneaking
+218 held-flags none
+219 /kill @e[type=pig]
+223 /kill @e[type=pig]
+225 /tp @s 0.5 -60 0.5 -90 0
+227 /clear @s
+228 /replaceitem entity @s slot.weapon.offhand 0 air
+229 /replaceitem entity @s slot.weapon.offhand 0 shield
+231 /summon pig 2.5 -60 0.5 0 0 minecraft:spawn_adult shieldpig
+234 /effect @s clear
+235 /effect @s instant_health 1 10 true
+239 /effect @s clear
+241 /say items6 shield front_5
+244 flags Startsneaking,Sneaking,Sneakdown
+245 held-flags Sneaking,Sneakdown
+254 /damage @s 5 entity_attack entity @e[type=pig,c=1]
+262 flags Stopsneaking
+263 held-flags none
+264 /kill @e[type=pig]
+268 /kill @e[type=pig]
+270 /tp @s 0.5 -60 0.5 -90 0
+272 /clear @s
+273 /replaceitem entity @s slot.weapon.offhand 0 air
+274 /replaceitem entity @s slot.weapon.offhand 0 shield
+276 /summon pig 2.5 -60 0.5 0 0 minecraft:spawn_adult shieldpig
+279 /effect @s clear
+280 /effect @s instant_health 1 10 true
+284 /effect @s clear
+286 /say items6 shield front_8
+289 flags Startsneaking,Sneaking,Sneakdown
+290 held-flags Sneaking,Sneakdown
+299 /damage @s 8 entity_attack entity @e[type=pig,c=1]
+307 flags Stopsneaking
+308 held-flags none
+309 /kill @e[type=pig]
+313 /kill @e[type=pig]
+315 /tp @s 0.5 -60 0.5 -90 0
+317 /clear @s
+318 /replaceitem entity @s slot.weapon.offhand 0 air
+319 /replaceitem entity @s slot.weapon.offhand 0 shield
+321 /summon pig 2.5 -60 0.5 0 0 minecraft:spawn_adult shieldpig
+324 /effect @s clear
+325 /effect @s instant_health 1 10 true
+329 /effect @s clear
+331 /say items6 shield front_12
+334 flags Startsneaking,Sneaking,Sneakdown
+335 held-flags Sneaking,Sneakdown
+344 /damage @s 12 entity_attack entity @e[type=pig,c=1]
+352 flags Stopsneaking
+353 held-flags none
+354 /kill @e[type=pig]
+358 /kill @e[type=pig]
+360 /tp @s 0.5 -60 0.5 -90 0
+362 /clear @s
+363 /replaceitem entity @s slot.weapon.offhand 0 air
+364 /replaceitem entity @s slot.weapon.offhand 0 shield
+366 /summon pig -1.5 -60 0.5 0 0 minecraft:spawn_adult shieldpig
+369 /effect @s clear
+370 /effect @s instant_health 1 10 true
+374 /effect @s clear
+376 /say items6 shield behind_4
+379 flags Startsneaking,Sneaking,Sneakdown
+380 held-flags Sneaking,Sneakdown
+389 /damage @s 4 entity_attack entity @e[type=pig,c=1]
+397 flags Stopsneaking
+398 held-flags none
+399 /kill @e[type=pig]
+403 /kill @e[type=pig]
+405 /tp @s 0.5 -60 0.5 -90 0
+407 /clear @s
+408 /replaceitem entity @s slot.weapon.offhand 0 air
+409 /replaceitem entity @s slot.weapon.offhand 0 shield
+411 /summon pig 2.5 -60 0.5 0 0 minecraft:spawn_adult shieldpig
+414 /effect @s clear
+415 /effect @s instant_health 1 10 true
+419 /effect @s clear
+421 /say items6 shield standing_4
+424 /damage @s 4 entity_attack entity @e[type=pig,c=1]
+432 /kill @e[type=pig]
+436 /kill @e[type=pig]
+438 /tp @s 0.5 -60 0.5 -90 0
+440 /clear @s
+441 /replaceitem entity @s slot.weapon.offhand 0 air
+442 /replaceitem entity @s slot.hotbar 0 shield
+444 /summon pig 2.5 -60 0.5 0 0 minecraft:spawn_adult shieldpig
+447 /effect @s clear
+448 /effect @s instant_health 1 10 true
+452 /effect @s clear
+454 /say items6 shield mainhand_4
+457 flags Startsneaking,Sneaking,Sneakdown
+458 held-flags Sneaking,Sneakdown
+467 /damage @s 4 entity_attack entity @e[type=pig,c=1]
+475 flags Stopsneaking
+476 held-flags none
+477 /kill @e[type=pig]
+481 /kill @e[type=pig]
+483 /tp @s 0.5 -60 0.5 -90 0
+485 /clear @s
+486 /replaceitem entity @s slot.weapon.offhand 0 air
+487 /replaceitem entity @s slot.weapon.offhand 0 shield
+489 /summon pig 2.5 -60 0.5 0 0 minecraft:spawn_adult shieldpig
+492 /effect @s clear
+493 /effect @s instant_health 1 10 true
+497 /effect @s clear
+499 /say items6 shield projectile_4
+502 flags Startsneaking,Sneaking,Sneakdown
+503 held-flags Sneaking,Sneakdown
+512 /damage @s 4 projectile entity @e[type=pig,c=1]
+520 flags Stopsneaking
+521 held-flags none
+522 /kill @e[type=pig]
+526 /kill @e[type=pig]
+528 /tp @s 0.5 -60 0.5 -90 0
+530 /clear @s
+531 /replaceitem entity @s slot.weapon.offhand 0 air
+532 /replaceitem entity @s slot.weapon.offhand 0 shield
+534 /summon pig 2.5 -60 0.5 0 0 minecraft:spawn_adult shieldpig
+537 /effect @s clear
+538 /effect @s instant_health 1 10 true
+542 /effect @s clear
+544 /say items6 shield fire_4
+547 flags Startsneaking,Sneaking,Sneakdown
+548 held-flags Sneaking,Sneakdown
+557 /damage @s 4 fire entity @e[type=pig,c=1]
+565 flags Stopsneaking
+566 held-flags none
+567 /kill @e[type=pig]
+571 /kill @e[type=pig]
+573 /tp @s 0.5 -60 0.5 -90 0
+575 /clear @s
+576 /replaceitem entity @s slot.weapon.offhand 0 air
+577 /replaceitem entity @s slot.weapon.offhand 0 shield
+579 /summon pig 2.5 -60 0.5 0 0 minecraft:spawn_adult shieldpig
+582 /effect @s clear
+583 /effect @s instant_health 1 10 true
+587 /effect @s clear
+589 /say items6 shield delay_1
+592 flags Startsneaking,Sneaking,Sneakdown
+593 held-flags Sneaking,Sneakdown
+594 /damage @s 4 entity_attack entity @e[type=pig,c=1]
+602 flags Stopsneaking
+603 held-flags none
+604 /kill @e[type=pig]
+608 /kill @e[type=pig]
+610 /tp @s 0.5 -60 0.5 -90 0
+612 /clear @s
+613 /replaceitem entity @s slot.weapon.offhand 0 air
+614 /replaceitem entity @s slot.weapon.offhand 0 shield
+616 /summon pig 2.5 -60 0.5 0 0 minecraft:spawn_adult shieldpig
+619 /effect @s clear
+620 /effect @s instant_health 1 10 true
+624 /effect @s clear
+626 /say items6 shield delay_2
+629 flags Startsneaking,Sneaking,Sneakdown
+630 held-flags Sneaking,Sneakdown
+631 /damage @s 4 entity_attack entity @e[type=pig,c=1]
+639 flags Stopsneaking
+640 held-flags none
+641 /kill @e[type=pig]
+645 /kill @e[type=pig]
+647 /tp @s 0.5 -60 0.5 -90 0
+649 /clear @s
+650 /replaceitem entity @s slot.weapon.offhand 0 air
+651 /replaceitem entity @s slot.weapon.offhand 0 shield
+653 /summon pig 2.5 -60 0.5 0 0 minecraft:spawn_adult shieldpig
+656 /effect @s clear
+657 /effect @s instant_health 1 10 true
+661 /effect @s clear
+663 /say items6 shield delay_3
+666 flags Startsneaking,Sneaking,Sneakdown
+667 held-flags Sneaking,Sneakdown
+669 /damage @s 4 entity_attack entity @e[type=pig,c=1]
+677 flags Stopsneaking
+678 held-flags none
+679 /kill @e[type=pig]
+683 /kill @e[type=pig]
+685 /tp @s 0.5 -60 0.5 -90 0
+687 /clear @s
+688 /replaceitem entity @s slot.weapon.offhand 0 air
+689 /replaceitem entity @s slot.weapon.offhand 0 shield
+691 /summon pig 2.5 -60 0.5 0 0 minecraft:spawn_adult shieldpig
+694 /effect @s clear
+695 /effect @s instant_health 1 10 true
+699 /effect @s clear
+701 /say items6 shield delay_4
+704 flags Startsneaking,Sneaking,Sneakdown
+705 held-flags Sneaking,Sneakdown
+708 /damage @s 4 entity_attack entity @e[type=pig,c=1]
+716 flags Stopsneaking
+717 held-flags none
+718 /kill @e[type=pig]
+722 /kill @e[type=pig]
+724 /tp @s 0.5 -60 0.5 -90 0
+726 /clear @s
+727 /replaceitem entity @s slot.weapon.offhand 0 air
+728 /replaceitem entity @s slot.weapon.offhand 0 shield
+730 /summon pig 2.5 -60 0.5 0 0 minecraft:spawn_adult shieldpig
+733 /effect @s clear
+734 /effect @s instant_health 1 10 true
+738 /effect @s clear
+740 /say items6 shield delay_5
+743 flags Startsneaking,Sneaking,Sneakdown
+744 held-flags Sneaking,Sneakdown
+748 /damage @s 4 entity_attack entity @e[type=pig,c=1]
+756 flags Stopsneaking
+757 held-flags none
+758 /kill @e[type=pig]
+762 /kill @e[type=pig]
+764 /tp @s 0.5 -60 0.5 -90 0
+766 /clear @s
+767 /replaceitem entity @s slot.weapon.offhand 0 air
+768 /replaceitem entity @s slot.weapon.offhand 0 shield
+770 /summon pig 2.5 -60 0.5 0 0 minecraft:spawn_adult shieldpig
+773 /effect @s clear
+774 /effect @s instant_health 1 10 true
+778 /effect @s clear
+780 /say items6 shield delay_6
+783 flags Startsneaking,Sneaking,Sneakdown
+784 held-flags Sneaking,Sneakdown
+789 /damage @s 4 entity_attack entity @e[type=pig,c=1]
+797 flags Stopsneaking
+798 held-flags none
+799 /kill @e[type=pig]
+803 /kill @e[type=pig]
+805 /tp @s 0.5 -60 0.5 -90 0
+807 /clear @s
+808 /replaceitem entity @s slot.weapon.offhand 0 air
+809 /replaceitem entity @s slot.weapon.offhand 0 shield
+811 /summon pig 2.5 -60 0.5 0 0 minecraft:spawn_adult shieldpig
+814 /effect @s clear
+815 /effect @s instant_health 1 10 true
+819 /effect @s clear
+821 /say items6 shield delay_8
+824 flags Startsneaking,Sneaking,Sneakdown
+825 held-flags Sneaking,Sneakdown
+832 /damage @s 4 entity_attack entity @e[type=pig,c=1]
+840 flags Stopsneaking
+841 held-flags none
+842 /kill @e[type=pig]
+846 /kill @e[type=!player]
+848 /tp @s 0.5 -60 0.5 -90 0
+850 /clear @s
+851 /replaceitem entity @s slot.weapon.offhand 0 shield
+853 /effect @s clear
+854 /effect @s instant_health 1 10 true
+858 /effect @s clear
+860 /effect @s resistance 100 2 true
+862 /summon vindicator 2.5 -60 0.5 90 0 minecraft:spawn_adult axeman
+865 /say items6 shield vindicator_blocking
+868 flags Startsneaking,Sneaking,Sneakdown
+869 held-flags Sneaking,Sneakdown
+990 flags Stopsneaking
+991 held-flags none
+992 /kill @e[type=vindicator]
+996 /kill @e[type=!player]
+998 /tp @s 0.5 -60 0.5 -90 0
+1000 /clear @s
+1001 /replaceitem entity @s slot.weapon.offhand 0 shield
+1003 /effect @s clear
+1004 /effect @s instant_health 1 10 true
+1008 /effect @s clear
+1010 /effect @s resistance 100 2 true
+1012 /summon vindicator 2.5 -60 0.5 90 0 minecraft:spawn_adult axeman
+1015 /say items6 shield vindicator_open
+1138 /kill @e[type=vindicator]
+1142 /clear @s
+1143 /replaceitem entity @s slot.weapon.offhand 0 air
+1146 /difficulty peaceful
+1148 exit

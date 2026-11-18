@@ -1,0 +1,1367 @@
+# Food chances, shields and totems on BDS 1.26.51; printed by tools/bds-sweep/items6_script.py (see there).
+# The player (feet (0.5,-60,0.5), facing east).
+20 /gamerule sendcommandfeedback false
+21 /gamerule domobspawning false
+22 /gamerule dodaylightcycle false
+23 /gamerule randomtickspeed 0
+24 /gamerule naturalregeneration false
+25 /time set 6000
+26 /fill -4 -61 -4 4 -61 4 stone
+27 /fill -4 -60 -4 4 -55 4 air
+28 /gamemode survival @s
+29 /clear @s
+30 /tp @s 0.5 -60 0.5 -90 0
+41 /say items6 food chicken
+44 /replaceitem entity @s slot.hotbar 0 chicken
+47 use
+83 /effect @s clear
+86 /replaceitem entity @s slot.hotbar 0 chicken
+89 use
+125 /effect @s clear
+128 /replaceitem entity @s slot.hotbar 0 chicken
+131 use
+167 /effect @s clear
+170 /replaceitem entity @s slot.hotbar 0 chicken
+173 use
+209 /effect @s clear
+212 /replaceitem entity @s slot.hotbar 0 chicken
+215 use
+251 /effect @s clear
+254 /replaceitem entity @s slot.hotbar 0 chicken
+257 use
+293 /effect @s clear
+296 /replaceitem entity @s slot.hotbar 0 chicken
+299 use
+335 /effect @s clear
+338 /replaceitem entity @s slot.hotbar 0 chicken
+341 use
+377 /effect @s clear
+380 /replaceitem entity @s slot.hotbar 0 chicken
+383 use
+419 /effect @s clear
+422 /replaceitem entity @s slot.hotbar 0 chicken
+425 use
+461 /effect @s clear
+464 /replaceitem entity @s slot.hotbar 0 chicken
+467 use
+503 /effect @s clear
+506 /replaceitem entity @s slot.hotbar 0 chicken
+509 use
+545 /effect @s clear
+548 /replaceitem entity @s slot.hotbar 0 chicken
+551 use
+587 /effect @s clear
+590 /replaceitem entity @s slot.hotbar 0 chicken
+593 use
+629 /effect @s clear
+632 /replaceitem entity @s slot.hotbar 0 chicken
+635 use
+671 /effect @s clear
+674 /replaceitem entity @s slot.hotbar 0 chicken
+677 use
+713 /effect @s clear
+716 /replaceitem entity @s slot.hotbar 0 chicken
+719 use
+755 /effect @s clear
+758 /replaceitem entity @s slot.hotbar 0 chicken
+761 use
+797 /effect @s clear
+800 /replaceitem entity @s slot.hotbar 0 chicken
+803 use
+839 /effect @s clear
+842 /replaceitem entity @s slot.hotbar 0 chicken
+845 use
+881 /effect @s clear
+884 /replaceitem entity @s slot.hotbar 0 chicken
+887 use
+923 /effect @s clear
+926 /replaceitem entity @s slot.hotbar 0 chicken
+929 use
+965 /effect @s clear
+968 /replaceitem entity @s slot.hotbar 0 chicken
+971 use
+1007 /effect @s clear
+1010 /replaceitem entity @s slot.hotbar 0 chicken
+1013 use
+1049 /effect @s clear
+1052 /replaceitem entity @s slot.hotbar 0 chicken
+1055 use
+1091 /effect @s clear
+1094 /replaceitem entity @s slot.hotbar 0 chicken
+1097 use
+1133 /effect @s clear
+1136 /replaceitem entity @s slot.hotbar 0 chicken
+1139 use
+1175 /effect @s clear
+1178 /replaceitem entity @s slot.hotbar 0 chicken
+1181 use
+1217 /effect @s clear
+1220 /replaceitem entity @s slot.hotbar 0 chicken
+1223 use
+1259 /effect @s clear
+1262 /replaceitem entity @s slot.hotbar 0 chicken
+1265 use
+1301 /effect @s clear
+1304 /replaceitem entity @s slot.hotbar 0 chicken
+1307 use
+1343 /effect @s clear
+1346 /replaceitem entity @s slot.hotbar 0 chicken
+1349 use
+1385 /effect @s clear
+1388 /replaceitem entity @s slot.hotbar 0 chicken
+1391 use
+1427 /effect @s clear
+1430 /replaceitem entity @s slot.hotbar 0 chicken
+1433 use
+1469 /effect @s clear
+1472 /replaceitem entity @s slot.hotbar 0 chicken
+1475 use
+1511 /effect @s clear
+1514 /replaceitem entity @s slot.hotbar 0 chicken
+1517 use
+1553 /effect @s clear
+1556 /replaceitem entity @s slot.hotbar 0 chicken
+1559 use
+1595 /effect @s clear
+1598 /replaceitem entity @s slot.hotbar 0 chicken
+1601 use
+1637 /effect @s clear
+1640 /replaceitem entity @s slot.hotbar 0 chicken
+1643 use
+1679 /effect @s clear
+1682 /replaceitem entity @s slot.hotbar 0 chicken
+1685 use
+1721 /effect @s clear
+1724 /replaceitem entity @s slot.hotbar 0 chicken
+1727 use
+1763 /effect @s clear
+1766 /replaceitem entity @s slot.hotbar 0 chicken
+1769 use
+1805 /effect @s clear
+1808 /replaceitem entity @s slot.hotbar 0 chicken
+1811 use
+1847 /effect @s clear
+1850 /replaceitem entity @s slot.hotbar 0 chicken
+1853 use
+1889 /effect @s clear
+1892 /replaceitem entity @s slot.hotbar 0 chicken
+1895 use
+1931 /effect @s clear
+1934 /replaceitem entity @s slot.hotbar 0 chicken
+1937 use
+1973 /effect @s clear
+1976 /replaceitem entity @s slot.hotbar 0 chicken
+1979 use
+2015 /effect @s clear
+2018 /replaceitem entity @s slot.hotbar 0 chicken
+2021 use
+2057 /effect @s clear
+2060 /replaceitem entity @s slot.hotbar 0 chicken
+2063 use
+2099 /effect @s clear
+2102 /replaceitem entity @s slot.hotbar 0 chicken
+2105 use
+2141 /effect @s clear
+2144 /replaceitem entity @s slot.hotbar 0 chicken
+2147 use
+2183 /effect @s clear
+2186 /replaceitem entity @s slot.hotbar 0 chicken
+2189 use
+2225 /effect @s clear
+2228 /replaceitem entity @s slot.hotbar 0 chicken
+2231 use
+2267 /effect @s clear
+2270 /replaceitem entity @s slot.hotbar 0 chicken
+2273 use
+2309 /effect @s clear
+2312 /replaceitem entity @s slot.hotbar 0 chicken
+2315 use
+2351 /effect @s clear
+2354 /replaceitem entity @s slot.hotbar 0 chicken
+2357 use
+2393 /effect @s clear
+2396 /replaceitem entity @s slot.hotbar 0 chicken
+2399 use
+2435 /effect @s clear
+2438 /replaceitem entity @s slot.hotbar 0 chicken
+2441 use
+2477 /effect @s clear
+2480 /replaceitem entity @s slot.hotbar 0 chicken
+2483 use
+2519 /effect @s clear
+2522 /replaceitem entity @s slot.hotbar 0 chicken
+2525 use
+2561 /effect @s clear
+2564 /replaceitem entity @s slot.hotbar 0 chicken
+2567 use
+2603 /effect @s clear
+2606 /replaceitem entity @s slot.hotbar 0 chicken
+2609 use
+2645 /effect @s clear
+2648 /replaceitem entity @s slot.hotbar 0 chicken
+2651 use
+2687 /effect @s clear
+2690 /replaceitem entity @s slot.hotbar 0 chicken
+2693 use
+2729 /effect @s clear
+2732 /replaceitem entity @s slot.hotbar 0 chicken
+2735 use
+2771 /effect @s clear
+2774 /replaceitem entity @s slot.hotbar 0 chicken
+2777 use
+2813 /effect @s clear
+2816 /replaceitem entity @s slot.hotbar 0 chicken
+2819 use
+2855 /effect @s clear
+2858 /replaceitem entity @s slot.hotbar 0 chicken
+2861 use
+2897 /effect @s clear
+2900 /replaceitem entity @s slot.hotbar 0 chicken
+2903 use
+2939 /effect @s clear
+2942 /replaceitem entity @s slot.hotbar 0 chicken
+2945 use
+2981 /effect @s clear
+2984 /replaceitem entity @s slot.hotbar 0 chicken
+2987 use
+3023 /effect @s clear
+3026 /replaceitem entity @s slot.hotbar 0 chicken
+3029 use
+3065 /effect @s clear
+3068 /replaceitem entity @s slot.hotbar 0 chicken
+3071 use
+3107 /effect @s clear
+3110 /replaceitem entity @s slot.hotbar 0 chicken
+3113 use
+3149 /effect @s clear
+3152 /replaceitem entity @s slot.hotbar 0 chicken
+3155 use
+3191 /effect @s clear
+3194 /replaceitem entity @s slot.hotbar 0 chicken
+3197 use
+3233 /effect @s clear
+3236 /replaceitem entity @s slot.hotbar 0 chicken
+3239 use
+3275 /effect @s clear
+3278 /replaceitem entity @s slot.hotbar 0 chicken
+3281 use
+3317 /effect @s clear
+3320 /replaceitem entity @s slot.hotbar 0 chicken
+3323 use
+3359 /effect @s clear
+3362 /replaceitem entity @s slot.hotbar 0 chicken
+3365 use
+3401 /effect @s clear
+3404 /replaceitem entity @s slot.hotbar 0 chicken
+3407 use
+3443 /effect @s clear
+3446 /replaceitem entity @s slot.hotbar 0 chicken
+3449 use
+3485 /effect @s clear
+3488 /replaceitem entity @s slot.hotbar 0 chicken
+3491 use
+3527 /effect @s clear
+3530 /replaceitem entity @s slot.hotbar 0 chicken
+3533 use
+3569 /effect @s clear
+3572 /replaceitem entity @s slot.hotbar 0 chicken
+3575 use
+3611 /effect @s clear
+3614 /replaceitem entity @s slot.hotbar 0 chicken
+3617 use
+3653 /effect @s clear
+3656 /replaceitem entity @s slot.hotbar 0 chicken
+3659 use
+3695 /effect @s clear
+3698 /replaceitem entity @s slot.hotbar 0 chicken
+3701 use
+3737 /effect @s clear
+3740 /replaceitem entity @s slot.hotbar 0 chicken
+3743 use
+3779 /effect @s clear
+3782 /replaceitem entity @s slot.hotbar 0 chicken
+3785 use
+3821 /effect @s clear
+3824 /replaceitem entity @s slot.hotbar 0 chicken
+3827 use
+3863 /effect @s clear
+3866 /replaceitem entity @s slot.hotbar 0 chicken
+3869 use
+3905 /effect @s clear
+3908 /replaceitem entity @s slot.hotbar 0 chicken
+3911 use
+3947 /effect @s clear
+3950 /replaceitem entity @s slot.hotbar 0 chicken
+3953 use
+3989 /effect @s clear
+3992 /replaceitem entity @s slot.hotbar 0 chicken
+3995 use
+4031 /effect @s clear
+4034 /replaceitem entity @s slot.hotbar 0 chicken
+4037 use
+4073 /effect @s clear
+4076 /replaceitem entity @s slot.hotbar 0 chicken
+4079 use
+4115 /effect @s clear
+4118 /replaceitem entity @s slot.hotbar 0 chicken
+4121 use
+4157 /effect @s clear
+4160 /replaceitem entity @s slot.hotbar 0 chicken
+4163 use
+4199 /effect @s clear
+4202 /replaceitem entity @s slot.hotbar 0 chicken
+4205 use
+4241 /effect @s clear
+4244 /replaceitem entity @s slot.hotbar 0 chicken
+4247 use
+4283 /effect @s clear
+4286 /replaceitem entity @s slot.hotbar 0 chicken
+4289 use
+4325 /effect @s clear
+4328 /replaceitem entity @s slot.hotbar 0 chicken
+4331 use
+4367 /effect @s clear
+4370 /replaceitem entity @s slot.hotbar 0 chicken
+4373 use
+4409 /effect @s clear
+4412 /replaceitem entity @s slot.hotbar 0 chicken
+4415 use
+4451 /effect @s clear
+4454 /replaceitem entity @s slot.hotbar 0 chicken
+4457 use
+4493 /effect @s clear
+4496 /replaceitem entity @s slot.hotbar 0 chicken
+4499 use
+4535 /effect @s clear
+4538 /replaceitem entity @s slot.hotbar 0 chicken
+4541 use
+4577 /effect @s clear
+4580 /replaceitem entity @s slot.hotbar 0 chicken
+4583 use
+4619 /effect @s clear
+4622 /replaceitem entity @s slot.hotbar 0 chicken
+4625 use
+4661 /effect @s clear
+4664 /replaceitem entity @s slot.hotbar 0 chicken
+4667 use
+4703 /effect @s clear
+4706 /replaceitem entity @s slot.hotbar 0 chicken
+4709 use
+4745 /effect @s clear
+4748 /replaceitem entity @s slot.hotbar 0 chicken
+4751 use
+4787 /effect @s clear
+4790 /replaceitem entity @s slot.hotbar 0 chicken
+4793 use
+4829 /effect @s clear
+4832 /replaceitem entity @s slot.hotbar 0 chicken
+4835 use
+4871 /effect @s clear
+4874 /replaceitem entity @s slot.hotbar 0 chicken
+4877 use
+4913 /effect @s clear
+4916 /replaceitem entity @s slot.hotbar 0 chicken
+4919 use
+4955 /effect @s clear
+4958 /replaceitem entity @s slot.hotbar 0 chicken
+4961 use
+4997 /effect @s clear
+5000 /replaceitem entity @s slot.hotbar 0 chicken
+5003 use
+5039 /effect @s clear
+5042 /replaceitem entity @s slot.hotbar 0 chicken
+5045 use
+5081 /effect @s clear
+5084 /replaceitem entity @s slot.hotbar 0 chicken
+5087 use
+5123 /effect @s clear
+5126 /replaceitem entity @s slot.hotbar 0 chicken
+5129 use
+5165 /effect @s clear
+5168 /replaceitem entity @s slot.hotbar 0 chicken
+5171 use
+5207 /effect @s clear
+5210 /replaceitem entity @s slot.hotbar 0 chicken
+5213 use
+5249 /effect @s clear
+5252 /replaceitem entity @s slot.hotbar 0 chicken
+5255 use
+5291 /effect @s clear
+5294 /replaceitem entity @s slot.hotbar 0 chicken
+5297 use
+5333 /effect @s clear
+5336 /replaceitem entity @s slot.hotbar 0 chicken
+5339 use
+5375 /effect @s clear
+5378 /replaceitem entity @s slot.hotbar 0 chicken
+5381 use
+5417 /effect @s clear
+5420 /replaceitem entity @s slot.hotbar 0 chicken
+5423 use
+5459 /effect @s clear
+5462 /replaceitem entity @s slot.hotbar 0 chicken
+5465 use
+5501 /effect @s clear
+5504 /replaceitem entity @s slot.hotbar 0 chicken
+5507 use
+5543 /effect @s clear
+5546 /replaceitem entity @s slot.hotbar 0 chicken
+5549 use
+5585 /effect @s clear
+5588 /replaceitem entity @s slot.hotbar 0 chicken
+5591 use
+5627 /effect @s clear
+5630 /replaceitem entity @s slot.hotbar 0 chicken
+5633 use
+5669 /effect @s clear
+5672 /replaceitem entity @s slot.hotbar 0 chicken
+5675 use
+5711 /effect @s clear
+5714 /replaceitem entity @s slot.hotbar 0 chicken
+5717 use
+5753 /effect @s clear
+5756 /replaceitem entity @s slot.hotbar 0 chicken
+5759 use
+5795 /effect @s clear
+5798 /replaceitem entity @s slot.hotbar 0 chicken
+5801 use
+5837 /effect @s clear
+5840 /replaceitem entity @s slot.hotbar 0 chicken
+5843 use
+5879 /effect @s clear
+5882 /replaceitem entity @s slot.hotbar 0 chicken
+5885 use
+5921 /effect @s clear
+5924 /replaceitem entity @s slot.hotbar 0 chicken
+5927 use
+5963 /effect @s clear
+5966 /replaceitem entity @s slot.hotbar 0 chicken
+5969 use
+6005 /effect @s clear
+6008 /replaceitem entity @s slot.hotbar 0 chicken
+6011 use
+6047 /effect @s clear
+6050 /replaceitem entity @s slot.hotbar 0 chicken
+6053 use
+6089 /effect @s clear
+6092 /replaceitem entity @s slot.hotbar 0 chicken
+6095 use
+6131 /effect @s clear
+6134 /replaceitem entity @s slot.hotbar 0 chicken
+6137 use
+6173 /effect @s clear
+6176 /replaceitem entity @s slot.hotbar 0 chicken
+6179 use
+6215 /effect @s clear
+6218 /replaceitem entity @s slot.hotbar 0 chicken
+6221 use
+6257 /effect @s clear
+6260 /replaceitem entity @s slot.hotbar 0 chicken
+6263 use
+6299 /effect @s clear
+6302 /replaceitem entity @s slot.hotbar 0 chicken
+6305 use
+6341 /effect @s clear
+6344 /say items6 food rotten_flesh
+6347 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+6350 use
+6386 /effect @s clear
+6389 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+6392 use
+6428 /effect @s clear
+6431 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+6434 use
+6470 /effect @s clear
+6473 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+6476 use
+6512 /effect @s clear
+6515 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+6518 use
+6554 /effect @s clear
+6557 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+6560 use
+6596 /effect @s clear
+6599 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+6602 use
+6638 /effect @s clear
+6641 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+6644 use
+6680 /effect @s clear
+6683 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+6686 use
+6722 /effect @s clear
+6725 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+6728 use
+6764 /effect @s clear
+6767 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+6770 use
+6806 /effect @s clear
+6809 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+6812 use
+6848 /effect @s clear
+6851 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+6854 use
+6890 /effect @s clear
+6893 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+6896 use
+6932 /effect @s clear
+6935 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+6938 use
+6974 /effect @s clear
+6977 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+6980 use
+7016 /effect @s clear
+7019 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+7022 use
+7058 /effect @s clear
+7061 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+7064 use
+7100 /effect @s clear
+7103 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+7106 use
+7142 /effect @s clear
+7145 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+7148 use
+7184 /effect @s clear
+7187 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+7190 use
+7226 /effect @s clear
+7229 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+7232 use
+7268 /effect @s clear
+7271 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+7274 use
+7310 /effect @s clear
+7313 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+7316 use
+7352 /effect @s clear
+7355 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+7358 use
+7394 /effect @s clear
+7397 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+7400 use
+7436 /effect @s clear
+7439 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+7442 use
+7478 /effect @s clear
+7481 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+7484 use
+7520 /effect @s clear
+7523 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+7526 use
+7562 /effect @s clear
+7565 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+7568 use
+7604 /effect @s clear
+7607 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+7610 use
+7646 /effect @s clear
+7649 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+7652 use
+7688 /effect @s clear
+7691 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+7694 use
+7730 /effect @s clear
+7733 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+7736 use
+7772 /effect @s clear
+7775 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+7778 use
+7814 /effect @s clear
+7817 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+7820 use
+7856 /effect @s clear
+7859 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+7862 use
+7898 /effect @s clear
+7901 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+7904 use
+7940 /effect @s clear
+7943 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+7946 use
+7982 /effect @s clear
+7985 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+7988 use
+8024 /effect @s clear
+8027 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+8030 use
+8066 /effect @s clear
+8069 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+8072 use
+8108 /effect @s clear
+8111 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+8114 use
+8150 /effect @s clear
+8153 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+8156 use
+8192 /effect @s clear
+8195 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+8198 use
+8234 /effect @s clear
+8237 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+8240 use
+8276 /effect @s clear
+8279 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+8282 use
+8318 /effect @s clear
+8321 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+8324 use
+8360 /effect @s clear
+8363 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+8366 use
+8402 /effect @s clear
+8405 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+8408 use
+8444 /effect @s clear
+8447 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+8450 use
+8486 /effect @s clear
+8489 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+8492 use
+8528 /effect @s clear
+8531 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+8534 use
+8570 /effect @s clear
+8573 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+8576 use
+8612 /effect @s clear
+8615 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+8618 use
+8654 /effect @s clear
+8657 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+8660 use
+8696 /effect @s clear
+8699 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+8702 use
+8738 /effect @s clear
+8741 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+8744 use
+8780 /effect @s clear
+8783 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+8786 use
+8822 /effect @s clear
+8825 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+8828 use
+8864 /effect @s clear
+8867 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+8870 use
+8906 /effect @s clear
+8909 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+8912 use
+8948 /effect @s clear
+8951 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+8954 use
+8990 /effect @s clear
+8993 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+8996 use
+9032 /effect @s clear
+9035 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+9038 use
+9074 /effect @s clear
+9077 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+9080 use
+9116 /effect @s clear
+9119 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+9122 use
+9158 /effect @s clear
+9161 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+9164 use
+9200 /effect @s clear
+9203 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+9206 use
+9242 /effect @s clear
+9245 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+9248 use
+9284 /effect @s clear
+9287 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+9290 use
+9326 /effect @s clear
+9329 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+9332 use
+9368 /effect @s clear
+9371 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+9374 use
+9410 /effect @s clear
+9413 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+9416 use
+9452 /effect @s clear
+9455 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+9458 use
+9494 /effect @s clear
+9497 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+9500 use
+9536 /effect @s clear
+9539 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+9542 use
+9578 /effect @s clear
+9581 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+9584 use
+9620 /effect @s clear
+9623 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+9626 use
+9662 /effect @s clear
+9665 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+9668 use
+9704 /effect @s clear
+9707 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+9710 use
+9746 /effect @s clear
+9749 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+9752 use
+9788 /effect @s clear
+9791 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+9794 use
+9830 /effect @s clear
+9833 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+9836 use
+9872 /effect @s clear
+9875 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+9878 use
+9914 /effect @s clear
+9917 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+9920 use
+9956 /effect @s clear
+9959 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+9962 use
+9998 /effect @s clear
+10001 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+10004 use
+10040 /effect @s clear
+10043 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+10046 use
+10082 /effect @s clear
+10085 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+10088 use
+10124 /effect @s clear
+10127 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+10130 use
+10166 /effect @s clear
+10169 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+10172 use
+10208 /effect @s clear
+10211 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+10214 use
+10250 /effect @s clear
+10253 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+10256 use
+10292 /effect @s clear
+10295 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+10298 use
+10334 /effect @s clear
+10337 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+10340 use
+10376 /effect @s clear
+10379 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+10382 use
+10418 /effect @s clear
+10421 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+10424 use
+10460 /effect @s clear
+10463 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+10466 use
+10502 /effect @s clear
+10505 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+10508 use
+10544 /effect @s clear
+10547 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+10550 use
+10586 /effect @s clear
+10589 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+10592 use
+10628 /effect @s clear
+10631 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+10634 use
+10670 /effect @s clear
+10673 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+10676 use
+10712 /effect @s clear
+10715 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+10718 use
+10754 /effect @s clear
+10757 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+10760 use
+10796 /effect @s clear
+10799 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+10802 use
+10838 /effect @s clear
+10841 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+10844 use
+10880 /effect @s clear
+10883 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+10886 use
+10922 /effect @s clear
+10925 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+10928 use
+10964 /effect @s clear
+10967 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+10970 use
+11006 /effect @s clear
+11009 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+11012 use
+11048 /effect @s clear
+11051 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+11054 use
+11090 /effect @s clear
+11093 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+11096 use
+11132 /effect @s clear
+11135 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+11138 use
+11174 /effect @s clear
+11177 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+11180 use
+11216 /effect @s clear
+11219 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+11222 use
+11258 /effect @s clear
+11261 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+11264 use
+11300 /effect @s clear
+11303 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+11306 use
+11342 /effect @s clear
+11345 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+11348 use
+11384 /effect @s clear
+11387 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+11390 use
+11426 /effect @s clear
+11429 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+11432 use
+11468 /effect @s clear
+11471 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+11474 use
+11510 /effect @s clear
+11513 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+11516 use
+11552 /effect @s clear
+11555 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+11558 use
+11594 /effect @s clear
+11597 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+11600 use
+11636 /effect @s clear
+11639 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+11642 use
+11678 /effect @s clear
+11681 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+11684 use
+11720 /effect @s clear
+11723 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+11726 use
+11762 /effect @s clear
+11765 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+11768 use
+11804 /effect @s clear
+11807 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+11810 use
+11846 /effect @s clear
+11849 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+11852 use
+11888 /effect @s clear
+11891 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+11894 use
+11930 /effect @s clear
+11933 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+11936 use
+11972 /effect @s clear
+11975 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+11978 use
+12014 /effect @s clear
+12017 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+12020 use
+12056 /effect @s clear
+12059 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+12062 use
+12098 /effect @s clear
+12101 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+12104 use
+12140 /effect @s clear
+12143 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+12146 use
+12182 /effect @s clear
+12185 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+12188 use
+12224 /effect @s clear
+12227 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+12230 use
+12266 /effect @s clear
+12269 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+12272 use
+12308 /effect @s clear
+12311 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+12314 use
+12350 /effect @s clear
+12353 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+12356 use
+12392 /effect @s clear
+12395 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+12398 use
+12434 /effect @s clear
+12437 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+12440 use
+12476 /effect @s clear
+12479 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+12482 use
+12518 /effect @s clear
+12521 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+12524 use
+12560 /effect @s clear
+12563 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+12566 use
+12602 /effect @s clear
+12605 /replaceitem entity @s slot.hotbar 0 rotten_flesh
+12608 use
+12644 /effect @s clear
+12647 /say items6 food poisonous_potato
+12650 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+12653 use
+12689 /effect @s clear
+12692 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+12695 use
+12731 /effect @s clear
+12734 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+12737 use
+12773 /effect @s clear
+12776 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+12779 use
+12815 /effect @s clear
+12818 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+12821 use
+12857 /effect @s clear
+12860 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+12863 use
+12899 /effect @s clear
+12902 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+12905 use
+12941 /effect @s clear
+12944 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+12947 use
+12983 /effect @s clear
+12986 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+12989 use
+13025 /effect @s clear
+13028 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+13031 use
+13067 /effect @s clear
+13070 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+13073 use
+13109 /effect @s clear
+13112 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+13115 use
+13151 /effect @s clear
+13154 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+13157 use
+13193 /effect @s clear
+13196 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+13199 use
+13235 /effect @s clear
+13238 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+13241 use
+13277 /effect @s clear
+13280 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+13283 use
+13319 /effect @s clear
+13322 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+13325 use
+13361 /effect @s clear
+13364 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+13367 use
+13403 /effect @s clear
+13406 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+13409 use
+13445 /effect @s clear
+13448 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+13451 use
+13487 /effect @s clear
+13490 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+13493 use
+13529 /effect @s clear
+13532 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+13535 use
+13571 /effect @s clear
+13574 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+13577 use
+13613 /effect @s clear
+13616 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+13619 use
+13655 /effect @s clear
+13658 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+13661 use
+13697 /effect @s clear
+13700 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+13703 use
+13739 /effect @s clear
+13742 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+13745 use
+13781 /effect @s clear
+13784 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+13787 use
+13823 /effect @s clear
+13826 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+13829 use
+13865 /effect @s clear
+13868 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+13871 use
+13907 /effect @s clear
+13910 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+13913 use
+13949 /effect @s clear
+13952 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+13955 use
+13991 /effect @s clear
+13994 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+13997 use
+14033 /effect @s clear
+14036 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+14039 use
+14075 /effect @s clear
+14078 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+14081 use
+14117 /effect @s clear
+14120 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+14123 use
+14159 /effect @s clear
+14162 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+14165 use
+14201 /effect @s clear
+14204 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+14207 use
+14243 /effect @s clear
+14246 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+14249 use
+14285 /effect @s clear
+14288 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+14291 use
+14327 /effect @s clear
+14330 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+14333 use
+14369 /effect @s clear
+14372 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+14375 use
+14411 /effect @s clear
+14414 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+14417 use
+14453 /effect @s clear
+14456 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+14459 use
+14495 /effect @s clear
+14498 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+14501 use
+14537 /effect @s clear
+14540 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+14543 use
+14579 /effect @s clear
+14582 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+14585 use
+14621 /effect @s clear
+14624 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+14627 use
+14663 /effect @s clear
+14666 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+14669 use
+14705 /effect @s clear
+14708 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+14711 use
+14747 /effect @s clear
+14750 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+14753 use
+14789 /effect @s clear
+14792 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+14795 use
+14831 /effect @s clear
+14834 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+14837 use
+14873 /effect @s clear
+14876 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+14879 use
+14915 /effect @s clear
+14918 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+14921 use
+14957 /effect @s clear
+14960 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+14963 use
+14999 /effect @s clear
+15002 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+15005 use
+15041 /effect @s clear
+15044 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+15047 use
+15083 /effect @s clear
+15086 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+15089 use
+15125 /effect @s clear
+15128 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+15131 use
+15167 /effect @s clear
+15170 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+15173 use
+15209 /effect @s clear
+15212 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+15215 use
+15251 /effect @s clear
+15254 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+15257 use
+15293 /effect @s clear
+15296 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+15299 use
+15335 /effect @s clear
+15338 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+15341 use
+15377 /effect @s clear
+15380 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+15383 use
+15419 /effect @s clear
+15422 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+15425 use
+15461 /effect @s clear
+15464 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+15467 use
+15503 /effect @s clear
+15506 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+15509 use
+15545 /effect @s clear
+15548 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+15551 use
+15587 /effect @s clear
+15590 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+15593 use
+15629 /effect @s clear
+15632 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+15635 use
+15671 /effect @s clear
+15674 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+15677 use
+15713 /effect @s clear
+15716 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+15719 use
+15755 /effect @s clear
+15758 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+15761 use
+15797 /effect @s clear
+15800 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+15803 use
+15839 /effect @s clear
+15842 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+15845 use
+15881 /effect @s clear
+15884 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+15887 use
+15923 /effect @s clear
+15926 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+15929 use
+15965 /effect @s clear
+15968 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+15971 use
+16007 /effect @s clear
+16010 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+16013 use
+16049 /effect @s clear
+16052 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+16055 use
+16091 /effect @s clear
+16094 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+16097 use
+16133 /effect @s clear
+16136 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+16139 use
+16175 /effect @s clear
+16178 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+16181 use
+16217 /effect @s clear
+16220 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+16223 use
+16259 /effect @s clear
+16262 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+16265 use
+16301 /effect @s clear
+16304 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+16307 use
+16343 /effect @s clear
+16346 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+16349 use
+16385 /effect @s clear
+16388 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+16391 use
+16427 /effect @s clear
+16430 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+16433 use
+16469 /effect @s clear
+16472 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+16475 use
+16511 /effect @s clear
+16514 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+16517 use
+16553 /effect @s clear
+16556 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+16559 use
+16595 /effect @s clear
+16598 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+16601 use
+16637 /effect @s clear
+16640 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+16643 use
+16679 /effect @s clear
+16682 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+16685 use
+16721 /effect @s clear
+16724 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+16727 use
+16763 /effect @s clear
+16766 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+16769 use
+16805 /effect @s clear
+16808 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+16811 use
+16847 /effect @s clear
+16850 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+16853 use
+16889 /effect @s clear
+16892 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+16895 use
+16931 /effect @s clear
+16934 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+16937 use
+16973 /effect @s clear
+16976 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+16979 use
+17015 /effect @s clear
+17018 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+17021 use
+17057 /effect @s clear
+17060 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+17063 use
+17099 /effect @s clear
+17102 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+17105 use
+17141 /effect @s clear
+17144 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+17147 use
+17183 /effect @s clear
+17186 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+17189 use
+17225 /effect @s clear
+17228 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+17231 use
+17267 /effect @s clear
+17270 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+17273 use
+17309 /effect @s clear
+17312 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+17315 use
+17351 /effect @s clear
+17354 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+17357 use
+17393 /effect @s clear
+17396 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+17399 use
+17435 /effect @s clear
+17438 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+17441 use
+17477 /effect @s clear
+17480 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+17483 use
+17519 /effect @s clear
+17522 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+17525 use
+17561 /effect @s clear
+17564 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+17567 use
+17603 /effect @s clear
+17606 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+17609 use
+17645 /effect @s clear
+17648 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+17651 use
+17687 /effect @s clear
+17690 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+17693 use
+17729 /effect @s clear
+17732 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+17735 use
+17771 /effect @s clear
+17774 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+17777 use
+17813 /effect @s clear
+17816 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+17819 use
+17855 /effect @s clear
+17858 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+17861 use
+17897 /effect @s clear
+17900 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+17903 use
+17939 /effect @s clear
+17942 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+17945 use
+17981 /effect @s clear
+17984 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+17987 use
+18023 /effect @s clear
+18026 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+18029 use
+18065 /effect @s clear
+18068 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+18071 use
+18107 /effect @s clear
+18110 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+18113 use
+18149 /effect @s clear
+18152 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+18155 use
+18191 /effect @s clear
+18194 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+18197 use
+18233 /effect @s clear
+18236 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+18239 use
+18275 /effect @s clear
+18278 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+18281 use
+18317 /effect @s clear
+18320 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+18323 use
+18359 /effect @s clear
+18362 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+18365 use
+18401 /effect @s clear
+18404 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+18407 use
+18443 /effect @s clear
+18446 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+18449 use
+18485 /effect @s clear
+18488 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+18491 use
+18527 /effect @s clear
+18530 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+18533 use
+18569 /effect @s clear
+18572 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+18575 use
+18611 /effect @s clear
+18614 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+18617 use
+18653 /effect @s clear
+18656 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+18659 use
+18695 /effect @s clear
+18698 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+18701 use
+18737 /effect @s clear
+18740 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+18743 use
+18779 /effect @s clear
+18782 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+18785 use
+18821 /effect @s clear
+18824 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+18827 use
+18863 /effect @s clear
+18866 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+18869 use
+18905 /effect @s clear
+18908 /replaceitem entity @s slot.hotbar 0 poisonous_potato
+18911 use
+18947 /effect @s clear
+18950 exit
