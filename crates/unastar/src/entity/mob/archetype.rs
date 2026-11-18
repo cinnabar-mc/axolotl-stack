@@ -123,13 +123,19 @@ fn supported_test(test: BuiltinTest, subject: Subject) -> bool {
         | BuiltinTest::BoolProperty
         | BuiltinTest::IntProperty
         | BuiltinTest::RiderCount
+        | BuiltinTest::IsRiding
         | BuiltinTest::IsPersistent
         | BuiltinTest::DistanceToNearestPlayer
-        | BuiltinTest::InactivityTimer => subject == Subject::Self_,
+        | BuiltinTest::InactivityTimer
+        | BuiltinTest::InBlock
+        | BuiltinTest::IsUnderground => subject == Subject::Self_,
         BuiltinTest::IsSneakHeld => subject == Subject::Other,
+        // The world's clock: the same for every subject.
+        BuiltinTest::IsDaytime => true,
         BuiltinTest::IsFamily
         | BuiltinTest::HasComponent
         | BuiltinTest::HasEquipment
+        | BuiltinTest::HasRangedWeapon
         | BuiltinTest::EnumProperty
         | BuiltinTest::InWater
         | BuiltinTest::IsUnderwater
@@ -231,6 +237,9 @@ pub struct MobArchetype {
     pub attribute_seed: Box<[AttributeValue]>,
     pub health_attribute: Option<AttributeId>,
     pub movement_attribute: Option<AttributeId>,
+    /// `minecraft:underwater_movement`, with the native class's value
+    /// (the summon's row) used when the definition authors none.
+    pub underwater_attribute: Option<(AttributeId, f32)>,
     /// Indexed by [`FilterBinding`].
     pub filters: Box<[Filter]>,
     /// The definition predates the 1.26.20 friction change; BDS marks such
@@ -240,6 +249,9 @@ pub struct MobArchetype {
     /// The definition's base components include `minecraft:projectile`: the
     /// actor flies as a projectile instead of living physics and AI.
     pub projectile: bool,
+    /// The height of the base `minecraft:collision_box` (0 without one):
+    /// where a shot places its projectile before the projectile exists.
+    pub base_height: f64,
 }
 
 /// Non-living actors (no attributes on the native summon) whose whole
@@ -311,11 +323,23 @@ impl MobArchetype {
             properties: layout,
             health_attribute: attributes.resolve("minecraft:health"),
             movement_attribute: attributes.resolve("minecraft:movement"),
+            underwater_attribute: attributes
+                .names()
+                .iter()
+                .position(|name| name.as_ref() == "minecraft:underwater_movement")
+                .zip(attributes.resolve("minecraft:underwater_movement"))
+                .map(|(index, id)| (id, attribute_seed[index].current)),
             attributes,
             attribute_seed,
             filters: bindings.filters.into_boxed_slice(),
             legacy_friction: format_before(&source.format_version, [1, 26, 20]),
             projectile,
+            base_height: source
+                .components
+                .get(ActorComponent::CollisionBox.name())
+                .and_then(|body| body.get("height"))
+                .and_then(Value::as_f64)
+                .unwrap_or(0.0),
         })
     }
 }

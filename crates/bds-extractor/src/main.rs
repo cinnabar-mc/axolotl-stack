@@ -4,8 +4,10 @@
 //! (items, blocks, creative content, etc.) for code generation, or records a
 //! whole session as packet fixtures (`--capture-dir`).
 
+mod actions;
 mod capture;
 mod debug_json;
+mod input;
 mod output;
 
 use anyhow::{Context, Result};
@@ -79,6 +81,26 @@ struct Args {
     /// Capture mode: milliseconds to wait after each scripted command
     #[arg(long, default_value = "1500", requires = "capture_dir")]
     command_wait: u64,
+
+    /// Capture mode: log in with this UUID (the client's self-signed id)
+    /// instead of a random one, so BDS knows the player again in a later
+    /// session (offline mode keys player records by it)
+    #[arg(long, requires = "capture_dir")]
+    uuid: Option<uuid::Uuid>,
+
+    /// Capture mode: a JSON object of login ClientData fields (as the client
+    /// sends them, e.g. `SkinData`, `PersonaPieces`) replacing jolyne's defaults
+    #[arg(long, requires = "capture_dir")]
+    client_data: Option<PathBuf>,
+
+    /// Capture mode: claim a chunk blob cache in ClientCacheStatus
+    #[arg(long, requires = "capture_dir")]
+    blob_cache: bool,
+
+    /// Capture mode: send PlayerAuthInput every 50 ms after the spawn (a
+    /// player standing still), as a real client does
+    #[arg(long, requires = "capture_dir")]
+    input: bool,
 
     /// Decode a recorded `packets.jsonl` (from `--capture-dir` or
     /// `bds-sweep-client --capture-dir`) instead of connecting: one JSON line
@@ -164,6 +186,18 @@ async fn run(args: Args) -> Result<()> {
             .map(read_commands)
             .transpose()?
             .unwrap_or_default();
+        let client_data = args
+            .client_data
+            .as_deref()
+            .map(
+                |path| -> Result<serde_json::Map<String, serde_json::Value>> {
+                    let text = std::fs::read_to_string(path)
+                        .with_context(|| format!("reading {}", path.display()))?;
+                    serde_json::from_str(&text)
+                        .with_context(|| format!("{} is not a JSON object", path.display()))
+                },
+            )
+            .transpose()?;
         return capture::run(&capture::Options {
             addr,
             name: args.name,
@@ -174,6 +208,10 @@ async fn run(args: Args) -> Result<()> {
             summon_wait: Duration::from_secs(args.summon_wait),
             commands,
             command_wait: Duration::from_millis(args.command_wait),
+            uuid: args.uuid,
+            client_data,
+            blob_cache: args.blob_cache,
+            input: args.input,
         })
         .await;
     }
@@ -195,7 +233,9 @@ async fn run(args: Args) -> Result<()> {
     Ok(())
 }
 
-/// The steps of a `--commands` script.
+/// The steps of a `--commands` script: commands without their leading `/`,
+/// console and second-player directives and `!` client actions
+/// ([`capture::Step`]).
 fn read_commands(path: &Path) -> Result<Vec<capture::Step>> {
     let text = std::fs::read_to_string(path)
         .with_context(|| format!("reading commands from {}", path.display()))?;

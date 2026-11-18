@@ -66,7 +66,23 @@ prints `@@console@@ COMMAND` for the harness that owns BDS's stdin
 and `!join NAME` / `!leave NAME` log a second client in and out (it answers
 latency probes and records its own packets to `clients/NAME.jsonl` on the
 session's clock). Every step prints `@@step@@ INDEX` first and is listed in
-`steps.json` (index, kind, line, start `seq` and time).
+`steps.json` (index, kind, line, start `seq` and time). `--uuid UUID` logs in
+with that self-signed id instead of a random one: an offline BDS keys player
+records by it, so the same id finds the same player (scores, tags, inventory)
+in a later session (`tools/bds-sweep/level_data.py`).
+
+Lines starting with `!` are client actions instead of commands: `!wait MS`,
+`!interact`, `!pick-actor`, `!emote`, `!emote-list`, `!animate`, `!book`,
+`!blob-status`, `!party-changed`, `!packs-ready`, `!ddui-closed`,
+`!data-store` and `!cookie` send the packet a client would (syntax in
+`src/actions.rs`; targets `self`, `peer` for the last `AddPlayer`, `actor`
+for the last `AddActor`, or a runtime id). They are attributed in
+`command-outputs.json` like commands. `--client-data FILE` logs in with the
+login ClientData fields of a JSON object (a custom or persona skin) over
+jolyne's defaults; `--blob-cache` claims a chunk blob cache in
+`ClientCacheStatus`. When the server ends the session during the scripted
+steps (a refused packet), the outputs up to that point are still written and
+the extractor exits with the error.
 
 From the recording it writes `join-sequence.json` (server packets of the join
 phase, in order), `join/<seq>-<Packet>.{bin,json}` (every non-chunk join
@@ -139,6 +155,11 @@ JigsawStructureData (209 KB), `packets.jsonl` and the JSON forms stay in the
 cache; tests that need them read the cache and check the SHA-256 the committed
 manifest records. `tests/captures.rs` checks every committed fixture against its
 manifest entry and that Valentine decodes and re-encodes it byte for byte.
+
+`captures/1.26.51/spawns/` holds AddActors of actors no command summons, taken where the game
+spawned them (its `manifest.json` names the sweep and item): `spawns/thrown_trident.bin` is the
+first trident a ranged drowned threw in `sweep.py drowned --items trident`. `unastar-data`'s
+actor wire catalog reads its attribute layout like a summon's.
 
 Observed in the 1.26.51 reference capture (2026-10-25): the member and operator
 AvailableCommands are byte-identical (BDS sends one command list and the

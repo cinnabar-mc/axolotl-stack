@@ -9,14 +9,16 @@ mod block_drops;
 pub(crate) mod block_update;
 mod block_use;
 pub(crate) mod blocks;
+pub(crate) mod books;
 #[cfg(test)]
 pub(crate) mod capture_replay;
 mod chunks;
+pub(crate) mod client_packets;
 #[cfg(test)]
 mod command_order_tests;
 #[cfg(test)]
 mod command_tests;
-mod commands;
+pub(crate) mod commands;
 mod containers;
 pub mod durability;
 pub mod effects;
@@ -128,6 +130,9 @@ pub struct StorageShutdown {
     /// Chunks with something to write that storage refused; their unsaved
     /// edits are lost when the process exits.
     pub chunks_failed: usize,
+    /// The level data (`level.dat` and the level records) saved, or there
+    /// was none to save.
+    pub level_saved: bool,
     /// Every attached provider closed (and so flushed) without error.
     pub closed: bool,
 }
@@ -135,7 +140,7 @@ pub struct StorageShutdown {
 impl StorageShutdown {
     /// Every save succeeded and every provider closed.
     pub fn is_clean(&self) -> bool {
-        self.players_failed == 0 && self.chunks_failed == 0 && self.closed
+        self.players_failed == 0 && self.chunks_failed == 0 && self.level_saved && self.closed
     }
 }
 
@@ -215,6 +220,9 @@ pub(crate) fn player_record(world: &World, entity: Entity) -> Option<(uuid::Uuid
             unlocked_recipes: world
                 .get::<crate::command::exec::UnlockedRecipes>(entity)
                 .map(|recipes| recipes.0.clone()),
+            unique_id: world
+                .get::<crate::world::scoreboard::PlayerUniqueId>(entity)
+                .map(|id| id.0),
             air: world
                 .get::<crate::entity::player_life::breath::PlayerBreath>(entity)
                 .filter(|_| !dead)
@@ -409,6 +417,8 @@ impl GameServer {
         ecs.world_mut().insert_resource(world_time);
         ecs.world_mut().insert_resource(start_game_state);
         ecs.world_mut()
+            .insert_resource(roster::OnlineRoster::default());
+        ecs.world_mut()
             .init_resource::<crate::world::clock::ClockSync>();
         ecs.world_mut()
             .init_resource::<crate::command::CommandRegistry>();
@@ -475,6 +485,7 @@ impl GameServer {
         .expect("vanilla player definition");
 
         ecs.world_mut().add_observer(on_block_changed);
+        crate::world::scoreboard::install(ecs.world_mut());
         ecs.world_mut()
             .init_resource::<containers::BlockContainers>();
         ecs.world_mut()
@@ -592,6 +603,24 @@ impl GameServer {
                 .in_set(PhysicsSet)
                 .after(tick_physics),
         );
+        // Stomp goals decide by where the mob stands after its move.
+        ecs.schedule_mut().add_systems(
+            crate::entity::mob::ai::tick_stomp_attacks
+                .in_set(PhysicsSet)
+                .after(tick_physics),
+        );
+        // A charging vex hits by where it stands after its move.
+        ecs.schedule_mut().add_systems(
+            crate::entity::mob::ai::tick_charge_hits
+                .in_set(PhysicsSet)
+                .after(tick_physics),
+        );
+        // The slime classes report leaving the ground and landing.
+        ecs.schedule_mut().add_systems(
+            crate::entity::mob::ai::hop::report_ground_changes
+                .in_set(PhysicsSet)
+                .after(tick_physics),
+        );
         // Mob AI turns goals into rotation and velocity before the physics
         // step integrates them; pushing separates overlapping mobs.
         ecs.schedule_mut().add_systems(
@@ -692,14 +721,16 @@ impl GameServer {
                 .after(liquids::tick_liquids)
                 .before(tick_block_breaking),
         );
-        // The mobs' effect step, mob fall damage, condition damage,
+        // The mobs' effect step, mob fall damage, contact damage, condition damage,
         // daylight burning and fire, death, then experience orbs. After the
         // entity chain so deaths from fire/effects are caught the same tick.
         ecs.schedule_mut().add_systems(
             (
                 crate::entity::effects::tick_mob_effects,
                 crate::entity::mob::combat::fall::apply_fall_damage,
+                crate::entity::mob::combat::area_attack::area_attacks,
                 crate::entity::mob::combat::hurt_on_condition,
+                crate::entity::mob::combat::damage_over_time,
                 crate::entity::mob::combat::fire::burn_in_daylight,
                 crate::entity::mob::combat::fire::burn_mobs,
                 crate::entity::mob::combat::explode::tick_fuses,
@@ -750,8 +781,10 @@ impl GameServer {
         ecs.schedule_mut().add_systems(
             (
                 effects::sync_visible_effects,
+                crate::world::scoreboard::sync_score_tags,
                 crate::entity::player_life::actor_data::sync_players,
                 attributes::sync_player_attributes,
+                books::sync_interact_text,
                 // After the attributes were sent: what a player's effect
                 // step changes reaches it the next tick, as BDS sends it.
                 crate::entity::effects::tick_player_effects,
@@ -782,12 +815,14 @@ impl GameServer {
                 .after(despawn_dead)
                 .before(tick_block_breaking),
         );
-        // Environment sensors, timers, then anger. Their group changes apply
-        // at the next tick's definition barrier (`PhysicsSet`), which is when
-        // anger that spread this tick starts on its receivers.
+        // Environment sensors, target-nearby sensors, timers, then anger.
+        // Their group changes apply at the next tick's definition barrier
+        // (`PhysicsSet`), which is when anger that spread this tick starts
+        // on its receivers.
         ecs.schedule_mut().add_systems(
             (
                 crate::entity::mob::life::sensors::tick_environment_sensors,
+                crate::entity::mob::life::sensors::tick_target_nearby_sensors,
                 crate::entity::mob::life::sensors::tick_timers,
                 crate::entity::mob::life::anger::tick_anger,
             )
@@ -846,6 +881,16 @@ impl GameServer {
         ecs.schedule_mut()
             .add_systems(cleanup_despawned_entities.in_set(CleanupSet));
 
+        ecs.world_mut().insert_resource(
+            books::BookItems::resolve(&items).expect("vanilla book and quill and written book"),
+        );
+        ecs.world_mut().insert_resource(
+            inventory::actor_pick::ActorPickItems::resolve(
+                unastar_data::actor_picks::vanilla(),
+                &items,
+            )
+            .expect("measured actor pick items are registered"),
+        );
         ecs.world_mut()
             .insert_resource(types::ItemRegistryResource(items));
         ecs.world_mut()
@@ -857,6 +902,8 @@ impl GameServer {
         ecs.world_mut()
             .insert_resource(types::BlockRegistryResource(Arc::new(blocks)));
         crate::entity::spawning::install(ecs.world_mut());
+        crate::entity::player_life::sleep::install(ecs.world_mut())
+            .expect("vanilla beds and monster family");
 
         info!("Registries loaded");
         Self { ecs }
@@ -941,6 +988,18 @@ impl GameServer {
     pub async fn save_and_close_storage(&mut self) -> StorageShutdown {
         let players = self.save_all_players().await;
         let chunks = self.save_all_chunks().await;
+        // After the chunks, so every saved mob has its unique id for the
+        // scoreboard; before the world database closes.
+        let mut level_saved = true;
+        if let Some(save) = crate::world::level_data::capture(self.ecs.world_mut()) {
+            match save.write().await {
+                Ok(()) => info!("Level data saved"),
+                Err(error) => {
+                    error!(%error, "Failed to save the level data");
+                    level_saved = false;
+                }
+            }
+        }
         let mut closed = true;
         let world_provider = self
             .ecs
@@ -969,6 +1028,7 @@ impl GameServer {
             players_failed: players.failed,
             chunks_saved: chunks.saved,
             chunks_failed: chunks.failed,
+            level_saved,
             closed,
         }
     }
@@ -1100,7 +1160,7 @@ impl GameServer {
         let mut health = crate::entity::components::Health::default();
         let mut hunger = crate::entity::components::Hunger::default();
         let mut experience = crate::entity::components::Experience::default();
-        let (spawn_point, spawn_bed, tags, unlocked_recipes) = saved_data
+        let (spawn_point, spawn_bed, tags, unlocked_recipes, unique_id) = saved_data
             .as_mut()
             .map(|saved| {
                 (
@@ -1108,6 +1168,7 @@ impl GameServer {
                     saved.spawn_bed,
                     std::mem::take(&mut saved.tags),
                     saved.unlocked_recipes.take(),
+                    saved.unique_id,
                 )
             })
             .unwrap_or_default();
@@ -1219,6 +1280,7 @@ impl GameServer {
             // Join sends these values in its first UpdateAttributes.
             attributes::SentAttributes::sent(&health_sent, &hunger_sent, 0.0),
             crate::entity::components::Effects::default(),
+            books::InteractText::default(),
             effects::SentVisibleEffects::default(),
         ));
         if operator {
@@ -1241,6 +1303,12 @@ impl GameServer {
         if let Some(recipes) = unlocked_recipes {
             player.insert(crate::command::exec::UnlockedRecipes(recipes));
         }
+        // The id its scores are saved under: inserting it gives the player
+        // back the scores it had when it left.
+        player.insert(unique_id.map_or_else(
+            crate::world::scoreboard::PlayerUniqueId::fresh,
+            crate::world::scoreboard::PlayerUniqueId,
+        ));
 
         if let Some(mut session_map) = self.ecs.world_mut().get_resource_mut::<SessionEntityMap>() {
             session_map.insert(data.session_id, entity);
@@ -1248,22 +1316,21 @@ impl GameServer {
         // Plugins see the join (`on-player-join`) once the client has spawned:
         // `send_spawn_status` queues it when it clears `AwaitingSpawnStatus`.
 
-        let roster_entry = {
-            let world = self.ecs.world_mut();
-            let taken: Vec<u32> = world
-                .query::<&roster::RosterEntry>()
-                .iter(world)
-                .map(roster::RosterEntry::colour)
-                .collect();
-            roster::RosterEntry::new(
-                player_uuid,
-                runtime_id,
-                &player_name_for_roster,
-                player_xuid.as_deref(),
-                client_data.unwrap_or(&jolyne::auth::ClientData::default()),
-                roster::free_colour(taken),
-            )
-        };
+        // The colour reserved when the join reached StartGame (a player
+        // spawned without a connection task reserves its place here).
+        let (colour, _) = self
+            .ecs
+            .world()
+            .resource::<roster::OnlineRoster>()
+            .join(data.session_id);
+        let roster_entry = roster::RosterEntry::new(
+            player_uuid,
+            runtime_id,
+            &player_name_for_roster,
+            player_xuid.as_deref(),
+            client_data.unwrap_or(&jolyne::auth::ClientData::default()),
+            colour,
+        );
         self.ecs.world_mut().entity_mut(entity).insert(roster_entry);
 
         self.ecs.world_mut().write_message(PlayerSpawnedEvent {
@@ -1301,6 +1368,11 @@ impl GameServer {
                 None
             }
         };
+        let remaining = self
+            .ecs
+            .world()
+            .resource::<roster::OnlineRoster>()
+            .leave(session_id);
         if let Some(entity) = entity {
             // A sleeper leaving frees its bed.
             crate::entity::player_life::sleep::wake(
@@ -1308,7 +1380,7 @@ impl GameServer {
                 entity,
                 crate::entity::player_life::sleep::WakeCause::Gone,
             );
-            self.announce_leave(entity);
+            self.announce_leave(entity, remaining);
             // Every leave path (disconnect packet, network drop) ends here, so
             // plugins see exactly one `on-player-quit` per online player.
             if let Some(mut events) = self
@@ -1708,6 +1780,7 @@ mod tests {
                 players_failed: 1,
                 chunks_saved: 0,
                 chunks_failed: 1,
+                level_saved: true,
                 closed: true,
             }
         );
@@ -1798,6 +1871,7 @@ mod tests {
                 players_failed: 0,
                 chunks_saved: 1,
                 chunks_failed: 0,
+                level_saved: true,
                 closed: true,
             }
         );

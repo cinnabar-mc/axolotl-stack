@@ -33,7 +33,7 @@ Prior work:
   stand-up search, the night skip with `playersSleepingPercentage`, the sleeping-players event.
 - **Shared types extended:** `PlayerSpawnPoint` carries the bed (saved with the player as
   `spawn_bed`); `PlayerActorData` sends keys 26, 28 and 133 and the sleeping flag and box;
-  `GameRules::int` with `IntGameRule`; `clock::weather_sky_darken` and `clock::jump_to`;
+  `GameRules::players_sleeping_percentage`; `clock::weather_sky_darken` and `clock::jump_to`;
   `Horizontal::from_legacy`, `step`; `block_actors::resend`.
 - **Movement:** a sleeper's inputs only turn it (`server::game::movement`).
 

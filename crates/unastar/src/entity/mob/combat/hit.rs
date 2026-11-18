@@ -33,7 +33,7 @@ use crate::entity::components::{
     Velocity,
 };
 use crate::entity::mob::components::{
-    HurtCondition, HurtOnConditionConfig, KnockbackPower, KnockbackRules,
+    DamageOverTime, HurtCondition, HurtOnConditionConfig, KnockbackPower, KnockbackRules,
 };
 use crate::entity::mob::events::{MobFacts, held_item};
 use crate::entity::mob::state::{Dead, LastHurt};
@@ -65,12 +65,26 @@ pub struct Hit {
     pub knockback_power: KnockbackPower,
 }
 
-/// The knockback `attacker` deals: its knockback rules, else the built-in
-/// preset.
-pub fn knockback_power_of(world: &World, attacker: Entity) -> KnockbackPower {
+/// The knockback `attacker` deals to `target`: its knockback rules, else the
+/// built-in preset.
+pub fn knockback_power_of(world: &World, attacker: Entity, target: Entity) -> KnockbackPower {
     world
         .get::<KnockbackRules>(attacker)
-        .map_or(KnockbackPower::DEFAULT, |rules| rules.0)
+        .map_or(KnockbackPower::DEFAULT, |rules| {
+            rules.against(feet_in_water(world, target))
+        })
+}
+
+/// Whether the block at `actor`'s feet is water.
+fn feet_in_water(world: &World, actor: Entity) -> bool {
+    use crate::entity::systems::physics::BlockSource;
+    let Some(feet) = world.get::<Position>(actor) else {
+        return false;
+    };
+    world
+        .block_at(feet.0.floor().as_ivec3())
+        .and_then(|state| world.registry().liquid_state(state))
+        .is_some_and(|liquid| liquid.kind == crate::registry::block::LiquidKind::Water)
 }
 
 /// A player attacks `target` with whatever the server has in the player's
@@ -244,6 +258,7 @@ fn hurt_mob_with(world: &mut World, target: Entity, hit: Hit, animate: bool) -> 
         health.damage(to_health);
         health.is_dead()
     };
+    crate::entity::mob::ai::roost::wake_hurt(world, target);
     if full && animate {
         // A killing hit shows only the death (`ActorEvent` death from
         // `begin_death`), still with its knockback (BDS 1.26.51 spear capture).
@@ -386,6 +401,71 @@ pub fn hurt_on_condition(
                     },
                 );
             }
+        }
+    }
+}
+
+/// Ticks until a mob's next `minecraft:damage_over_time` hurt.
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DamageOverTimeClock(u32);
+
+/// System (exclusive): `minecraft:damage_over_time`. A mob hurts itself
+/// by `damage` with no cause and no knockback every `interval` ticks, the
+/// first `interval` ticks after the component arrived (BDS 1.26.51: a vex
+/// whose decay timer ran out took 1 every 20 ticks, cause `none`, and died
+/// on its 14th hurt, `sweep.py vex --items decay`).
+#[allow(clippy::type_complexity)]
+pub fn damage_over_time(
+    world: &mut World,
+    mobs: &mut QueryState<
+        (
+            Entity,
+            Ref<DamageOverTime>,
+            Option<&mut DamageOverTimeClock>,
+        ),
+        (With<MobKind>, Without<Dead>),
+    >,
+    mut due: Local<Vec<(Entity, Option<u32>, Option<i32>)>>,
+) {
+    for (entity, config, clock) in mobs.iter_mut(world) {
+        let left = match &clock {
+            Some(clock) if !config.is_added() => clock.0,
+            _ => config.interval_ticks,
+        };
+        let (next, hurt) = if left <= 1 {
+            (config.interval_ticks, Some(config.damage))
+        } else {
+            (left - 1, None)
+        };
+        // The clock is inserted once and stepped in place after.
+        let missing = match clock {
+            Some(mut clock) => {
+                clock.0 = next;
+                None
+            }
+            None => Some(next),
+        };
+        if missing.is_some() || hurt.is_some() {
+            due.push((entity, missing, hurt));
+        }
+    }
+    for (entity, missing, hurt) in due.drain(..) {
+        if let Some(left) = missing {
+            world.entity_mut(entity).insert(DamageOverTimeClock(left));
+        }
+        if let Some(damage) = hurt {
+            hurt_mob(
+                world,
+                entity,
+                Hit {
+                    damage: damage as f32,
+                    cause: ActorDamageCause::None,
+                    attacker: None,
+                    by_player: false,
+                    knockback_from: None,
+                    knockback_power: KnockbackPower::DEFAULT,
+                },
+            );
         }
     }
 }

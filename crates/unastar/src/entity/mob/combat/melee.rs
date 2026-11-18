@@ -24,7 +24,7 @@ use crate::ecs::resources::TickCounter;
 use crate::entity::EntityRandom;
 use crate::entity::components::{GameMode, Health, Player, Position};
 use crate::entity::mob::MobKind;
-use crate::entity::mob::components::{AttackConfig, MeleeBoxAttackGoal, SelfEvent};
+use crate::entity::mob::components::{AttackConfig, MeleeAttackGoal, SelfEvent};
 use crate::entity::mob::constants::{MELEE_FIRE_SPREAD_CHANCE, TICKS_PER_SECOND};
 use crate::entity::mob::events::fire_event;
 use crate::entity::mob::gear;
@@ -33,15 +33,17 @@ use crate::entity::player_life::environment::ignite_player;
 use crate::entity::player_life::hurt_player;
 use crate::world::rules::Difficulty;
 
-/// `attacker` hits `target` (the melee goal found it in reach this tick).
+/// `attacker` hits `target` (its melee goal found it in reach this tick,
+/// or its charge touched it). The melee goal's fire spread and attack
+/// events follow only when it has one.
 pub fn melee_attack(world: &mut World, attacker: Entity, target: Entity) {
-    let (Some(attack), Some(goal), Some(feet)) = (
+    let (Some(attack), Some(feet)) = (
         world.get::<AttackConfig>(attacker).cloned(),
-        world.get::<MeleeBoxAttackGoal>(attacker).cloned(),
         world.get::<Position>(attacker).map(|p| p.0),
     ) else {
         return;
     };
+    let goal = world.get::<MeleeAttackGoal>(attacker).cloned();
     if world.get::<Dead>(attacker).is_some() || !alive(world, target) {
         return;
     }
@@ -60,7 +62,7 @@ pub fn melee_attack(world: &mut World, attacker: Entity, target: Entity) {
         attacker: Some(attacker),
         by_player: false,
         knockback_from: Some(feet),
-        knockback_power: knockback_power_of(world, attacker),
+        knockback_power: knockback_power_of(world, attacker, target),
     };
     let is_player = world.get::<Player>(target).is_some();
     let dealt = if is_player {
@@ -73,7 +75,9 @@ pub fn melee_attack(world: &mut World, attacker: Entity, target: Entity) {
         world
             .entity_mut(attacker)
             .insert(crate::entity::mob::state::LastAttack { tick, target });
-        after_hurt(world, attacker, target, &goal, holding, is_player);
+        if let Some(goal) = &goal {
+            after_hurt(world, attacker, target, goal, holding, is_player);
+        }
     }
     // Through the shared effect system (`entity::effects`), which keeps it
     // off an immune target and shows it.
@@ -95,7 +99,7 @@ fn after_hurt(
     world: &mut World,
     attacker: Entity,
     target: Entity,
-    goal: &MeleeBoxAttackGoal,
+    goal: &MeleeAttackGoal,
     holding: bool,
     is_player: bool,
 ) {

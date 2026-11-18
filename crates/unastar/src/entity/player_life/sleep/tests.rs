@@ -66,10 +66,27 @@ struct Click {
     clicked: [i32; 3],
     zombie: Option<[f64; 3]>,
     walls: Vec<[i32; 3]>,
-    block_on_head: Option<String>,
+    block_on_head: Option<FixtureBlock>,
     mode: GameMode,
     occupied_by_other: bool,
     answer: Answer,
+}
+
+/// A block the fixture names, resolved to its default state when the
+/// fixture loads.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(try_from = "String")]
+struct FixtureBlock(u32);
+
+impl TryFrom<String> for FixtureBlock {
+    type Error = String;
+
+    fn try_from(name: String) -> Result<Self, Self::Error> {
+        BlockRegistry::vanilla()
+            .default_state_id_by_name(&name)
+            .map(Self)
+            .ok_or_else(|| format!("unknown block {name}"))
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
@@ -293,7 +310,7 @@ impl Bedroom {
         rules.do_daylight_cycle = click.daylight_cycle;
         rules
             .set_value(
-                IntGameRule::PlayersSleepingPercentage.name(),
+                crate::world::rules::PLAYERS_SLEEPING_PERCENTAGE,
                 GameRuleValue::Int(click.percentage),
             )
             .unwrap();
@@ -307,9 +324,9 @@ impl Bedroom {
         for wall in &click.walls {
             self.replay.set(ivec(*wall), "minecraft:stone");
         }
-        if let Some(block) = &click.block_on_head {
-            let head = IVec3::new(2, -59, 0);
-            self.replay.set(head, block);
+        if let Some(FixtureBlock(block)) = click.block_on_head {
+            let above = IVec3::new(2, -59, 0);
+            crate::server::game::blocks::write_block(self.world(), above, block, false);
         }
         if click.bed.head != fixture_head() {
             let bed = click.bed;
@@ -400,17 +417,10 @@ fn answer(packets: &[McpePacketData], slept: bool) -> Answer {
     answer
 }
 
-/// (needed, sleeping) of a sleeping-players event: compare its bytes with
-/// the event built from candidate counts.
+/// (needed, sleeping) of a sleeping-players event, decoded.
 fn sleeping_counts(event: &jolyne::valentine::LevelEventGenericPacket) -> [i32; 2] {
-    for needed in 0..=4 {
-        for sleeping in 0..=4 {
-            if roster::sleeping_players(needed, sleeping).__ctd__ == event.__ctd__ {
-                return [needed, sleeping];
-            }
-        }
-    }
-    panic!("unexpected sleeping-players event {event:?}");
+    let counts = roster::SleepingPlayers::try_from(event).expect("a sleeping-players event");
+    [counts.needed, counts.sleeping]
 }
 
 #[test]
@@ -563,10 +573,7 @@ fn everyone_must_sleep_unless_the_percentage_says_otherwise() {
     assert_eq!(sleepers_needed(2, 50), 1);
     assert_eq!(sleepers_needed(3, 50), 2);
     assert_eq!(sleepers_needed(2, 0), 1);
-    assert_eq!(
-        GameRules::default().int(IntGameRule::PlayersSleepingPercentage),
-        100
-    );
+    assert_eq!(GameRules::default().players_sleeping_percentage, 100);
     // sleeping-2 line 192: the player lies down, the guest ten ticks later;
     // the morning comes 100 ticks after the guest.
     let fixture = fixture();

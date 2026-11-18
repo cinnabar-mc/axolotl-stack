@@ -137,6 +137,10 @@ pub struct PlayerData {
     /// recipes were stored: the initial recipes.
     #[serde(default)]
     pub unlocked_recipes: Option<Vec<String>>,
+    /// The id the player's scores are saved under (BDS's player
+    /// `UniqueID`). Missing on records saved before scores were: a new one.
+    #[serde(default)]
+    pub unique_id: Option<i64>,
     /// Air supply in ticks (below zero while drowning, down to
     /// [`LOWEST_AIR`]). BDS 1.26.51 keeps it across a rejoin; records saved
     /// before it have full air.
@@ -169,6 +173,7 @@ impl Default for PlayerData {
             spawn_bed: None,
             tags: Vec::new(),
             unlocked_recipes: None,
+            unique_id: None,
             air: default_air(),
         }
     }
@@ -264,6 +269,7 @@ impl PlayerData {
             || self
                 .spawn_point
                 .is_some_and(|point| !point.iter().all(|n| n.is_finite()))
+            || matches!(self.unique_id, Some(0 | -1))
             || !(LOWEST_AIR..=default_air()).contains(&self.air)
         {
             return Err(StorageError::Deserialization("invalid player state".into()));

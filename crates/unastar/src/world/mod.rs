@@ -1,10 +1,12 @@
 //! World module - chunk storage, generation, and ECS integration.
 
+pub mod bedrock_random;
 pub mod block_entity;
 pub mod chunk;
 pub mod clock;
 pub mod ecs;
 pub mod generator;
+pub mod level_data;
 pub mod regional_difficulty;
 pub mod rules;
 pub mod scoreboard;

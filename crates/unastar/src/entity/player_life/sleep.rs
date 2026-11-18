@@ -79,7 +79,7 @@ use crate::entity::PLAYER_EYE_HEIGHT;
 use crate::entity::components::{
     GameMode, PhysicsBody, Player, PlayerSession, Position, RuntimeEntityId, input_tick_of,
 };
-use crate::entity::definition::families::ActorFamilies;
+use crate::entity::definition::families::{ActorFamilies, FamilyId};
 use crate::entity::item_drop::PLAYER_REPORTED_EYE_HEIGHT;
 use crate::entity::mob::{MobKind, MobRegistry};
 use crate::entity::systems::BlockSource;
@@ -89,7 +89,7 @@ use crate::server::game::placement::{Horizontal, placed_boxes};
 use crate::server::game::roster;
 use crate::server::game::types::BlockRegistryResource;
 use crate::world::clock::{self, DAYTIME_DARKEN_LIMIT};
-use crate::world::rules::{GameRules, IntGameRule, WorldTime};
+use crate::world::rules::{GameRules, WorldTime};
 
 #[cfg(test)]
 mod tests;
@@ -130,26 +130,35 @@ pub struct Sleeping {
 #[derive(Resource, Debug, Default)]
 pub struct WakeQueue(pub Vec<(Entity, WakeCause)>);
 
-/// The bed block's registry id, looked up once.
-#[derive(Resource, Debug, Clone, Copy)]
-struct BedBlock(Option<u32>);
+/// What beds look up, resolved once when the registries load
+/// ([`install`]): the bed block's registry id and the `monster` family.
+#[derive(Resource, Clone)]
+pub struct SleepIds {
+    bed: u32,
+    monster: FamilyId,
+}
 
-/// The bed block's registry id (`None` without a block registry or a bed).
-fn bed_block(world: &mut World) -> Option<u32> {
-    if let Some(bed) = world.get_resource::<BedBlock>() {
-        return bed.0;
-    }
-    let id = world
+/// Resolve [`SleepIds`] from the block registry and the mob registry's
+/// families. Vanilla data has both; a missing one is an error naming it.
+pub fn install(world: &mut World) -> Result<(), &'static str> {
+    let bed = world
         .get_resource::<BlockRegistryResource>()
         .and_then(|registry| {
             let state = registry.0.default_state_id_by_name("minecraft:bed")?;
             Some(registry.0.get_by_runtime_id(state)?.id)
-        });
-    // Only cache once a registry exists: tests may add it later.
-    if world.get_resource::<BlockRegistryResource>().is_some() {
-        world.insert_resource(BedBlock(id));
-    }
-    id
+        })
+        .ok_or("the block registry has no minecraft:bed")?;
+    let monster = world
+        .get_resource::<MobRegistry>()
+        .and_then(|registry| registry.families().resolve("monster"))
+        .ok_or("the mob families have no monster")?;
+    world.insert_resource(SleepIds { bed, monster });
+    Ok(())
+}
+
+/// The bed block's registry id (`None` before [`install`]).
+fn bed_block(world: &World) -> Option<u32> {
+    world.get_resource::<SleepIds>().map(|ids| ids.bed)
 }
 
 /// A bed, as found from either half.
@@ -252,8 +261,8 @@ fn in_reach(feet: DVec3, bed: Bed) -> bool {
 /// awake (see [`MONSTER_REACH`]).
 fn monster_near(world: &mut World, head: IVec3) -> bool {
     let Some(monster) = world
-        .get_resource::<MobRegistry>()
-        .and_then(|registry| registry.families().resolve("monster"))
+        .get_resource::<SleepIds>()
+        .map(|ids| ids.monster.clone())
     else {
         return false;
     };
@@ -301,11 +310,37 @@ pub fn sleeping_players_event(
     leaving: Option<Entity>,
 ) -> jolyne::valentine::LevelEventGenericPacket {
     let counted = counted_players(world, leaving);
-    let percentage = world.get_resource::<GameRules>().map_or(100, |rules| {
-        rules.int(IntGameRule::PlayersSleepingPercentage)
-    });
+    let percentage = world
+        .get_resource::<GameRules>()
+        .map_or(100, |rules| rules.players_sleeping_percentage);
     let needed = sleepers_needed(counted.len(), percentage);
     let sleeping = counted.iter().filter(|(_, sleeping)| *sleeping).count();
+    roster::sleeping_players(
+        i32::try_from(needed).unwrap_or(i32::MAX),
+        i32::try_from(sleeping).unwrap_or(i32::MAX),
+    )
+}
+
+/// The sleeping-players event a leave sends the others: `remaining` players
+/// online after `leaving` is gone (the roster's count), the sleepers among
+/// them.
+pub fn leave_event(
+    world: &World,
+    leaving: Option<Entity>,
+    remaining: usize,
+) -> jolyne::valentine::LevelEventGenericPacket {
+    let percentage = world
+        .get_resource::<GameRules>()
+        .map_or(100, |rules| rules.players_sleeping_percentage);
+    let needed = if remaining == 0 {
+        0
+    } else {
+        sleepers_needed(remaining, percentage)
+    };
+    let sleeping = counted_players(world, leaving)
+        .iter()
+        .filter(|(_, sleeping)| *sleeping)
+        .count();
     roster::sleeping_players(
         i32::try_from(needed).unwrap_or(i32::MAX),
         i32::try_from(sleeping).unwrap_or(i32::MAX),
@@ -586,9 +621,7 @@ fn standing_eye(world: &World, player: Entity, head: IVec3) -> DVec3 {
         .map_or(DVec3::ZERO, |data| {
             DVec3::from_array(data.entered_bed.map(f64::from))
         });
-    let bed = world
-        .get_resource::<BedBlock>()
-        .and_then(|block| block.0)
+    let bed = bed_block(world)
         .and_then(|block| bed_at(world, block, head))
         .filter(|bed| bed.head == head);
     let spot = bed.map_or(head, |bed| {
@@ -633,9 +666,7 @@ pub fn tick_sleepers(world: &mut World) {
     if asleep.is_empty() {
         return;
     }
-    let percentage = world
-        .resource::<GameRules>()
-        .int(IntGameRule::PlayersSleepingPercentage);
+    let percentage = world.resource::<GameRules>().players_sleeping_percentage;
     let now = world.resource::<TickCounter>().current;
     // As many sleepers as needed must each have slept long enough (BDS
     // 1.26.51: with one of two needed, the morning came 100 ticks after the

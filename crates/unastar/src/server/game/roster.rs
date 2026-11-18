@@ -3,9 +3,12 @@
 //! Measured with `tools/bds-sweep/capture.py --pair` (fixtures under
 //! `crates/bds-extractor/captures/1.26.51/roster/`):
 //!
-//! - A joining player gets the sleeping-player `LevelEventGeneric` and a
-//!   `PlayerList` holding only itself first, and later in the join a
-//!   `PlayerList` holding every online player, itself included.
+//! - A joining player gets the sleeping-player `LevelEventGeneric`, a
+//!   `PlayerList` holding only itself and the world clock state before
+//!   `StartGame` (in its batch), and later in the join a `PlayerList`
+//!   holding every online player, itself included. A player counts as online
+//!   from that moment: [`OnlineRoster`] reserves its place and colour in the
+//!   connection task, before the game loop has spawned it.
 //! - Every player already online gets, in this order, the sleeping-player
 //!   event with the new count, a `PlayerList` adding the newcomer and an
 //!   `UpdateAdventureSettings` (the same settings the join sends), all before
@@ -21,19 +24,21 @@
 //! same players online listed them differently); unastar lists players in
 //! join order.
 
-use base64::Engine as _;
-use base64::engine::general_purpose::STANDARD;
-use bevy_ecs::prelude::{Component, Entity, World};
+use std::collections::BTreeMap;
+use std::sync::Arc;
+
+use bevy_ecs::prelude::{Component, Entity, Resource, World};
 use bytes::{BufMut, Bytes, BytesMut};
 use jolyne::auth::ClientData;
 use jolyne::valentine::types::{
-    ActorUniqueId, AdventureSettings, AnimatedImageData, EnumsBuildPlatform,
-    EnumsPlayerListPacketType, EnumsSharedTypespersonaArmSizeType, EnumspersonaAnimatedTextureType,
-    EnumspersonaAnimationExpression, MceColor, PlayerListPacketEntriesItem,
-    PlayerListPacketPayloadAddEntry, PlayerListPacketPayloadAddEntryAction,
-    PlayerListPacketPayloadRemoveEntry, SerializedSkinRef, SkinImage,
+    ActorUniqueId, AdventureSettings, EnumsBuildPlatform, EnumsPlayerListPacketType, MceColor,
+    PlayerListPacketEntriesItem, PlayerListPacketPayloadAddEntry,
+    PlayerListPacketPayloadAddEntryAction, PlayerListPacketPayloadRemoveEntry,
 };
-use jolyne::valentine::{LevelEventGenericPacket, PlayerListPacket, UpdateAdventureSettingsPacket};
+use jolyne::valentine::{
+    LevelEventGenericPacket, McpePacket, PlayerListPacket, UpdateAdventureSettingsPacket,
+};
+use parking_lot::Mutex;
 use uuid::Uuid;
 use valentine::bedrock::codec::{BedrockCodec, NbtCompoundBody};
 
@@ -100,6 +105,7 @@ impl RosterEntry {
         self.0.actor_unique_id.actor_unique_id
     }
 
+    #[cfg(test)]
     pub fn colour(&self) -> u32 {
         self.0.player_color.color as u32
     }
@@ -113,6 +119,112 @@ pub fn free_colour(taken: impl IntoIterator<Item = u32>) -> u32 {
         .into_iter()
         .min_by_key(|colour| taken.iter().filter(|held| *held == colour).count())
         .expect("the palette is not empty")
+}
+
+/// Who counts as online, shared by the connection tasks and the game loop:
+/// each session's colour, from the moment its join reaches `StartGame` until
+/// the player leaves. BDS counts a joining player (and has given it a colour)
+/// before `StartGame`, so the place is reserved there, off the game thread.
+#[derive(Resource, Debug, Clone, Default)]
+pub struct OnlineRoster(Arc<Mutex<BTreeMap<u64, u32>>>);
+
+impl OnlineRoster {
+    /// Reserves `session`'s place: the [`free_colour`] among everyone online
+    /// and the number online, `session` included. Dropping the reservation
+    /// before [`Reservation::keep`] gives the place back (a join that failed
+    /// before the game loop took it over).
+    pub fn reserve(&self, session: u64) -> Reservation {
+        let (colour, online) = self.join(session);
+        Reservation {
+            roster: self.clone(),
+            session,
+            colour,
+            online,
+            kept: false,
+        }
+    }
+
+    /// `session`'s colour and the number online, reserving its place when it
+    /// has none yet.
+    pub fn join(&self, session: u64) -> (u32, usize) {
+        let mut online = self.0.lock();
+        let colour = match online.get(&session) {
+            Some(colour) => *colour,
+            None => {
+                let colour = free_colour(online.values().copied());
+                online.insert(session, colour);
+                colour
+            }
+        };
+        (colour, online.len())
+    }
+
+    /// Gives `session`'s place and colour back (it left); returns how many
+    /// stay online.
+    pub fn leave(&self, session: u64) -> usize {
+        let mut online = self.0.lock();
+        online.remove(&session);
+        online.len()
+    }
+
+    /// How many players are online, joining ones included.
+    pub fn len(&self) -> usize {
+        self.0.lock().len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+}
+
+/// A place in the [`OnlineRoster`] held by a join in progress.
+#[derive(Debug)]
+pub struct Reservation {
+    roster: OnlineRoster,
+    session: u64,
+    colour: u32,
+    online: usize,
+    kept: bool,
+}
+
+impl Reservation {
+    pub fn colour(&self) -> u32 {
+        self.colour
+    }
+
+    /// How many were online when the place was reserved, this one included.
+    pub fn online(&self) -> usize {
+        self.online
+    }
+
+    /// The game loop has the player now; its leave gives the place back.
+    pub fn keep(mut self) {
+        self.kept = true;
+    }
+}
+
+impl Drop for Reservation {
+    fn drop(&mut self) {
+        if !self.kept {
+            self.roster.leave(self.session);
+        }
+    }
+}
+
+/// The packets BDS 1.26.51 sends a joining player before `StartGame`, in its
+/// order (member join fixtures `00011`-`00013`): the sleeping-player count
+/// with everyone online (the joining player included), the player's own
+/// `PlayerList` entry and the world clock state.
+pub fn before_start_game(
+    online: usize,
+    own: &RosterEntry,
+    time: crate::world::rules::WorldTime,
+) -> Vec<McpePacket> {
+    vec![
+        McpePacket::from(sleeping_players(online as i32, 0)),
+        McpePacket::from(add_packet([own])),
+        McpePacket::from(crate::world::clock::clock_state_packet(time)),
+    ]
 }
 
 /// Every online player with its entry, in join order (unique ids are
@@ -148,30 +260,96 @@ pub fn remove_packet(uuid: Uuid) -> PlayerListPacket {
     }
 }
 
+/// The counts a sleeping-players event carries ([`sleeping_players`]).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SleepingPlayers {
+    /// `overworldPlayerCount`: the sleepers needed.
+    pub needed: i32,
+    /// `sleepingPlayerCount`.
+    pub sleeping: i32,
+}
+
+/// A `LevelEventGeneric` that is not a well-formed sleeping-players event.
+#[cfg(test)]
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[error("not a sleeping-players event: {0}")]
+pub struct NotSleepingPlayers(&'static str);
+
+/// Tests read the counts back from the events the server sent.
+#[cfg(test)]
+impl TryFrom<&LevelEventGenericPacket> for SleepingPlayers {
+    type Error = NotSleepingPlayers;
+
+    /// Reads the int tags [`sleeping_players`] writes.
+    fn try_from(event: &LevelEventGenericPacket) -> Result<Self, Self::Error> {
+        use bytes::Buf;
+        if event.event_id != LEVEL_EVENT_SLEEPING_PLAYERS {
+            return Err(NotSleepingPlayers("another event id"));
+        }
+        let mut body = event.__ctd__.0.clone();
+        let (mut needed, mut sleeping) = (None, None);
+        loop {
+            if !body.has_remaining() {
+                return Err(NotSleepingPlayers("no end tag"));
+            }
+            match body.get_u8() {
+                0 => break,
+                3 => {}
+                _ => return Err(NotSleepingPlayers("a tag that is not an int")),
+            }
+            let len = valentine::bedrock::codec::VarUInt::decode(&mut body, ())
+                .map_err(|_| NotSleepingPlayers("a bad name length"))?
+                .0 as usize;
+            if body.remaining() < len {
+                return Err(NotSleepingPlayers("a cut name"));
+            }
+            let name = body.split_to(len);
+            let value = valentine::bedrock::codec::ZigZag32::decode(&mut body, ())
+                .map_err(|_| NotSleepingPlayers("a bad value"))?
+                .0;
+            match &name[..] {
+                b"overworldPlayerCount" => needed = Some(value),
+                b"sleepingPlayerCount" => sleeping = Some(value),
+                _ => {}
+            }
+        }
+        match (needed, sleeping) {
+            (Some(needed), Some(sleeping)) => Ok(Self { needed, sleeping }),
+            _ => Err(NotSleepingPlayers("a count is missing")),
+        }
+    }
+}
+
 /// The sleeping-player event: how many players must sleep for the night to
 /// pass (every Overworld player while `playersSleepingPercentage` is 100;
 /// `player_life::sleep::sleepers_needed`) and how many sleep. `ableToSleep` is 1 in every BDS capture, day or night.
-pub fn sleeping_players(needed: i32, sleeping_players: i32) -> LevelEventGenericPacket {
-    let mut body = BytesMut::new();
-    // Network NBT compound body: int tags in name order, then TAG_End.
-    for (name, value) in [
-        ("ableToSleep", 1),
-        ("overworldPlayerCount", needed),
-        ("sleepingPlayerCount", sleeping_players),
-    ] {
-        body.put_u8(3);
-        valentine::bedrock::codec::VarUInt(name.len() as u32)
-            .encode(&mut body)
-            .expect("writing to a buffer cannot fail");
-        body.put_slice(name.as_bytes());
-        valentine::bedrock::codec::ZigZag32(value)
-            .encode(&mut body)
-            .expect("writing to a buffer cannot fail");
-    }
-    body.put_u8(0);
-    LevelEventGenericPacket {
-        event_id: LEVEL_EVENT_SLEEPING_PLAYERS,
-        __ctd__: NbtCompoundBody(Bytes::from(body)),
+pub fn sleeping_players(needed: i32, sleeping: i32) -> LevelEventGenericPacket {
+    SleepingPlayers { needed, sleeping }.into()
+}
+
+impl From<SleepingPlayers> for LevelEventGenericPacket {
+    fn from(SleepingPlayers { needed, sleeping }: SleepingPlayers) -> Self {
+        let mut body = BytesMut::new();
+        // Network NBT compound body: int tags in name order, then TAG_End.
+        for (name, value) in [
+            ("ableToSleep", 1),
+            ("overworldPlayerCount", needed),
+            ("sleepingPlayerCount", sleeping),
+        ] {
+            body.put_u8(3);
+            valentine::bedrock::codec::VarUInt(name.len() as u32)
+                .encode(&mut body)
+                .expect("writing to a buffer cannot fail");
+            body.put_slice(name.as_bytes());
+            valentine::bedrock::codec::ZigZag32(value)
+                .encode(&mut body)
+                .expect("writing to a buffer cannot fail");
+        }
+        body.put_u8(0);
+        LevelEventGenericPacket {
+            event_id: LEVEL_EVENT_SLEEPING_PLAYERS,
+            __ctd__: NbtCompoundBody(Bytes::from(body)),
+        }
     }
 }
 
@@ -197,108 +375,10 @@ pub fn build_platform(device_os: i32) -> EnumsBuildPlatform {
         .expect("every i32 decodes to a build platform")
 }
 
-fn base64(value: &str) -> Vec<u8> {
-    // The login validator has already checked every image and JSON field.
-    STANDARD.decode(value).unwrap_or_default()
-}
+mod skin;
+pub use skin::skin;
 
-fn image(data: &str, width: u32, height: u32) -> SkinImage {
-    SkinImage {
-        width,
-        height,
-        image_bytes: base64(data),
-    }
-}
-
-/// `#rrggbb` as an RGB integer without alpha, as BDS echoes `SkinColor`.
-/// [INFERENCE] A malformed colour (the login validator does not check it) is 0.
-fn skin_colour(value: &str) -> i32 {
-    value
-        .strip_prefix('#')
-        .and_then(|hex| i32::from_str_radix(hex, 16).ok())
-        .unwrap_or(0)
-}
-
-/// The serialized skin BDS forwards for a login. Measured for a plain custom
-/// skin (`crates/bds-extractor/captures/1.26.51/member/join/00012-*`): ids,
-/// images, resource patch and colour are echoed; an empty geometry becomes
-/// `null` followed by a newline and an empty geometry engine version
-/// `0.0.0`; the trusted flag is the string `false`. Persona pieces and tint
-/// colours are not forwarded yet.
-pub fn skin(client: &ClientData) -> SerializedSkinRef {
-    let geometry = String::from_utf8(base64(&client.skin_geometry)).unwrap_or_default();
-    SerializedSkinRef {
-        id: client.skin_id.as_str().into(),
-        play_fab_id: client.playfab_id.as_str().into(),
-        resource_patch: String::from_utf8(base64(&client.skin_resource_patch))
-            .unwrap_or_default()
-            .into(),
-        image_data: image(
-            &client.skin_data,
-            client.skin_image_width,
-            client.skin_image_height,
-        ),
-        animated_image_data: client
-            .animated_image_data
-            .iter()
-            .map(|animation| AnimatedImageData {
-                skin_image: image(
-                    &animation.image,
-                    animation.image_width,
-                    animation.image_height,
-                ),
-                animated_texture_type: match animation.animation_type {
-                    1 => EnumspersonaAnimatedTextureType::Face,
-                    2 => EnumspersonaAnimatedTextureType::Body32X32,
-                    3 => EnumspersonaAnimatedTextureType::Body128X128,
-                    _ => EnumspersonaAnimatedTextureType::None,
-                },
-                frames: animation.frames as f32,
-                animation_expression: match animation.animation_expression {
-                    1 => EnumspersonaAnimationExpression::Blinking,
-                    _ => EnumspersonaAnimationExpression::Linear,
-                },
-            })
-            .collect(),
-        cape_image_data: image(
-            &client.cape_data,
-            client.cape_image_width,
-            client.cape_image_height,
-        ),
-        // [INFERENCE] A non-empty geometry is forwarded as the client sent it.
-        geometry_data: if geometry.is_empty() {
-            "null\n".into()
-        } else {
-            geometry.into()
-        },
-        geometry_data_min_engine_version: if client.skin_geometry_version.is_empty() {
-            "0.0.0".into()
-        } else {
-            client.skin_geometry_version.as_str().into()
-        },
-        animation_data: client.skin_animation_data.as_str().into(),
-        cape_id: client.cape_id.as_str().into(),
-        // [INFERENCE] Skin id then cape id; measured only without a cape.
-        full_id: format!("{}{}", client.skin_id, client.cape_id).into(),
-        arm_size: if client.arm_size == "slim" {
-            EnumsSharedTypespersonaArmSizeType::Slim
-        } else {
-            EnumsSharedTypespersonaArmSizeType::Wide
-        },
-        skin_color: MceColor {
-            color: skin_colour(&client.skin_colour),
-        },
-        persona_pieces: Vec::new(),
-        piece_tint_colors: Vec::new(),
-        is_premium: client.premium_skin,
-        is_persona: client.persona_skin,
-        is_persona_cape_on_classic_skin: client.cape_on_classic_skin,
-        is_primary_user: false,
-        overrides_player_appearance: client.override_skin,
-        trusted_skin_flag: "false".into(),
-        profile_hash: client.profile_hash.as_str().into(),
-    }
-}
-
+#[cfg(test)]
+mod probe_tests;
 #[cfg(test)]
 mod tests;

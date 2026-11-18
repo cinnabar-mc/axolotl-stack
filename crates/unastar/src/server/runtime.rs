@@ -86,13 +86,30 @@ impl UnastarServer {
         let world_db_path = std::path::PathBuf::from("worlds")
             .join("default")
             .join("db");
-        let provider =
+        let (provider, level_records) =
             open_world_provider(&world_db_path, &config.server_config().world).map_err(|e| {
                 format!(
                     "Failed to open world storage at {}: {e}",
                     world_db_path.display()
                 )
             })?;
+        // The world's level.dat and level records (clock, game rules, spawn,
+        // scoreboard, ...). Data that cannot be read stops the start rather
+        // than being replaced.
+        let new_world = crate::world::level_data::new_world(&config.server_config());
+        let level = crate::world::level_data::open(
+            crate::storage::level::LevelFiles::new(
+                std::path::PathBuf::from("worlds").join("default"),
+            ),
+            level_records,
+            &new_world,
+        )
+        .await
+        .map_err(|e| format!("cannot load the world's level data: {e}"))?;
+        level
+            .apply(server.ecs.world_mut())
+            .map_err(|e| format!("cannot load the world's level data: {e}"))?;
+        info!("Loaded level data");
         server
             .ecs
             .world_mut()
@@ -193,8 +210,15 @@ impl UnastarServer {
         let local_addr = listener.local_addr();
         info!("Listening on {:?}", local_addr);
 
-        // Where dead players respawn: the configured or generated world
-        // spawn (no player's previous position).
+        // Where dead players respawn: the world spawn the level data holds,
+        // else the configured or generated one (no player's previous
+        // position).
+        let level_spawn = self
+            .server
+            .ecs
+            .world()
+            .get_resource::<crate::world::level_data::LevelSpawn>()
+            .and_then(|spawn| spawn.0);
         let world_spawn = {
             let template = self
                 .server
@@ -203,12 +227,13 @@ impl UnastarServer {
                 .resource::<crate::server::game::types::ServerWorldTemplate>()
                 .0
                 .clone();
-            crate::server::resolve_spawn_location(
+            crate::server::connect::resolve_spawn_in_world(
                 &self.config,
                 None,
                 &template,
                 &self.player_data_store,
                 None,
+                level_spawn,
             )
             .await
         };
@@ -268,6 +293,12 @@ impl UnastarServer {
                     .ecs
                     .world()
                     .resource::<crate::world::rules::StartGameWorldState>()
+                    .clone(),
+                roster: self
+                    .server
+                    .ecs
+                    .world()
+                    .resource::<crate::server::game::roster::OnlineRoster>()
                     .clone(),
                 key: self.server_key.clone(),
                 config: self.config.clone(),
@@ -426,9 +457,14 @@ impl UnastarServer {
         );
         if !result.is_clean() {
             return Err(format!(
-                "shutdown lost data: {} player saves and {} chunk saves failed{}",
+                "shutdown lost data: {} player saves and {} chunk saves failed{}{}",
                 result.players_failed,
                 result.chunks_failed,
+                if result.level_saved {
+                    ""
+                } else {
+                    ", the level data was not saved"
+                },
                 if result.closed {
                     ""
                 } else {
@@ -443,15 +479,21 @@ impl UnastarServer {
 }
 
 /// Open the world provider `world.storage_provider` selects at `path`.
+/// The world database: it serves the chunks and the level records.
+type WorldStores = (
+    Arc<dyn crate::storage::WorldProvider>,
+    Arc<dyn crate::storage::level::LevelRecordStore>,
+);
+
 fn open_world_provider(
     path: &std::path::Path,
     world: &crate::world::WorldConfig,
-) -> crate::storage::StorageResult<Arc<dyn crate::storage::WorldProvider>> {
+) -> crate::storage::StorageResult<WorldStores> {
     match world.storage_provider {
         crate::world::StorageProvider::LevelDb => {
-            let provider = crate::storage::LevelDBWorldProvider::open(path)?;
+            let provider = Arc::new(crate::storage::LevelDBWorldProvider::open(path)?);
             info!(path = %path.display(), "Opened world LevelDB");
-            Ok(Arc::new(provider))
+            Ok((provider.clone(), provider))
         }
         crate::world::StorageProvider::BlazeDb => {
             let cache_capacity = world.blazedb_cache_chunks;
@@ -461,7 +503,7 @@ fn open_world_provider(
             };
             let provider = crate::storage::BlazeDBProvider::open(path, Some(blaze_config))?;
             info!(path = %path.display(), cache_capacity, "Opened world BlazeDB");
-            Ok(provider)
+            Ok((provider.clone(), provider))
         }
     }
 }
@@ -585,6 +627,13 @@ fn spawn_or_reject(
         Err(error) => error,
     };
     warn!(session_id, %error, "Rejecting player with invalid saved data");
+    // The refused player no longer counts as online; the later
+    // `Disconnected` finds the place already given back.
+    server
+        .ecs
+        .world()
+        .resource::<crate::server::game::roster::OnlineRoster>()
+        .leave(session_id);
     let _ = reject_tx.try_send(McpePacket::from(DisconnectPacket {
         reason: EnumsConnectionDisconnectFailReason::Disconnected,
         messages: DisconnectPacketMessagesUnion::DisconnectPacketMessages(
@@ -600,6 +649,7 @@ fn spawn_or_reject(
 struct AcceptLoopState {
     template: Arc<jolyne::WorldTemplate>,
     world_state: crate::world::rules::StartGameWorldState,
+    roster: crate::server::game::roster::OnlineRoster,
     key: SecretKey,
     config: Arc<UnastarConfig>,
     player_data_store: Arc<PlayerDataStore>,
@@ -616,6 +666,7 @@ fn spawn_accept_loop(mut listener: BedrockListener<RaknetListener>, state: Accep
         let AcceptLoopState {
             template,
             world_state,
+            roster,
             key,
             config,
             player_data_store,
@@ -645,6 +696,7 @@ fn spawn_accept_loop(mut listener: BedrockListener<RaknetListener>, state: Accep
 
                     let template = template.clone();
                     let world_state = world_state.clone();
+                    let roster = roster.clone();
                     let key = key.clone();
                     let config = config.clone();
                     let player_data_store = player_data_store.clone();
@@ -660,6 +712,7 @@ fn spawn_accept_loop(mut listener: BedrockListener<RaknetListener>, state: Accep
                             crate::server::connect::JoinWorld {
                                 template: &template,
                                 state: &world_state,
+                                roster: &roster,
                             },
                             &key,
                             &config,
@@ -670,13 +723,14 @@ fn spawn_accept_loop(mut listener: BedrockListener<RaknetListener>, state: Accep
                         )
                         .await
                         {
-                            Ok((
-                                mut play_stream,
+                            Ok(crate::server::connect::AcceptedJoin {
+                                play: mut play_stream,
                                 identity,
-                                initial_position,
+                                position: initial_position,
                                 saved_data,
                                 client_data,
-                            )) => {
+                                reservation,
+                            }) => {
                                 let display_name = identity.display_name().to_string();
 
                                 info!(%addr, name = %display_name, "Player joined");
@@ -723,6 +777,9 @@ fn spawn_accept_loop(mut listener: BedrockListener<RaknetListener>, state: Accep
                                 {
                                     return; // Server shutting down
                                 }
+                                // The game loop frees the place when the
+                                // session's Disconnected arrives.
+                                reservation.keep();
 
                                 run_network_loop(
                                     play_stream,
@@ -831,7 +888,15 @@ mod tests {
                 };
 
                 let (data, mut rx) = join(1, "minecraft:not_a_real_item");
+                // The connection task reserved the place before StartGame.
+                let roster = server
+                    .ecs
+                    .world()
+                    .resource::<crate::server::game::roster::OnlineRoster>()
+                    .clone();
+                roster.reserve(1).keep();
                 assert!(spawn_or_reject(&mut server, None, data).is_none());
+                assert!(roster.is_empty(), "a refused player no longer counts");
                 assert!(
                     server
                         .ecs
