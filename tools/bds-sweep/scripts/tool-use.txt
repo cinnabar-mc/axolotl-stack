@@ -1,0 +1,4721 @@
+# Tools used on blocks on BDS 1.26.51; printed by tools/bds-sweep/tool_use_script.py (see there).
+# The player (feet (0.5,-60,0.5), facing east) clicks the block at (2,-60,0).
+20 /gamerule sendcommandfeedback false
+21 /gamerule domobspawning false
+22 /gamerule dodaylightcycle false
+23 /gamerule randomtickspeed 0
+24 /gamerule dofiretick false
+25 /time set 6000
+26 /fill -4 -61 -4 4 -61 4 stone
+27 /fill -4 -60 -4 4 -55 4 air
+28 /gamemode survival @s
+29 /clear @s
+30 /tp @s 0.5 -60 0.5 -90 0
+41 /fill 1 -60 -1 3 -56 1 air
+43 /kill @e[type=item]
+45 /clear @s
+46 /gamemode survival @s
+48 /replaceitem entity @s slot.hotbar 0 iron_hoe
+51 use
+56 /setblock 2 -60 0 grass_block
+58 /say tooluse case hoe_grass_block
+61 use-on 2 -60 0 1
+73 /fill 1 -60 -1 3 -56 1 air
+75 /kill @e[type=item]
+77 /clear @s
+78 /gamemode survival @s
+80 /replaceitem entity @s slot.hotbar 0 iron_hoe
+83 use
+88 /setblock 2 -60 0 dirt
+90 /say tooluse case hoe_dirt
+93 use-on 2 -60 0 1
+105 /fill 1 -60 -1 3 -56 1 air
+107 /kill @e[type=item]
+109 /clear @s
+110 /gamemode survival @s
+112 /replaceitem entity @s slot.hotbar 0 iron_hoe
+115 use
+120 /setblock 2 -60 0 coarse_dirt
+122 /say tooluse case hoe_coarse_dirt
+125 use-on 2 -60 0 1
+137 /fill 1 -60 -1 3 -56 1 air
+139 /kill @e[type=item]
+141 /clear @s
+142 /gamemode survival @s
+144 /replaceitem entity @s slot.hotbar 0 iron_hoe
+147 use
+152 /setblock 2 -60 0 dirt_with_roots
+154 /say tooluse case hoe_dirt_with_roots
+157 use-on 2 -60 0 1
+169 /fill 1 -60 -1 3 -56 1 air
+171 /kill @e[type=item]
+173 /clear @s
+174 /gamemode survival @s
+176 /replaceitem entity @s slot.hotbar 0 iron_hoe
+179 use
+184 /setblock 2 -60 0 grass_path
+186 /say tooluse case hoe_grass_path
+189 use-on 2 -60 0 1
+201 /fill 1 -60 -1 3 -56 1 air
+203 /kill @e[type=item]
+205 /clear @s
+206 /gamemode survival @s
+208 /replaceitem entity @s slot.hotbar 0 iron_hoe
+211 use
+216 /setblock 2 -60 0 podzol
+218 /say tooluse case hoe_podzol
+221 use-on 2 -60 0 1
+233 /fill 1 -60 -1 3 -56 1 air
+235 /kill @e[type=item]
+237 /clear @s
+238 /gamemode survival @s
+240 /replaceitem entity @s slot.hotbar 0 iron_hoe
+243 use
+248 /setblock 2 -60 0 mycelium
+250 /say tooluse case hoe_mycelium
+253 use-on 2 -60 0 1
+265 /fill 1 -60 -1 3 -56 1 air
+267 /kill @e[type=item]
+269 /clear @s
+270 /gamemode survival @s
+272 /replaceitem entity @s slot.hotbar 0 iron_hoe
+275 use
+280 /setblock 2 -60 0 farmland
+282 /say tooluse case hoe_farmland
+285 use-on 2 -60 0 1
+297 /fill 1 -60 -1 3 -56 1 air
+299 /kill @e[type=item]
+301 /clear @s
+302 /gamemode survival @s
+304 /replaceitem entity @s slot.hotbar 0 iron_hoe
+307 use
+312 /setblock 2 -60 0 rooted_dirt
+314 /say tooluse case hoe_rooted_dirt
+317 use-on 2 -60 0 1
+329 /fill 1 -60 -1 3 -56 1 air
+331 /kill @e[type=item]
+333 /clear @s
+334 /gamemode survival @s
+336 /replaceitem entity @s slot.hotbar 0 iron_hoe
+339 use
+344 /setblock 2 -60 0 mud
+346 /say tooluse case hoe_mud
+349 use-on 2 -60 0 1
+361 /fill 1 -60 -1 3 -56 1 air
+363 /kill @e[type=item]
+365 /clear @s
+366 /gamemode survival @s
+368 /replaceitem entity @s slot.hotbar 0 iron_hoe
+371 use
+376 /setblock 2 -60 0 snow
+378 /say tooluse case hoe_snow
+381 use-on 2 -60 0 1
+393 /fill 1 -60 -1 3 -56 1 air
+395 /kill @e[type=item]
+397 /clear @s
+398 /gamemode survival @s
+400 /replaceitem entity @s slot.hotbar 0 iron_hoe
+403 use
+408 /setblock 2 -60 0 dirt
+410 /say tooluse case hoe_dirt_side
+413 use-on 2 -60 0 4
+425 /fill 1 -60 -1 3 -56 1 air
+427 /kill @e[type=item]
+429 /clear @s
+430 /gamemode survival @s
+432 /replaceitem entity @s slot.hotbar 0 iron_hoe
+435 use
+440 /setblock 2 -60 0 dirt
+442 /setblock 2 -59 0 stone
+444 /say tooluse case hoe_dirt_covered
+447 use-on 2 -60 0 1
+459 /fill 1 -60 -1 3 -56 1 air
+461 /kill @e[type=item]
+463 /clear @s
+464 /gamemode survival @s
+466 /replaceitem entity @s slot.hotbar 0 iron_hoe
+469 use
+474 /setblock 2 -60 0 dirt
+476 /setblock 2 -59 0 short_grass
+478 /say tooluse case hoe_dirt_under_grass
+481 use-on 2 -60 0 1
+493 /fill 1 -60 -1 3 -56 1 air
+495 /kill @e[type=item]
+497 /clear @s
+498 /gamemode survival @s
+500 /replaceitem entity @s slot.hotbar 0 iron_hoe
+503 use
+508 /setblock 2 -58 0 dirt
+510 /say tooluse case hoe_dirt_below
+513 use-on 2 -58 0 0
+525 /fill 1 -60 -1 3 -56 1 air
+527 /kill @e[type=item]
+529 /clear @s
+530 /gamemode creative @s
+532 /replaceitem entity @s slot.hotbar 0 iron_hoe
+535 use
+540 /setblock 2 -60 0 dirt
+542 /say tooluse case hoe_dirt_creative
+545 use-on 2 -60 0 1
+557 /fill 1 -60 -1 3 -56 1 air
+559 /kill @e[type=item]
+561 /clear @s
+562 /gamemode survival @s
+564 /replaceitem entity @s slot.hotbar 0 iron_shovel
+567 use
+572 /setblock 2 -60 0 grass_block
+574 /say tooluse case shovel_grass_block
+577 use-on 2 -60 0 1
+589 /fill 1 -60 -1 3 -56 1 air
+591 /kill @e[type=item]
+593 /clear @s
+594 /gamemode survival @s
+596 /replaceitem entity @s slot.hotbar 0 iron_shovel
+599 use
+604 /setblock 2 -60 0 dirt
+606 /say tooluse case shovel_dirt
+609 use-on 2 -60 0 1
+621 /fill 1 -60 -1 3 -56 1 air
+623 /kill @e[type=item]
+625 /clear @s
+626 /gamemode survival @s
+628 /replaceitem entity @s slot.hotbar 0 iron_shovel
+631 use
+636 /setblock 2 -60 0 coarse_dirt
+638 /say tooluse case shovel_coarse_dirt
+641 use-on 2 -60 0 1
+653 /fill 1 -60 -1 3 -56 1 air
+655 /kill @e[type=item]
+657 /clear @s
+658 /gamemode survival @s
+660 /replaceitem entity @s slot.hotbar 0 iron_shovel
+663 use
+668 /setblock 2 -60 0 dirt_with_roots
+670 /say tooluse case shovel_dirt_with_roots
+673 use-on 2 -60 0 1
+685 /fill 1 -60 -1 3 -56 1 air
+687 /kill @e[type=item]
+689 /clear @s
+690 /gamemode survival @s
+692 /replaceitem entity @s slot.hotbar 0 iron_shovel
+695 use
+700 /setblock 2 -60 0 podzol
+702 /say tooluse case shovel_podzol
+705 use-on 2 -60 0 1
+717 /fill 1 -60 -1 3 -56 1 air
+719 /kill @e[type=item]
+721 /clear @s
+722 /gamemode survival @s
+724 /replaceitem entity @s slot.hotbar 0 iron_shovel
+727 use
+732 /setblock 2 -60 0 mycelium
+734 /say tooluse case shovel_mycelium
+737 use-on 2 -60 0 1
+749 /fill 1 -60 -1 3 -56 1 air
+751 /kill @e[type=item]
+753 /clear @s
+754 /gamemode survival @s
+756 /replaceitem entity @s slot.hotbar 0 iron_shovel
+759 use
+764 /setblock 2 -60 0 farmland
+766 /say tooluse case shovel_farmland
+769 use-on 2 -60 0 1
+781 /fill 1 -60 -1 3 -56 1 air
+783 /kill @e[type=item]
+785 /clear @s
+786 /gamemode survival @s
+788 /replaceitem entity @s slot.hotbar 0 iron_shovel
+791 use
+796 /setblock 2 -60 0 grass_path
+798 /say tooluse case shovel_grass_path
+801 use-on 2 -60 0 1
+813 /fill 1 -60 -1 3 -56 1 air
+815 /kill @e[type=item]
+817 /clear @s
+818 /gamemode survival @s
+820 /replaceitem entity @s slot.hotbar 0 iron_shovel
+823 use
+828 /setblock 2 -60 0 mud
+830 /say tooluse case shovel_mud
+833 use-on 2 -60 0 1
+845 /fill 1 -60 -1 3 -56 1 air
+847 /kill @e[type=item]
+849 /clear @s
+850 /gamemode survival @s
+852 /replaceitem entity @s slot.hotbar 0 iron_shovel
+855 use
+860 /setblock 2 -60 0 snow_layer
+862 /say tooluse case shovel_snow_layer
+865 use-on 2 -60 0 1
+877 /fill 1 -60 -1 3 -56 1 air
+879 /kill @e[type=item]
+881 /clear @s
+882 /gamemode survival @s
+884 /replaceitem entity @s slot.hotbar 0 iron_shovel
+887 use
+892 /setblock 2 -60 0 campfire
+894 /say tooluse case shovel_campfire
+897 use-on 2 -60 0 1
+909 /fill 1 -60 -1 3 -56 1 air
+911 /kill @e[type=item]
+913 /clear @s
+914 /gamemode survival @s
+916 /replaceitem entity @s slot.hotbar 0 iron_shovel
+919 use
+924 /setblock 2 -60 0 soul_campfire
+926 /say tooluse case shovel_soul_campfire
+929 use-on 2 -60 0 1
+941 /fill 1 -60 -1 3 -56 1 air
+943 /kill @e[type=item]
+945 /clear @s
+946 /gamemode survival @s
+948 /replaceitem entity @s slot.hotbar 0 iron_shovel
+951 use
+956 /setblock 2 -60 0 campfire ["extinguished"=true]
+958 /say tooluse case shovel_campfire_out
+961 use-on 2 -60 0 1
+973 /fill 1 -60 -1 3 -56 1 air
+975 /kill @e[type=item]
+977 /clear @s
+978 /gamemode survival @s
+980 /replaceitem entity @s slot.hotbar 0 iron_shovel
+983 use
+988 /setblock 2 -60 0 dirt
+990 /say tooluse case shovel_dirt_side
+993 use-on 2 -60 0 4
+1005 /fill 1 -60 -1 3 -56 1 air
+1007 /kill @e[type=item]
+1009 /clear @s
+1010 /gamemode survival @s
+1012 /replaceitem entity @s slot.hotbar 0 iron_shovel
+1015 use
+1020 /setblock 2 -60 0 dirt
+1022 /setblock 2 -59 0 stone
+1024 /say tooluse case shovel_dirt_covered
+1027 use-on 2 -60 0 1
+1039 /fill 1 -60 -1 3 -56 1 air
+1041 /kill @e[type=item]
+1043 /clear @s
+1044 /gamemode survival @s
+1046 /replaceitem entity @s slot.hotbar 0 iron_shovel
+1049 use
+1054 /setblock 2 -60 0 dirt
+1056 /setblock 2 -59 0 short_grass
+1058 /say tooluse case shovel_dirt_under_grass
+1061 use-on 2 -60 0 1
+1073 /fill 1 -60 -1 3 -56 1 air
+1075 /kill @e[type=item]
+1077 /clear @s
+1078 /gamemode survival @s
+1080 /replaceitem entity @s slot.hotbar 0 iron_shovel
+1083 use
+1088 /setblock 2 -58 0 dirt
+1090 /say tooluse case shovel_dirt_below
+1093 use-on 2 -58 0 0
+1105 /fill 1 -60 -1 3 -56 1 air
+1107 /kill @e[type=item]
+1109 /clear @s
+1110 /gamemode creative @s
+1112 /replaceitem entity @s slot.hotbar 0 iron_shovel
+1115 use
+1120 /setblock 2 -60 0 grass_block
+1122 /say tooluse case shovel_grass_creative
+1125 use-on 2 -60 0 1
+1137 /fill 1 -60 -1 3 -56 1 air
+1139 /kill @e[type=item]
+1141 /clear @s
+1142 /gamemode survival @s
+1144 /replaceitem entity @s slot.hotbar 0 iron_axe
+1147 use
+1152 /setblock 2 -60 0 oak_log ["pillar_axis"="x"]
+1154 /say tooluse case axe_oak_log
+1157 use-on 2 -60 0 1
+1169 /fill 1 -60 -1 3 -56 1 air
+1171 /kill @e[type=item]
+1173 /clear @s
+1174 /gamemode survival @s
+1176 /replaceitem entity @s slot.hotbar 0 iron_axe
+1179 use
+1184 /setblock 2 -60 0 oak_wood
+1186 /say tooluse case axe_oak_wood
+1189 use-on 2 -60 0 1
+1201 /fill 1 -60 -1 3 -56 1 air
+1203 /kill @e[type=item]
+1205 /clear @s
+1206 /gamemode survival @s
+1208 /replaceitem entity @s slot.hotbar 0 iron_axe
+1211 use
+1216 /setblock 2 -60 0 stripped_oak_log
+1218 /say tooluse case axe_stripped_oak_log
+1221 use-on 2 -60 0 1
+1233 /fill 1 -60 -1 3 -56 1 air
+1235 /kill @e[type=item]
+1237 /clear @s
+1238 /gamemode survival @s
+1240 /replaceitem entity @s slot.hotbar 0 iron_axe
+1243 use
+1248 /setblock 2 -60 0 spruce_log
+1250 /say tooluse case axe_spruce_log
+1253 use-on 2 -60 0 1
+1265 /fill 1 -60 -1 3 -56 1 air
+1267 /kill @e[type=item]
+1269 /clear @s
+1270 /gamemode survival @s
+1272 /replaceitem entity @s slot.hotbar 0 iron_axe
+1275 use
+1280 /setblock 2 -60 0 crimson_stem
+1282 /say tooluse case axe_crimson_stem
+1285 use-on 2 -60 0 1
+1297 /fill 1 -60 -1 3 -56 1 air
+1299 /kill @e[type=item]
+1301 /clear @s
+1302 /gamemode survival @s
+1304 /replaceitem entity @s slot.hotbar 0 iron_axe
+1307 use
+1312 /setblock 2 -60 0 warped_hyphae
+1314 /say tooluse case axe_warped_hyphae
+1317 use-on 2 -60 0 1
+1329 /fill 1 -60 -1 3 -56 1 air
+1331 /kill @e[type=item]
+1333 /clear @s
+1334 /gamemode survival @s
+1336 /replaceitem entity @s slot.hotbar 0 iron_axe
+1339 use
+1344 /setblock 2 -60 0 bamboo_block
+1346 /say tooluse case axe_bamboo_block
+1349 use-on 2 -60 0 1
+1361 /fill 1 -60 -1 3 -56 1 air
+1363 /kill @e[type=item]
+1365 /clear @s
+1366 /gamemode survival @s
+1368 /replaceitem entity @s slot.hotbar 0 iron_axe
+1371 use
+1376 /setblock 2 -60 0 cherry_log
+1378 /say tooluse case axe_cherry_log
+1381 use-on 2 -60 0 1
+1393 /fill 1 -60 -1 3 -56 1 air
+1395 /kill @e[type=item]
+1397 /clear @s
+1398 /gamemode survival @s
+1400 /replaceitem entity @s slot.hotbar 0 iron_axe
+1403 use
+1408 /setblock 2 -60 0 mangrove_wood
+1410 /say tooluse case axe_mangrove_wood
+1413 use-on 2 -60 0 1
+1425 /fill 1 -60 -1 3 -56 1 air
+1427 /kill @e[type=item]
+1429 /clear @s
+1430 /gamemode survival @s
+1432 /replaceitem entity @s slot.hotbar 0 iron_axe
+1435 use
+1440 /setblock 2 -60 0 pale_oak_log
+1442 /say tooluse case axe_pale_oak_log
+1445 use-on 2 -60 0 1
+1457 /fill 1 -60 -1 3 -56 1 air
+1459 /kill @e[type=item]
+1461 /clear @s
+1462 /gamemode survival @s
+1464 /replaceitem entity @s slot.hotbar 0 iron_axe
+1467 use
+1472 /setblock 2 -60 0 copper_block
+1474 /say tooluse case axe_copper_block
+1477 use-on 2 -60 0 1
+1489 /fill 1 -60 -1 3 -56 1 air
+1491 /kill @e[type=item]
+1493 /clear @s
+1494 /gamemode survival @s
+1496 /replaceitem entity @s slot.hotbar 0 iron_axe
+1499 use
+1504 /setblock 2 -60 0 exposed_copper
+1506 /say tooluse case axe_exposed_copper
+1509 use-on 2 -60 0 1
+1521 /fill 1 -60 -1 3 -56 1 air
+1523 /kill @e[type=item]
+1525 /clear @s
+1526 /gamemode survival @s
+1528 /replaceitem entity @s slot.hotbar 0 iron_axe
+1531 use
+1536 /setblock 2 -60 0 weathered_cut_copper_stairs ["weirdo_direction"=2]
+1538 /say tooluse case axe_weathered_cut_copper_stairs
+1541 use-on 2 -60 0 1
+1553 /fill 1 -60 -1 3 -56 1 air
+1555 /kill @e[type=item]
+1557 /clear @s
+1558 /gamemode survival @s
+1560 /replaceitem entity @s slot.hotbar 0 iron_axe
+1563 use
+1568 /setblock 2 -60 0 oxidized_copper
+1570 /say tooluse case axe_oxidized_copper
+1573 use-on 2 -60 0 1
+1585 /fill 1 -60 -1 3 -56 1 air
+1587 /kill @e[type=item]
+1589 /clear @s
+1590 /gamemode survival @s
+1592 /replaceitem entity @s slot.hotbar 0 iron_axe
+1595 use
+1600 /setblock 2 -60 0 waxed_copper
+1602 /say tooluse case axe_waxed_copper
+1605 use-on 2 -60 0 1
+1617 /fill 1 -60 -1 3 -56 1 air
+1619 /kill @e[type=item]
+1621 /clear @s
+1622 /gamemode survival @s
+1624 /replaceitem entity @s slot.hotbar 0 iron_axe
+1627 use
+1632 /setblock 2 -60 0 waxed_oxidized_cut_copper_slab
+1634 /say tooluse case axe_waxed_oxidized_cut_copper_slab
+1637 use-on 2 -60 0 1
+1649 /fill 1 -60 -1 3 -56 1 air
+1651 /kill @e[type=item]
+1653 /clear @s
+1654 /gamemode survival @s
+1656 /replaceitem entity @s slot.hotbar 0 iron_axe
+1659 use
+1664 /setblock 2 -60 0 exposed_copper_bulb
+1666 /say tooluse case axe_exposed_copper_bulb
+1669 use-on 2 -60 0 1
+1681 /fill 1 -60 -1 3 -56 1 air
+1683 /kill @e[type=item]
+1685 /clear @s
+1686 /gamemode survival @s
+1688 /replaceitem entity @s slot.hotbar 0 iron_axe
+1691 use
+1696 /setblock 2 -60 0 weathered_copper_door
+1698 /say tooluse case axe_weathered_copper_door
+1701 use-on 2 -60 0 1
+1713 /fill 1 -60 -1 3 -56 1 air
+1715 /kill @e[type=item]
+1717 /clear @s
+1718 /gamemode survival @s
+1720 /replaceitem entity @s slot.hotbar 0 iron_axe
+1723 use
+1728 /setblock 2 -60 0 oxidized_copper_trapdoor
+1730 /say tooluse case axe_oxidized_copper_trapdoor
+1733 use-on 2 -60 0 1
+1745 /fill 1 -60 -1 3 -56 1 air
+1747 /kill @e[type=item]
+1749 /clear @s
+1750 /gamemode survival @s
+1752 /replaceitem entity @s slot.hotbar 0 iron_axe
+1755 use
+1760 /setblock 2 -60 0 exposed_copper_grate
+1762 /say tooluse case axe_exposed_copper_grate
+1765 use-on 2 -60 0 1
+1777 /fill 1 -60 -1 3 -56 1 air
+1779 /kill @e[type=item]
+1781 /clear @s
+1782 /gamemode survival @s
+1784 /replaceitem entity @s slot.hotbar 0 iron_axe
+1787 use
+1792 /setblock 2 -60 0 weathered_chiseled_copper
+1794 /say tooluse case axe_weathered_chiseled_copper
+1797 use-on 2 -60 0 1
+1809 /fill 1 -60 -1 3 -56 1 air
+1811 /kill @e[type=item]
+1813 /clear @s
+1814 /gamemode survival @s
+1816 /replaceitem entity @s slot.hotbar 0 iron_axe
+1819 use
+1824 /setblock 2 -60 0 exposed_lightning_rod
+1826 /say tooluse case axe_exposed_lightning_rod
+1829 use-on 2 -60 0 1
+1841 /fill 1 -60 -1 3 -56 1 air
+1843 /kill @e[type=item]
+1845 /clear @s
+1846 /gamemode survival @s
+1848 /replaceitem entity @s slot.hotbar 0 iron_axe
+1851 use
+1856 /setblock 2 -60 0 waxed_exposed_copper_chest
+1858 /say tooluse case axe_waxed_exposed_copper_chest
+1861 use-on 2 -60 0 1
+1873 /fill 1 -60 -1 3 -56 1 air
+1875 /kill @e[type=item]
+1877 /clear @s
+1878 /gamemode survival @s
+1880 /replaceitem entity @s slot.hotbar 0 iron_axe
+1883 use
+1888 /setblock 2 -60 0 oxidized_copper_lantern
+1890 /say tooluse case axe_oxidized_copper_lantern
+1893 use-on 2 -60 0 1
+1905 /fill 1 -60 -1 3 -56 1 air
+1907 /kill @e[type=item]
+1909 /clear @s
+1910 /gamemode survival @s
+1912 /replaceitem entity @s slot.hotbar 0 iron_axe
+1915 use
+1920 /setblock 2 -60 0 stone
+1922 /say tooluse case axe_stone
+1925 use-on 2 -60 0 1
+1937 /fill 1 -60 -1 3 -56 1 air
+1939 /kill @e[type=item]
+1941 /clear @s
+1942 /gamemode survival @s
+1944 /replaceitem entity @s slot.hotbar 0 iron_axe
+1947 use
+1952 /setblock 2 -60 0 pumpkin
+1954 /say tooluse case axe_pumpkin
+1957 use-on 2 -60 0 1
+1969 /fill 1 -60 -1 3 -56 1 air
+1971 /kill @e[type=item]
+1973 /clear @s
+1974 /gamemode survival @s
+1976 /replaceitem entity @s slot.hotbar 0 iron_axe
+1979 use
+1984 /setblock 2 -60 0 oak_log
+1986 /say tooluse case axe_oak_log_side
+1989 use-on 2 -60 0 4
+2001 /fill 1 -60 -1 3 -56 1 air
+2003 /kill @e[type=item]
+2005 /clear @s
+2006 /gamemode survival @s
+2008 /replaceitem entity @s slot.hotbar 0 iron_axe
+2011 use
+2016 /setblock 2 -58 0 oak_log
+2018 /say tooluse case axe_oak_log_below
+2021 use-on 2 -58 0 0
+2033 /fill 1 -60 -1 3 -56 1 air
+2035 /kill @e[type=item]
+2037 /clear @s
+2038 /gamemode creative @s
+2040 /replaceitem entity @s slot.hotbar 0 iron_axe
+2043 use
+2048 /setblock 2 -60 0 oak_log
+2050 /say tooluse case axe_oak_log_creative
+2053 use-on 2 -60 0 1
+2065 /fill 1 -60 -1 3 -56 1 air
+2067 /kill @e[type=item]
+2069 /clear @s
+2070 /gamemode creative @s
+2072 /replaceitem entity @s slot.hotbar 0 iron_axe
+2075 use
+2080 /setblock 2 -60 0 exposed_copper
+2082 /say tooluse case axe_exposed_copper_creative
+2085 use-on 2 -60 0 1
+2097 /fill 1 -60 -1 3 -56 1 air
+2099 /kill @e[type=item]
+2101 /clear @s
+2102 /gamemode survival @s
+2104 /replaceitem entity @s slot.hotbar 0 honeycomb 4
+2107 use
+2112 /setblock 2 -60 0 copper_block
+2114 /say tooluse case honeycomb_copper_block
+2117 use-on 2 -60 0 1
+2129 /fill 1 -60 -1 3 -56 1 air
+2131 /kill @e[type=item]
+2133 /clear @s
+2134 /gamemode survival @s
+2136 /replaceitem entity @s slot.hotbar 0 honeycomb 4
+2139 use
+2144 /setblock 2 -60 0 exposed_cut_copper_stairs
+2146 /say tooluse case honeycomb_exposed_cut_copper_stairs
+2149 use-on 2 -60 0 1
+2161 /fill 1 -60 -1 3 -56 1 air
+2163 /kill @e[type=item]
+2165 /clear @s
+2166 /gamemode survival @s
+2168 /replaceitem entity @s slot.hotbar 0 honeycomb 4
+2171 use
+2176 /setblock 2 -60 0 waxed_copper
+2178 /say tooluse case honeycomb_waxed_copper
+2181 use-on 2 -60 0 1
+2193 /fill 1 -60 -1 3 -56 1 air
+2195 /kill @e[type=item]
+2197 /clear @s
+2198 /gamemode survival @s
+2200 /replaceitem entity @s slot.hotbar 0 honeycomb 4
+2203 use
+2208 /setblock 2 -60 0 oxidized_copper_bulb
+2210 /say tooluse case honeycomb_oxidized_copper_bulb
+2213 use-on 2 -60 0 1
+2225 /fill 1 -60 -1 3 -56 1 air
+2227 /kill @e[type=item]
+2229 /clear @s
+2230 /gamemode survival @s
+2232 /replaceitem entity @s slot.hotbar 0 honeycomb 4
+2235 use
+2240 /setblock 2 -60 0 stone
+2242 /say tooluse case honeycomb_stone
+2245 use-on 2 -60 0 1
+2257 /fill 1 -60 -1 3 -56 1 air
+2259 /kill @e[type=item]
+2261 /clear @s
+2262 /gamemode creative @s
+2264 /replaceitem entity @s slot.hotbar 0 honeycomb 4
+2267 use
+2272 /setblock 2 -60 0 copper_block
+2274 /say tooluse case honeycomb_copper_creative
+2277 use-on 2 -60 0 1
+2289 /fill 1 -60 -1 3 -56 1 air
+2291 /kill @e[type=item]
+2293 /clear @s
+2294 /gamemode survival @s
+2296 /replaceitem entity @s slot.hotbar 0 shears
+2299 use
+2304 /setblock 2 -60 0 pumpkin
+2306 /say tooluse case shears_pumpkin_west
+2309 use-on 2 -60 0 4
+2321 /fill 1 -60 -1 3 -56 1 air
+2323 /kill @e[type=item]
+2325 /clear @s
+2326 /gamemode survival @s
+2328 /replaceitem entity @s slot.hotbar 0 shears
+2331 use
+2336 /setblock 2 -60 0 pumpkin
+2338 /say tooluse case shears_pumpkin_top
+2341 use-on 2 -60 0 1
+2353 /fill 1 -60 -1 3 -56 1 air
+2355 /kill @e[type=item]
+2357 /clear @s
+2358 /gamemode survival @s
+2360 /replaceitem entity @s slot.hotbar 0 shears
+2363 use
+2368 /setblock 2 -60 0 carved_pumpkin
+2370 /say tooluse case shears_carved_pumpkin
+2373 use-on 2 -60 0 4
+2385 /fill 1 -60 -1 3 -56 1 air
+2387 /gamemode survival @s
+2390 /kill @e[type=item]
+2392 /clear @s
+2393 /gamemode survival @s
+2395 /replaceitem entity @s slot.hotbar 0 netherite_axe
+2398 use
+2403 /say tooluse wear axe 0
+2406 /setblock 2 -60 0 oak_log
+2408 use-on 2 -60 0 1
+2410 /setblock 2 -60 0 oak_log
+2412 use-on 2 -60 0 1
+2414 /setblock 2 -60 0 oak_log
+2416 use-on 2 -60 0 1
+2418 /setblock 2 -60 0 oak_log
+2420 use-on 2 -60 0 1
+2422 /setblock 2 -60 0 oak_log
+2424 use-on 2 -60 0 1
+2426 /setblock 2 -60 0 oak_log
+2428 use-on 2 -60 0 1
+2430 /setblock 2 -60 0 oak_log
+2432 use-on 2 -60 0 1
+2434 /setblock 2 -60 0 oak_log
+2436 use-on 2 -60 0 1
+2438 /setblock 2 -60 0 oak_log
+2440 use-on 2 -60 0 1
+2442 /setblock 2 -60 0 oak_log
+2444 use-on 2 -60 0 1
+2446 /setblock 2 -60 0 oak_log
+2448 use-on 2 -60 0 1
+2450 /setblock 2 -60 0 oak_log
+2452 use-on 2 -60 0 1
+2454 /setblock 2 -60 0 oak_log
+2456 use-on 2 -60 0 1
+2458 /setblock 2 -60 0 oak_log
+2460 use-on 2 -60 0 1
+2462 /setblock 2 -60 0 oak_log
+2464 use-on 2 -60 0 1
+2466 /setblock 2 -60 0 oak_log
+2468 use-on 2 -60 0 1
+2470 /setblock 2 -60 0 oak_log
+2472 use-on 2 -60 0 1
+2474 /setblock 2 -60 0 oak_log
+2476 use-on 2 -60 0 1
+2478 /setblock 2 -60 0 oak_log
+2480 use-on 2 -60 0 1
+2482 /setblock 2 -60 0 oak_log
+2484 use-on 2 -60 0 1
+2486 /setblock 2 -60 0 oak_log
+2488 use-on 2 -60 0 1
+2490 /setblock 2 -60 0 oak_log
+2492 use-on 2 -60 0 1
+2494 /setblock 2 -60 0 oak_log
+2496 use-on 2 -60 0 1
+2498 /setblock 2 -60 0 oak_log
+2500 use-on 2 -60 0 1
+2502 /setblock 2 -60 0 oak_log
+2504 use-on 2 -60 0 1
+2506 /setblock 2 -60 0 oak_log
+2508 use-on 2 -60 0 1
+2510 /setblock 2 -60 0 oak_log
+2512 use-on 2 -60 0 1
+2514 /setblock 2 -60 0 oak_log
+2516 use-on 2 -60 0 1
+2518 /setblock 2 -60 0 oak_log
+2520 use-on 2 -60 0 1
+2522 /setblock 2 -60 0 oak_log
+2524 use-on 2 -60 0 1
+2526 /setblock 2 -60 0 air
+2531 /kill @e[type=item]
+2533 /clear @s
+2534 /gamemode survival @s
+2536 /replaceitem entity @s slot.hotbar 0 netherite_axe
+2539 /enchant @s unbreaking 3
+2542 use
+2547 /say tooluse wear axe 3
+2550 /setblock 2 -60 0 oak_log
+2552 use-on 2 -60 0 1
+2554 /setblock 2 -60 0 oak_log
+2556 use-on 2 -60 0 1
+2558 /setblock 2 -60 0 oak_log
+2560 use-on 2 -60 0 1
+2562 /setblock 2 -60 0 oak_log
+2564 use-on 2 -60 0 1
+2566 /setblock 2 -60 0 oak_log
+2568 use-on 2 -60 0 1
+2570 /setblock 2 -60 0 oak_log
+2572 use-on 2 -60 0 1
+2574 /setblock 2 -60 0 oak_log
+2576 use-on 2 -60 0 1
+2578 /setblock 2 -60 0 oak_log
+2580 use-on 2 -60 0 1
+2582 /setblock 2 -60 0 oak_log
+2584 use-on 2 -60 0 1
+2586 /setblock 2 -60 0 oak_log
+2588 use-on 2 -60 0 1
+2590 /setblock 2 -60 0 oak_log
+2592 use-on 2 -60 0 1
+2594 /setblock 2 -60 0 oak_log
+2596 use-on 2 -60 0 1
+2598 /setblock 2 -60 0 oak_log
+2600 use-on 2 -60 0 1
+2602 /setblock 2 -60 0 oak_log
+2604 use-on 2 -60 0 1
+2606 /setblock 2 -60 0 oak_log
+2608 use-on 2 -60 0 1
+2610 /setblock 2 -60 0 oak_log
+2612 use-on 2 -60 0 1
+2614 /setblock 2 -60 0 oak_log
+2616 use-on 2 -60 0 1
+2618 /setblock 2 -60 0 oak_log
+2620 use-on 2 -60 0 1
+2622 /setblock 2 -60 0 oak_log
+2624 use-on 2 -60 0 1
+2626 /setblock 2 -60 0 oak_log
+2628 use-on 2 -60 0 1
+2630 /setblock 2 -60 0 oak_log
+2632 use-on 2 -60 0 1
+2634 /setblock 2 -60 0 oak_log
+2636 use-on 2 -60 0 1
+2638 /setblock 2 -60 0 oak_log
+2640 use-on 2 -60 0 1
+2642 /setblock 2 -60 0 oak_log
+2644 use-on 2 -60 0 1
+2646 /setblock 2 -60 0 oak_log
+2648 use-on 2 -60 0 1
+2650 /setblock 2 -60 0 oak_log
+2652 use-on 2 -60 0 1
+2654 /setblock 2 -60 0 oak_log
+2656 use-on 2 -60 0 1
+2658 /setblock 2 -60 0 oak_log
+2660 use-on 2 -60 0 1
+2662 /setblock 2 -60 0 oak_log
+2664 use-on 2 -60 0 1
+2666 /setblock 2 -60 0 oak_log
+2668 use-on 2 -60 0 1
+2670 /setblock 2 -60 0 oak_log
+2672 use-on 2 -60 0 1
+2674 /setblock 2 -60 0 oak_log
+2676 use-on 2 -60 0 1
+2678 /setblock 2 -60 0 oak_log
+2680 use-on 2 -60 0 1
+2682 /setblock 2 -60 0 oak_log
+2684 use-on 2 -60 0 1
+2686 /setblock 2 -60 0 oak_log
+2688 use-on 2 -60 0 1
+2690 /setblock 2 -60 0 oak_log
+2692 use-on 2 -60 0 1
+2694 /setblock 2 -60 0 oak_log
+2696 use-on 2 -60 0 1
+2698 /setblock 2 -60 0 oak_log
+2700 use-on 2 -60 0 1
+2702 /setblock 2 -60 0 oak_log
+2704 use-on 2 -60 0 1
+2706 /setblock 2 -60 0 oak_log
+2708 use-on 2 -60 0 1
+2710 /setblock 2 -60 0 oak_log
+2712 use-on 2 -60 0 1
+2714 /setblock 2 -60 0 oak_log
+2716 use-on 2 -60 0 1
+2718 /setblock 2 -60 0 oak_log
+2720 use-on 2 -60 0 1
+2722 /setblock 2 -60 0 oak_log
+2724 use-on 2 -60 0 1
+2726 /setblock 2 -60 0 oak_log
+2728 use-on 2 -60 0 1
+2730 /setblock 2 -60 0 oak_log
+2732 use-on 2 -60 0 1
+2734 /setblock 2 -60 0 oak_log
+2736 use-on 2 -60 0 1
+2738 /setblock 2 -60 0 oak_log
+2740 use-on 2 -60 0 1
+2742 /setblock 2 -60 0 oak_log
+2744 use-on 2 -60 0 1
+2746 /setblock 2 -60 0 oak_log
+2748 use-on 2 -60 0 1
+2750 /setblock 2 -60 0 oak_log
+2752 use-on 2 -60 0 1
+2754 /setblock 2 -60 0 oak_log
+2756 use-on 2 -60 0 1
+2758 /setblock 2 -60 0 oak_log
+2760 use-on 2 -60 0 1
+2762 /setblock 2 -60 0 oak_log
+2764 use-on 2 -60 0 1
+2766 /setblock 2 -60 0 oak_log
+2768 use-on 2 -60 0 1
+2770 /setblock 2 -60 0 oak_log
+2772 use-on 2 -60 0 1
+2774 /setblock 2 -60 0 oak_log
+2776 use-on 2 -60 0 1
+2778 /setblock 2 -60 0 oak_log
+2780 use-on 2 -60 0 1
+2782 /setblock 2 -60 0 oak_log
+2784 use-on 2 -60 0 1
+2786 /setblock 2 -60 0 oak_log
+2788 use-on 2 -60 0 1
+2790 /setblock 2 -60 0 oak_log
+2792 use-on 2 -60 0 1
+2794 /setblock 2 -60 0 oak_log
+2796 use-on 2 -60 0 1
+2798 /setblock 2 -60 0 oak_log
+2800 use-on 2 -60 0 1
+2802 /setblock 2 -60 0 oak_log
+2804 use-on 2 -60 0 1
+2806 /setblock 2 -60 0 oak_log
+2808 use-on 2 -60 0 1
+2810 /setblock 2 -60 0 oak_log
+2812 use-on 2 -60 0 1
+2814 /setblock 2 -60 0 oak_log
+2816 use-on 2 -60 0 1
+2818 /setblock 2 -60 0 oak_log
+2820 use-on 2 -60 0 1
+2822 /setblock 2 -60 0 oak_log
+2824 use-on 2 -60 0 1
+2826 /setblock 2 -60 0 oak_log
+2828 use-on 2 -60 0 1
+2830 /setblock 2 -60 0 oak_log
+2832 use-on 2 -60 0 1
+2834 /setblock 2 -60 0 oak_log
+2836 use-on 2 -60 0 1
+2838 /setblock 2 -60 0 oak_log
+2840 use-on 2 -60 0 1
+2842 /setblock 2 -60 0 oak_log
+2844 use-on 2 -60 0 1
+2846 /setblock 2 -60 0 oak_log
+2848 use-on 2 -60 0 1
+2850 /setblock 2 -60 0 oak_log
+2852 use-on 2 -60 0 1
+2854 /setblock 2 -60 0 oak_log
+2856 use-on 2 -60 0 1
+2858 /setblock 2 -60 0 oak_log
+2860 use-on 2 -60 0 1
+2862 /setblock 2 -60 0 oak_log
+2864 use-on 2 -60 0 1
+2866 /setblock 2 -60 0 oak_log
+2868 use-on 2 -60 0 1
+2870 /setblock 2 -60 0 oak_log
+2872 use-on 2 -60 0 1
+2874 /setblock 2 -60 0 oak_log
+2876 use-on 2 -60 0 1
+2878 /setblock 2 -60 0 oak_log
+2880 use-on 2 -60 0 1
+2882 /setblock 2 -60 0 oak_log
+2884 use-on 2 -60 0 1
+2886 /setblock 2 -60 0 oak_log
+2888 use-on 2 -60 0 1
+2890 /setblock 2 -60 0 oak_log
+2892 use-on 2 -60 0 1
+2894 /setblock 2 -60 0 oak_log
+2896 use-on 2 -60 0 1
+2898 /setblock 2 -60 0 oak_log
+2900 use-on 2 -60 0 1
+2902 /setblock 2 -60 0 oak_log
+2904 use-on 2 -60 0 1
+2906 /setblock 2 -60 0 oak_log
+2908 use-on 2 -60 0 1
+2910 /setblock 2 -60 0 oak_log
+2912 use-on 2 -60 0 1
+2914 /setblock 2 -60 0 oak_log
+2916 use-on 2 -60 0 1
+2918 /setblock 2 -60 0 oak_log
+2920 use-on 2 -60 0 1
+2922 /setblock 2 -60 0 oak_log
+2924 use-on 2 -60 0 1
+2926 /setblock 2 -60 0 oak_log
+2928 use-on 2 -60 0 1
+2930 /setblock 2 -60 0 oak_log
+2932 use-on 2 -60 0 1
+2934 /setblock 2 -60 0 oak_log
+2936 use-on 2 -60 0 1
+2938 /setblock 2 -60 0 oak_log
+2940 use-on 2 -60 0 1
+2942 /setblock 2 -60 0 oak_log
+2944 use-on 2 -60 0 1
+2946 /setblock 2 -60 0 oak_log
+2948 use-on 2 -60 0 1
+2950 /setblock 2 -60 0 oak_log
+2952 use-on 2 -60 0 1
+2954 /setblock 2 -60 0 oak_log
+2956 use-on 2 -60 0 1
+2958 /setblock 2 -60 0 oak_log
+2960 use-on 2 -60 0 1
+2962 /setblock 2 -60 0 oak_log
+2964 use-on 2 -60 0 1
+2966 /setblock 2 -60 0 oak_log
+2968 use-on 2 -60 0 1
+2970 /setblock 2 -60 0 oak_log
+2972 use-on 2 -60 0 1
+2974 /setblock 2 -60 0 oak_log
+2976 use-on 2 -60 0 1
+2978 /setblock 2 -60 0 oak_log
+2980 use-on 2 -60 0 1
+2982 /setblock 2 -60 0 oak_log
+2984 use-on 2 -60 0 1
+2986 /setblock 2 -60 0 oak_log
+2988 use-on 2 -60 0 1
+2990 /setblock 2 -60 0 oak_log
+2992 use-on 2 -60 0 1
+2994 /setblock 2 -60 0 oak_log
+2996 use-on 2 -60 0 1
+2998 /setblock 2 -60 0 oak_log
+3000 use-on 2 -60 0 1
+3002 /setblock 2 -60 0 oak_log
+3004 use-on 2 -60 0 1
+3006 /setblock 2 -60 0 oak_log
+3008 use-on 2 -60 0 1
+3010 /setblock 2 -60 0 oak_log
+3012 use-on 2 -60 0 1
+3014 /setblock 2 -60 0 oak_log
+3016 use-on 2 -60 0 1
+3018 /setblock 2 -60 0 oak_log
+3020 use-on 2 -60 0 1
+3022 /setblock 2 -60 0 oak_log
+3024 use-on 2 -60 0 1
+3026 /setblock 2 -60 0 oak_log
+3028 use-on 2 -60 0 1
+3030 /setblock 2 -60 0 oak_log
+3032 use-on 2 -60 0 1
+3034 /setblock 2 -60 0 oak_log
+3036 use-on 2 -60 0 1
+3038 /setblock 2 -60 0 oak_log
+3040 use-on 2 -60 0 1
+3042 /setblock 2 -60 0 oak_log
+3044 use-on 2 -60 0 1
+3046 /setblock 2 -60 0 oak_log
+3048 use-on 2 -60 0 1
+3050 /setblock 2 -60 0 oak_log
+3052 use-on 2 -60 0 1
+3054 /setblock 2 -60 0 oak_log
+3056 use-on 2 -60 0 1
+3058 /setblock 2 -60 0 oak_log
+3060 use-on 2 -60 0 1
+3062 /setblock 2 -60 0 oak_log
+3064 use-on 2 -60 0 1
+3066 /setblock 2 -60 0 oak_log
+3068 use-on 2 -60 0 1
+3070 /setblock 2 -60 0 oak_log
+3072 use-on 2 -60 0 1
+3074 /setblock 2 -60 0 oak_log
+3076 use-on 2 -60 0 1
+3078 /setblock 2 -60 0 oak_log
+3080 use-on 2 -60 0 1
+3082 /setblock 2 -60 0 oak_log
+3084 use-on 2 -60 0 1
+3086 /setblock 2 -60 0 oak_log
+3088 use-on 2 -60 0 1
+3090 /setblock 2 -60 0 oak_log
+3092 use-on 2 -60 0 1
+3094 /setblock 2 -60 0 oak_log
+3096 use-on 2 -60 0 1
+3098 /setblock 2 -60 0 oak_log
+3100 use-on 2 -60 0 1
+3102 /setblock 2 -60 0 oak_log
+3104 use-on 2 -60 0 1
+3106 /setblock 2 -60 0 oak_log
+3108 use-on 2 -60 0 1
+3110 /setblock 2 -60 0 oak_log
+3112 use-on 2 -60 0 1
+3114 /setblock 2 -60 0 oak_log
+3116 use-on 2 -60 0 1
+3118 /setblock 2 -60 0 oak_log
+3120 use-on 2 -60 0 1
+3122 /setblock 2 -60 0 oak_log
+3124 use-on 2 -60 0 1
+3126 /setblock 2 -60 0 oak_log
+3128 use-on 2 -60 0 1
+3130 /setblock 2 -60 0 oak_log
+3132 use-on 2 -60 0 1
+3134 /setblock 2 -60 0 oak_log
+3136 use-on 2 -60 0 1
+3138 /setblock 2 -60 0 oak_log
+3140 use-on 2 -60 0 1
+3142 /setblock 2 -60 0 oak_log
+3144 use-on 2 -60 0 1
+3146 /setblock 2 -60 0 oak_log
+3148 use-on 2 -60 0 1
+3150 /setblock 2 -60 0 oak_log
+3152 use-on 2 -60 0 1
+3154 /setblock 2 -60 0 oak_log
+3156 use-on 2 -60 0 1
+3158 /setblock 2 -60 0 oak_log
+3160 use-on 2 -60 0 1
+3162 /setblock 2 -60 0 oak_log
+3164 use-on 2 -60 0 1
+3166 /setblock 2 -60 0 oak_log
+3168 use-on 2 -60 0 1
+3170 /setblock 2 -60 0 oak_log
+3172 use-on 2 -60 0 1
+3174 /setblock 2 -60 0 oak_log
+3176 use-on 2 -60 0 1
+3178 /setblock 2 -60 0 oak_log
+3180 use-on 2 -60 0 1
+3182 /setblock 2 -60 0 oak_log
+3184 use-on 2 -60 0 1
+3186 /setblock 2 -60 0 oak_log
+3188 use-on 2 -60 0 1
+3190 /setblock 2 -60 0 oak_log
+3192 use-on 2 -60 0 1
+3194 /setblock 2 -60 0 oak_log
+3196 use-on 2 -60 0 1
+3198 /setblock 2 -60 0 oak_log
+3200 use-on 2 -60 0 1
+3202 /setblock 2 -60 0 oak_log
+3204 use-on 2 -60 0 1
+3206 /setblock 2 -60 0 oak_log
+3208 use-on 2 -60 0 1
+3210 /setblock 2 -60 0 oak_log
+3212 use-on 2 -60 0 1
+3214 /setblock 2 -60 0 oak_log
+3216 use-on 2 -60 0 1
+3218 /setblock 2 -60 0 oak_log
+3220 use-on 2 -60 0 1
+3222 /setblock 2 -60 0 oak_log
+3224 use-on 2 -60 0 1
+3226 /setblock 2 -60 0 oak_log
+3228 use-on 2 -60 0 1
+3230 /setblock 2 -60 0 oak_log
+3232 use-on 2 -60 0 1
+3234 /setblock 2 -60 0 oak_log
+3236 use-on 2 -60 0 1
+3238 /setblock 2 -60 0 oak_log
+3240 use-on 2 -60 0 1
+3242 /setblock 2 -60 0 oak_log
+3244 use-on 2 -60 0 1
+3246 /setblock 2 -60 0 oak_log
+3248 use-on 2 -60 0 1
+3250 /setblock 2 -60 0 oak_log
+3252 use-on 2 -60 0 1
+3254 /setblock 2 -60 0 oak_log
+3256 use-on 2 -60 0 1
+3258 /setblock 2 -60 0 oak_log
+3260 use-on 2 -60 0 1
+3262 /setblock 2 -60 0 oak_log
+3264 use-on 2 -60 0 1
+3266 /setblock 2 -60 0 oak_log
+3268 use-on 2 -60 0 1
+3270 /setblock 2 -60 0 oak_log
+3272 use-on 2 -60 0 1
+3274 /setblock 2 -60 0 oak_log
+3276 use-on 2 -60 0 1
+3278 /setblock 2 -60 0 oak_log
+3280 use-on 2 -60 0 1
+3282 /setblock 2 -60 0 oak_log
+3284 use-on 2 -60 0 1
+3286 /setblock 2 -60 0 oak_log
+3288 use-on 2 -60 0 1
+3290 /setblock 2 -60 0 oak_log
+3292 use-on 2 -60 0 1
+3294 /setblock 2 -60 0 oak_log
+3296 use-on 2 -60 0 1
+3298 /setblock 2 -60 0 oak_log
+3300 use-on 2 -60 0 1
+3302 /setblock 2 -60 0 oak_log
+3304 use-on 2 -60 0 1
+3306 /setblock 2 -60 0 oak_log
+3308 use-on 2 -60 0 1
+3310 /setblock 2 -60 0 oak_log
+3312 use-on 2 -60 0 1
+3314 /setblock 2 -60 0 oak_log
+3316 use-on 2 -60 0 1
+3318 /setblock 2 -60 0 oak_log
+3320 use-on 2 -60 0 1
+3322 /setblock 2 -60 0 oak_log
+3324 use-on 2 -60 0 1
+3326 /setblock 2 -60 0 oak_log
+3328 use-on 2 -60 0 1
+3330 /setblock 2 -60 0 oak_log
+3332 use-on 2 -60 0 1
+3334 /setblock 2 -60 0 oak_log
+3336 use-on 2 -60 0 1
+3338 /setblock 2 -60 0 oak_log
+3340 use-on 2 -60 0 1
+3342 /setblock 2 -60 0 oak_log
+3344 use-on 2 -60 0 1
+3346 /setblock 2 -60 0 oak_log
+3348 use-on 2 -60 0 1
+3350 /setblock 2 -60 0 oak_log
+3352 use-on 2 -60 0 1
+3354 /setblock 2 -60 0 oak_log
+3356 use-on 2 -60 0 1
+3358 /setblock 2 -60 0 oak_log
+3360 use-on 2 -60 0 1
+3362 /setblock 2 -60 0 oak_log
+3364 use-on 2 -60 0 1
+3366 /setblock 2 -60 0 oak_log
+3368 use-on 2 -60 0 1
+3370 /setblock 2 -60 0 oak_log
+3372 use-on 2 -60 0 1
+3374 /setblock 2 -60 0 oak_log
+3376 use-on 2 -60 0 1
+3378 /setblock 2 -60 0 oak_log
+3380 use-on 2 -60 0 1
+3382 /setblock 2 -60 0 oak_log
+3384 use-on 2 -60 0 1
+3386 /setblock 2 -60 0 oak_log
+3388 use-on 2 -60 0 1
+3390 /setblock 2 -60 0 oak_log
+3392 use-on 2 -60 0 1
+3394 /setblock 2 -60 0 oak_log
+3396 use-on 2 -60 0 1
+3398 /setblock 2 -60 0 oak_log
+3400 use-on 2 -60 0 1
+3402 /setblock 2 -60 0 oak_log
+3404 use-on 2 -60 0 1
+3406 /setblock 2 -60 0 oak_log
+3408 use-on 2 -60 0 1
+3410 /setblock 2 -60 0 oak_log
+3412 use-on 2 -60 0 1
+3414 /setblock 2 -60 0 oak_log
+3416 use-on 2 -60 0 1
+3418 /setblock 2 -60 0 oak_log
+3420 use-on 2 -60 0 1
+3422 /setblock 2 -60 0 oak_log
+3424 use-on 2 -60 0 1
+3426 /setblock 2 -60 0 oak_log
+3428 use-on 2 -60 0 1
+3430 /setblock 2 -60 0 oak_log
+3432 use-on 2 -60 0 1
+3434 /setblock 2 -60 0 oak_log
+3436 use-on 2 -60 0 1
+3438 /setblock 2 -60 0 oak_log
+3440 use-on 2 -60 0 1
+3442 /setblock 2 -60 0 oak_log
+3444 use-on 2 -60 0 1
+3446 /setblock 2 -60 0 oak_log
+3448 use-on 2 -60 0 1
+3450 /setblock 2 -60 0 oak_log
+3452 use-on 2 -60 0 1
+3454 /setblock 2 -60 0 oak_log
+3456 use-on 2 -60 0 1
+3458 /setblock 2 -60 0 oak_log
+3460 use-on 2 -60 0 1
+3462 /setblock 2 -60 0 oak_log
+3464 use-on 2 -60 0 1
+3466 /setblock 2 -60 0 oak_log
+3468 use-on 2 -60 0 1
+3470 /setblock 2 -60 0 oak_log
+3472 use-on 2 -60 0 1
+3474 /setblock 2 -60 0 oak_log
+3476 use-on 2 -60 0 1
+3478 /setblock 2 -60 0 oak_log
+3480 use-on 2 -60 0 1
+3482 /setblock 2 -60 0 oak_log
+3484 use-on 2 -60 0 1
+3486 /setblock 2 -60 0 oak_log
+3488 use-on 2 -60 0 1
+3490 /setblock 2 -60 0 oak_log
+3492 use-on 2 -60 0 1
+3494 /setblock 2 -60 0 oak_log
+3496 use-on 2 -60 0 1
+3498 /setblock 2 -60 0 oak_log
+3500 use-on 2 -60 0 1
+3502 /setblock 2 -60 0 oak_log
+3504 use-on 2 -60 0 1
+3506 /setblock 2 -60 0 oak_log
+3508 use-on 2 -60 0 1
+3510 /setblock 2 -60 0 oak_log
+3512 use-on 2 -60 0 1
+3514 /setblock 2 -60 0 oak_log
+3516 use-on 2 -60 0 1
+3518 /setblock 2 -60 0 oak_log
+3520 use-on 2 -60 0 1
+3522 /setblock 2 -60 0 oak_log
+3524 use-on 2 -60 0 1
+3526 /setblock 2 -60 0 oak_log
+3528 use-on 2 -60 0 1
+3530 /setblock 2 -60 0 oak_log
+3532 use-on 2 -60 0 1
+3534 /setblock 2 -60 0 oak_log
+3536 use-on 2 -60 0 1
+3538 /setblock 2 -60 0 oak_log
+3540 use-on 2 -60 0 1
+3542 /setblock 2 -60 0 oak_log
+3544 use-on 2 -60 0 1
+3546 /setblock 2 -60 0 oak_log
+3548 use-on 2 -60 0 1
+3550 /setblock 2 -60 0 oak_log
+3552 use-on 2 -60 0 1
+3554 /setblock 2 -60 0 oak_log
+3556 use-on 2 -60 0 1
+3558 /setblock 2 -60 0 oak_log
+3560 use-on 2 -60 0 1
+3562 /setblock 2 -60 0 oak_log
+3564 use-on 2 -60 0 1
+3566 /setblock 2 -60 0 oak_log
+3568 use-on 2 -60 0 1
+3570 /setblock 2 -60 0 oak_log
+3572 use-on 2 -60 0 1
+3574 /setblock 2 -60 0 oak_log
+3576 use-on 2 -60 0 1
+3578 /setblock 2 -60 0 oak_log
+3580 use-on 2 -60 0 1
+3582 /setblock 2 -60 0 oak_log
+3584 use-on 2 -60 0 1
+3586 /setblock 2 -60 0 oak_log
+3588 use-on 2 -60 0 1
+3590 /setblock 2 -60 0 oak_log
+3592 use-on 2 -60 0 1
+3594 /setblock 2 -60 0 oak_log
+3596 use-on 2 -60 0 1
+3598 /setblock 2 -60 0 oak_log
+3600 use-on 2 -60 0 1
+3602 /setblock 2 -60 0 oak_log
+3604 use-on 2 -60 0 1
+3606 /setblock 2 -60 0 oak_log
+3608 use-on 2 -60 0 1
+3610 /setblock 2 -60 0 oak_log
+3612 use-on 2 -60 0 1
+3614 /setblock 2 -60 0 oak_log
+3616 use-on 2 -60 0 1
+3618 /setblock 2 -60 0 oak_log
+3620 use-on 2 -60 0 1
+3622 /setblock 2 -60 0 oak_log
+3624 use-on 2 -60 0 1
+3626 /setblock 2 -60 0 oak_log
+3628 use-on 2 -60 0 1
+3630 /setblock 2 -60 0 oak_log
+3632 use-on 2 -60 0 1
+3634 /setblock 2 -60 0 oak_log
+3636 use-on 2 -60 0 1
+3638 /setblock 2 -60 0 oak_log
+3640 use-on 2 -60 0 1
+3642 /setblock 2 -60 0 oak_log
+3644 use-on 2 -60 0 1
+3646 /setblock 2 -60 0 oak_log
+3648 use-on 2 -60 0 1
+3650 /setblock 2 -60 0 oak_log
+3652 use-on 2 -60 0 1
+3654 /setblock 2 -60 0 oak_log
+3656 use-on 2 -60 0 1
+3658 /setblock 2 -60 0 oak_log
+3660 use-on 2 -60 0 1
+3662 /setblock 2 -60 0 oak_log
+3664 use-on 2 -60 0 1
+3666 /setblock 2 -60 0 oak_log
+3668 use-on 2 -60 0 1
+3670 /setblock 2 -60 0 oak_log
+3672 use-on 2 -60 0 1
+3674 /setblock 2 -60 0 oak_log
+3676 use-on 2 -60 0 1
+3678 /setblock 2 -60 0 oak_log
+3680 use-on 2 -60 0 1
+3682 /setblock 2 -60 0 oak_log
+3684 use-on 2 -60 0 1
+3686 /setblock 2 -60 0 oak_log
+3688 use-on 2 -60 0 1
+3690 /setblock 2 -60 0 oak_log
+3692 use-on 2 -60 0 1
+3694 /setblock 2 -60 0 oak_log
+3696 use-on 2 -60 0 1
+3698 /setblock 2 -60 0 oak_log
+3700 use-on 2 -60 0 1
+3702 /setblock 2 -60 0 oak_log
+3704 use-on 2 -60 0 1
+3706 /setblock 2 -60 0 oak_log
+3708 use-on 2 -60 0 1
+3710 /setblock 2 -60 0 oak_log
+3712 use-on 2 -60 0 1
+3714 /setblock 2 -60 0 oak_log
+3716 use-on 2 -60 0 1
+3718 /setblock 2 -60 0 oak_log
+3720 use-on 2 -60 0 1
+3722 /setblock 2 -60 0 oak_log
+3724 use-on 2 -60 0 1
+3726 /setblock 2 -60 0 oak_log
+3728 use-on 2 -60 0 1
+3730 /setblock 2 -60 0 oak_log
+3732 use-on 2 -60 0 1
+3734 /setblock 2 -60 0 oak_log
+3736 use-on 2 -60 0 1
+3738 /setblock 2 -60 0 oak_log
+3740 use-on 2 -60 0 1
+3742 /setblock 2 -60 0 oak_log
+3744 use-on 2 -60 0 1
+3746 /setblock 2 -60 0 oak_log
+3748 use-on 2 -60 0 1
+3750 /setblock 2 -60 0 air
+3755 /kill @e[type=item]
+3757 /clear @s
+3758 /gamemode survival @s
+3760 /replaceitem entity @s slot.hotbar 0 netherite_hoe
+3763 use
+3768 /say tooluse wear hoe 0
+3771 /setblock 2 -60 0 dirt
+3773 use-on 2 -60 0 1
+3775 /setblock 2 -60 0 dirt
+3777 use-on 2 -60 0 1
+3779 /setblock 2 -60 0 dirt
+3781 use-on 2 -60 0 1
+3783 /setblock 2 -60 0 dirt
+3785 use-on 2 -60 0 1
+3787 /setblock 2 -60 0 dirt
+3789 use-on 2 -60 0 1
+3791 /setblock 2 -60 0 dirt
+3793 use-on 2 -60 0 1
+3795 /setblock 2 -60 0 dirt
+3797 use-on 2 -60 0 1
+3799 /setblock 2 -60 0 dirt
+3801 use-on 2 -60 0 1
+3803 /setblock 2 -60 0 dirt
+3805 use-on 2 -60 0 1
+3807 /setblock 2 -60 0 dirt
+3809 use-on 2 -60 0 1
+3811 /setblock 2 -60 0 dirt
+3813 use-on 2 -60 0 1
+3815 /setblock 2 -60 0 dirt
+3817 use-on 2 -60 0 1
+3819 /setblock 2 -60 0 dirt
+3821 use-on 2 -60 0 1
+3823 /setblock 2 -60 0 dirt
+3825 use-on 2 -60 0 1
+3827 /setblock 2 -60 0 dirt
+3829 use-on 2 -60 0 1
+3831 /setblock 2 -60 0 dirt
+3833 use-on 2 -60 0 1
+3835 /setblock 2 -60 0 dirt
+3837 use-on 2 -60 0 1
+3839 /setblock 2 -60 0 dirt
+3841 use-on 2 -60 0 1
+3843 /setblock 2 -60 0 dirt
+3845 use-on 2 -60 0 1
+3847 /setblock 2 -60 0 dirt
+3849 use-on 2 -60 0 1
+3851 /setblock 2 -60 0 dirt
+3853 use-on 2 -60 0 1
+3855 /setblock 2 -60 0 dirt
+3857 use-on 2 -60 0 1
+3859 /setblock 2 -60 0 dirt
+3861 use-on 2 -60 0 1
+3863 /setblock 2 -60 0 dirt
+3865 use-on 2 -60 0 1
+3867 /setblock 2 -60 0 dirt
+3869 use-on 2 -60 0 1
+3871 /setblock 2 -60 0 dirt
+3873 use-on 2 -60 0 1
+3875 /setblock 2 -60 0 dirt
+3877 use-on 2 -60 0 1
+3879 /setblock 2 -60 0 dirt
+3881 use-on 2 -60 0 1
+3883 /setblock 2 -60 0 dirt
+3885 use-on 2 -60 0 1
+3887 /setblock 2 -60 0 dirt
+3889 use-on 2 -60 0 1
+3891 /setblock 2 -60 0 air
+3896 /kill @e[type=item]
+3898 /clear @s
+3899 /gamemode survival @s
+3901 /replaceitem entity @s slot.hotbar 0 netherite_hoe
+3904 /enchant @s unbreaking 3
+3907 use
+3912 /say tooluse wear hoe 3
+3915 /setblock 2 -60 0 dirt
+3917 use-on 2 -60 0 1
+3919 /setblock 2 -60 0 dirt
+3921 use-on 2 -60 0 1
+3923 /setblock 2 -60 0 dirt
+3925 use-on 2 -60 0 1
+3927 /setblock 2 -60 0 dirt
+3929 use-on 2 -60 0 1
+3931 /setblock 2 -60 0 dirt
+3933 use-on 2 -60 0 1
+3935 /setblock 2 -60 0 dirt
+3937 use-on 2 -60 0 1
+3939 /setblock 2 -60 0 dirt
+3941 use-on 2 -60 0 1
+3943 /setblock 2 -60 0 dirt
+3945 use-on 2 -60 0 1
+3947 /setblock 2 -60 0 dirt
+3949 use-on 2 -60 0 1
+3951 /setblock 2 -60 0 dirt
+3953 use-on 2 -60 0 1
+3955 /setblock 2 -60 0 dirt
+3957 use-on 2 -60 0 1
+3959 /setblock 2 -60 0 dirt
+3961 use-on 2 -60 0 1
+3963 /setblock 2 -60 0 dirt
+3965 use-on 2 -60 0 1
+3967 /setblock 2 -60 0 dirt
+3969 use-on 2 -60 0 1
+3971 /setblock 2 -60 0 dirt
+3973 use-on 2 -60 0 1
+3975 /setblock 2 -60 0 dirt
+3977 use-on 2 -60 0 1
+3979 /setblock 2 -60 0 dirt
+3981 use-on 2 -60 0 1
+3983 /setblock 2 -60 0 dirt
+3985 use-on 2 -60 0 1
+3987 /setblock 2 -60 0 dirt
+3989 use-on 2 -60 0 1
+3991 /setblock 2 -60 0 dirt
+3993 use-on 2 -60 0 1
+3995 /setblock 2 -60 0 dirt
+3997 use-on 2 -60 0 1
+3999 /setblock 2 -60 0 dirt
+4001 use-on 2 -60 0 1
+4003 /setblock 2 -60 0 dirt
+4005 use-on 2 -60 0 1
+4007 /setblock 2 -60 0 dirt
+4009 use-on 2 -60 0 1
+4011 /setblock 2 -60 0 dirt
+4013 use-on 2 -60 0 1
+4015 /setblock 2 -60 0 dirt
+4017 use-on 2 -60 0 1
+4019 /setblock 2 -60 0 dirt
+4021 use-on 2 -60 0 1
+4023 /setblock 2 -60 0 dirt
+4025 use-on 2 -60 0 1
+4027 /setblock 2 -60 0 dirt
+4029 use-on 2 -60 0 1
+4031 /setblock 2 -60 0 dirt
+4033 use-on 2 -60 0 1
+4035 /setblock 2 -60 0 dirt
+4037 use-on 2 -60 0 1
+4039 /setblock 2 -60 0 dirt
+4041 use-on 2 -60 0 1
+4043 /setblock 2 -60 0 dirt
+4045 use-on 2 -60 0 1
+4047 /setblock 2 -60 0 dirt
+4049 use-on 2 -60 0 1
+4051 /setblock 2 -60 0 dirt
+4053 use-on 2 -60 0 1
+4055 /setblock 2 -60 0 dirt
+4057 use-on 2 -60 0 1
+4059 /setblock 2 -60 0 dirt
+4061 use-on 2 -60 0 1
+4063 /setblock 2 -60 0 dirt
+4065 use-on 2 -60 0 1
+4067 /setblock 2 -60 0 dirt
+4069 use-on 2 -60 0 1
+4071 /setblock 2 -60 0 dirt
+4073 use-on 2 -60 0 1
+4075 /setblock 2 -60 0 dirt
+4077 use-on 2 -60 0 1
+4079 /setblock 2 -60 0 dirt
+4081 use-on 2 -60 0 1
+4083 /setblock 2 -60 0 dirt
+4085 use-on 2 -60 0 1
+4087 /setblock 2 -60 0 dirt
+4089 use-on 2 -60 0 1
+4091 /setblock 2 -60 0 dirt
+4093 use-on 2 -60 0 1
+4095 /setblock 2 -60 0 dirt
+4097 use-on 2 -60 0 1
+4099 /setblock 2 -60 0 dirt
+4101 use-on 2 -60 0 1
+4103 /setblock 2 -60 0 dirt
+4105 use-on 2 -60 0 1
+4107 /setblock 2 -60 0 dirt
+4109 use-on 2 -60 0 1
+4111 /setblock 2 -60 0 dirt
+4113 use-on 2 -60 0 1
+4115 /setblock 2 -60 0 dirt
+4117 use-on 2 -60 0 1
+4119 /setblock 2 -60 0 dirt
+4121 use-on 2 -60 0 1
+4123 /setblock 2 -60 0 dirt
+4125 use-on 2 -60 0 1
+4127 /setblock 2 -60 0 dirt
+4129 use-on 2 -60 0 1
+4131 /setblock 2 -60 0 dirt
+4133 use-on 2 -60 0 1
+4135 /setblock 2 -60 0 dirt
+4137 use-on 2 -60 0 1
+4139 /setblock 2 -60 0 dirt
+4141 use-on 2 -60 0 1
+4143 /setblock 2 -60 0 dirt
+4145 use-on 2 -60 0 1
+4147 /setblock 2 -60 0 dirt
+4149 use-on 2 -60 0 1
+4151 /setblock 2 -60 0 dirt
+4153 use-on 2 -60 0 1
+4155 /setblock 2 -60 0 dirt
+4157 use-on 2 -60 0 1
+4159 /setblock 2 -60 0 dirt
+4161 use-on 2 -60 0 1
+4163 /setblock 2 -60 0 dirt
+4165 use-on 2 -60 0 1
+4167 /setblock 2 -60 0 dirt
+4169 use-on 2 -60 0 1
+4171 /setblock 2 -60 0 dirt
+4173 use-on 2 -60 0 1
+4175 /setblock 2 -60 0 dirt
+4177 use-on 2 -60 0 1
+4179 /setblock 2 -60 0 dirt
+4181 use-on 2 -60 0 1
+4183 /setblock 2 -60 0 dirt
+4185 use-on 2 -60 0 1
+4187 /setblock 2 -60 0 dirt
+4189 use-on 2 -60 0 1
+4191 /setblock 2 -60 0 dirt
+4193 use-on 2 -60 0 1
+4195 /setblock 2 -60 0 dirt
+4197 use-on 2 -60 0 1
+4199 /setblock 2 -60 0 dirt
+4201 use-on 2 -60 0 1
+4203 /setblock 2 -60 0 dirt
+4205 use-on 2 -60 0 1
+4207 /setblock 2 -60 0 dirt
+4209 use-on 2 -60 0 1
+4211 /setblock 2 -60 0 dirt
+4213 use-on 2 -60 0 1
+4215 /setblock 2 -60 0 dirt
+4217 use-on 2 -60 0 1
+4219 /setblock 2 -60 0 dirt
+4221 use-on 2 -60 0 1
+4223 /setblock 2 -60 0 dirt
+4225 use-on 2 -60 0 1
+4227 /setblock 2 -60 0 dirt
+4229 use-on 2 -60 0 1
+4231 /setblock 2 -60 0 dirt
+4233 use-on 2 -60 0 1
+4235 /setblock 2 -60 0 dirt
+4237 use-on 2 -60 0 1
+4239 /setblock 2 -60 0 dirt
+4241 use-on 2 -60 0 1
+4243 /setblock 2 -60 0 dirt
+4245 use-on 2 -60 0 1
+4247 /setblock 2 -60 0 dirt
+4249 use-on 2 -60 0 1
+4251 /setblock 2 -60 0 dirt
+4253 use-on 2 -60 0 1
+4255 /setblock 2 -60 0 dirt
+4257 use-on 2 -60 0 1
+4259 /setblock 2 -60 0 dirt
+4261 use-on 2 -60 0 1
+4263 /setblock 2 -60 0 dirt
+4265 use-on 2 -60 0 1
+4267 /setblock 2 -60 0 dirt
+4269 use-on 2 -60 0 1
+4271 /setblock 2 -60 0 dirt
+4273 use-on 2 -60 0 1
+4275 /setblock 2 -60 0 dirt
+4277 use-on 2 -60 0 1
+4279 /setblock 2 -60 0 dirt
+4281 use-on 2 -60 0 1
+4283 /setblock 2 -60 0 dirt
+4285 use-on 2 -60 0 1
+4287 /setblock 2 -60 0 dirt
+4289 use-on 2 -60 0 1
+4291 /setblock 2 -60 0 dirt
+4293 use-on 2 -60 0 1
+4295 /setblock 2 -60 0 dirt
+4297 use-on 2 -60 0 1
+4299 /setblock 2 -60 0 dirt
+4301 use-on 2 -60 0 1
+4303 /setblock 2 -60 0 dirt
+4305 use-on 2 -60 0 1
+4307 /setblock 2 -60 0 dirt
+4309 use-on 2 -60 0 1
+4311 /setblock 2 -60 0 dirt
+4313 use-on 2 -60 0 1
+4315 /setblock 2 -60 0 dirt
+4317 use-on 2 -60 0 1
+4319 /setblock 2 -60 0 dirt
+4321 use-on 2 -60 0 1
+4323 /setblock 2 -60 0 dirt
+4325 use-on 2 -60 0 1
+4327 /setblock 2 -60 0 dirt
+4329 use-on 2 -60 0 1
+4331 /setblock 2 -60 0 dirt
+4333 use-on 2 -60 0 1
+4335 /setblock 2 -60 0 dirt
+4337 use-on 2 -60 0 1
+4339 /setblock 2 -60 0 dirt
+4341 use-on 2 -60 0 1
+4343 /setblock 2 -60 0 dirt
+4345 use-on 2 -60 0 1
+4347 /setblock 2 -60 0 dirt
+4349 use-on 2 -60 0 1
+4351 /setblock 2 -60 0 dirt
+4353 use-on 2 -60 0 1
+4355 /setblock 2 -60 0 dirt
+4357 use-on 2 -60 0 1
+4359 /setblock 2 -60 0 dirt
+4361 use-on 2 -60 0 1
+4363 /setblock 2 -60 0 dirt
+4365 use-on 2 -60 0 1
+4367 /setblock 2 -60 0 dirt
+4369 use-on 2 -60 0 1
+4371 /setblock 2 -60 0 dirt
+4373 use-on 2 -60 0 1
+4375 /setblock 2 -60 0 dirt
+4377 use-on 2 -60 0 1
+4379 /setblock 2 -60 0 dirt
+4381 use-on 2 -60 0 1
+4383 /setblock 2 -60 0 dirt
+4385 use-on 2 -60 0 1
+4387 /setblock 2 -60 0 dirt
+4389 use-on 2 -60 0 1
+4391 /setblock 2 -60 0 dirt
+4393 use-on 2 -60 0 1
+4395 /setblock 2 -60 0 dirt
+4397 use-on 2 -60 0 1
+4399 /setblock 2 -60 0 dirt
+4401 use-on 2 -60 0 1
+4403 /setblock 2 -60 0 dirt
+4405 use-on 2 -60 0 1
+4407 /setblock 2 -60 0 dirt
+4409 use-on 2 -60 0 1
+4411 /setblock 2 -60 0 dirt
+4413 use-on 2 -60 0 1
+4415 /setblock 2 -60 0 dirt
+4417 use-on 2 -60 0 1
+4419 /setblock 2 -60 0 dirt
+4421 use-on 2 -60 0 1
+4423 /setblock 2 -60 0 dirt
+4425 use-on 2 -60 0 1
+4427 /setblock 2 -60 0 dirt
+4429 use-on 2 -60 0 1
+4431 /setblock 2 -60 0 dirt
+4433 use-on 2 -60 0 1
+4435 /setblock 2 -60 0 dirt
+4437 use-on 2 -60 0 1
+4439 /setblock 2 -60 0 dirt
+4441 use-on 2 -60 0 1
+4443 /setblock 2 -60 0 dirt
+4445 use-on 2 -60 0 1
+4447 /setblock 2 -60 0 dirt
+4449 use-on 2 -60 0 1
+4451 /setblock 2 -60 0 dirt
+4453 use-on 2 -60 0 1
+4455 /setblock 2 -60 0 dirt
+4457 use-on 2 -60 0 1
+4459 /setblock 2 -60 0 dirt
+4461 use-on 2 -60 0 1
+4463 /setblock 2 -60 0 dirt
+4465 use-on 2 -60 0 1
+4467 /setblock 2 -60 0 dirt
+4469 use-on 2 -60 0 1
+4471 /setblock 2 -60 0 dirt
+4473 use-on 2 -60 0 1
+4475 /setblock 2 -60 0 dirt
+4477 use-on 2 -60 0 1
+4479 /setblock 2 -60 0 dirt
+4481 use-on 2 -60 0 1
+4483 /setblock 2 -60 0 dirt
+4485 use-on 2 -60 0 1
+4487 /setblock 2 -60 0 dirt
+4489 use-on 2 -60 0 1
+4491 /setblock 2 -60 0 dirt
+4493 use-on 2 -60 0 1
+4495 /setblock 2 -60 0 dirt
+4497 use-on 2 -60 0 1
+4499 /setblock 2 -60 0 dirt
+4501 use-on 2 -60 0 1
+4503 /setblock 2 -60 0 dirt
+4505 use-on 2 -60 0 1
+4507 /setblock 2 -60 0 dirt
+4509 use-on 2 -60 0 1
+4511 /setblock 2 -60 0 dirt
+4513 use-on 2 -60 0 1
+4515 /setblock 2 -60 0 dirt
+4517 use-on 2 -60 0 1
+4519 /setblock 2 -60 0 dirt
+4521 use-on 2 -60 0 1
+4523 /setblock 2 -60 0 dirt
+4525 use-on 2 -60 0 1
+4527 /setblock 2 -60 0 dirt
+4529 use-on 2 -60 0 1
+4531 /setblock 2 -60 0 dirt
+4533 use-on 2 -60 0 1
+4535 /setblock 2 -60 0 dirt
+4537 use-on 2 -60 0 1
+4539 /setblock 2 -60 0 dirt
+4541 use-on 2 -60 0 1
+4543 /setblock 2 -60 0 dirt
+4545 use-on 2 -60 0 1
+4547 /setblock 2 -60 0 dirt
+4549 use-on 2 -60 0 1
+4551 /setblock 2 -60 0 dirt
+4553 use-on 2 -60 0 1
+4555 /setblock 2 -60 0 dirt
+4557 use-on 2 -60 0 1
+4559 /setblock 2 -60 0 dirt
+4561 use-on 2 -60 0 1
+4563 /setblock 2 -60 0 dirt
+4565 use-on 2 -60 0 1
+4567 /setblock 2 -60 0 dirt
+4569 use-on 2 -60 0 1
+4571 /setblock 2 -60 0 dirt
+4573 use-on 2 -60 0 1
+4575 /setblock 2 -60 0 dirt
+4577 use-on 2 -60 0 1
+4579 /setblock 2 -60 0 dirt
+4581 use-on 2 -60 0 1
+4583 /setblock 2 -60 0 dirt
+4585 use-on 2 -60 0 1
+4587 /setblock 2 -60 0 dirt
+4589 use-on 2 -60 0 1
+4591 /setblock 2 -60 0 dirt
+4593 use-on 2 -60 0 1
+4595 /setblock 2 -60 0 dirt
+4597 use-on 2 -60 0 1
+4599 /setblock 2 -60 0 dirt
+4601 use-on 2 -60 0 1
+4603 /setblock 2 -60 0 dirt
+4605 use-on 2 -60 0 1
+4607 /setblock 2 -60 0 dirt
+4609 use-on 2 -60 0 1
+4611 /setblock 2 -60 0 dirt
+4613 use-on 2 -60 0 1
+4615 /setblock 2 -60 0 dirt
+4617 use-on 2 -60 0 1
+4619 /setblock 2 -60 0 dirt
+4621 use-on 2 -60 0 1
+4623 /setblock 2 -60 0 dirt
+4625 use-on 2 -60 0 1
+4627 /setblock 2 -60 0 dirt
+4629 use-on 2 -60 0 1
+4631 /setblock 2 -60 0 dirt
+4633 use-on 2 -60 0 1
+4635 /setblock 2 -60 0 dirt
+4637 use-on 2 -60 0 1
+4639 /setblock 2 -60 0 dirt
+4641 use-on 2 -60 0 1
+4643 /setblock 2 -60 0 dirt
+4645 use-on 2 -60 0 1
+4647 /setblock 2 -60 0 dirt
+4649 use-on 2 -60 0 1
+4651 /setblock 2 -60 0 dirt
+4653 use-on 2 -60 0 1
+4655 /setblock 2 -60 0 dirt
+4657 use-on 2 -60 0 1
+4659 /setblock 2 -60 0 dirt
+4661 use-on 2 -60 0 1
+4663 /setblock 2 -60 0 dirt
+4665 use-on 2 -60 0 1
+4667 /setblock 2 -60 0 dirt
+4669 use-on 2 -60 0 1
+4671 /setblock 2 -60 0 dirt
+4673 use-on 2 -60 0 1
+4675 /setblock 2 -60 0 dirt
+4677 use-on 2 -60 0 1
+4679 /setblock 2 -60 0 dirt
+4681 use-on 2 -60 0 1
+4683 /setblock 2 -60 0 dirt
+4685 use-on 2 -60 0 1
+4687 /setblock 2 -60 0 dirt
+4689 use-on 2 -60 0 1
+4691 /setblock 2 -60 0 dirt
+4693 use-on 2 -60 0 1
+4695 /setblock 2 -60 0 dirt
+4697 use-on 2 -60 0 1
+4699 /setblock 2 -60 0 dirt
+4701 use-on 2 -60 0 1
+4703 /setblock 2 -60 0 dirt
+4705 use-on 2 -60 0 1
+4707 /setblock 2 -60 0 dirt
+4709 use-on 2 -60 0 1
+4711 /setblock 2 -60 0 dirt
+4713 use-on 2 -60 0 1
+4715 /setblock 2 -60 0 dirt
+4717 use-on 2 -60 0 1
+4719 /setblock 2 -60 0 dirt
+4721 use-on 2 -60 0 1
+4723 /setblock 2 -60 0 dirt
+4725 use-on 2 -60 0 1
+4727 /setblock 2 -60 0 dirt
+4729 use-on 2 -60 0 1
+4731 /setblock 2 -60 0 dirt
+4733 use-on 2 -60 0 1
+4735 /setblock 2 -60 0 dirt
+4737 use-on 2 -60 0 1
+4739 /setblock 2 -60 0 dirt
+4741 use-on 2 -60 0 1
+4743 /setblock 2 -60 0 dirt
+4745 use-on 2 -60 0 1
+4747 /setblock 2 -60 0 dirt
+4749 use-on 2 -60 0 1
+4751 /setblock 2 -60 0 dirt
+4753 use-on 2 -60 0 1
+4755 /setblock 2 -60 0 dirt
+4757 use-on 2 -60 0 1
+4759 /setblock 2 -60 0 dirt
+4761 use-on 2 -60 0 1
+4763 /setblock 2 -60 0 dirt
+4765 use-on 2 -60 0 1
+4767 /setblock 2 -60 0 dirt
+4769 use-on 2 -60 0 1
+4771 /setblock 2 -60 0 dirt
+4773 use-on 2 -60 0 1
+4775 /setblock 2 -60 0 dirt
+4777 use-on 2 -60 0 1
+4779 /setblock 2 -60 0 dirt
+4781 use-on 2 -60 0 1
+4783 /setblock 2 -60 0 dirt
+4785 use-on 2 -60 0 1
+4787 /setblock 2 -60 0 dirt
+4789 use-on 2 -60 0 1
+4791 /setblock 2 -60 0 dirt
+4793 use-on 2 -60 0 1
+4795 /setblock 2 -60 0 dirt
+4797 use-on 2 -60 0 1
+4799 /setblock 2 -60 0 dirt
+4801 use-on 2 -60 0 1
+4803 /setblock 2 -60 0 dirt
+4805 use-on 2 -60 0 1
+4807 /setblock 2 -60 0 dirt
+4809 use-on 2 -60 0 1
+4811 /setblock 2 -60 0 dirt
+4813 use-on 2 -60 0 1
+4815 /setblock 2 -60 0 dirt
+4817 use-on 2 -60 0 1
+4819 /setblock 2 -60 0 dirt
+4821 use-on 2 -60 0 1
+4823 /setblock 2 -60 0 dirt
+4825 use-on 2 -60 0 1
+4827 /setblock 2 -60 0 dirt
+4829 use-on 2 -60 0 1
+4831 /setblock 2 -60 0 dirt
+4833 use-on 2 -60 0 1
+4835 /setblock 2 -60 0 dirt
+4837 use-on 2 -60 0 1
+4839 /setblock 2 -60 0 dirt
+4841 use-on 2 -60 0 1
+4843 /setblock 2 -60 0 dirt
+4845 use-on 2 -60 0 1
+4847 /setblock 2 -60 0 dirt
+4849 use-on 2 -60 0 1
+4851 /setblock 2 -60 0 dirt
+4853 use-on 2 -60 0 1
+4855 /setblock 2 -60 0 dirt
+4857 use-on 2 -60 0 1
+4859 /setblock 2 -60 0 dirt
+4861 use-on 2 -60 0 1
+4863 /setblock 2 -60 0 dirt
+4865 use-on 2 -60 0 1
+4867 /setblock 2 -60 0 dirt
+4869 use-on 2 -60 0 1
+4871 /setblock 2 -60 0 dirt
+4873 use-on 2 -60 0 1
+4875 /setblock 2 -60 0 dirt
+4877 use-on 2 -60 0 1
+4879 /setblock 2 -60 0 dirt
+4881 use-on 2 -60 0 1
+4883 /setblock 2 -60 0 dirt
+4885 use-on 2 -60 0 1
+4887 /setblock 2 -60 0 dirt
+4889 use-on 2 -60 0 1
+4891 /setblock 2 -60 0 dirt
+4893 use-on 2 -60 0 1
+4895 /setblock 2 -60 0 dirt
+4897 use-on 2 -60 0 1
+4899 /setblock 2 -60 0 dirt
+4901 use-on 2 -60 0 1
+4903 /setblock 2 -60 0 dirt
+4905 use-on 2 -60 0 1
+4907 /setblock 2 -60 0 dirt
+4909 use-on 2 -60 0 1
+4911 /setblock 2 -60 0 dirt
+4913 use-on 2 -60 0 1
+4915 /setblock 2 -60 0 dirt
+4917 use-on 2 -60 0 1
+4919 /setblock 2 -60 0 dirt
+4921 use-on 2 -60 0 1
+4923 /setblock 2 -60 0 dirt
+4925 use-on 2 -60 0 1
+4927 /setblock 2 -60 0 dirt
+4929 use-on 2 -60 0 1
+4931 /setblock 2 -60 0 dirt
+4933 use-on 2 -60 0 1
+4935 /setblock 2 -60 0 dirt
+4937 use-on 2 -60 0 1
+4939 /setblock 2 -60 0 dirt
+4941 use-on 2 -60 0 1
+4943 /setblock 2 -60 0 dirt
+4945 use-on 2 -60 0 1
+4947 /setblock 2 -60 0 dirt
+4949 use-on 2 -60 0 1
+4951 /setblock 2 -60 0 dirt
+4953 use-on 2 -60 0 1
+4955 /setblock 2 -60 0 dirt
+4957 use-on 2 -60 0 1
+4959 /setblock 2 -60 0 dirt
+4961 use-on 2 -60 0 1
+4963 /setblock 2 -60 0 dirt
+4965 use-on 2 -60 0 1
+4967 /setblock 2 -60 0 dirt
+4969 use-on 2 -60 0 1
+4971 /setblock 2 -60 0 dirt
+4973 use-on 2 -60 0 1
+4975 /setblock 2 -60 0 dirt
+4977 use-on 2 -60 0 1
+4979 /setblock 2 -60 0 dirt
+4981 use-on 2 -60 0 1
+4983 /setblock 2 -60 0 dirt
+4985 use-on 2 -60 0 1
+4987 /setblock 2 -60 0 dirt
+4989 use-on 2 -60 0 1
+4991 /setblock 2 -60 0 dirt
+4993 use-on 2 -60 0 1
+4995 /setblock 2 -60 0 dirt
+4997 use-on 2 -60 0 1
+4999 /setblock 2 -60 0 dirt
+5001 use-on 2 -60 0 1
+5003 /setblock 2 -60 0 dirt
+5005 use-on 2 -60 0 1
+5007 /setblock 2 -60 0 dirt
+5009 use-on 2 -60 0 1
+5011 /setblock 2 -60 0 dirt
+5013 use-on 2 -60 0 1
+5015 /setblock 2 -60 0 dirt
+5017 use-on 2 -60 0 1
+5019 /setblock 2 -60 0 dirt
+5021 use-on 2 -60 0 1
+5023 /setblock 2 -60 0 dirt
+5025 use-on 2 -60 0 1
+5027 /setblock 2 -60 0 dirt
+5029 use-on 2 -60 0 1
+5031 /setblock 2 -60 0 dirt
+5033 use-on 2 -60 0 1
+5035 /setblock 2 -60 0 dirt
+5037 use-on 2 -60 0 1
+5039 /setblock 2 -60 0 dirt
+5041 use-on 2 -60 0 1
+5043 /setblock 2 -60 0 dirt
+5045 use-on 2 -60 0 1
+5047 /setblock 2 -60 0 dirt
+5049 use-on 2 -60 0 1
+5051 /setblock 2 -60 0 dirt
+5053 use-on 2 -60 0 1
+5055 /setblock 2 -60 0 dirt
+5057 use-on 2 -60 0 1
+5059 /setblock 2 -60 0 dirt
+5061 use-on 2 -60 0 1
+5063 /setblock 2 -60 0 dirt
+5065 use-on 2 -60 0 1
+5067 /setblock 2 -60 0 dirt
+5069 use-on 2 -60 0 1
+5071 /setblock 2 -60 0 dirt
+5073 use-on 2 -60 0 1
+5075 /setblock 2 -60 0 dirt
+5077 use-on 2 -60 0 1
+5079 /setblock 2 -60 0 dirt
+5081 use-on 2 -60 0 1
+5083 /setblock 2 -60 0 dirt
+5085 use-on 2 -60 0 1
+5087 /setblock 2 -60 0 dirt
+5089 use-on 2 -60 0 1
+5091 /setblock 2 -60 0 dirt
+5093 use-on 2 -60 0 1
+5095 /setblock 2 -60 0 dirt
+5097 use-on 2 -60 0 1
+5099 /setblock 2 -60 0 dirt
+5101 use-on 2 -60 0 1
+5103 /setblock 2 -60 0 dirt
+5105 use-on 2 -60 0 1
+5107 /setblock 2 -60 0 dirt
+5109 use-on 2 -60 0 1
+5111 /setblock 2 -60 0 dirt
+5113 use-on 2 -60 0 1
+5115 /setblock 2 -60 0 air
+5120 /kill @e[type=item]
+5122 /clear @s
+5123 /gamemode survival @s
+5125 /replaceitem entity @s slot.hotbar 0 netherite_shovel
+5128 use
+5133 /say tooluse wear shovel 0
+5136 /setblock 2 -60 0 grass_block
+5138 use-on 2 -60 0 1
+5140 /setblock 2 -60 0 grass_block
+5142 use-on 2 -60 0 1
+5144 /setblock 2 -60 0 grass_block
+5146 use-on 2 -60 0 1
+5148 /setblock 2 -60 0 grass_block
+5150 use-on 2 -60 0 1
+5152 /setblock 2 -60 0 grass_block
+5154 use-on 2 -60 0 1
+5156 /setblock 2 -60 0 grass_block
+5158 use-on 2 -60 0 1
+5160 /setblock 2 -60 0 grass_block
+5162 use-on 2 -60 0 1
+5164 /setblock 2 -60 0 grass_block
+5166 use-on 2 -60 0 1
+5168 /setblock 2 -60 0 grass_block
+5170 use-on 2 -60 0 1
+5172 /setblock 2 -60 0 grass_block
+5174 use-on 2 -60 0 1
+5176 /setblock 2 -60 0 grass_block
+5178 use-on 2 -60 0 1
+5180 /setblock 2 -60 0 grass_block
+5182 use-on 2 -60 0 1
+5184 /setblock 2 -60 0 grass_block
+5186 use-on 2 -60 0 1
+5188 /setblock 2 -60 0 grass_block
+5190 use-on 2 -60 0 1
+5192 /setblock 2 -60 0 grass_block
+5194 use-on 2 -60 0 1
+5196 /setblock 2 -60 0 grass_block
+5198 use-on 2 -60 0 1
+5200 /setblock 2 -60 0 grass_block
+5202 use-on 2 -60 0 1
+5204 /setblock 2 -60 0 grass_block
+5206 use-on 2 -60 0 1
+5208 /setblock 2 -60 0 grass_block
+5210 use-on 2 -60 0 1
+5212 /setblock 2 -60 0 grass_block
+5214 use-on 2 -60 0 1
+5216 /setblock 2 -60 0 grass_block
+5218 use-on 2 -60 0 1
+5220 /setblock 2 -60 0 grass_block
+5222 use-on 2 -60 0 1
+5224 /setblock 2 -60 0 grass_block
+5226 use-on 2 -60 0 1
+5228 /setblock 2 -60 0 grass_block
+5230 use-on 2 -60 0 1
+5232 /setblock 2 -60 0 grass_block
+5234 use-on 2 -60 0 1
+5236 /setblock 2 -60 0 grass_block
+5238 use-on 2 -60 0 1
+5240 /setblock 2 -60 0 grass_block
+5242 use-on 2 -60 0 1
+5244 /setblock 2 -60 0 grass_block
+5246 use-on 2 -60 0 1
+5248 /setblock 2 -60 0 grass_block
+5250 use-on 2 -60 0 1
+5252 /setblock 2 -60 0 grass_block
+5254 use-on 2 -60 0 1
+5256 /setblock 2 -60 0 air
+5261 /kill @e[type=item]
+5263 /clear @s
+5264 /gamemode survival @s
+5266 /replaceitem entity @s slot.hotbar 0 netherite_shovel
+5269 /enchant @s unbreaking 3
+5272 use
+5277 /say tooluse wear shovel 3
+5280 /setblock 2 -60 0 grass_block
+5282 use-on 2 -60 0 1
+5284 /setblock 2 -60 0 grass_block
+5286 use-on 2 -60 0 1
+5288 /setblock 2 -60 0 grass_block
+5290 use-on 2 -60 0 1
+5292 /setblock 2 -60 0 grass_block
+5294 use-on 2 -60 0 1
+5296 /setblock 2 -60 0 grass_block
+5298 use-on 2 -60 0 1
+5300 /setblock 2 -60 0 grass_block
+5302 use-on 2 -60 0 1
+5304 /setblock 2 -60 0 grass_block
+5306 use-on 2 -60 0 1
+5308 /setblock 2 -60 0 grass_block
+5310 use-on 2 -60 0 1
+5312 /setblock 2 -60 0 grass_block
+5314 use-on 2 -60 0 1
+5316 /setblock 2 -60 0 grass_block
+5318 use-on 2 -60 0 1
+5320 /setblock 2 -60 0 grass_block
+5322 use-on 2 -60 0 1
+5324 /setblock 2 -60 0 grass_block
+5326 use-on 2 -60 0 1
+5328 /setblock 2 -60 0 grass_block
+5330 use-on 2 -60 0 1
+5332 /setblock 2 -60 0 grass_block
+5334 use-on 2 -60 0 1
+5336 /setblock 2 -60 0 grass_block
+5338 use-on 2 -60 0 1
+5340 /setblock 2 -60 0 grass_block
+5342 use-on 2 -60 0 1
+5344 /setblock 2 -60 0 grass_block
+5346 use-on 2 -60 0 1
+5348 /setblock 2 -60 0 grass_block
+5350 use-on 2 -60 0 1
+5352 /setblock 2 -60 0 grass_block
+5354 use-on 2 -60 0 1
+5356 /setblock 2 -60 0 grass_block
+5358 use-on 2 -60 0 1
+5360 /setblock 2 -60 0 grass_block
+5362 use-on 2 -60 0 1
+5364 /setblock 2 -60 0 grass_block
+5366 use-on 2 -60 0 1
+5368 /setblock 2 -60 0 grass_block
+5370 use-on 2 -60 0 1
+5372 /setblock 2 -60 0 grass_block
+5374 use-on 2 -60 0 1
+5376 /setblock 2 -60 0 grass_block
+5378 use-on 2 -60 0 1
+5380 /setblock 2 -60 0 grass_block
+5382 use-on 2 -60 0 1
+5384 /setblock 2 -60 0 grass_block
+5386 use-on 2 -60 0 1
+5388 /setblock 2 -60 0 grass_block
+5390 use-on 2 -60 0 1
+5392 /setblock 2 -60 0 grass_block
+5394 use-on 2 -60 0 1
+5396 /setblock 2 -60 0 grass_block
+5398 use-on 2 -60 0 1
+5400 /setblock 2 -60 0 grass_block
+5402 use-on 2 -60 0 1
+5404 /setblock 2 -60 0 grass_block
+5406 use-on 2 -60 0 1
+5408 /setblock 2 -60 0 grass_block
+5410 use-on 2 -60 0 1
+5412 /setblock 2 -60 0 grass_block
+5414 use-on 2 -60 0 1
+5416 /setblock 2 -60 0 grass_block
+5418 use-on 2 -60 0 1
+5420 /setblock 2 -60 0 grass_block
+5422 use-on 2 -60 0 1
+5424 /setblock 2 -60 0 grass_block
+5426 use-on 2 -60 0 1
+5428 /setblock 2 -60 0 grass_block
+5430 use-on 2 -60 0 1
+5432 /setblock 2 -60 0 grass_block
+5434 use-on 2 -60 0 1
+5436 /setblock 2 -60 0 grass_block
+5438 use-on 2 -60 0 1
+5440 /setblock 2 -60 0 grass_block
+5442 use-on 2 -60 0 1
+5444 /setblock 2 -60 0 grass_block
+5446 use-on 2 -60 0 1
+5448 /setblock 2 -60 0 grass_block
+5450 use-on 2 -60 0 1
+5452 /setblock 2 -60 0 grass_block
+5454 use-on 2 -60 0 1
+5456 /setblock 2 -60 0 grass_block
+5458 use-on 2 -60 0 1
+5460 /setblock 2 -60 0 grass_block
+5462 use-on 2 -60 0 1
+5464 /setblock 2 -60 0 grass_block
+5466 use-on 2 -60 0 1
+5468 /setblock 2 -60 0 grass_block
+5470 use-on 2 -60 0 1
+5472 /setblock 2 -60 0 grass_block
+5474 use-on 2 -60 0 1
+5476 /setblock 2 -60 0 grass_block
+5478 use-on 2 -60 0 1
+5480 /setblock 2 -60 0 grass_block
+5482 use-on 2 -60 0 1
+5484 /setblock 2 -60 0 grass_block
+5486 use-on 2 -60 0 1
+5488 /setblock 2 -60 0 grass_block
+5490 use-on 2 -60 0 1
+5492 /setblock 2 -60 0 grass_block
+5494 use-on 2 -60 0 1
+5496 /setblock 2 -60 0 grass_block
+5498 use-on 2 -60 0 1
+5500 /setblock 2 -60 0 grass_block
+5502 use-on 2 -60 0 1
+5504 /setblock 2 -60 0 grass_block
+5506 use-on 2 -60 0 1
+5508 /setblock 2 -60 0 grass_block
+5510 use-on 2 -60 0 1
+5512 /setblock 2 -60 0 grass_block
+5514 use-on 2 -60 0 1
+5516 /setblock 2 -60 0 grass_block
+5518 use-on 2 -60 0 1
+5520 /setblock 2 -60 0 grass_block
+5522 use-on 2 -60 0 1
+5524 /setblock 2 -60 0 grass_block
+5526 use-on 2 -60 0 1
+5528 /setblock 2 -60 0 grass_block
+5530 use-on 2 -60 0 1
+5532 /setblock 2 -60 0 grass_block
+5534 use-on 2 -60 0 1
+5536 /setblock 2 -60 0 grass_block
+5538 use-on 2 -60 0 1
+5540 /setblock 2 -60 0 grass_block
+5542 use-on 2 -60 0 1
+5544 /setblock 2 -60 0 grass_block
+5546 use-on 2 -60 0 1
+5548 /setblock 2 -60 0 grass_block
+5550 use-on 2 -60 0 1
+5552 /setblock 2 -60 0 grass_block
+5554 use-on 2 -60 0 1
+5556 /setblock 2 -60 0 grass_block
+5558 use-on 2 -60 0 1
+5560 /setblock 2 -60 0 grass_block
+5562 use-on 2 -60 0 1
+5564 /setblock 2 -60 0 grass_block
+5566 use-on 2 -60 0 1
+5568 /setblock 2 -60 0 grass_block
+5570 use-on 2 -60 0 1
+5572 /setblock 2 -60 0 grass_block
+5574 use-on 2 -60 0 1
+5576 /setblock 2 -60 0 grass_block
+5578 use-on 2 -60 0 1
+5580 /setblock 2 -60 0 grass_block
+5582 use-on 2 -60 0 1
+5584 /setblock 2 -60 0 grass_block
+5586 use-on 2 -60 0 1
+5588 /setblock 2 -60 0 grass_block
+5590 use-on 2 -60 0 1
+5592 /setblock 2 -60 0 grass_block
+5594 use-on 2 -60 0 1
+5596 /setblock 2 -60 0 grass_block
+5598 use-on 2 -60 0 1
+5600 /setblock 2 -60 0 grass_block
+5602 use-on 2 -60 0 1
+5604 /setblock 2 -60 0 grass_block
+5606 use-on 2 -60 0 1
+5608 /setblock 2 -60 0 grass_block
+5610 use-on 2 -60 0 1
+5612 /setblock 2 -60 0 grass_block
+5614 use-on 2 -60 0 1
+5616 /setblock 2 -60 0 grass_block
+5618 use-on 2 -60 0 1
+5620 /setblock 2 -60 0 grass_block
+5622 use-on 2 -60 0 1
+5624 /setblock 2 -60 0 grass_block
+5626 use-on 2 -60 0 1
+5628 /setblock 2 -60 0 grass_block
+5630 use-on 2 -60 0 1
+5632 /setblock 2 -60 0 grass_block
+5634 use-on 2 -60 0 1
+5636 /setblock 2 -60 0 grass_block
+5638 use-on 2 -60 0 1
+5640 /setblock 2 -60 0 grass_block
+5642 use-on 2 -60 0 1
+5644 /setblock 2 -60 0 grass_block
+5646 use-on 2 -60 0 1
+5648 /setblock 2 -60 0 grass_block
+5650 use-on 2 -60 0 1
+5652 /setblock 2 -60 0 grass_block
+5654 use-on 2 -60 0 1
+5656 /setblock 2 -60 0 grass_block
+5658 use-on 2 -60 0 1
+5660 /setblock 2 -60 0 grass_block
+5662 use-on 2 -60 0 1
+5664 /setblock 2 -60 0 grass_block
+5666 use-on 2 -60 0 1
+5668 /setblock 2 -60 0 grass_block
+5670 use-on 2 -60 0 1
+5672 /setblock 2 -60 0 grass_block
+5674 use-on 2 -60 0 1
+5676 /setblock 2 -60 0 grass_block
+5678 use-on 2 -60 0 1
+5680 /setblock 2 -60 0 grass_block
+5682 use-on 2 -60 0 1
+5684 /setblock 2 -60 0 grass_block
+5686 use-on 2 -60 0 1
+5688 /setblock 2 -60 0 grass_block
+5690 use-on 2 -60 0 1
+5692 /setblock 2 -60 0 grass_block
+5694 use-on 2 -60 0 1
+5696 /setblock 2 -60 0 grass_block
+5698 use-on 2 -60 0 1
+5700 /setblock 2 -60 0 grass_block
+5702 use-on 2 -60 0 1
+5704 /setblock 2 -60 0 grass_block
+5706 use-on 2 -60 0 1
+5708 /setblock 2 -60 0 grass_block
+5710 use-on 2 -60 0 1
+5712 /setblock 2 -60 0 grass_block
+5714 use-on 2 -60 0 1
+5716 /setblock 2 -60 0 grass_block
+5718 use-on 2 -60 0 1
+5720 /setblock 2 -60 0 grass_block
+5722 use-on 2 -60 0 1
+5724 /setblock 2 -60 0 grass_block
+5726 use-on 2 -60 0 1
+5728 /setblock 2 -60 0 grass_block
+5730 use-on 2 -60 0 1
+5732 /setblock 2 -60 0 grass_block
+5734 use-on 2 -60 0 1
+5736 /setblock 2 -60 0 grass_block
+5738 use-on 2 -60 0 1
+5740 /setblock 2 -60 0 grass_block
+5742 use-on 2 -60 0 1
+5744 /setblock 2 -60 0 grass_block
+5746 use-on 2 -60 0 1
+5748 /setblock 2 -60 0 grass_block
+5750 use-on 2 -60 0 1
+5752 /setblock 2 -60 0 grass_block
+5754 use-on 2 -60 0 1
+5756 /setblock 2 -60 0 grass_block
+5758 use-on 2 -60 0 1
+5760 /setblock 2 -60 0 grass_block
+5762 use-on 2 -60 0 1
+5764 /setblock 2 -60 0 grass_block
+5766 use-on 2 -60 0 1
+5768 /setblock 2 -60 0 grass_block
+5770 use-on 2 -60 0 1
+5772 /setblock 2 -60 0 grass_block
+5774 use-on 2 -60 0 1
+5776 /setblock 2 -60 0 grass_block
+5778 use-on 2 -60 0 1
+5780 /setblock 2 -60 0 grass_block
+5782 use-on 2 -60 0 1
+5784 /setblock 2 -60 0 grass_block
+5786 use-on 2 -60 0 1
+5788 /setblock 2 -60 0 grass_block
+5790 use-on 2 -60 0 1
+5792 /setblock 2 -60 0 grass_block
+5794 use-on 2 -60 0 1
+5796 /setblock 2 -60 0 grass_block
+5798 use-on 2 -60 0 1
+5800 /setblock 2 -60 0 grass_block
+5802 use-on 2 -60 0 1
+5804 /setblock 2 -60 0 grass_block
+5806 use-on 2 -60 0 1
+5808 /setblock 2 -60 0 grass_block
+5810 use-on 2 -60 0 1
+5812 /setblock 2 -60 0 grass_block
+5814 use-on 2 -60 0 1
+5816 /setblock 2 -60 0 grass_block
+5818 use-on 2 -60 0 1
+5820 /setblock 2 -60 0 grass_block
+5822 use-on 2 -60 0 1
+5824 /setblock 2 -60 0 grass_block
+5826 use-on 2 -60 0 1
+5828 /setblock 2 -60 0 grass_block
+5830 use-on 2 -60 0 1
+5832 /setblock 2 -60 0 grass_block
+5834 use-on 2 -60 0 1
+5836 /setblock 2 -60 0 grass_block
+5838 use-on 2 -60 0 1
+5840 /setblock 2 -60 0 grass_block
+5842 use-on 2 -60 0 1
+5844 /setblock 2 -60 0 grass_block
+5846 use-on 2 -60 0 1
+5848 /setblock 2 -60 0 grass_block
+5850 use-on 2 -60 0 1
+5852 /setblock 2 -60 0 grass_block
+5854 use-on 2 -60 0 1
+5856 /setblock 2 -60 0 grass_block
+5858 use-on 2 -60 0 1
+5860 /setblock 2 -60 0 grass_block
+5862 use-on 2 -60 0 1
+5864 /setblock 2 -60 0 grass_block
+5866 use-on 2 -60 0 1
+5868 /setblock 2 -60 0 grass_block
+5870 use-on 2 -60 0 1
+5872 /setblock 2 -60 0 grass_block
+5874 use-on 2 -60 0 1
+5876 /setblock 2 -60 0 grass_block
+5878 use-on 2 -60 0 1
+5880 /setblock 2 -60 0 grass_block
+5882 use-on 2 -60 0 1
+5884 /setblock 2 -60 0 grass_block
+5886 use-on 2 -60 0 1
+5888 /setblock 2 -60 0 grass_block
+5890 use-on 2 -60 0 1
+5892 /setblock 2 -60 0 grass_block
+5894 use-on 2 -60 0 1
+5896 /setblock 2 -60 0 grass_block
+5898 use-on 2 -60 0 1
+5900 /setblock 2 -60 0 grass_block
+5902 use-on 2 -60 0 1
+5904 /setblock 2 -60 0 grass_block
+5906 use-on 2 -60 0 1
+5908 /setblock 2 -60 0 grass_block
+5910 use-on 2 -60 0 1
+5912 /setblock 2 -60 0 grass_block
+5914 use-on 2 -60 0 1
+5916 /setblock 2 -60 0 grass_block
+5918 use-on 2 -60 0 1
+5920 /setblock 2 -60 0 grass_block
+5922 use-on 2 -60 0 1
+5924 /setblock 2 -60 0 grass_block
+5926 use-on 2 -60 0 1
+5928 /setblock 2 -60 0 grass_block
+5930 use-on 2 -60 0 1
+5932 /setblock 2 -60 0 grass_block
+5934 use-on 2 -60 0 1
+5936 /setblock 2 -60 0 grass_block
+5938 use-on 2 -60 0 1
+5940 /setblock 2 -60 0 grass_block
+5942 use-on 2 -60 0 1
+5944 /setblock 2 -60 0 grass_block
+5946 use-on 2 -60 0 1
+5948 /setblock 2 -60 0 grass_block
+5950 use-on 2 -60 0 1
+5952 /setblock 2 -60 0 grass_block
+5954 use-on 2 -60 0 1
+5956 /setblock 2 -60 0 grass_block
+5958 use-on 2 -60 0 1
+5960 /setblock 2 -60 0 grass_block
+5962 use-on 2 -60 0 1
+5964 /setblock 2 -60 0 grass_block
+5966 use-on 2 -60 0 1
+5968 /setblock 2 -60 0 grass_block
+5970 use-on 2 -60 0 1
+5972 /setblock 2 -60 0 grass_block
+5974 use-on 2 -60 0 1
+5976 /setblock 2 -60 0 grass_block
+5978 use-on 2 -60 0 1
+5980 /setblock 2 -60 0 grass_block
+5982 use-on 2 -60 0 1
+5984 /setblock 2 -60 0 grass_block
+5986 use-on 2 -60 0 1
+5988 /setblock 2 -60 0 grass_block
+5990 use-on 2 -60 0 1
+5992 /setblock 2 -60 0 grass_block
+5994 use-on 2 -60 0 1
+5996 /setblock 2 -60 0 grass_block
+5998 use-on 2 -60 0 1
+6000 /setblock 2 -60 0 grass_block
+6002 use-on 2 -60 0 1
+6004 /setblock 2 -60 0 grass_block
+6006 use-on 2 -60 0 1
+6008 /setblock 2 -60 0 grass_block
+6010 use-on 2 -60 0 1
+6012 /setblock 2 -60 0 grass_block
+6014 use-on 2 -60 0 1
+6016 /setblock 2 -60 0 grass_block
+6018 use-on 2 -60 0 1
+6020 /setblock 2 -60 0 grass_block
+6022 use-on 2 -60 0 1
+6024 /setblock 2 -60 0 grass_block
+6026 use-on 2 -60 0 1
+6028 /setblock 2 -60 0 grass_block
+6030 use-on 2 -60 0 1
+6032 /setblock 2 -60 0 grass_block
+6034 use-on 2 -60 0 1
+6036 /setblock 2 -60 0 grass_block
+6038 use-on 2 -60 0 1
+6040 /setblock 2 -60 0 grass_block
+6042 use-on 2 -60 0 1
+6044 /setblock 2 -60 0 grass_block
+6046 use-on 2 -60 0 1
+6048 /setblock 2 -60 0 grass_block
+6050 use-on 2 -60 0 1
+6052 /setblock 2 -60 0 grass_block
+6054 use-on 2 -60 0 1
+6056 /setblock 2 -60 0 grass_block
+6058 use-on 2 -60 0 1
+6060 /setblock 2 -60 0 grass_block
+6062 use-on 2 -60 0 1
+6064 /setblock 2 -60 0 grass_block
+6066 use-on 2 -60 0 1
+6068 /setblock 2 -60 0 grass_block
+6070 use-on 2 -60 0 1
+6072 /setblock 2 -60 0 grass_block
+6074 use-on 2 -60 0 1
+6076 /setblock 2 -60 0 grass_block
+6078 use-on 2 -60 0 1
+6080 /setblock 2 -60 0 grass_block
+6082 use-on 2 -60 0 1
+6084 /setblock 2 -60 0 grass_block
+6086 use-on 2 -60 0 1
+6088 /setblock 2 -60 0 grass_block
+6090 use-on 2 -60 0 1
+6092 /setblock 2 -60 0 grass_block
+6094 use-on 2 -60 0 1
+6096 /setblock 2 -60 0 grass_block
+6098 use-on 2 -60 0 1
+6100 /setblock 2 -60 0 grass_block
+6102 use-on 2 -60 0 1
+6104 /setblock 2 -60 0 grass_block
+6106 use-on 2 -60 0 1
+6108 /setblock 2 -60 0 grass_block
+6110 use-on 2 -60 0 1
+6112 /setblock 2 -60 0 grass_block
+6114 use-on 2 -60 0 1
+6116 /setblock 2 -60 0 grass_block
+6118 use-on 2 -60 0 1
+6120 /setblock 2 -60 0 grass_block
+6122 use-on 2 -60 0 1
+6124 /setblock 2 -60 0 grass_block
+6126 use-on 2 -60 0 1
+6128 /setblock 2 -60 0 grass_block
+6130 use-on 2 -60 0 1
+6132 /setblock 2 -60 0 grass_block
+6134 use-on 2 -60 0 1
+6136 /setblock 2 -60 0 grass_block
+6138 use-on 2 -60 0 1
+6140 /setblock 2 -60 0 grass_block
+6142 use-on 2 -60 0 1
+6144 /setblock 2 -60 0 grass_block
+6146 use-on 2 -60 0 1
+6148 /setblock 2 -60 0 grass_block
+6150 use-on 2 -60 0 1
+6152 /setblock 2 -60 0 grass_block
+6154 use-on 2 -60 0 1
+6156 /setblock 2 -60 0 grass_block
+6158 use-on 2 -60 0 1
+6160 /setblock 2 -60 0 grass_block
+6162 use-on 2 -60 0 1
+6164 /setblock 2 -60 0 grass_block
+6166 use-on 2 -60 0 1
+6168 /setblock 2 -60 0 grass_block
+6170 use-on 2 -60 0 1
+6172 /setblock 2 -60 0 grass_block
+6174 use-on 2 -60 0 1
+6176 /setblock 2 -60 0 grass_block
+6178 use-on 2 -60 0 1
+6180 /setblock 2 -60 0 grass_block
+6182 use-on 2 -60 0 1
+6184 /setblock 2 -60 0 grass_block
+6186 use-on 2 -60 0 1
+6188 /setblock 2 -60 0 grass_block
+6190 use-on 2 -60 0 1
+6192 /setblock 2 -60 0 grass_block
+6194 use-on 2 -60 0 1
+6196 /setblock 2 -60 0 grass_block
+6198 use-on 2 -60 0 1
+6200 /setblock 2 -60 0 grass_block
+6202 use-on 2 -60 0 1
+6204 /setblock 2 -60 0 grass_block
+6206 use-on 2 -60 0 1
+6208 /setblock 2 -60 0 grass_block
+6210 use-on 2 -60 0 1
+6212 /setblock 2 -60 0 grass_block
+6214 use-on 2 -60 0 1
+6216 /setblock 2 -60 0 grass_block
+6218 use-on 2 -60 0 1
+6220 /setblock 2 -60 0 grass_block
+6222 use-on 2 -60 0 1
+6224 /setblock 2 -60 0 grass_block
+6226 use-on 2 -60 0 1
+6228 /setblock 2 -60 0 grass_block
+6230 use-on 2 -60 0 1
+6232 /setblock 2 -60 0 grass_block
+6234 use-on 2 -60 0 1
+6236 /setblock 2 -60 0 grass_block
+6238 use-on 2 -60 0 1
+6240 /setblock 2 -60 0 grass_block
+6242 use-on 2 -60 0 1
+6244 /setblock 2 -60 0 grass_block
+6246 use-on 2 -60 0 1
+6248 /setblock 2 -60 0 grass_block
+6250 use-on 2 -60 0 1
+6252 /setblock 2 -60 0 grass_block
+6254 use-on 2 -60 0 1
+6256 /setblock 2 -60 0 grass_block
+6258 use-on 2 -60 0 1
+6260 /setblock 2 -60 0 grass_block
+6262 use-on 2 -60 0 1
+6264 /setblock 2 -60 0 grass_block
+6266 use-on 2 -60 0 1
+6268 /setblock 2 -60 0 grass_block
+6270 use-on 2 -60 0 1
+6272 /setblock 2 -60 0 grass_block
+6274 use-on 2 -60 0 1
+6276 /setblock 2 -60 0 grass_block
+6278 use-on 2 -60 0 1
+6280 /setblock 2 -60 0 grass_block
+6282 use-on 2 -60 0 1
+6284 /setblock 2 -60 0 grass_block
+6286 use-on 2 -60 0 1
+6288 /setblock 2 -60 0 grass_block
+6290 use-on 2 -60 0 1
+6292 /setblock 2 -60 0 grass_block
+6294 use-on 2 -60 0 1
+6296 /setblock 2 -60 0 grass_block
+6298 use-on 2 -60 0 1
+6300 /setblock 2 -60 0 grass_block
+6302 use-on 2 -60 0 1
+6304 /setblock 2 -60 0 grass_block
+6306 use-on 2 -60 0 1
+6308 /setblock 2 -60 0 grass_block
+6310 use-on 2 -60 0 1
+6312 /setblock 2 -60 0 grass_block
+6314 use-on 2 -60 0 1
+6316 /setblock 2 -60 0 grass_block
+6318 use-on 2 -60 0 1
+6320 /setblock 2 -60 0 grass_block
+6322 use-on 2 -60 0 1
+6324 /setblock 2 -60 0 grass_block
+6326 use-on 2 -60 0 1
+6328 /setblock 2 -60 0 grass_block
+6330 use-on 2 -60 0 1
+6332 /setblock 2 -60 0 grass_block
+6334 use-on 2 -60 0 1
+6336 /setblock 2 -60 0 grass_block
+6338 use-on 2 -60 0 1
+6340 /setblock 2 -60 0 grass_block
+6342 use-on 2 -60 0 1
+6344 /setblock 2 -60 0 grass_block
+6346 use-on 2 -60 0 1
+6348 /setblock 2 -60 0 grass_block
+6350 use-on 2 -60 0 1
+6352 /setblock 2 -60 0 grass_block
+6354 use-on 2 -60 0 1
+6356 /setblock 2 -60 0 grass_block
+6358 use-on 2 -60 0 1
+6360 /setblock 2 -60 0 grass_block
+6362 use-on 2 -60 0 1
+6364 /setblock 2 -60 0 grass_block
+6366 use-on 2 -60 0 1
+6368 /setblock 2 -60 0 grass_block
+6370 use-on 2 -60 0 1
+6372 /setblock 2 -60 0 grass_block
+6374 use-on 2 -60 0 1
+6376 /setblock 2 -60 0 grass_block
+6378 use-on 2 -60 0 1
+6380 /setblock 2 -60 0 grass_block
+6382 use-on 2 -60 0 1
+6384 /setblock 2 -60 0 grass_block
+6386 use-on 2 -60 0 1
+6388 /setblock 2 -60 0 grass_block
+6390 use-on 2 -60 0 1
+6392 /setblock 2 -60 0 grass_block
+6394 use-on 2 -60 0 1
+6396 /setblock 2 -60 0 grass_block
+6398 use-on 2 -60 0 1
+6400 /setblock 2 -60 0 grass_block
+6402 use-on 2 -60 0 1
+6404 /setblock 2 -60 0 grass_block
+6406 use-on 2 -60 0 1
+6408 /setblock 2 -60 0 grass_block
+6410 use-on 2 -60 0 1
+6412 /setblock 2 -60 0 grass_block
+6414 use-on 2 -60 0 1
+6416 /setblock 2 -60 0 grass_block
+6418 use-on 2 -60 0 1
+6420 /setblock 2 -60 0 grass_block
+6422 use-on 2 -60 0 1
+6424 /setblock 2 -60 0 grass_block
+6426 use-on 2 -60 0 1
+6428 /setblock 2 -60 0 grass_block
+6430 use-on 2 -60 0 1
+6432 /setblock 2 -60 0 grass_block
+6434 use-on 2 -60 0 1
+6436 /setblock 2 -60 0 grass_block
+6438 use-on 2 -60 0 1
+6440 /setblock 2 -60 0 grass_block
+6442 use-on 2 -60 0 1
+6444 /setblock 2 -60 0 grass_block
+6446 use-on 2 -60 0 1
+6448 /setblock 2 -60 0 grass_block
+6450 use-on 2 -60 0 1
+6452 /setblock 2 -60 0 grass_block
+6454 use-on 2 -60 0 1
+6456 /setblock 2 -60 0 grass_block
+6458 use-on 2 -60 0 1
+6460 /setblock 2 -60 0 grass_block
+6462 use-on 2 -60 0 1
+6464 /setblock 2 -60 0 grass_block
+6466 use-on 2 -60 0 1
+6468 /setblock 2 -60 0 grass_block
+6470 use-on 2 -60 0 1
+6472 /setblock 2 -60 0 grass_block
+6474 use-on 2 -60 0 1
+6476 /setblock 2 -60 0 grass_block
+6478 use-on 2 -60 0 1
+6480 /setblock 2 -60 0 air
+6485 /clear @s
+6486 /gamemode survival @s
+6488 /replaceitem entity @s slot.hotbar 0 shears
+6491 use
+6496 /say tooluse wear shears 0
+6499 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s1
+6504 interact-named s1
+6508 /kill @e[type=sheep]
+6510 /kill @e[type=item]
+6513 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s2
+6518 interact-named s2
+6522 /kill @e[type=sheep]
+6524 /kill @e[type=item]
+6527 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s3
+6532 interact-named s3
+6536 /kill @e[type=sheep]
+6538 /kill @e[type=item]
+6541 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s4
+6546 interact-named s4
+6550 /kill @e[type=sheep]
+6552 /kill @e[type=item]
+6555 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s5
+6560 interact-named s5
+6564 /kill @e[type=sheep]
+6566 /kill @e[type=item]
+6569 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s6
+6574 interact-named s6
+6578 /kill @e[type=sheep]
+6580 /kill @e[type=item]
+6583 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s7
+6588 interact-named s7
+6592 /kill @e[type=sheep]
+6594 /kill @e[type=item]
+6597 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s8
+6602 interact-named s8
+6606 /kill @e[type=sheep]
+6608 /kill @e[type=item]
+6611 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s9
+6616 interact-named s9
+6620 /kill @e[type=sheep]
+6622 /kill @e[type=item]
+6625 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s10
+6630 interact-named s10
+6634 /kill @e[type=sheep]
+6636 /kill @e[type=item]
+6639 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s11
+6644 interact-named s11
+6648 /kill @e[type=sheep]
+6650 /kill @e[type=item]
+6653 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s12
+6658 interact-named s12
+6662 /kill @e[type=sheep]
+6664 /kill @e[type=item]
+6667 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s13
+6672 interact-named s13
+6676 /kill @e[type=sheep]
+6678 /kill @e[type=item]
+6681 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s14
+6686 interact-named s14
+6690 /kill @e[type=sheep]
+6692 /kill @e[type=item]
+6695 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s15
+6700 interact-named s15
+6704 /kill @e[type=sheep]
+6706 /kill @e[type=item]
+6709 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s16
+6714 interact-named s16
+6718 /kill @e[type=sheep]
+6720 /kill @e[type=item]
+6723 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s17
+6728 interact-named s17
+6732 /kill @e[type=sheep]
+6734 /kill @e[type=item]
+6737 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s18
+6742 interact-named s18
+6746 /kill @e[type=sheep]
+6748 /kill @e[type=item]
+6751 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s19
+6756 interact-named s19
+6760 /kill @e[type=sheep]
+6762 /kill @e[type=item]
+6765 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s20
+6770 interact-named s20
+6774 /kill @e[type=sheep]
+6776 /kill @e[type=item]
+6779 /clear @s
+6780 /gamemode survival @s
+6782 /replaceitem entity @s slot.hotbar 0 shears
+6785 /enchant @s unbreaking 3
+6788 use
+6793 /say tooluse wear shears 3
+6796 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s21
+6801 interact-named s21
+6805 /kill @e[type=sheep]
+6807 /kill @e[type=item]
+6810 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s22
+6815 interact-named s22
+6819 /kill @e[type=sheep]
+6821 /kill @e[type=item]
+6824 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s23
+6829 interact-named s23
+6833 /kill @e[type=sheep]
+6835 /kill @e[type=item]
+6838 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s24
+6843 interact-named s24
+6847 /kill @e[type=sheep]
+6849 /kill @e[type=item]
+6852 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s25
+6857 interact-named s25
+6861 /kill @e[type=sheep]
+6863 /kill @e[type=item]
+6866 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s26
+6871 interact-named s26
+6875 /kill @e[type=sheep]
+6877 /kill @e[type=item]
+6880 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s27
+6885 interact-named s27
+6889 /kill @e[type=sheep]
+6891 /kill @e[type=item]
+6894 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s28
+6899 interact-named s28
+6903 /kill @e[type=sheep]
+6905 /kill @e[type=item]
+6908 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s29
+6913 interact-named s29
+6917 /kill @e[type=sheep]
+6919 /kill @e[type=item]
+6922 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s30
+6927 interact-named s30
+6931 /kill @e[type=sheep]
+6933 /kill @e[type=item]
+6936 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s31
+6941 interact-named s31
+6945 /kill @e[type=sheep]
+6947 /kill @e[type=item]
+6950 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s32
+6955 interact-named s32
+6959 /kill @e[type=sheep]
+6961 /kill @e[type=item]
+6964 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s33
+6969 interact-named s33
+6973 /kill @e[type=sheep]
+6975 /kill @e[type=item]
+6978 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s34
+6983 interact-named s34
+6987 /kill @e[type=sheep]
+6989 /kill @e[type=item]
+6992 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s35
+6997 interact-named s35
+7001 /kill @e[type=sheep]
+7003 /kill @e[type=item]
+7006 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s36
+7011 interact-named s36
+7015 /kill @e[type=sheep]
+7017 /kill @e[type=item]
+7020 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s37
+7025 interact-named s37
+7029 /kill @e[type=sheep]
+7031 /kill @e[type=item]
+7034 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s38
+7039 interact-named s38
+7043 /kill @e[type=sheep]
+7045 /kill @e[type=item]
+7048 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s39
+7053 interact-named s39
+7057 /kill @e[type=sheep]
+7059 /kill @e[type=item]
+7062 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s40
+7067 interact-named s40
+7071 /kill @e[type=sheep]
+7073 /kill @e[type=item]
+7076 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s41
+7081 interact-named s41
+7085 /kill @e[type=sheep]
+7087 /kill @e[type=item]
+7090 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s42
+7095 interact-named s42
+7099 /kill @e[type=sheep]
+7101 /kill @e[type=item]
+7104 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s43
+7109 interact-named s43
+7113 /kill @e[type=sheep]
+7115 /kill @e[type=item]
+7118 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s44
+7123 interact-named s44
+7127 /kill @e[type=sheep]
+7129 /kill @e[type=item]
+7132 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s45
+7137 interact-named s45
+7141 /kill @e[type=sheep]
+7143 /kill @e[type=item]
+7146 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s46
+7151 interact-named s46
+7155 /kill @e[type=sheep]
+7157 /kill @e[type=item]
+7160 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s47
+7165 interact-named s47
+7169 /kill @e[type=sheep]
+7171 /kill @e[type=item]
+7174 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s48
+7179 interact-named s48
+7183 /kill @e[type=sheep]
+7185 /kill @e[type=item]
+7188 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s49
+7193 interact-named s49
+7197 /kill @e[type=sheep]
+7199 /kill @e[type=item]
+7202 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s50
+7207 interact-named s50
+7211 /kill @e[type=sheep]
+7213 /kill @e[type=item]
+7216 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s51
+7221 interact-named s51
+7225 /kill @e[type=sheep]
+7227 /kill @e[type=item]
+7230 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s52
+7235 interact-named s52
+7239 /kill @e[type=sheep]
+7241 /kill @e[type=item]
+7244 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s53
+7249 interact-named s53
+7253 /kill @e[type=sheep]
+7255 /kill @e[type=item]
+7258 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s54
+7263 interact-named s54
+7267 /kill @e[type=sheep]
+7269 /kill @e[type=item]
+7272 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s55
+7277 interact-named s55
+7281 /kill @e[type=sheep]
+7283 /kill @e[type=item]
+7286 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s56
+7291 interact-named s56
+7295 /kill @e[type=sheep]
+7297 /kill @e[type=item]
+7300 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s57
+7305 interact-named s57
+7309 /kill @e[type=sheep]
+7311 /kill @e[type=item]
+7314 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s58
+7319 interact-named s58
+7323 /kill @e[type=sheep]
+7325 /kill @e[type=item]
+7328 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s59
+7333 interact-named s59
+7337 /kill @e[type=sheep]
+7339 /kill @e[type=item]
+7342 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s60
+7347 interact-named s60
+7351 /kill @e[type=sheep]
+7353 /kill @e[type=item]
+7356 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s61
+7361 interact-named s61
+7365 /kill @e[type=sheep]
+7367 /kill @e[type=item]
+7370 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s62
+7375 interact-named s62
+7379 /kill @e[type=sheep]
+7381 /kill @e[type=item]
+7384 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s63
+7389 interact-named s63
+7393 /kill @e[type=sheep]
+7395 /kill @e[type=item]
+7398 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s64
+7403 interact-named s64
+7407 /kill @e[type=sheep]
+7409 /kill @e[type=item]
+7412 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s65
+7417 interact-named s65
+7421 /kill @e[type=sheep]
+7423 /kill @e[type=item]
+7426 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s66
+7431 interact-named s66
+7435 /kill @e[type=sheep]
+7437 /kill @e[type=item]
+7440 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s67
+7445 interact-named s67
+7449 /kill @e[type=sheep]
+7451 /kill @e[type=item]
+7454 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s68
+7459 interact-named s68
+7463 /kill @e[type=sheep]
+7465 /kill @e[type=item]
+7468 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s69
+7473 interact-named s69
+7477 /kill @e[type=sheep]
+7479 /kill @e[type=item]
+7482 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s70
+7487 interact-named s70
+7491 /kill @e[type=sheep]
+7493 /kill @e[type=item]
+7496 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s71
+7501 interact-named s71
+7505 /kill @e[type=sheep]
+7507 /kill @e[type=item]
+7510 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s72
+7515 interact-named s72
+7519 /kill @e[type=sheep]
+7521 /kill @e[type=item]
+7524 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s73
+7529 interact-named s73
+7533 /kill @e[type=sheep]
+7535 /kill @e[type=item]
+7538 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s74
+7543 interact-named s74
+7547 /kill @e[type=sheep]
+7549 /kill @e[type=item]
+7552 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s75
+7557 interact-named s75
+7561 /kill @e[type=sheep]
+7563 /kill @e[type=item]
+7566 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s76
+7571 interact-named s76
+7575 /kill @e[type=sheep]
+7577 /kill @e[type=item]
+7580 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s77
+7585 interact-named s77
+7589 /kill @e[type=sheep]
+7591 /kill @e[type=item]
+7594 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s78
+7599 interact-named s78
+7603 /kill @e[type=sheep]
+7605 /kill @e[type=item]
+7608 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s79
+7613 interact-named s79
+7617 /kill @e[type=sheep]
+7619 /kill @e[type=item]
+7622 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s80
+7627 interact-named s80
+7631 /kill @e[type=sheep]
+7633 /kill @e[type=item]
+7636 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s81
+7641 interact-named s81
+7645 /kill @e[type=sheep]
+7647 /kill @e[type=item]
+7650 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s82
+7655 interact-named s82
+7659 /kill @e[type=sheep]
+7661 /kill @e[type=item]
+7664 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s83
+7669 interact-named s83
+7673 /kill @e[type=sheep]
+7675 /kill @e[type=item]
+7678 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s84
+7683 interact-named s84
+7687 /kill @e[type=sheep]
+7689 /kill @e[type=item]
+7692 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s85
+7697 interact-named s85
+7701 /kill @e[type=sheep]
+7703 /kill @e[type=item]
+7706 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s86
+7711 interact-named s86
+7715 /kill @e[type=sheep]
+7717 /kill @e[type=item]
+7720 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s87
+7725 interact-named s87
+7729 /kill @e[type=sheep]
+7731 /kill @e[type=item]
+7734 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s88
+7739 interact-named s88
+7743 /kill @e[type=sheep]
+7745 /kill @e[type=item]
+7748 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s89
+7753 interact-named s89
+7757 /kill @e[type=sheep]
+7759 /kill @e[type=item]
+7762 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s90
+7767 interact-named s90
+7771 /kill @e[type=sheep]
+7773 /kill @e[type=item]
+7776 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s91
+7781 interact-named s91
+7785 /kill @e[type=sheep]
+7787 /kill @e[type=item]
+7790 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s92
+7795 interact-named s92
+7799 /kill @e[type=sheep]
+7801 /kill @e[type=item]
+7804 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s93
+7809 interact-named s93
+7813 /kill @e[type=sheep]
+7815 /kill @e[type=item]
+7818 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s94
+7823 interact-named s94
+7827 /kill @e[type=sheep]
+7829 /kill @e[type=item]
+7832 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s95
+7837 interact-named s95
+7841 /kill @e[type=sheep]
+7843 /kill @e[type=item]
+7846 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s96
+7851 interact-named s96
+7855 /kill @e[type=sheep]
+7857 /kill @e[type=item]
+7860 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s97
+7865 interact-named s97
+7869 /kill @e[type=sheep]
+7871 /kill @e[type=item]
+7874 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s98
+7879 interact-named s98
+7883 /kill @e[type=sheep]
+7885 /kill @e[type=item]
+7888 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s99
+7893 interact-named s99
+7897 /kill @e[type=sheep]
+7899 /kill @e[type=item]
+7902 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s100
+7907 interact-named s100
+7911 /kill @e[type=sheep]
+7913 /kill @e[type=item]
+7916 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s101
+7921 interact-named s101
+7925 /kill @e[type=sheep]
+7927 /kill @e[type=item]
+7930 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s102
+7935 interact-named s102
+7939 /kill @e[type=sheep]
+7941 /kill @e[type=item]
+7944 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s103
+7949 interact-named s103
+7953 /kill @e[type=sheep]
+7955 /kill @e[type=item]
+7958 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s104
+7963 interact-named s104
+7967 /kill @e[type=sheep]
+7969 /kill @e[type=item]
+7972 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s105
+7977 interact-named s105
+7981 /kill @e[type=sheep]
+7983 /kill @e[type=item]
+7986 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s106
+7991 interact-named s106
+7995 /kill @e[type=sheep]
+7997 /kill @e[type=item]
+8000 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s107
+8005 interact-named s107
+8009 /kill @e[type=sheep]
+8011 /kill @e[type=item]
+8014 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s108
+8019 interact-named s108
+8023 /kill @e[type=sheep]
+8025 /kill @e[type=item]
+8028 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s109
+8033 interact-named s109
+8037 /kill @e[type=sheep]
+8039 /kill @e[type=item]
+8042 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s110
+8047 interact-named s110
+8051 /kill @e[type=sheep]
+8053 /kill @e[type=item]
+8056 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s111
+8061 interact-named s111
+8065 /kill @e[type=sheep]
+8067 /kill @e[type=item]
+8070 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s112
+8075 interact-named s112
+8079 /kill @e[type=sheep]
+8081 /kill @e[type=item]
+8084 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s113
+8089 interact-named s113
+8093 /kill @e[type=sheep]
+8095 /kill @e[type=item]
+8098 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s114
+8103 interact-named s114
+8107 /kill @e[type=sheep]
+8109 /kill @e[type=item]
+8112 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s115
+8117 interact-named s115
+8121 /kill @e[type=sheep]
+8123 /kill @e[type=item]
+8126 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s116
+8131 interact-named s116
+8135 /kill @e[type=sheep]
+8137 /kill @e[type=item]
+8140 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s117
+8145 interact-named s117
+8149 /kill @e[type=sheep]
+8151 /kill @e[type=item]
+8154 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s118
+8159 interact-named s118
+8163 /kill @e[type=sheep]
+8165 /kill @e[type=item]
+8168 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s119
+8173 interact-named s119
+8177 /kill @e[type=sheep]
+8179 /kill @e[type=item]
+8182 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s120
+8187 interact-named s120
+8191 /kill @e[type=sheep]
+8193 /kill @e[type=item]
+8196 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s121
+8201 interact-named s121
+8205 /kill @e[type=sheep]
+8207 /kill @e[type=item]
+8210 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s122
+8215 interact-named s122
+8219 /kill @e[type=sheep]
+8221 /kill @e[type=item]
+8224 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s123
+8229 interact-named s123
+8233 /kill @e[type=sheep]
+8235 /kill @e[type=item]
+8238 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s124
+8243 interact-named s124
+8247 /kill @e[type=sheep]
+8249 /kill @e[type=item]
+8252 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s125
+8257 interact-named s125
+8261 /kill @e[type=sheep]
+8263 /kill @e[type=item]
+8266 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s126
+8271 interact-named s126
+8275 /kill @e[type=sheep]
+8277 /kill @e[type=item]
+8280 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s127
+8285 interact-named s127
+8289 /kill @e[type=sheep]
+8291 /kill @e[type=item]
+8294 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s128
+8299 interact-named s128
+8303 /kill @e[type=sheep]
+8305 /kill @e[type=item]
+8308 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s129
+8313 interact-named s129
+8317 /kill @e[type=sheep]
+8319 /kill @e[type=item]
+8322 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s130
+8327 interact-named s130
+8331 /kill @e[type=sheep]
+8333 /kill @e[type=item]
+8336 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s131
+8341 interact-named s131
+8345 /kill @e[type=sheep]
+8347 /kill @e[type=item]
+8350 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s132
+8355 interact-named s132
+8359 /kill @e[type=sheep]
+8361 /kill @e[type=item]
+8364 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s133
+8369 interact-named s133
+8373 /kill @e[type=sheep]
+8375 /kill @e[type=item]
+8378 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s134
+8383 interact-named s134
+8387 /kill @e[type=sheep]
+8389 /kill @e[type=item]
+8392 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s135
+8397 interact-named s135
+8401 /kill @e[type=sheep]
+8403 /kill @e[type=item]
+8406 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s136
+8411 interact-named s136
+8415 /kill @e[type=sheep]
+8417 /kill @e[type=item]
+8420 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s137
+8425 interact-named s137
+8429 /kill @e[type=sheep]
+8431 /kill @e[type=item]
+8434 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s138
+8439 interact-named s138
+8443 /kill @e[type=sheep]
+8445 /kill @e[type=item]
+8448 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s139
+8453 interact-named s139
+8457 /kill @e[type=sheep]
+8459 /kill @e[type=item]
+8462 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s140
+8467 interact-named s140
+8471 /kill @e[type=sheep]
+8473 /kill @e[type=item]
+8476 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s141
+8481 interact-named s141
+8485 /kill @e[type=sheep]
+8487 /kill @e[type=item]
+8490 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s142
+8495 interact-named s142
+8499 /kill @e[type=sheep]
+8501 /kill @e[type=item]
+8504 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s143
+8509 interact-named s143
+8513 /kill @e[type=sheep]
+8515 /kill @e[type=item]
+8518 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s144
+8523 interact-named s144
+8527 /kill @e[type=sheep]
+8529 /kill @e[type=item]
+8532 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s145
+8537 interact-named s145
+8541 /kill @e[type=sheep]
+8543 /kill @e[type=item]
+8546 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s146
+8551 interact-named s146
+8555 /kill @e[type=sheep]
+8557 /kill @e[type=item]
+8560 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s147
+8565 interact-named s147
+8569 /kill @e[type=sheep]
+8571 /kill @e[type=item]
+8574 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s148
+8579 interact-named s148
+8583 /kill @e[type=sheep]
+8585 /kill @e[type=item]
+8588 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s149
+8593 interact-named s149
+8597 /kill @e[type=sheep]
+8599 /kill @e[type=item]
+8602 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s150
+8607 interact-named s150
+8611 /kill @e[type=sheep]
+8613 /kill @e[type=item]
+8616 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s151
+8621 interact-named s151
+8625 /kill @e[type=sheep]
+8627 /kill @e[type=item]
+8630 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s152
+8635 interact-named s152
+8639 /kill @e[type=sheep]
+8641 /kill @e[type=item]
+8644 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s153
+8649 interact-named s153
+8653 /kill @e[type=sheep]
+8655 /kill @e[type=item]
+8658 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s154
+8663 interact-named s154
+8667 /kill @e[type=sheep]
+8669 /kill @e[type=item]
+8672 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s155
+8677 interact-named s155
+8681 /kill @e[type=sheep]
+8683 /kill @e[type=item]
+8686 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s156
+8691 interact-named s156
+8695 /kill @e[type=sheep]
+8697 /kill @e[type=item]
+8700 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s157
+8705 interact-named s157
+8709 /kill @e[type=sheep]
+8711 /kill @e[type=item]
+8714 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s158
+8719 interact-named s158
+8723 /kill @e[type=sheep]
+8725 /kill @e[type=item]
+8728 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s159
+8733 interact-named s159
+8737 /kill @e[type=sheep]
+8739 /kill @e[type=item]
+8742 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s160
+8747 interact-named s160
+8751 /kill @e[type=sheep]
+8753 /kill @e[type=item]
+8756 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s161
+8761 interact-named s161
+8765 /kill @e[type=sheep]
+8767 /kill @e[type=item]
+8770 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s162
+8775 interact-named s162
+8779 /kill @e[type=sheep]
+8781 /kill @e[type=item]
+8784 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s163
+8789 interact-named s163
+8793 /kill @e[type=sheep]
+8795 /kill @e[type=item]
+8798 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s164
+8803 interact-named s164
+8807 /kill @e[type=sheep]
+8809 /kill @e[type=item]
+8812 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s165
+8817 interact-named s165
+8821 /kill @e[type=sheep]
+8823 /kill @e[type=item]
+8826 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s166
+8831 interact-named s166
+8835 /kill @e[type=sheep]
+8837 /kill @e[type=item]
+8840 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s167
+8845 interact-named s167
+8849 /kill @e[type=sheep]
+8851 /kill @e[type=item]
+8854 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s168
+8859 interact-named s168
+8863 /kill @e[type=sheep]
+8865 /kill @e[type=item]
+8868 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s169
+8873 interact-named s169
+8877 /kill @e[type=sheep]
+8879 /kill @e[type=item]
+8882 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s170
+8887 interact-named s170
+8891 /kill @e[type=sheep]
+8893 /kill @e[type=item]
+8896 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s171
+8901 interact-named s171
+8905 /kill @e[type=sheep]
+8907 /kill @e[type=item]
+8910 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s172
+8915 interact-named s172
+8919 /kill @e[type=sheep]
+8921 /kill @e[type=item]
+8924 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s173
+8929 interact-named s173
+8933 /kill @e[type=sheep]
+8935 /kill @e[type=item]
+8938 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s174
+8943 interact-named s174
+8947 /kill @e[type=sheep]
+8949 /kill @e[type=item]
+8952 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s175
+8957 interact-named s175
+8961 /kill @e[type=sheep]
+8963 /kill @e[type=item]
+8966 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s176
+8971 interact-named s176
+8975 /kill @e[type=sheep]
+8977 /kill @e[type=item]
+8980 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s177
+8985 interact-named s177
+8989 /kill @e[type=sheep]
+8991 /kill @e[type=item]
+8994 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s178
+8999 interact-named s178
+9003 /kill @e[type=sheep]
+9005 /kill @e[type=item]
+9008 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s179
+9013 interact-named s179
+9017 /kill @e[type=sheep]
+9019 /kill @e[type=item]
+9022 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s180
+9027 interact-named s180
+9031 /kill @e[type=sheep]
+9033 /kill @e[type=item]
+9036 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s181
+9041 interact-named s181
+9045 /kill @e[type=sheep]
+9047 /kill @e[type=item]
+9050 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s182
+9055 interact-named s182
+9059 /kill @e[type=sheep]
+9061 /kill @e[type=item]
+9064 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s183
+9069 interact-named s183
+9073 /kill @e[type=sheep]
+9075 /kill @e[type=item]
+9078 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s184
+9083 interact-named s184
+9087 /kill @e[type=sheep]
+9089 /kill @e[type=item]
+9092 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s185
+9097 interact-named s185
+9101 /kill @e[type=sheep]
+9103 /kill @e[type=item]
+9106 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s186
+9111 interact-named s186
+9115 /kill @e[type=sheep]
+9117 /kill @e[type=item]
+9120 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s187
+9125 interact-named s187
+9129 /kill @e[type=sheep]
+9131 /kill @e[type=item]
+9134 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s188
+9139 interact-named s188
+9143 /kill @e[type=sheep]
+9145 /kill @e[type=item]
+9148 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s189
+9153 interact-named s189
+9157 /kill @e[type=sheep]
+9159 /kill @e[type=item]
+9162 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s190
+9167 interact-named s190
+9171 /kill @e[type=sheep]
+9173 /kill @e[type=item]
+9176 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s191
+9181 interact-named s191
+9185 /kill @e[type=sheep]
+9187 /kill @e[type=item]
+9190 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s192
+9195 interact-named s192
+9199 /kill @e[type=sheep]
+9201 /kill @e[type=item]
+9204 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s193
+9209 interact-named s193
+9213 /kill @e[type=sheep]
+9215 /kill @e[type=item]
+9218 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s194
+9223 interact-named s194
+9227 /kill @e[type=sheep]
+9229 /kill @e[type=item]
+9232 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s195
+9237 interact-named s195
+9241 /kill @e[type=sheep]
+9243 /kill @e[type=item]
+9246 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s196
+9251 interact-named s196
+9255 /kill @e[type=sheep]
+9257 /kill @e[type=item]
+9260 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s197
+9265 interact-named s197
+9269 /kill @e[type=sheep]
+9271 /kill @e[type=item]
+9274 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s198
+9279 interact-named s198
+9283 /kill @e[type=sheep]
+9285 /kill @e[type=item]
+9288 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s199
+9293 interact-named s199
+9297 /kill @e[type=sheep]
+9299 /kill @e[type=item]
+9302 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s200
+9307 interact-named s200
+9311 /kill @e[type=sheep]
+9313 /kill @e[type=item]
+9316 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s201
+9321 interact-named s201
+9325 /kill @e[type=sheep]
+9327 /kill @e[type=item]
+9330 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s202
+9335 interact-named s202
+9339 /kill @e[type=sheep]
+9341 /kill @e[type=item]
+9344 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s203
+9349 interact-named s203
+9353 /kill @e[type=sheep]
+9355 /kill @e[type=item]
+9358 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s204
+9363 interact-named s204
+9367 /kill @e[type=sheep]
+9369 /kill @e[type=item]
+9372 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s205
+9377 interact-named s205
+9381 /kill @e[type=sheep]
+9383 /kill @e[type=item]
+9386 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s206
+9391 interact-named s206
+9395 /kill @e[type=sheep]
+9397 /kill @e[type=item]
+9400 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s207
+9405 interact-named s207
+9409 /kill @e[type=sheep]
+9411 /kill @e[type=item]
+9414 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s208
+9419 interact-named s208
+9423 /kill @e[type=sheep]
+9425 /kill @e[type=item]
+9428 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s209
+9433 interact-named s209
+9437 /kill @e[type=sheep]
+9439 /kill @e[type=item]
+9442 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s210
+9447 interact-named s210
+9451 /kill @e[type=sheep]
+9453 /kill @e[type=item]
+9456 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s211
+9461 interact-named s211
+9465 /kill @e[type=sheep]
+9467 /kill @e[type=item]
+9470 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s212
+9475 interact-named s212
+9479 /kill @e[type=sheep]
+9481 /kill @e[type=item]
+9484 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s213
+9489 interact-named s213
+9493 /kill @e[type=sheep]
+9495 /kill @e[type=item]
+9498 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s214
+9503 interact-named s214
+9507 /kill @e[type=sheep]
+9509 /kill @e[type=item]
+9512 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s215
+9517 interact-named s215
+9521 /kill @e[type=sheep]
+9523 /kill @e[type=item]
+9526 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s216
+9531 interact-named s216
+9535 /kill @e[type=sheep]
+9537 /kill @e[type=item]
+9540 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s217
+9545 interact-named s217
+9549 /kill @e[type=sheep]
+9551 /kill @e[type=item]
+9554 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s218
+9559 interact-named s218
+9563 /kill @e[type=sheep]
+9565 /kill @e[type=item]
+9568 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s219
+9573 interact-named s219
+9577 /kill @e[type=sheep]
+9579 /kill @e[type=item]
+9582 /summon sheep 2.5 -60 0.5 0 0 spawn_adult s220
+9587 interact-named s220
+9591 /kill @e[type=sheep]
+9593 /kill @e[type=item]
+9596 /difficulty easy
+9598 /effect @s resistance 100000 4 true
+9600 /clear @s
+9601 /gamemode survival @s
+9603 /replaceitem entity @s slot.hotbar 0 netherite_sword
+9606 use
+9611 /say tooluse drops husk 0
+9614 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h0
+9617 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+9619 /effect @e[type=husk] slowness 30 255 true
+9621 /damage @e[type=husk] 19
+9633 attack-named h0
+9663 /kill @e[type=husk]
+9665 /kill @e[type=item]
+9668 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h1
+9671 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+9673 /effect @e[type=husk] slowness 30 255 true
+9675 /damage @e[type=husk] 19
+9687 attack-named h1
+9717 /kill @e[type=husk]
+9719 /kill @e[type=item]
+9722 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h2
+9725 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+9727 /effect @e[type=husk] slowness 30 255 true
+9729 /damage @e[type=husk] 19
+9741 attack-named h2
+9771 /kill @e[type=husk]
+9773 /kill @e[type=item]
+9776 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h3
+9779 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+9781 /effect @e[type=husk] slowness 30 255 true
+9783 /damage @e[type=husk] 19
+9795 attack-named h3
+9825 /kill @e[type=husk]
+9827 /kill @e[type=item]
+9830 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h4
+9833 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+9835 /effect @e[type=husk] slowness 30 255 true
+9837 /damage @e[type=husk] 19
+9849 attack-named h4
+9879 /kill @e[type=husk]
+9881 /kill @e[type=item]
+9884 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h5
+9887 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+9889 /effect @e[type=husk] slowness 30 255 true
+9891 /damage @e[type=husk] 19
+9903 attack-named h5
+9933 /kill @e[type=husk]
+9935 /kill @e[type=item]
+9938 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h6
+9941 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+9943 /effect @e[type=husk] slowness 30 255 true
+9945 /damage @e[type=husk] 19
+9957 attack-named h6
+9987 /kill @e[type=husk]
+9989 /kill @e[type=item]
+9992 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h7
+9995 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+9997 /effect @e[type=husk] slowness 30 255 true
+9999 /damage @e[type=husk] 19
+10011 attack-named h7
+10041 /kill @e[type=husk]
+10043 /kill @e[type=item]
+10046 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h8
+10049 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+10051 /effect @e[type=husk] slowness 30 255 true
+10053 /damage @e[type=husk] 19
+10065 attack-named h8
+10095 /kill @e[type=husk]
+10097 /kill @e[type=item]
+10100 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h9
+10103 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+10105 /effect @e[type=husk] slowness 30 255 true
+10107 /damage @e[type=husk] 19
+10119 attack-named h9
+10149 /kill @e[type=husk]
+10151 /kill @e[type=item]
+10154 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h10
+10157 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+10159 /effect @e[type=husk] slowness 30 255 true
+10161 /damage @e[type=husk] 19
+10173 attack-named h10
+10203 /kill @e[type=husk]
+10205 /kill @e[type=item]
+10208 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h11
+10211 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+10213 /effect @e[type=husk] slowness 30 255 true
+10215 /damage @e[type=husk] 19
+10227 attack-named h11
+10257 /kill @e[type=husk]
+10259 /kill @e[type=item]
+10262 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h12
+10265 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+10267 /effect @e[type=husk] slowness 30 255 true
+10269 /damage @e[type=husk] 19
+10281 attack-named h12
+10311 /kill @e[type=husk]
+10313 /kill @e[type=item]
+10316 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h13
+10319 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+10321 /effect @e[type=husk] slowness 30 255 true
+10323 /damage @e[type=husk] 19
+10335 attack-named h13
+10365 /kill @e[type=husk]
+10367 /kill @e[type=item]
+10370 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h14
+10373 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+10375 /effect @e[type=husk] slowness 30 255 true
+10377 /damage @e[type=husk] 19
+10389 attack-named h14
+10419 /kill @e[type=husk]
+10421 /kill @e[type=item]
+10424 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h15
+10427 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+10429 /effect @e[type=husk] slowness 30 255 true
+10431 /damage @e[type=husk] 19
+10443 attack-named h15
+10473 /kill @e[type=husk]
+10475 /kill @e[type=item]
+10478 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h16
+10481 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+10483 /effect @e[type=husk] slowness 30 255 true
+10485 /damage @e[type=husk] 19
+10497 attack-named h16
+10527 /kill @e[type=husk]
+10529 /kill @e[type=item]
+10532 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h17
+10535 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+10537 /effect @e[type=husk] slowness 30 255 true
+10539 /damage @e[type=husk] 19
+10551 attack-named h17
+10581 /kill @e[type=husk]
+10583 /kill @e[type=item]
+10586 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h18
+10589 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+10591 /effect @e[type=husk] slowness 30 255 true
+10593 /damage @e[type=husk] 19
+10605 attack-named h18
+10635 /kill @e[type=husk]
+10637 /kill @e[type=item]
+10640 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h19
+10643 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+10645 /effect @e[type=husk] slowness 30 255 true
+10647 /damage @e[type=husk] 19
+10659 attack-named h19
+10689 /kill @e[type=husk]
+10691 /kill @e[type=item]
+10694 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h20
+10697 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+10699 /effect @e[type=husk] slowness 30 255 true
+10701 /damage @e[type=husk] 19
+10713 attack-named h20
+10743 /kill @e[type=husk]
+10745 /kill @e[type=item]
+10748 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h21
+10751 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+10753 /effect @e[type=husk] slowness 30 255 true
+10755 /damage @e[type=husk] 19
+10767 attack-named h21
+10797 /kill @e[type=husk]
+10799 /kill @e[type=item]
+10802 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h22
+10805 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+10807 /effect @e[type=husk] slowness 30 255 true
+10809 /damage @e[type=husk] 19
+10821 attack-named h22
+10851 /kill @e[type=husk]
+10853 /kill @e[type=item]
+10856 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h23
+10859 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+10861 /effect @e[type=husk] slowness 30 255 true
+10863 /damage @e[type=husk] 19
+10875 attack-named h23
+10905 /kill @e[type=husk]
+10907 /kill @e[type=item]
+10910 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h24
+10913 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+10915 /effect @e[type=husk] slowness 30 255 true
+10917 /damage @e[type=husk] 19
+10929 attack-named h24
+10959 /kill @e[type=husk]
+10961 /kill @e[type=item]
+10964 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h25
+10967 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+10969 /effect @e[type=husk] slowness 30 255 true
+10971 /damage @e[type=husk] 19
+10983 attack-named h25
+11013 /kill @e[type=husk]
+11015 /kill @e[type=item]
+11018 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h26
+11021 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+11023 /effect @e[type=husk] slowness 30 255 true
+11025 /damage @e[type=husk] 19
+11037 attack-named h26
+11067 /kill @e[type=husk]
+11069 /kill @e[type=item]
+11072 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h27
+11075 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+11077 /effect @e[type=husk] slowness 30 255 true
+11079 /damage @e[type=husk] 19
+11091 attack-named h27
+11121 /kill @e[type=husk]
+11123 /kill @e[type=item]
+11126 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h28
+11129 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+11131 /effect @e[type=husk] slowness 30 255 true
+11133 /damage @e[type=husk] 19
+11145 attack-named h28
+11175 /kill @e[type=husk]
+11177 /kill @e[type=item]
+11180 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h29
+11183 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+11185 /effect @e[type=husk] slowness 30 255 true
+11187 /damage @e[type=husk] 19
+11199 attack-named h29
+11229 /kill @e[type=husk]
+11231 /kill @e[type=item]
+11234 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h30
+11237 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+11239 /effect @e[type=husk] slowness 30 255 true
+11241 /damage @e[type=husk] 19
+11253 attack-named h30
+11283 /kill @e[type=husk]
+11285 /kill @e[type=item]
+11288 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h31
+11291 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+11293 /effect @e[type=husk] slowness 30 255 true
+11295 /damage @e[type=husk] 19
+11307 attack-named h31
+11337 /kill @e[type=husk]
+11339 /kill @e[type=item]
+11342 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h32
+11345 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+11347 /effect @e[type=husk] slowness 30 255 true
+11349 /damage @e[type=husk] 19
+11361 attack-named h32
+11391 /kill @e[type=husk]
+11393 /kill @e[type=item]
+11396 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h33
+11399 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+11401 /effect @e[type=husk] slowness 30 255 true
+11403 /damage @e[type=husk] 19
+11415 attack-named h33
+11445 /kill @e[type=husk]
+11447 /kill @e[type=item]
+11450 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h34
+11453 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+11455 /effect @e[type=husk] slowness 30 255 true
+11457 /damage @e[type=husk] 19
+11469 attack-named h34
+11499 /kill @e[type=husk]
+11501 /kill @e[type=item]
+11504 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h35
+11507 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+11509 /effect @e[type=husk] slowness 30 255 true
+11511 /damage @e[type=husk] 19
+11523 attack-named h35
+11553 /kill @e[type=husk]
+11555 /kill @e[type=item]
+11558 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h36
+11561 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+11563 /effect @e[type=husk] slowness 30 255 true
+11565 /damage @e[type=husk] 19
+11577 attack-named h36
+11607 /kill @e[type=husk]
+11609 /kill @e[type=item]
+11612 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h37
+11615 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+11617 /effect @e[type=husk] slowness 30 255 true
+11619 /damage @e[type=husk] 19
+11631 attack-named h37
+11661 /kill @e[type=husk]
+11663 /kill @e[type=item]
+11666 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h38
+11669 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+11671 /effect @e[type=husk] slowness 30 255 true
+11673 /damage @e[type=husk] 19
+11685 attack-named h38
+11715 /kill @e[type=husk]
+11717 /kill @e[type=item]
+11720 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h39
+11723 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+11725 /effect @e[type=husk] slowness 30 255 true
+11727 /damage @e[type=husk] 19
+11739 attack-named h39
+11769 /kill @e[type=husk]
+11771 /kill @e[type=item]
+11774 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h40
+11777 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+11779 /effect @e[type=husk] slowness 30 255 true
+11781 /damage @e[type=husk] 19
+11793 attack-named h40
+11823 /kill @e[type=husk]
+11825 /kill @e[type=item]
+11828 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h41
+11831 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+11833 /effect @e[type=husk] slowness 30 255 true
+11835 /damage @e[type=husk] 19
+11847 attack-named h41
+11877 /kill @e[type=husk]
+11879 /kill @e[type=item]
+11882 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h42
+11885 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+11887 /effect @e[type=husk] slowness 30 255 true
+11889 /damage @e[type=husk] 19
+11901 attack-named h42
+11931 /kill @e[type=husk]
+11933 /kill @e[type=item]
+11936 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h43
+11939 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+11941 /effect @e[type=husk] slowness 30 255 true
+11943 /damage @e[type=husk] 19
+11955 attack-named h43
+11985 /kill @e[type=husk]
+11987 /kill @e[type=item]
+11990 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h44
+11993 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+11995 /effect @e[type=husk] slowness 30 255 true
+11997 /damage @e[type=husk] 19
+12009 attack-named h44
+12039 /kill @e[type=husk]
+12041 /kill @e[type=item]
+12044 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h45
+12047 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+12049 /effect @e[type=husk] slowness 30 255 true
+12051 /damage @e[type=husk] 19
+12063 attack-named h45
+12093 /kill @e[type=husk]
+12095 /kill @e[type=item]
+12098 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h46
+12101 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+12103 /effect @e[type=husk] slowness 30 255 true
+12105 /damage @e[type=husk] 19
+12117 attack-named h46
+12147 /kill @e[type=husk]
+12149 /kill @e[type=item]
+12152 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h47
+12155 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+12157 /effect @e[type=husk] slowness 30 255 true
+12159 /damage @e[type=husk] 19
+12171 attack-named h47
+12201 /kill @e[type=husk]
+12203 /kill @e[type=item]
+12206 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h48
+12209 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+12211 /effect @e[type=husk] slowness 30 255 true
+12213 /damage @e[type=husk] 19
+12225 attack-named h48
+12255 /kill @e[type=husk]
+12257 /kill @e[type=item]
+12260 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h49
+12263 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+12265 /effect @e[type=husk] slowness 30 255 true
+12267 /damage @e[type=husk] 19
+12279 attack-named h49
+12309 /kill @e[type=husk]
+12311 /kill @e[type=item]
+12314 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h50
+12317 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+12319 /effect @e[type=husk] slowness 30 255 true
+12321 /damage @e[type=husk] 19
+12333 attack-named h50
+12363 /kill @e[type=husk]
+12365 /kill @e[type=item]
+12368 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h51
+12371 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+12373 /effect @e[type=husk] slowness 30 255 true
+12375 /damage @e[type=husk] 19
+12387 attack-named h51
+12417 /kill @e[type=husk]
+12419 /kill @e[type=item]
+12422 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h52
+12425 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+12427 /effect @e[type=husk] slowness 30 255 true
+12429 /damage @e[type=husk] 19
+12441 attack-named h52
+12471 /kill @e[type=husk]
+12473 /kill @e[type=item]
+12476 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h53
+12479 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+12481 /effect @e[type=husk] slowness 30 255 true
+12483 /damage @e[type=husk] 19
+12495 attack-named h53
+12525 /kill @e[type=husk]
+12527 /kill @e[type=item]
+12530 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h54
+12533 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+12535 /effect @e[type=husk] slowness 30 255 true
+12537 /damage @e[type=husk] 19
+12549 attack-named h54
+12579 /kill @e[type=husk]
+12581 /kill @e[type=item]
+12584 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h55
+12587 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+12589 /effect @e[type=husk] slowness 30 255 true
+12591 /damage @e[type=husk] 19
+12603 attack-named h55
+12633 /kill @e[type=husk]
+12635 /kill @e[type=item]
+12638 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h56
+12641 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+12643 /effect @e[type=husk] slowness 30 255 true
+12645 /damage @e[type=husk] 19
+12657 attack-named h56
+12687 /kill @e[type=husk]
+12689 /kill @e[type=item]
+12692 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h57
+12695 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+12697 /effect @e[type=husk] slowness 30 255 true
+12699 /damage @e[type=husk] 19
+12711 attack-named h57
+12741 /kill @e[type=husk]
+12743 /kill @e[type=item]
+12746 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h58
+12749 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+12751 /effect @e[type=husk] slowness 30 255 true
+12753 /damage @e[type=husk] 19
+12765 attack-named h58
+12795 /kill @e[type=husk]
+12797 /kill @e[type=item]
+12800 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h59
+12803 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+12805 /effect @e[type=husk] slowness 30 255 true
+12807 /damage @e[type=husk] 19
+12819 attack-named h59
+12849 /kill @e[type=husk]
+12851 /kill @e[type=item]
+12854 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h60
+12857 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+12859 /effect @e[type=husk] slowness 30 255 true
+12861 /damage @e[type=husk] 19
+12873 attack-named h60
+12903 /kill @e[type=husk]
+12905 /kill @e[type=item]
+12908 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h61
+12911 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+12913 /effect @e[type=husk] slowness 30 255 true
+12915 /damage @e[type=husk] 19
+12927 attack-named h61
+12957 /kill @e[type=husk]
+12959 /kill @e[type=item]
+12962 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h62
+12965 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+12967 /effect @e[type=husk] slowness 30 255 true
+12969 /damage @e[type=husk] 19
+12981 attack-named h62
+13011 /kill @e[type=husk]
+13013 /kill @e[type=item]
+13016 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h63
+13019 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+13021 /effect @e[type=husk] slowness 30 255 true
+13023 /damage @e[type=husk] 19
+13035 attack-named h63
+13065 /kill @e[type=husk]
+13067 /kill @e[type=item]
+13070 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h64
+13073 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+13075 /effect @e[type=husk] slowness 30 255 true
+13077 /damage @e[type=husk] 19
+13089 attack-named h64
+13119 /kill @e[type=husk]
+13121 /kill @e[type=item]
+13124 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h65
+13127 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+13129 /effect @e[type=husk] slowness 30 255 true
+13131 /damage @e[type=husk] 19
+13143 attack-named h65
+13173 /kill @e[type=husk]
+13175 /kill @e[type=item]
+13178 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h66
+13181 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+13183 /effect @e[type=husk] slowness 30 255 true
+13185 /damage @e[type=husk] 19
+13197 attack-named h66
+13227 /kill @e[type=husk]
+13229 /kill @e[type=item]
+13232 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h67
+13235 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+13237 /effect @e[type=husk] slowness 30 255 true
+13239 /damage @e[type=husk] 19
+13251 attack-named h67
+13281 /kill @e[type=husk]
+13283 /kill @e[type=item]
+13286 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h68
+13289 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+13291 /effect @e[type=husk] slowness 30 255 true
+13293 /damage @e[type=husk] 19
+13305 attack-named h68
+13335 /kill @e[type=husk]
+13337 /kill @e[type=item]
+13340 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h69
+13343 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+13345 /effect @e[type=husk] slowness 30 255 true
+13347 /damage @e[type=husk] 19
+13359 attack-named h69
+13389 /kill @e[type=husk]
+13391 /kill @e[type=item]
+13394 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h70
+13397 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+13399 /effect @e[type=husk] slowness 30 255 true
+13401 /damage @e[type=husk] 19
+13413 attack-named h70
+13443 /kill @e[type=husk]
+13445 /kill @e[type=item]
+13448 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h71
+13451 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+13453 /effect @e[type=husk] slowness 30 255 true
+13455 /damage @e[type=husk] 19
+13467 attack-named h71
+13497 /kill @e[type=husk]
+13499 /kill @e[type=item]
+13502 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h72
+13505 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+13507 /effect @e[type=husk] slowness 30 255 true
+13509 /damage @e[type=husk] 19
+13521 attack-named h72
+13551 /kill @e[type=husk]
+13553 /kill @e[type=item]
+13556 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h73
+13559 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+13561 /effect @e[type=husk] slowness 30 255 true
+13563 /damage @e[type=husk] 19
+13575 attack-named h73
+13605 /kill @e[type=husk]
+13607 /kill @e[type=item]
+13610 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h74
+13613 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+13615 /effect @e[type=husk] slowness 30 255 true
+13617 /damage @e[type=husk] 19
+13629 attack-named h74
+13659 /kill @e[type=husk]
+13661 /kill @e[type=item]
+13664 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h75
+13667 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+13669 /effect @e[type=husk] slowness 30 255 true
+13671 /damage @e[type=husk] 19
+13683 attack-named h75
+13713 /kill @e[type=husk]
+13715 /kill @e[type=item]
+13718 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h76
+13721 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+13723 /effect @e[type=husk] slowness 30 255 true
+13725 /damage @e[type=husk] 19
+13737 attack-named h76
+13767 /kill @e[type=husk]
+13769 /kill @e[type=item]
+13772 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h77
+13775 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+13777 /effect @e[type=husk] slowness 30 255 true
+13779 /damage @e[type=husk] 19
+13791 attack-named h77
+13821 /kill @e[type=husk]
+13823 /kill @e[type=item]
+13826 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h78
+13829 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+13831 /effect @e[type=husk] slowness 30 255 true
+13833 /damage @e[type=husk] 19
+13845 attack-named h78
+13875 /kill @e[type=husk]
+13877 /kill @e[type=item]
+13880 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h79
+13883 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+13885 /effect @e[type=husk] slowness 30 255 true
+13887 /damage @e[type=husk] 19
+13899 attack-named h79
+13929 /kill @e[type=husk]
+13931 /kill @e[type=item]
+13934 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h80
+13937 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+13939 /effect @e[type=husk] slowness 30 255 true
+13941 /damage @e[type=husk] 19
+13953 attack-named h80
+13983 /kill @e[type=husk]
+13985 /kill @e[type=item]
+13988 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h81
+13991 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+13993 /effect @e[type=husk] slowness 30 255 true
+13995 /damage @e[type=husk] 19
+14007 attack-named h81
+14037 /kill @e[type=husk]
+14039 /kill @e[type=item]
+14042 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h82
+14045 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+14047 /effect @e[type=husk] slowness 30 255 true
+14049 /damage @e[type=husk] 19
+14061 attack-named h82
+14091 /kill @e[type=husk]
+14093 /kill @e[type=item]
+14096 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h83
+14099 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+14101 /effect @e[type=husk] slowness 30 255 true
+14103 /damage @e[type=husk] 19
+14115 attack-named h83
+14145 /kill @e[type=husk]
+14147 /kill @e[type=item]
+14150 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h84
+14153 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+14155 /effect @e[type=husk] slowness 30 255 true
+14157 /damage @e[type=husk] 19
+14169 attack-named h84
+14199 /kill @e[type=husk]
+14201 /kill @e[type=item]
+14204 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h85
+14207 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+14209 /effect @e[type=husk] slowness 30 255 true
+14211 /damage @e[type=husk] 19
+14223 attack-named h85
+14253 /kill @e[type=husk]
+14255 /kill @e[type=item]
+14258 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h86
+14261 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+14263 /effect @e[type=husk] slowness 30 255 true
+14265 /damage @e[type=husk] 19
+14277 attack-named h86
+14307 /kill @e[type=husk]
+14309 /kill @e[type=item]
+14312 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h87
+14315 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+14317 /effect @e[type=husk] slowness 30 255 true
+14319 /damage @e[type=husk] 19
+14331 attack-named h87
+14361 /kill @e[type=husk]
+14363 /kill @e[type=item]
+14366 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h88
+14369 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+14371 /effect @e[type=husk] slowness 30 255 true
+14373 /damage @e[type=husk] 19
+14385 attack-named h88
+14415 /kill @e[type=husk]
+14417 /kill @e[type=item]
+14420 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h89
+14423 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+14425 /effect @e[type=husk] slowness 30 255 true
+14427 /damage @e[type=husk] 19
+14439 attack-named h89
+14469 /kill @e[type=husk]
+14471 /kill @e[type=item]
+14474 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h90
+14477 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+14479 /effect @e[type=husk] slowness 30 255 true
+14481 /damage @e[type=husk] 19
+14493 attack-named h90
+14523 /kill @e[type=husk]
+14525 /kill @e[type=item]
+14528 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h91
+14531 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+14533 /effect @e[type=husk] slowness 30 255 true
+14535 /damage @e[type=husk] 19
+14547 attack-named h91
+14577 /kill @e[type=husk]
+14579 /kill @e[type=item]
+14582 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h92
+14585 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+14587 /effect @e[type=husk] slowness 30 255 true
+14589 /damage @e[type=husk] 19
+14601 attack-named h92
+14631 /kill @e[type=husk]
+14633 /kill @e[type=item]
+14636 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h93
+14639 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+14641 /effect @e[type=husk] slowness 30 255 true
+14643 /damage @e[type=husk] 19
+14655 attack-named h93
+14685 /kill @e[type=husk]
+14687 /kill @e[type=item]
+14690 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h94
+14693 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+14695 /effect @e[type=husk] slowness 30 255 true
+14697 /damage @e[type=husk] 19
+14709 attack-named h94
+14739 /kill @e[type=husk]
+14741 /kill @e[type=item]
+14744 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h95
+14747 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+14749 /effect @e[type=husk] slowness 30 255 true
+14751 /damage @e[type=husk] 19
+14763 attack-named h95
+14793 /kill @e[type=husk]
+14795 /kill @e[type=item]
+14798 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h96
+14801 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+14803 /effect @e[type=husk] slowness 30 255 true
+14805 /damage @e[type=husk] 19
+14817 attack-named h96
+14847 /kill @e[type=husk]
+14849 /kill @e[type=item]
+14852 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h97
+14855 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+14857 /effect @e[type=husk] slowness 30 255 true
+14859 /damage @e[type=husk] 19
+14871 attack-named h97
+14901 /kill @e[type=husk]
+14903 /kill @e[type=item]
+14906 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h98
+14909 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+14911 /effect @e[type=husk] slowness 30 255 true
+14913 /damage @e[type=husk] 19
+14925 attack-named h98
+14955 /kill @e[type=husk]
+14957 /kill @e[type=item]
+14960 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h99
+14963 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+14965 /effect @e[type=husk] slowness 30 255 true
+14967 /damage @e[type=husk] 19
+14979 attack-named h99
+15009 /kill @e[type=husk]
+15011 /kill @e[type=item]
+15014 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h100
+15017 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+15019 /effect @e[type=husk] slowness 30 255 true
+15021 /damage @e[type=husk] 19
+15033 attack-named h100
+15063 /kill @e[type=husk]
+15065 /kill @e[type=item]
+15068 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h101
+15071 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+15073 /effect @e[type=husk] slowness 30 255 true
+15075 /damage @e[type=husk] 19
+15087 attack-named h101
+15117 /kill @e[type=husk]
+15119 /kill @e[type=item]
+15122 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h102
+15125 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+15127 /effect @e[type=husk] slowness 30 255 true
+15129 /damage @e[type=husk] 19
+15141 attack-named h102
+15171 /kill @e[type=husk]
+15173 /kill @e[type=item]
+15176 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h103
+15179 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+15181 /effect @e[type=husk] slowness 30 255 true
+15183 /damage @e[type=husk] 19
+15195 attack-named h103
+15225 /kill @e[type=husk]
+15227 /kill @e[type=item]
+15230 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h104
+15233 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+15235 /effect @e[type=husk] slowness 30 255 true
+15237 /damage @e[type=husk] 19
+15249 attack-named h104
+15279 /kill @e[type=husk]
+15281 /kill @e[type=item]
+15284 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h105
+15287 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+15289 /effect @e[type=husk] slowness 30 255 true
+15291 /damage @e[type=husk] 19
+15303 attack-named h105
+15333 /kill @e[type=husk]
+15335 /kill @e[type=item]
+15338 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h106
+15341 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+15343 /effect @e[type=husk] slowness 30 255 true
+15345 /damage @e[type=husk] 19
+15357 attack-named h106
+15387 /kill @e[type=husk]
+15389 /kill @e[type=item]
+15392 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h107
+15395 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+15397 /effect @e[type=husk] slowness 30 255 true
+15399 /damage @e[type=husk] 19
+15411 attack-named h107
+15441 /kill @e[type=husk]
+15443 /kill @e[type=item]
+15446 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h108
+15449 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+15451 /effect @e[type=husk] slowness 30 255 true
+15453 /damage @e[type=husk] 19
+15465 attack-named h108
+15495 /kill @e[type=husk]
+15497 /kill @e[type=item]
+15500 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h109
+15503 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+15505 /effect @e[type=husk] slowness 30 255 true
+15507 /damage @e[type=husk] 19
+15519 attack-named h109
+15549 /kill @e[type=husk]
+15551 /kill @e[type=item]
+15554 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h110
+15557 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+15559 /effect @e[type=husk] slowness 30 255 true
+15561 /damage @e[type=husk] 19
+15573 attack-named h110
+15603 /kill @e[type=husk]
+15605 /kill @e[type=item]
+15608 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h111
+15611 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+15613 /effect @e[type=husk] slowness 30 255 true
+15615 /damage @e[type=husk] 19
+15627 attack-named h111
+15657 /kill @e[type=husk]
+15659 /kill @e[type=item]
+15662 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h112
+15665 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+15667 /effect @e[type=husk] slowness 30 255 true
+15669 /damage @e[type=husk] 19
+15681 attack-named h112
+15711 /kill @e[type=husk]
+15713 /kill @e[type=item]
+15716 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h113
+15719 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+15721 /effect @e[type=husk] slowness 30 255 true
+15723 /damage @e[type=husk] 19
+15735 attack-named h113
+15765 /kill @e[type=husk]
+15767 /kill @e[type=item]
+15770 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h114
+15773 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+15775 /effect @e[type=husk] slowness 30 255 true
+15777 /damage @e[type=husk] 19
+15789 attack-named h114
+15819 /kill @e[type=husk]
+15821 /kill @e[type=item]
+15824 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h115
+15827 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+15829 /effect @e[type=husk] slowness 30 255 true
+15831 /damage @e[type=husk] 19
+15843 attack-named h115
+15873 /kill @e[type=husk]
+15875 /kill @e[type=item]
+15878 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h116
+15881 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+15883 /effect @e[type=husk] slowness 30 255 true
+15885 /damage @e[type=husk] 19
+15897 attack-named h116
+15927 /kill @e[type=husk]
+15929 /kill @e[type=item]
+15932 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h117
+15935 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+15937 /effect @e[type=husk] slowness 30 255 true
+15939 /damage @e[type=husk] 19
+15951 attack-named h117
+15981 /kill @e[type=husk]
+15983 /kill @e[type=item]
+15986 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h118
+15989 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+15991 /effect @e[type=husk] slowness 30 255 true
+15993 /damage @e[type=husk] 19
+16005 attack-named h118
+16035 /kill @e[type=husk]
+16037 /kill @e[type=item]
+16040 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h119
+16043 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+16045 /effect @e[type=husk] slowness 30 255 true
+16047 /damage @e[type=husk] 19
+16059 attack-named h119
+16089 /kill @e[type=husk]
+16091 /kill @e[type=item]
+16094 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h120
+16097 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+16099 /effect @e[type=husk] slowness 30 255 true
+16101 /damage @e[type=husk] 19
+16113 attack-named h120
+16143 /kill @e[type=husk]
+16145 /kill @e[type=item]
+16148 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h121
+16151 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+16153 /effect @e[type=husk] slowness 30 255 true
+16155 /damage @e[type=husk] 19
+16167 attack-named h121
+16197 /kill @e[type=husk]
+16199 /kill @e[type=item]
+16202 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h122
+16205 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+16207 /effect @e[type=husk] slowness 30 255 true
+16209 /damage @e[type=husk] 19
+16221 attack-named h122
+16251 /kill @e[type=husk]
+16253 /kill @e[type=item]
+16256 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h123
+16259 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+16261 /effect @e[type=husk] slowness 30 255 true
+16263 /damage @e[type=husk] 19
+16275 attack-named h123
+16305 /kill @e[type=husk]
+16307 /kill @e[type=item]
+16310 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h124
+16313 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+16315 /effect @e[type=husk] slowness 30 255 true
+16317 /damage @e[type=husk] 19
+16329 attack-named h124
+16359 /kill @e[type=husk]
+16361 /kill @e[type=item]
+16364 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h125
+16367 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+16369 /effect @e[type=husk] slowness 30 255 true
+16371 /damage @e[type=husk] 19
+16383 attack-named h125
+16413 /kill @e[type=husk]
+16415 /kill @e[type=item]
+16418 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h126
+16421 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+16423 /effect @e[type=husk] slowness 30 255 true
+16425 /damage @e[type=husk] 19
+16437 attack-named h126
+16467 /kill @e[type=husk]
+16469 /kill @e[type=item]
+16472 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h127
+16475 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+16477 /effect @e[type=husk] slowness 30 255 true
+16479 /damage @e[type=husk] 19
+16491 attack-named h127
+16521 /kill @e[type=husk]
+16523 /kill @e[type=item]
+16526 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h128
+16529 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+16531 /effect @e[type=husk] slowness 30 255 true
+16533 /damage @e[type=husk] 19
+16545 attack-named h128
+16575 /kill @e[type=husk]
+16577 /kill @e[type=item]
+16580 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h129
+16583 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+16585 /effect @e[type=husk] slowness 30 255 true
+16587 /damage @e[type=husk] 19
+16599 attack-named h129
+16629 /kill @e[type=husk]
+16631 /kill @e[type=item]
+16634 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h130
+16637 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+16639 /effect @e[type=husk] slowness 30 255 true
+16641 /damage @e[type=husk] 19
+16653 attack-named h130
+16683 /kill @e[type=husk]
+16685 /kill @e[type=item]
+16688 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h131
+16691 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+16693 /effect @e[type=husk] slowness 30 255 true
+16695 /damage @e[type=husk] 19
+16707 attack-named h131
+16737 /kill @e[type=husk]
+16739 /kill @e[type=item]
+16742 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h132
+16745 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+16747 /effect @e[type=husk] slowness 30 255 true
+16749 /damage @e[type=husk] 19
+16761 attack-named h132
+16791 /kill @e[type=husk]
+16793 /kill @e[type=item]
+16796 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h133
+16799 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+16801 /effect @e[type=husk] slowness 30 255 true
+16803 /damage @e[type=husk] 19
+16815 attack-named h133
+16845 /kill @e[type=husk]
+16847 /kill @e[type=item]
+16850 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h134
+16853 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+16855 /effect @e[type=husk] slowness 30 255 true
+16857 /damage @e[type=husk] 19
+16869 attack-named h134
+16899 /kill @e[type=husk]
+16901 /kill @e[type=item]
+16904 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h135
+16907 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+16909 /effect @e[type=husk] slowness 30 255 true
+16911 /damage @e[type=husk] 19
+16923 attack-named h135
+16953 /kill @e[type=husk]
+16955 /kill @e[type=item]
+16958 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h136
+16961 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+16963 /effect @e[type=husk] slowness 30 255 true
+16965 /damage @e[type=husk] 19
+16977 attack-named h136
+17007 /kill @e[type=husk]
+17009 /kill @e[type=item]
+17012 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h137
+17015 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+17017 /effect @e[type=husk] slowness 30 255 true
+17019 /damage @e[type=husk] 19
+17031 attack-named h137
+17061 /kill @e[type=husk]
+17063 /kill @e[type=item]
+17066 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h138
+17069 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+17071 /effect @e[type=husk] slowness 30 255 true
+17073 /damage @e[type=husk] 19
+17085 attack-named h138
+17115 /kill @e[type=husk]
+17117 /kill @e[type=item]
+17120 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h139
+17123 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+17125 /effect @e[type=husk] slowness 30 255 true
+17127 /damage @e[type=husk] 19
+17139 attack-named h139
+17169 /kill @e[type=husk]
+17171 /kill @e[type=item]
+17174 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h140
+17177 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+17179 /effect @e[type=husk] slowness 30 255 true
+17181 /damage @e[type=husk] 19
+17193 attack-named h140
+17223 /kill @e[type=husk]
+17225 /kill @e[type=item]
+17228 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h141
+17231 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+17233 /effect @e[type=husk] slowness 30 255 true
+17235 /damage @e[type=husk] 19
+17247 attack-named h141
+17277 /kill @e[type=husk]
+17279 /kill @e[type=item]
+17282 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h142
+17285 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+17287 /effect @e[type=husk] slowness 30 255 true
+17289 /damage @e[type=husk] 19
+17301 attack-named h142
+17331 /kill @e[type=husk]
+17333 /kill @e[type=item]
+17336 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h143
+17339 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+17341 /effect @e[type=husk] slowness 30 255 true
+17343 /damage @e[type=husk] 19
+17355 attack-named h143
+17385 /kill @e[type=husk]
+17387 /kill @e[type=item]
+17390 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h144
+17393 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+17395 /effect @e[type=husk] slowness 30 255 true
+17397 /damage @e[type=husk] 19
+17409 attack-named h144
+17439 /kill @e[type=husk]
+17441 /kill @e[type=item]
+17444 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h145
+17447 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+17449 /effect @e[type=husk] slowness 30 255 true
+17451 /damage @e[type=husk] 19
+17463 attack-named h145
+17493 /kill @e[type=husk]
+17495 /kill @e[type=item]
+17498 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h146
+17501 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+17503 /effect @e[type=husk] slowness 30 255 true
+17505 /damage @e[type=husk] 19
+17517 attack-named h146
+17547 /kill @e[type=husk]
+17549 /kill @e[type=item]
+17552 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h147
+17555 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+17557 /effect @e[type=husk] slowness 30 255 true
+17559 /damage @e[type=husk] 19
+17571 attack-named h147
+17601 /kill @e[type=husk]
+17603 /kill @e[type=item]
+17606 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h148
+17609 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+17611 /effect @e[type=husk] slowness 30 255 true
+17613 /damage @e[type=husk] 19
+17625 attack-named h148
+17655 /kill @e[type=husk]
+17657 /kill @e[type=item]
+17660 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h149
+17663 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+17665 /effect @e[type=husk] slowness 30 255 true
+17667 /damage @e[type=husk] 19
+17679 attack-named h149
+17709 /kill @e[type=husk]
+17711 /kill @e[type=item]
+17714 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h150
+17717 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+17719 /effect @e[type=husk] slowness 30 255 true
+17721 /damage @e[type=husk] 19
+17733 attack-named h150
+17763 /kill @e[type=husk]
+17765 /kill @e[type=item]
+17768 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h151
+17771 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+17773 /effect @e[type=husk] slowness 30 255 true
+17775 /damage @e[type=husk] 19
+17787 attack-named h151
+17817 /kill @e[type=husk]
+17819 /kill @e[type=item]
+17822 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h152
+17825 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+17827 /effect @e[type=husk] slowness 30 255 true
+17829 /damage @e[type=husk] 19
+17841 attack-named h152
+17871 /kill @e[type=husk]
+17873 /kill @e[type=item]
+17876 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h153
+17879 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+17881 /effect @e[type=husk] slowness 30 255 true
+17883 /damage @e[type=husk] 19
+17895 attack-named h153
+17925 /kill @e[type=husk]
+17927 /kill @e[type=item]
+17930 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h154
+17933 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+17935 /effect @e[type=husk] slowness 30 255 true
+17937 /damage @e[type=husk] 19
+17949 attack-named h154
+17979 /kill @e[type=husk]
+17981 /kill @e[type=item]
+17984 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h155
+17987 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+17989 /effect @e[type=husk] slowness 30 255 true
+17991 /damage @e[type=husk] 19
+18003 attack-named h155
+18033 /kill @e[type=husk]
+18035 /kill @e[type=item]
+18038 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h156
+18041 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+18043 /effect @e[type=husk] slowness 30 255 true
+18045 /damage @e[type=husk] 19
+18057 attack-named h156
+18087 /kill @e[type=husk]
+18089 /kill @e[type=item]
+18092 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h157
+18095 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+18097 /effect @e[type=husk] slowness 30 255 true
+18099 /damage @e[type=husk] 19
+18111 attack-named h157
+18141 /kill @e[type=husk]
+18143 /kill @e[type=item]
+18146 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h158
+18149 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+18151 /effect @e[type=husk] slowness 30 255 true
+18153 /damage @e[type=husk] 19
+18165 attack-named h158
+18195 /kill @e[type=husk]
+18197 /kill @e[type=item]
+18200 /summon husk 2.5 -60 0.5 0 0 minecraft:spawn_adult h159
+18203 /replaceitem entity @e[type=husk] slot.weapon.mainhand 0 iron_spear
+18205 /effect @e[type=husk] slowness 30 255 true
+18207 /damage @e[type=husk] 19
+18219 attack-named h159
+18249 /kill @e[type=husk]
+18251 /kill @e[type=item]
+18254 /difficulty peaceful
+18256 exit

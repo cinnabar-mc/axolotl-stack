@@ -36,6 +36,7 @@ import scenarios  # noqa: E402
 import spawn_bonus_fixture  # noqa: E402
 import subchunk_fixture  # noqa: E402
 import subchunk_roundtrip  # noqa: E402
+import tool_use_fixture  # noqa: E402
 import summarize  # noqa: E402
 import sweep  # noqa: E402
 import unbreaking_table  # noqa: E402
@@ -447,6 +448,53 @@ class UnbreakingTable(unittest.TestCase):
     def test_broken_reads_an_empty_slot(self):
         self.assertTrue(unbreaking_table.broken('item: CerealizerNetworkItemStackDescriptorSerializedData { id: 0, '))
         self.assertFalse(unbreaking_table.broken('item: CerealizerNetworkItemStackDescriptorSerializedData { id: 7, '))
+
+
+class ToolUseFixture(unittest.TestCase):
+    SCRIPT = [
+        '10 /fill 1 -60 -1 3 -56 1 air', '12 /clear @s', '13 /gamemode creative @s',
+        '15 /replaceitem entity @s slot.hotbar 0 iron_axe', '18 use',
+        '23 /setblock 2 -60 0 oak_log ["pillar_axis"="x"]', '25 /setblock 2 -59 0 stone',
+        '27 /say tooluse case axe_log', '30 use-on 2 -60 0 4',
+        '42 /fill 1 -60 -1 3 -56 1 air', '45 /replaceitem entity @s slot.hotbar 0 honeycomb 4',
+        '50 /setblock 2 -60 0 rooted_dirt', '52 /say tooluse case refused', '55 use-on 2 -60 0 1',
+        '60 /say tooluse wear axe 3', '62 /setblock 2 -60 0 oak_log', '64 use-on 2 -60 0 1',
+        '66 /setblock 2 -60 0 oak_log', '68 use-on 2 -60 0 1', '70 /setblock 2 -60 0 oak_log', '72 use-on 2 -60 0 1',
+        '80 /say tooluse drops husk 0', '82 attack-named h0', '90 attack-named h1',
+    ]
+
+    def script(self, tmp):
+        path = Path(tmp) / 'tool-use.txt'
+        path.write_text('\n'.join(self.SCRIPT), encoding='utf-8')
+        return path
+
+    def test_cases_keep_the_setup_and_skip_refused_blocks(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cases = tool_use_fixture.cases(self.script(tmp))
+        self.assertEqual(cases, [{
+            'mode': 'creative', 'above': {'pos': [2, -59, 0], 'name': 'minecraft:stone', 'states': {}},
+            'item': 'minecraft:iron_axe', 'count': 1,
+            'block': {'pos': [2, -60, 0], 'name': 'minecraft:oak_log', 'states': {'pillar_axis': 'x'}},
+            'name': 'axe_log', 'inputs': [27, 42], 'face': 4,
+        }])
+
+    def test_table_counts_each_use_and_the_dropped_items(self):
+        def content(damage):
+            return ('s2c InventoryContentPacket InventoryContentPacket { container_id: 0, slots: [{ id: 301, '
+                    rf'user_data_buffer: b"\x03\x06\0Damage\x0{damage}\0\0\0" }}] }}')
+        dump = [
+            'TextPacket message: "[BDSSweep] tooluse wear axe 3"',
+            content(0), content(1), content(1),
+            'TextPacket message: "[BDSSweep] tooluse drops husk 0"',
+            'AddItemActorPacket { item: CerealizerNetworkItemStackDescriptorSerializedData { id: 857, '
+            r'user_data_buffer: b"\x03\x06\0Damage\x07\0\0\0" } }',
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            table = tool_use_fixture.table(self.script(tmp), dump)
+        # Three uses: two resends seen (worn 1 and 0); the one with no
+        # resend counts as unworn.
+        self.assertEqual(table['wear'], {'axe': {'3': {'uses': 3, 'worn': [2, 1, 0]}}})
+        self.assertEqual(table['drops'], {'husks': 2, 'items': [[857, 7]]})
 
 
 class PairCaptureTest(unittest.TestCase):
