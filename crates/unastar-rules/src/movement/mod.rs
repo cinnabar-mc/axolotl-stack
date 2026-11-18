@@ -52,9 +52,12 @@ const JUMP_VELOCITY: f32 = 0.42;
 const JUMP_BOOST_STEP: f32 = 0.1;
 /// Climbing speed on ladders and vines, and their slowest fall.
 const CLIMB_SPEED: f32 = 0.2;
-/// The slowest fall onto slime that bounces (just over a standing player's
-/// 0.0784).
-const SLIME_MIN_BOUNCE: f32 = 0.080_000_12;
+/// The slowest fall onto slime or a bed that bounces (just over a standing
+/// player's 0.0784; BDS 1.26.51, `bedfit_6_3`: a bed landing at 0.0409 rests
+/// with the full gravity after it).
+const MIN_BOUNCE: f32 = 0.080_000_12;
+/// The share of a fall's speed a bed returns ([`Bounce`]).
+const BED_BOUNCE: f32 = 0.75;
 /// Scaffolding: climbed and descended at this speed a tick.
 const SCAFFOLDING_SPEED: f32 = 0.15;
 /// The fastest slide down a honey block's side.
@@ -113,6 +116,14 @@ const WATER_DRAG_SPRINTING: f32 = 0.9;
 const WATER_SINK: f32 = 0.005;
 /// The jump key's lift in water and lava.
 const LIQUID_JUMP: f32 = 0.04;
+/// How far over the feet a swimmer's water must reach to keep steering:
+/// the whole block there holds water ([`Surroundings::deep`]).
+const SWIM_DEEP: f32 = 0.4;
+/// A swimmer whose water no longer reaches [`SWIM_DEEP`] over its feet
+/// holds at the surface while it rises slower than this (BDS 1.26.51,
+/// `surft_d3_l16_p32_75` holds at 0.10454092, `surf8_d3_l16_p32_8` stops at
+/// 0.10469673: the bound is measured to that interval).
+const SURFACE_HOLD_SPEED: f32 = 0.1046;
 /// Lava: input acceleration and drag.
 const LAVA_SPEED: f32 = 0.02;
 const LAVA_DRAG: f32 = 0.5;
@@ -404,10 +415,9 @@ impl BlockKind {
 
     /// Whether BDS runs confirmed how this family moves a player, bit for
     /// bit (the movement differential's scenarios, `tools/movement-diff`):
-    /// beds (the bounce) and powder snow (the freezing slowdown) are
-    /// simulated but not yet BDS's.
+    /// powder snow (the freezing slowdown) is simulated but not yet BDS's.
     pub fn confirmed(self) -> bool {
-        !matches!(self, Self::Bed | Self::PowderSnow)
+        self != Self::PowderSnow
     }
 }
 
@@ -735,9 +745,13 @@ pub fn update_state(
     }
     // BDS 1.26.51 sprints at the surface without swimming (drag 0.9, the
     // sink, no pitch steering) until the eyes go under.
+    // A swim goes on while its water is deep, or, at the surface, while the
+    // swimmer is in the water and rising slowly enough to hold there (BDS
+    // 1.26.51: the surfacing swims `surface_swim_*`, `surf8_*` and `surft_*`,
+    // 47 of them; a faster one stops, in the water or out of it).
     let want_swim = want_sprint
         && if body.swimming {
-            body.in_water
+            surroundings.deep || (surroundings.afloat && body.velocity[1] < SURFACE_HOLD_SPEED)
         } else {
             surroundings.submerged
         };
@@ -754,6 +768,12 @@ pub fn update_state(
 pub struct Surroundings {
     /// The block at the eyes holds water ([`eyes_in_water`]).
     pub submerged: bool,
+    /// The block [`SWIM_DEEP`] over the feet holds water: a swimmer there
+    /// steers.
+    pub deep: bool,
+    /// The body's water box is in water where it is now (not where the
+    /// last tick started).
+    pub afloat: bool,
     /// A standing body's box fits where the body is, or within
     /// [`STAND_PUSH`] of it ([`Surroundings::stand_push`]).
     pub room_to_stand: bool,
@@ -767,6 +787,8 @@ impl Default for Surroundings {
     fn default() -> Self {
         Self {
             submerged: false,
+            deep: false,
+            afloat: false,
             room_to_stand: true,
             stand_push: [0.0; 3],
         }
@@ -785,6 +807,8 @@ impl Surroundings {
         };
         Self {
             submerged: eyes_in_water(body, terrain),
+            deep: feet_block_at(body, terrain, SWIM_DEEP).water(),
+            afloat: water(terrain, &body.water_box()),
             room_to_stand,
             stand_push,
         }
@@ -836,6 +860,13 @@ pub fn step(body: &mut Body, controls: &Controls, terrain: &impl Terrain) -> Cha
     let mut changes = Changes::default();
     let surroundings = Surroundings::of(body, controls, terrain);
     update_state(body, controls, surroundings, &mut changes);
+    if changes.stopped_swimming {
+        // The swim's end rebuilds the box from the feet before the move,
+        // still a swimmer's (BDS 1.26.51, `water_swim_deep` tick 46 and
+        // `surface_swim_d2_p55_l20` tick 38: the box kept from the last move
+        // is an ULP off on x and z); [`finish`] makes it a standing one.
+        body.swept = None;
+    }
     let push = surroundings.stand_push;
     if push != [0.0; 3] {
         // Standing up out of a block moves the standing box (rebuilt at the
@@ -865,6 +896,7 @@ pub fn step(body: &mut Body, controls: &Controls, terrain: &impl Terrain) -> Cha
         let swim = Swim {
             steering: body.swimming && !changes.stopped_swimming,
             sprint_drag: body.swimming || body.sprinting,
+            holding: !surroundings.deep,
         };
         water_tick(body, controls, terrain, swim);
     } else if body.in_lava {
@@ -907,25 +939,37 @@ pub fn rest(body: &mut Body, terrain: &impl Terrain) {
 /// The height of a liquid's surface in its block: a source's and a falling
 /// liquid's 8/9, a flowing one's `(8 - depth) / 9`.
 fn liquid_height(liquid: LiquidState) -> f32 {
-    let amount = if liquid.depth >= 8 {
+    f32::from(liquid_amount(liquid)) / 9.0
+}
+
+/// A liquid's level in ninths of a block.
+fn liquid_amount(liquid: LiquidState) -> u8 {
+    if liquid.depth >= 8 {
         8
     } else {
         8 - liquid.depth
-    };
-    f32::from(amount) / 9.0
+    }
+}
+
+/// [`liquid_height`] in `f64`, as a current's flow is worked out.
+fn liquid_height_f64(liquid: LiquidState) -> f64 {
+    f64::from(liquid_amount(liquid)) / 9.0
 }
 
 /// The direction water flows in at `pos`: towards the lower neighbours,
 /// each weighted by how much lower it is (a neighbour without water that
-/// does not stop a body counts by the water under it), normalised.
+/// does not stop a body counts by the water under it), normalised. Worked
+/// out in `f64` and rounded to `f32` once normalised (BDS 1.26.51: the 37
+/// current probes `cur8_*` match only this way; in `f32` throughout, 9 of
+/// them do, and `current_diamond_one` drifts an ULP after 30 inputs).
 fn water_flow(terrain: &impl Terrain, pos: [i32; 3], own: LiquidState) -> [f32; 2] {
-    let height = liquid_height(own);
-    let (mut x, mut z) = (0.0f32, 0.0f32);
+    let height = liquid_height_f64(own);
+    let (mut x, mut z) = (0.0f64, 0.0f64);
     for (dx, dz) in [(0, -1), (1, 0), (0, 1), (-1, 0)] {
         let side = [pos[0] + dx, pos[1], pos[2] + dz];
         let neighbour = terrain.block(side);
         let step = match neighbour.liquid {
-            Some(liquid) if liquid.kind == LiquidKind::Water => height - liquid_height(liquid),
+            Some(liquid) if liquid.kind == LiquidKind::Water => height - liquid_height_f64(liquid),
             Some(_) => continue,
             None => {
                 let cell = Aabb {
@@ -937,20 +981,20 @@ fn water_flow(terrain: &impl Terrain, pos: [i32; 3], own: LiquidState) -> [f32; 
                     Some(liquid)
                         if liquid.kind == LiquidKind::Water && !collides(terrain, &cell) =>
                     {
-                        height - (liquid_height(liquid) - 8.0 / 9.0)
+                        height - (liquid_height_f64(liquid) - 8.0 / 9.0)
                     }
                     _ => 0.0,
                 }
             }
         };
-        x += dx as f32 * step;
-        z += dz as f32 * step;
+        x += f64::from(dx) * step;
+        z += f64::from(dz) * step;
     }
     let length = (x * x + z * z).sqrt();
     if length < 1.0e-4 {
         [0.0, 0.0]
     } else {
-        [x / length, z / length]
+        [(x / length) as f32, (z / length) as f32]
     }
 }
 
@@ -960,25 +1004,30 @@ fn water_flow(terrain: &impl Terrain, pos: [i32; 3], own: LiquidState) -> [f32; 
 /// along a channel, on its source too; `current_diamond_four`: 0.014
 /// diagonally across four blocks whose flows differ).
 fn push_by_current(body: &mut Body, terrain: &impl Terrain) {
+    // Only a body in water is pushed, and then by every water block its box
+    // covers, whatever the block's level (BDS 1.26.51, `current_diamond_jump`
+    // ticks 11 and 13). WIP: not yet checked on held-out probes.
+    if !water(terrain, &body.water_box()) {
+        return;
+    }
     let bb = body.aabb().inflate([-0.001; 3]);
     let (min, max) = bb.block_range();
     let mut flow = [0.0f32; 2];
-    for x in min[0]..=max[0] {
-        for y in min[1]..=max[1] {
-            for z in min[2]..=max[2] {
+    // The blocks are summed x fastest, then z (BDS 1.26.51: the 56 current
+    // probes `cur8_*` and `curho_*` match only so; x outermost leaves 2 of
+    // them an ULP off). Which comes first between z and y is unmeasured.
+    for y in min[1]..=max[1] {
+        for z in min[2]..=max[2] {
+            for x in min[0]..=max[0] {
                 let Some(liquid) = terrain.block([x, y, z]).liquid else {
                     continue;
                 };
                 if liquid.kind != LiquidKind::Water {
                     continue;
                 }
-                let above = terrain.block([x, y + 1, z]).water();
-                let top = y as f32 + if above { 1.0 } else { liquid_height(liquid) };
-                if top >= bb.min[1] {
-                    let [fx, fz] = water_flow(terrain, [x, y, z], liquid);
-                    flow[0] += fx;
-                    flow[1] += fz;
-                }
+                let [fx, fz] = water_flow(terrain, [x, y, z], liquid);
+                flow[0] += fx;
+                flow[1] += fz;
             }
         }
     }
@@ -1026,6 +1075,14 @@ fn bubble_columns(body: &mut Body, terrain: &impl Terrain) {
 fn finish(body: &mut Body, changes: &Changes) {
     if changes.stopped_swimming {
         body.swimming = false;
+        // The standing box grows from the swimmer's box, which keeps its x
+        // and z (BDS 1.26.51, `surface_swim_d2_p55_l20`: rebuilt from the
+        // feet again it is an ULP off on z the next input).
+        if let Some((mut bb, feet, _)) = body.swept {
+            let pose = body.pose();
+            bb.max[1] = bb.min[1] + pose.height();
+            body.swept = Some((bb, feet, pose));
+        }
     }
 }
 
@@ -1144,7 +1201,9 @@ fn landing_block(body: &Body, terrain: &impl Terrain) -> Block {
 /// One tick on land or in the air.
 fn land_tick(body: &mut Body, controls: &Controls, terrain: &impl Terrain, changes: &mut Changes) {
     let mut friction = AIR_FRICTION;
-    let mut speed = if body.sprinting {
+    // A swim ending out of the water accelerates as a walk, sprinting or not
+    // (BDS 1.26.51, `surface_swim_d2_p45` tick 39: 0.0196 on z).
+    let mut speed = if body.sprinting && !changes.stopped_swimming {
         AIR_SPEED_SPRINTING
     } else {
         AIR_SPEED
@@ -1223,24 +1282,22 @@ fn land_tick(body: &mut Body, controls: &Controls, terrain: &impl Terrain, chang
         body.velocity = [0.0; 3];
     }
     let ground = landing_block(body, terrain);
+    // A bounce leaves gravity only the part of the tick after the impact.
+    let mut gravity_left = GRAVITY;
     if body.vertical_collision {
-        body.velocity[1] = if !was_on_ground && before[1] < 0.0 && !controls.sneak {
-            match ground.kind {
-                // Slime returns the speed at impact: the speed the tick
-                // started with, accelerated by gravity over the distance
-                // fallen before the floor stopped the move (BDS bounces 0.8585
-                // from 0.8439 after falling 0.1555); slower falls do not
-                // bounce.
-                BlockKind::Slime if -before[1] < SLIME_MIN_BOUNCE => 0.0,
-                BlockKind::Slime => {
-                    let fallen = -body.velocity[1];
-                    (before[1] * before[1] + 2.0 * GRAVITY * fallen).sqrt()
-                }
-                BlockKind::Bed => (-0.66 * before[1]).min(1.0),
-                _ => 0.0,
+        let keep = match ground.kind {
+            _ if was_on_ground || -before[1] < MIN_BOUNCE || controls.sneak => None,
+            BlockKind::Slime => Some(1.0),
+            BlockKind::Bed => Some(BED_BOUNCE),
+            _ => None,
+        };
+        body.velocity[1] = match keep {
+            Some(keep) => {
+                let bounce = Bounce::of(before[1], -body.velocity[1], keep);
+                gravity_left = bounce.gravity_left;
+                bounce.velocity
             }
-        } else {
-            0.0
+            None => 0.0,
         };
     }
     if body.horizontal_collision && climbable(body, terrain) {
@@ -1262,7 +1319,7 @@ fn land_tick(body: &mut Body, controls: &Controls, terrain: &impl Terrain, chang
         let gravity = if body.slow_falling && body.velocity[1] < 0.0 {
             SLOW_FALLING_GRAVITY
         } else {
-            GRAVITY
+            gravity_left
         };
         body.velocity[1] = (body.velocity[1] - gravity) * VERTICAL_DRAG;
     }
@@ -1284,10 +1341,50 @@ fn land_tick(body: &mut Body, controls: &Controls, terrain: &impl Terrain, chang
     honey_slide(body, terrain);
 }
 
+/// A bounce off slime or a bed. The fall started its tick at `velocity`
+/// (negative) and moved `fallen` before the block stopped it, so it hit the
+/// block at the time `t` of the tick where `fallen = |v| t + g t² / 2`
+/// (gravity acting through the tick). The block sends the fall's speed back
+/// up, kept by `keep`, and gravity acts only for the rest of the tick,
+/// `g (1 - t)`, before the drag (BDS 1.26.51: every one of the 17 bed
+/// landings of `bedfit_*`, `bed_drop_*` and `bed_bounce`, which keep 0.75 of
+/// the speed, and the 13 slime landings of `slimefit_*` and `slimehold_*`,
+/// which keep all of it; folding the remaining gravity into the bounce
+/// (`k |v| + g t - g`) misses two of the 30, and every other `f32` order more).
+#[derive(Debug, Clone, Copy, PartialEq)]
+struct Bounce {
+    /// The vertical velocity after the impact.
+    velocity: f32,
+    /// The gravity left for the rest of the tick.
+    gravity_left: f32,
+}
+
+impl Bounce {
+    fn of(velocity: f32, fallen: f32, keep: f32) -> Self {
+        let speed = -velocity;
+        let impact = (velocity * velocity + 2.0 * GRAVITY * fallen).sqrt();
+        let t = (impact - speed) / GRAVITY;
+        Self {
+            velocity: keep * speed,
+            gravity_left: GRAVITY * (1.0 - t),
+        }
+    }
+}
+
 /// The block `dy` blocks above the one the feet are in.
 fn feet_block(body: &Body, terrain: &impl Terrain, dy: i32) -> Block {
     let [x, y, z] = body.feet.map(|v| v.floor() as i32);
     terrain.block([x, y + dy, z])
+}
+
+/// The block `height` over the feet.
+fn feet_block_at(body: &Body, terrain: &impl Terrain, height: f32) -> Block {
+    let [x, y, z] = body.feet;
+    terrain.block([
+        x.floor() as i32,
+        (y + height).floor() as i32,
+        z.floor() as i32,
+    ])
 }
 
 /// Beside a honey block's side the horizontal velocity is slowed to 0.4 of
@@ -1359,35 +1456,38 @@ struct Swim {
     /// BDS 1.26.51 `water_swim_deep` tick 46), or sprinting at the surface
     /// (a sprint stops before the move: `water_surface_sprint` tick 36).
     sprint_drag: bool,
+    /// A steering swimmer whose water is not deep holds at the surface
+    /// ([`SURFACE_HOLD_SPEED`]).
+    holding: bool,
 }
 
 /// One tick in water: the swimmer's pitch, the jump's lift, 0.02
 /// acceleration, drag 0.8 (0.9 for a sprinter, [`Swim`]) and a 0.005 sink
 /// unless swimming.
 fn water_tick(body: &mut Body, controls: &Controls, terrain: &impl Terrain, swim: Swim) {
-    if swim.steering {
+    if swim.steering && !swim.holding && !controls.jump {
         // A swimmer heads where it looks: the vertical velocity moves
         // towards the look's y by 8.5 % a tick looking down (below -0.2),
-        // 6 % otherwise, the latter only under water or jumping.
-        // The look vector's y (BDS 1.26.51 `water_swim_deep`: only it gives
-        // the first swimming tick's bits).
+        // 6 % otherwise. The look vector's y (BDS 1.26.51 `water_swim_deep`:
+        // only it gives the first swimming tick's bits). It steers wherever
+        // its water is deep, also looking up out of it (BDS 1.26.51,
+        // `surface_swim_d2_p15`: steered up to the surface until the water
+        // 0.4 over the feet runs out). The jump key lifts instead of the
+        // pitch (BDS 1.26.51, `surfho_8`: 0.04 a tick over the velocity,
+        // with no steering).
         let look_y = look_vector(controls)[1];
         let rate = if look_y < -0.2 { 0.085 } else { 0.06 };
-        let head = [
-            body.feet[0].floor() as i32,
-            (body.feet[1] + 0.9).floor() as i32,
-            body.feet[2].floor() as i32,
-        ];
-        let under = Aabb {
-            min: head.map(|v| v as f32),
-            max: head.map(|v| v as f32 + 1.0),
-        };
-        if look_y <= 0.0 || controls.jump || water(terrain, &under.inflate([-0.01; 3])) {
-            body.velocity[1] += (look_y - body.velocity[1]) * rate;
-        }
+        body.velocity[1] += (look_y - body.velocity[1]) * rate;
     }
     if controls.jump {
         body.velocity[1] += LIQUID_JUMP;
+    }
+    if swim.steering && swim.holding {
+        // Held at the surface: no vertical move, whatever the look or the
+        // jump key (BDS 1.26.51, `surface_swim_d2_p30_l16`: the same height
+        // for nine inputs and a corrected velocity of 0; `surf8_hold_dive`,
+        // `surf8_hold_jump`).
+        body.velocity[1] = 0.0;
     }
     move_relative(body, controls, WATER_SPEED);
     let y = body.feet[1];

@@ -42,7 +42,8 @@ Besides the hand-written situations the corpus holds:
 
 - probes that vary one thing at a time: `sr_*` (letting go of sneak), `ss_*` (sprint stops),
   `dt_*` (double-tap sprints), `sw_*` (sprinting into walls), `bed_drop_*` and `bedfit_*` (bed
-  bounces from 20 heights, measured for a fit), `sinx_*` and `sinh_*` (one sprint jump or walk
+  bounces from 20 heights, measured for a fit), `bedho_*` and `slimeho_*` (bounces held out of
+  that fit), `sinx_*` and `sinh_*` (one sprint jump or walk
   from rest, which shows a sine at full precision: `sinx_*` at angles where the Windows C
   runtime's sine is an ULP off the correctly rounded one, `sinh_*` at random yaws held out of the
   fit), `glide_p*` (glides at eleven pitches), `ceil_*` (a sneak let go under a top slab, the

@@ -193,6 +193,22 @@ fn slime_bounces_a_landing_and_sneaking_does_not() {
     }
 }
 
+/// The two landings (BDS 1.26.51, `bedfit_6_9` and `slimefit_6_4`, both at
+/// 0.37663 a tick) that a bounce with the remaining gravity folded into it
+/// cannot reach: their velocity after the tick has no `(b - 0.08) × 0.98`.
+#[test]
+fn a_bounce_takes_only_the_gravity_left_after_the_impact() {
+    let velocity = f32::from_bits(0xbec0_d5b6);
+    for (fallen, keep, after) in [
+        (0x3eae_8a00, BED_BOUNCE, 0x3e86_f9f8),
+        (0x3e1d_1400, 1.0, 0x3ea4_88c2),
+    ] {
+        let bounce = Bounce::of(velocity, f32::from_bits(fallen), keep);
+        let after_tick = (bounce.velocity - bounce.gravity_left) * VERTICAL_DRAG;
+        assert_eq!(after_tick.to_bits(), after, "{bounce:?}");
+    }
+}
+
 #[test]
 fn sneaking_stops_at_an_edge() {
     struct Ledge;
