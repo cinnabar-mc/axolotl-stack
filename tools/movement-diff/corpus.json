@@ -19682,6 +19682,638 @@
           "layer": 1
         }
       ]
+    },
+    {
+      "name": "bedho_0",
+      "description": "Held-out bed drop from 10.59375 above its top (round 8).",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 111.15625, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 50
+        }
+      ],
+      "formed": [
+        {
+          "from": [0, 100, 0],
+          "to": [0, 100, 0],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed",
+            "states": {
+              "head_piece_bit": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "bedho_1",
+      "description": "Held-out bed drop from 5.921875 above its top (round 8).",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 106.484375, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 50
+        }
+      ],
+      "formed": [
+        {
+          "from": [0, 100, 0],
+          "to": [0, 100, 0],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed",
+            "states": {
+              "head_piece_bit": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "bedho_2",
+      "description": "Held-out bed drop from 5.84375 above its top (round 8).",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 106.40625, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 50
+        }
+      ],
+      "formed": [
+        {
+          "from": [0, 100, 0],
+          "to": [0, 100, 0],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed",
+            "states": {
+              "head_piece_bit": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "bedho_3",
+      "description": "Held-out bed drop from 1.703125 above its top (round 8).",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 102.265625, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 50
+        }
+      ],
+      "formed": [
+        {
+          "from": [0, 100, 0],
+          "to": [0, 100, 0],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed",
+            "states": {
+              "head_piece_bit": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "bedho_4",
+      "description": "Held-out bed drop from 4.65625 above its top (round 8).",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 105.21875, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 50
+        }
+      ],
+      "formed": [
+        {
+          "from": [0, 100, 0],
+          "to": [0, 100, 0],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed",
+            "states": {
+              "head_piece_bit": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "bedho_5",
+      "description": "Held-out bed drop from 6.9375 above its top (round 8).",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 107.5, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 50
+        }
+      ],
+      "formed": [
+        {
+          "from": [0, 100, 0],
+          "to": [0, 100, 0],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed",
+            "states": {
+              "head_piece_bit": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "bedho_6",
+      "description": "Held-out bed drop from 4.046875 above its top (round 8).",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 104.609375, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 50
+        }
+      ],
+      "formed": [
+        {
+          "from": [0, 100, 0],
+          "to": [0, 100, 0],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed",
+            "states": {
+              "head_piece_bit": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "bedho_7",
+      "description": "Held-out bed drop from 7.796875 above its top (round 8).",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 108.359375, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 50
+        }
+      ],
+      "formed": [
+        {
+          "from": [0, 100, 0],
+          "to": [0, 100, 0],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed",
+            "states": {
+              "head_piece_bit": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "bedho_min_3_6875",
+      "description": "A bed drop whose bounce at input 48 lands slower than 0.08: no bounce, or one that only beats the gravity left.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 104.25, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 60
+        }
+      ],
+      "formed": [
+        {
+          "from": [0, 100, 0],
+          "to": [0, 100, 0],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed",
+            "states": {
+              "head_piece_bit": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "bedho_air_walk",
+      "description": "Fall 4 blocks onto a bed walking forward all the way: a bounce with horizontal motion.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 104.5625, 0.35]
+      },
+      "inputs": [
+        {
+          "ticks": 3
+        },
+        {
+          "ticks": 40,
+          "forward": 1
+        }
+      ],
+      "formed": [
+        {
+          "from": [0, 100, 0],
+          "to": [0, 100, 0],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed",
+            "states": {
+              "head_piece_bit": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "bedho_jump",
+      "description": "Hold jump on a bed: each landing bounces and jumps.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 100.5625, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 3
+        },
+        {
+          "ticks": 50,
+          "jump": true
+        }
+      ],
+      "formed": [
+        {
+          "from": [0, 100, 0],
+          "to": [0, 100, 0],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed",
+            "states": {
+              "head_piece_bit": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "bedho_sneak_land",
+      "description": "Fall 3 blocks onto a bed holding sneak: no bounce.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 103.5625, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 3
+        },
+        {
+          "ticks": 30,
+          "sneak": true
+        }
+      ],
+      "formed": [
+        {
+          "from": [0, 100, 0],
+          "to": [0, 100, 0],
+          "block": {
+            "name": "minecraft:bed"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:bed",
+            "states": {
+              "head_piece_bit": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "slimeho_min_0_3828125",
+      "description": "Slime drop from 0.3828125: a late landing slower than 0.08 that a bounce beating the gravity left would lift.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:slime"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 101.3828125, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 62
+        }
+      ]
+    },
+    {
+      "name": "slimeho_min_0_390625",
+      "description": "Slime drop from 0.390625: a late landing slower than 0.08 that a bounce beating the gravity left would lift.",
+      "world": [
+        {
+          "from": [-8, 99, -8],
+          "to": [8, 99, 40],
+          "block": {
+            "name": "minecraft:stone"
+          }
+        },
+        {
+          "from": [0, 100, 1],
+          "to": [0, 100, 1],
+          "block": {
+            "name": "minecraft:slime"
+          }
+        }
+      ],
+      "start": {
+        "feet": [0.5, 101.390625, 1.5]
+      },
+      "inputs": [
+        {
+          "ticks": 62
+        }
+      ]
     }
   ]
 }

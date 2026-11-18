@@ -52,9 +52,12 @@ const JUMP_VELOCITY: f32 = 0.42;
 const JUMP_BOOST_STEP: f32 = 0.1;
 /// Climbing speed on ladders and vines, and their slowest fall.
 const CLIMB_SPEED: f32 = 0.2;
-/// The slowest fall onto slime that bounces (just over a standing player's
-/// 0.0784).
-const SLIME_MIN_BOUNCE: f32 = 0.080_000_12;
+/// The slowest fall onto slime or a bed that bounces (just over a standing
+/// player's 0.0784; BDS 1.26.51, `bedfit_6_3`: a bed landing at 0.0409 rests
+/// with the full gravity after it).
+const MIN_BOUNCE: f32 = 0.080_000_12;
+/// The share of a fall's speed a bed returns ([`Bounce`]).
+const BED_BOUNCE: f32 = 0.75;
 /// Scaffolding: climbed and descended at this speed a tick.
 const SCAFFOLDING_SPEED: f32 = 0.15;
 /// The fastest slide down a honey block's side.
@@ -404,10 +407,9 @@ impl BlockKind {
 
     /// Whether BDS runs confirmed how this family moves a player, bit for
     /// bit (the movement differential's scenarios, `tools/movement-diff`):
-    /// beds (the bounce) and powder snow (the freezing slowdown) are
-    /// simulated but not yet BDS's.
+    /// powder snow (the freezing slowdown) is simulated but not yet BDS's.
     pub fn confirmed(self) -> bool {
-        !matches!(self, Self::Bed | Self::PowderSnow)
+        self != Self::PowderSnow
     }
 }
 
@@ -1223,24 +1225,22 @@ fn land_tick(body: &mut Body, controls: &Controls, terrain: &impl Terrain, chang
         body.velocity = [0.0; 3];
     }
     let ground = landing_block(body, terrain);
+    // A bounce leaves gravity only the part of the tick after the impact.
+    let mut gravity_left = GRAVITY;
     if body.vertical_collision {
-        body.velocity[1] = if !was_on_ground && before[1] < 0.0 && !controls.sneak {
-            match ground.kind {
-                // Slime returns the speed at impact: the speed the tick
-                // started with, accelerated by gravity over the distance
-                // fallen before the floor stopped the move (BDS bounces 0.8585
-                // from 0.8439 after falling 0.1555); slower falls do not
-                // bounce.
-                BlockKind::Slime if -before[1] < SLIME_MIN_BOUNCE => 0.0,
-                BlockKind::Slime => {
-                    let fallen = -body.velocity[1];
-                    (before[1] * before[1] + 2.0 * GRAVITY * fallen).sqrt()
-                }
-                BlockKind::Bed => (-0.66 * before[1]).min(1.0),
-                _ => 0.0,
+        let keep = match ground.kind {
+            _ if was_on_ground || -before[1] < MIN_BOUNCE || controls.sneak => None,
+            BlockKind::Slime => Some(1.0),
+            BlockKind::Bed => Some(BED_BOUNCE),
+            _ => None,
+        };
+        body.velocity[1] = match keep {
+            Some(keep) => {
+                let bounce = Bounce::of(before[1], -body.velocity[1], keep);
+                gravity_left = bounce.gravity_left;
+                bounce.velocity
             }
-        } else {
-            0.0
+            None => 0.0,
         };
     }
     if body.horizontal_collision && climbable(body, terrain) {
@@ -1262,7 +1262,7 @@ fn land_tick(body: &mut Body, controls: &Controls, terrain: &impl Terrain, chang
         let gravity = if body.slow_falling && body.velocity[1] < 0.0 {
             SLOW_FALLING_GRAVITY
         } else {
-            GRAVITY
+            gravity_left
         };
         body.velocity[1] = (body.velocity[1] - gravity) * VERTICAL_DRAG;
     }
@@ -1282,6 +1282,36 @@ fn land_tick(body: &mut Body, controls: &Controls, terrain: &impl Terrain, chang
         }
     }
     honey_slide(body, terrain);
+}
+
+/// A bounce off slime or a bed. The fall started its tick at `velocity`
+/// (negative) and moved `fallen` before the block stopped it, so it hit the
+/// block at the time `t` of the tick where `fallen = |v| t + g t² / 2`
+/// (gravity acting through the tick). The block sends the fall's speed back
+/// up, kept by `keep`, and gravity acts only for the rest of the tick,
+/// `g (1 - t)`, before the drag (BDS 1.26.51: every one of the 17 bed
+/// landings of `bedfit_*`, `bed_drop_*` and `bed_bounce`, which keep 0.75 of
+/// the speed, and the 13 slime landings of `slimefit_*` and `slimehold_*`,
+/// which keep all of it; folding the remaining gravity into the bounce
+/// (`k |v| + g t - g`) misses two of the 30, and every other `f32` order more).
+#[derive(Debug, Clone, Copy, PartialEq)]
+struct Bounce {
+    /// The vertical velocity after the impact.
+    velocity: f32,
+    /// The gravity left for the rest of the tick.
+    gravity_left: f32,
+}
+
+impl Bounce {
+    fn of(velocity: f32, fallen: f32, keep: f32) -> Self {
+        let speed = -velocity;
+        let impact = (velocity * velocity + 2.0 * GRAVITY * fallen).sqrt();
+        let t = (impact - speed) / GRAVITY;
+        Self {
+            velocity: keep * speed,
+            gravity_left: GRAVITY * (1.0 - t),
+        }
+    }
 }
 
 /// The block `dy` blocks above the one the feet are in.

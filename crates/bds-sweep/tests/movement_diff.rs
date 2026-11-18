@@ -19,111 +19,6 @@ use bds_sweep::scenario::{
 /// differs, and why.
 const KNOWN_GAPS: &[(&str, u32, &str)] = &[
     (
-        "bed_bounce",
-        12,
-        "a bed's bounce is not BDS's (0.5324 after the landing, unfitted)",
-    ),
-    (
-        "bed_drop_1",
-        6,
-        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
-    ),
-    (
-        "bed_drop_2",
-        9,
-        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
-    ),
-    (
-        "bed_drop_3",
-        11,
-        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
-    ),
-    (
-        "bed_drop_4",
-        12,
-        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
-    ),
-    (
-        "bed_drop_7",
-        16,
-        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
-    ),
-    (
-        "bedfit_6_1",
-        6,
-        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
-    ),
-    (
-        "bedfit_6_3",
-        6,
-        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
-    ),
-    (
-        "bedfit_6_5",
-        6,
-        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
-    ),
-    (
-        "bedfit_6_7",
-        6,
-        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
-    ),
-    (
-        "bedfit_6_9",
-        6,
-        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
-    ),
-    (
-        "bedfit_12_1",
-        12,
-        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
-    ),
-    (
-        "bedfit_12_3",
-        12,
-        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
-    ),
-    (
-        "bedfit_12_5",
-        12,
-        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
-    ),
-    (
-        "bedfit_12_7",
-        12,
-        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
-    ),
-    (
-        "bedfit_12_9",
-        12,
-        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
-    ),
-    (
-        "bedfit_18_1",
-        18,
-        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
-    ),
-    (
-        "bedfit_18_3",
-        18,
-        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
-    ),
-    (
-        "bedfit_18_5",
-        18,
-        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
-    ),
-    (
-        "bedfit_18_7",
-        18,
-        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
-    ),
-    (
-        "bedfit_18_9",
-        18,
-        "a bed's bounce is not BDS's (measured from 20 heights; no f32 formula found)",
-    ),
-    (
         "current_diamond_jump",
         11,
         "jumping out of spreading water: the push as the box leaves the water is not BDS's",
@@ -149,39 +44,9 @@ const KNOWN_GAPS: &[(&str, u32, &str)] = &[
         "a sprint jump at the edge of a trapdoor: x off after two air ticks",
     ),
     (
-        "random_354",
-        72,
-        "a slime bounce's corrected velocity an ULP off (as random_291)",
-    ),
-    (
-        "random_386",
-        90,
-        "a slime bounce's corrected velocity an ULP off (as random_291)",
-    ),
-    (
         "random_388",
         20,
         "1 ULP on z in a jump from a sneak let go against a block",
-    ),
-    (
-        "slimefit_6_2",
-        18,
-        "a slime bounce an ULP off after a landing late in its tick (as random_291); no f32 form of the bounce fits it and the other 17 slime probes",
-    ),
-    (
-        "slimefit_6_4",
-        6,
-        "a slime bounce an ULP off after a landing late in its tick (as random_291); no f32 form of the bounce fits it and the other 17 slime probes",
-    ),
-    (
-        "slimefit_6_6",
-        18,
-        "a slime bounce an ULP off after a landing late in its tick (as random_291); no f32 form of the bounce fits it and the other 17 slime probes",
-    ),
-    (
-        "slimefit_6_8",
-        30,
-        "a slime bounce an ULP off after a landing late in its tick (as random_291); no f32 form of the bounce fits it and the other 17 slime probes",
     ),
     (
         "surface_swim_d2_p20_l20",
@@ -257,11 +122,6 @@ const KNOWN_GAPS: &[(&str, u32, &str)] = &[
         "surface_swim_d3_p60",
         39,
         "a swimmer surfacing: BDS steers it up until about 0.2 under the surface, then holds its height",
-    ),
-    (
-        "random_291",
-        72,
-        "a slime bounce an ULP off after the tick's gravity; no f32 order found",
     ),
     (
         "water_sprint_swim",
