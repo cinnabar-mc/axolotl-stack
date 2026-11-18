@@ -3,16 +3,28 @@
 //! The ranges are the ones BDS 1.26.51 sends at join (capture
 //! `20261025T172246Z/member/join/00046-UpdateAttributesPacket`): hunger
 //! 0..20 default 20, saturation 0..20 default 5, exhaustion 0..20 default 0,
-//! absorption 0..16 default 0, health 0..max default max. After join only
-//! the attributes whose value changed are sent, one packet per player per
-//! tick, from [`sync_player_attributes`]. Experience is sent by the
-//! experience code itself (`entity::xp_orb`).
+//! absorption 0..16 default 0, health 0..max default max, movement 0..f32
+//! max default 0.1. After join only the attributes whose value changed are
+//! sent, one packet per player per tick, from [`sync_player_attributes`], to
+//! the player and the players that see it (BDS 1.26.51 sends a player's
+//! health, exhaustion and movement to its viewers too; movement capture).
+//! A sprinting player's movement is 0.13 with BDS's sprint modifier. Experience
+//! is sent by the experience code itself (`entity::xp_orb`).
+//! The modifiers effects put on health and movement
+//! (`entity::effects::EffectModifiers`) go with them, as BDS 1.26.51 sends
+//! them: health boost raises the maximum with a `HealthBoost` modifier while
+//! the defaults stay 20, speed and slowness modify the 0.1 movement (one
+//! entry per modifier added or removed).
 
 use bevy_ecs::prelude::*;
 use jolyne::valentine::types::{ActorRuntimeId, AttributeData};
 use jolyne::valentine::{McpePacket, UpdateAttributesPacket};
 
-use crate::entity::components::{Health, Hunger, PlayerInput, PlayerSession, RuntimeEntityId};
+use crate::entity::components::{
+    ActorViewers, Health, Hunger, Player, PlayerInput, PlayerSession, PlayerState, RuntimeEntityId,
+};
+use crate::entity::definition::attributes::WireModifier;
+use crate::entity::effects::EffectModifiers;
 
 /// Maximum food level.
 pub const MAX_FOOD: f32 = 20.0;
@@ -24,6 +36,17 @@ pub const DEFAULT_SATURATION: f32 = 5.0;
 pub const MAX_EXHAUSTION: f32 = 20.0;
 /// Upper end of the absorption attribute.
 pub const MAX_ABSORPTION: f32 = 16.0;
+/// `minecraft:movement` of a player that is not sprinting (BDS 1.26.51 join).
+pub const WALK_SPEED: f32 = 0.1;
+/// The sprint modifier BDS lists on a sprinting player's movement:
+/// +30 % of the total (operation and operand 2), not saved.
+const SPRINT_MODIFIER: WireModifier = WireModifier {
+    id: "d208fc00-42aa-4aad-9276-d5446530de43",
+    name: "Sprinting speed boost",
+    amount: 0.3,
+    operation: 2,
+    operand: 2,
+};
 
 fn attr(name: &str, current: f32, max: f32, default: f32) -> AttributeData {
     AttributeData {
@@ -40,6 +63,48 @@ fn attr(name: &str, current: f32, max: f32, default: f32) -> AttributeData {
 
 pub fn health(health: &Health) -> AttributeData {
     attr("minecraft:health", health.current, health.max, health.max)
+}
+
+/// Health under effect modifiers: health boost raises the maximum; the
+/// defaults stay the unboosted maximum.
+pub fn boosted_health(health: &Health, effects: &EffectModifiers) -> AttributeData {
+    let base = health.max - effects.health_boost;
+    AttributeData {
+        default_max_value: base,
+        default_value: base,
+        modifiers: wire_modifiers(&effects.health_modifiers()),
+        ..attr("minecraft:health", health.current, health.max, base)
+    }
+}
+
+/// The modifiers on a player's movement: speed and slowness (effect id
+/// order), then, sprinting, BDS's sprint modifier. [INFERENCE] the sprint
+/// modifier's place after the effects' is not measured.
+fn movement_modifiers(effects: &EffectModifiers, sprinting: bool) -> Vec<WireModifier> {
+    let mut modifiers = effects.movement.clone();
+    if sprinting {
+        modifiers.push(SPRINT_MODIFIER);
+    }
+    modifiers
+}
+
+/// `minecraft:movement` of a player: 0.1 under its movement modifiers, all
+/// total multipliers (BDS 1.26.51: 0.13 sprinting, 0.1 walking).
+pub fn movement(effects: &EffectModifiers, sprinting: bool) -> AttributeData {
+    let modifiers = movement_modifiers(effects, sprinting);
+    let current = EffectModifiers {
+        movement: modifiers.clone(),
+        health_boost: 0.0,
+    }
+    .movement(WALK_SPEED);
+    AttributeData {
+        modifiers: wire_modifiers(&modifiers),
+        ..attr("minecraft:movement", current, f32::MAX, WALK_SPEED)
+    }
+}
+
+fn wire_modifiers(modifiers: &[WireModifier]) -> Vec<jolyne::valentine::types::AttributeModifier> {
+    modifiers.iter().map(WireModifier::to_wire).collect()
 }
 
 pub fn absorption(amount: f32) -> AttributeData {
@@ -85,10 +150,15 @@ pub struct SentAttributes {
     food: Option<i32>,
     saturation: Option<f32>,
     exhaustion: Option<f32>,
+    /// The effect modifiers last sent (none at join).
+    modifiers: EffectModifiers,
+    /// The movement attribute: sprinting or not.
+    movement: Option<bool>,
 }
 
 impl SentAttributes {
-    /// The state after join sent `health`, `hunger` and `absorption`.
+    /// The state after join sent `health`, `hunger`, `absorption` and the
+    /// walking movement speed.
     pub fn sent(health: &Health, hunger: &Hunger, absorption: f32) -> Self {
         Self {
             health: Some((health.current, health.max)),
@@ -96,6 +166,8 @@ impl SentAttributes {
             food: Some(hunger.food_level),
             saturation: Some(hunger.saturation),
             exhaustion: Some(hunger.exhaustion),
+            modifiers: EffectModifiers::default(),
+            movement: Some(false),
         }
     }
 
@@ -109,13 +181,34 @@ impl SentAttributes {
         self.health = None;
     }
 
-    /// The attributes that differ from what was sent; records them as sent.
-    pub fn diff(&mut self, health: &Health, hunger: &Hunger, absorb: f32) -> Vec<AttributeData> {
+    /// The attributes that differ from what was sent, in BDS's order
+    /// (movement first); records them as sent.
+    pub fn diff(
+        &mut self,
+        health: &Health,
+        hunger: &Hunger,
+        absorb: f32,
+        effects: &EffectModifiers,
+        sprinting: bool,
+    ) -> Vec<AttributeData> {
         let mut out = Vec::new();
-        if self.health != Some((health.current, health.max)) {
-            self.health = Some((health.current, health.max));
-            out.push(self::health(health));
+        if self.movement != Some(sprinting) || self.modifiers.movement != effects.movement {
+            let entries = crate::entity::effects::modifier_changes(
+                &movement_modifiers(&self.modifiers, self.movement == Some(true)),
+                &movement_modifiers(effects, sprinting),
+            );
+            for _ in 0..entries.max(1) {
+                out.push(movement(effects, sprinting));
+            }
+            self.movement = Some(sprinting);
         }
+        if self.health != Some((health.current, health.max))
+            || self.modifiers.health_boost != effects.health_boost
+        {
+            self.health = Some((health.current, health.max));
+            out.push(boosted_health(health, effects));
+        }
+        self.modifiers = effects.clone();
         if self.absorption != Some(absorb) {
             self.absorption = Some(absorb);
             out.push(absorption(absorb));
@@ -136,9 +229,10 @@ impl SentAttributes {
     }
 }
 
-/// System: send each player the attributes that changed since the last send.
-/// The packet carries the player's last input tick, so the client applies
-/// it in order with its own prediction.
+/// System: send each player and the players that see it (its
+/// `ActorViewers`, as `player_life::player_viewers`) the attributes that
+/// changed since the last send. The packet carries the player's last input
+/// tick, so the client applies it in order with its own prediction.
 #[allow(clippy::type_complexity)]
 pub fn sync_player_attributes(
     mut players: Query<(
@@ -148,21 +242,41 @@ pub fn sync_player_attributes(
         &Health,
         &Hunger,
         Option<&Absorption>,
+        Option<&EffectModifiers>,
+        Option<&PlayerState>,
+        Option<&ActorViewers>,
         &mut SentAttributes,
     )>,
+    others: Query<&PlayerSession, With<Player>>,
 ) {
-    for (runtime_id, session, input, health, hunger, absorb, mut sent) in &mut players {
-        let changed = sent.diff(health, hunger, absorb.map_or(0.0, |a| a.0));
+    let none = EffectModifiers::default();
+    for (runtime_id, session, input, health, hunger, absorb, effects, state, shown_to, mut sent) in
+        &mut players
+    {
+        let sprinting = state.is_some_and(|state| state.sprinting);
+        let changed = sent.diff(
+            health,
+            hunger,
+            absorb.map_or(0.0, |a| a.0),
+            effects.unwrap_or(&none),
+            sprinting,
+        );
         if changed.is_empty() {
             continue;
         }
-        let _ = session.send(McpePacket::from(UpdateAttributesPacket {
+        let packet = McpePacket::from(UpdateAttributesPacket {
             target_runtime_id: ActorRuntimeId {
                 actor_runtime_id: runtime_id.0 as u64,
             },
             attribute_list: changed,
             tick: input.wire_tick(),
-        }));
+        });
+        let _ = session.send(packet.clone());
+        for viewer in shown_to.into_iter().flat_map(|viewers| &viewers.viewers) {
+            if let Ok(session) = others.get(*viewer) {
+                let _ = session.send(packet.clone());
+            }
+        }
     }
 }
 
@@ -194,11 +308,12 @@ mod tests {
         let health = Health::new(20.0);
         let mut hunger = Hunger::default();
         let mut sent = SentAttributes::sent(&health, &hunger, 0.0);
-        assert!(sent.diff(&health, &hunger, 0.0).is_empty());
+        let none = EffectModifiers::default();
+        assert!(sent.diff(&health, &hunger, 0.0, &none, false).is_empty());
         hunger.food_level = 17;
         hunger.exhaustion = 0.5;
         let names: Vec<_> = sent
-            .diff(&health, &hunger, 0.0)
+            .diff(&health, &hunger, 0.0, &none, false)
             .into_iter()
             .map(|a| a.name.to_string())
             .collect();
@@ -206,6 +321,54 @@ mod tests {
             names,
             ["minecraft:player.hunger", "minecraft:player.exhaustion"]
         );
-        assert!(sent.diff(&health, &hunger, 0.0).is_empty());
+        assert!(sent.diff(&health, &hunger, 0.0, &none, false).is_empty());
+    }
+
+    #[test]
+    fn effect_modifiers_are_listed_as_bds_sends_them() {
+        use crate::entity::effects::{
+            MOVEMENT_SLOWDOWN_MODIFIER, MOVEMENT_SPEED_MODIFIER, SLOWNESS_PER_LEVEL,
+            SPEED_PER_LEVEL,
+        };
+        let modifier = |(name, id): (&'static str, &'static str), amount| WireModifier {
+            id,
+            name,
+            amount,
+            operation: 2,
+            operand: 2,
+        };
+        // BDS 1.26.51 (movement differential, slowness_sprint): 0.091,
+        // MovementSlowdown -0.3 then the sprint's 0.3.
+        let slowness = EffectModifiers {
+            movement: vec![modifier(
+                MOVEMENT_SLOWDOWN_MODIFIER,
+                SLOWNESS_PER_LEVEL * 2.0,
+            )],
+            health_boost: 0.0,
+        };
+        let slowed = movement(&slowness, true);
+        assert_eq!(slowed.current_value, 0.091);
+        let names: Vec<_> = slowed
+            .modifiers
+            .iter()
+            .map(|m| (&*m.name, m.amount))
+            .collect();
+        assert_eq!(
+            names,
+            [("MovementSlowdown", -0.3), ("Sprinting speed boost", 0.3)]
+        );
+        // Speed II walking: 0.14.
+        let speed = EffectModifiers {
+            movement: vec![modifier(MOVEMENT_SPEED_MODIFIER, SPEED_PER_LEVEL * 2.0)],
+            health_boost: 0.0,
+        };
+        let fast = movement(&speed, false);
+        assert_eq!(fast.current_value, 0.14);
+        assert_eq!(fast.modifiers[0].id, MOVEMENT_SPEED_MODIFIER.1);
+        assert!(
+            movement(&EffectModifiers::default(), false)
+                .modifiers
+                .is_empty()
+        );
     }
 }

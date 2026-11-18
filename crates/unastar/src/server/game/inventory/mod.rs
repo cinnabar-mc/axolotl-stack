@@ -1,9 +1,11 @@
 //! Inventory domain system.
 //!
 //! Processes ItemStackRequest (through [`engine`]), ContainerClose,
-//! MobEquipment, Interact, BlockPickRequest (through [`pick`]) and
+//! MobEquipment, Interact, BlockPickRequest (through [`pick`]),
+//! ActorPickRequest (through [`actor_pick`]) and
 //! InventoryTransaction packets.
 
+pub(crate) mod actor_pick;
 pub mod containers;
 #[cfg(test)]
 mod creative_tests;
@@ -154,7 +156,12 @@ pub fn apply_inventory(world: &mut World, state: &mut InventorySystemState) {
             && crate::entity::item_drop::drop_thrower_id(world, entity).is_some();
         let position = world.get::<Position>(entity).map(|position| position.0);
         let picked = match &action {
-            InventoryAction::BlockPick(pk) => pick::picked_item(world, entity, pk),
+            InventoryAction::BlockPick(pk) => {
+                pick::picked_item(world, entity, pk).map(|item| (item, None))
+            }
+            InventoryAction::ActorPick(pk) => {
+                actor_pick::picked_item(world, entity, pk).map(|(item, name)| (item, Some(name)))
+            }
             _ => None,
         };
         // A block window's slots are copied out for the request and committed
@@ -219,9 +226,17 @@ pub fn apply_inventory(world: &mut World, state: &mut InventorySystemState) {
                         &mut players,
                     );
                 }
-                InventoryAction::BlockPick(_) => {
-                    if let (Some(item), Ok(mut player)) = (picked, players.get_mut(entity)) {
-                        pick::select_item(entity, item, &mut player, &mut events, block_ids);
+                InventoryAction::BlockPick(_) | InventoryAction::ActorPick(_) => {
+                    if let (Some((item, name)), Ok(mut player)) = (picked, players.get_mut(entity))
+                    {
+                        pick::select_item(
+                            entity,
+                            item,
+                            name.as_deref(),
+                            &mut player,
+                            &mut events,
+                            block_ids,
+                        );
                     }
                 }
             }
@@ -315,18 +330,16 @@ fn handle_item_stack_request(
 /// BDS 1.26.51, entity-player-drop-20261026-v4 seq 468/471: positive ID 1
 /// receives this terminating warning, then RakNet closes. There is no
 /// Minecraft Disconnect packet. The network loop owns flushing the warning
-/// and closing the transport when it sees Terminatingconnection.
+/// and closing the transport when it sees Terminatingconnection. The message
+/// omits BDS's reader-failure suffix (`crate::network::violation`).
 fn invalid_request_warning() -> jolyne::valentine::PacketViolationWarningPacket {
-    use jolyne::valentine::{
-        EnumsPacketViolationSeverity, EnumsPacketViolationType, PacketViolationWarningPacket,
-    };
-    PacketViolationWarningPacket {
-        violation_type: EnumsPacketViolationType::Packetmalformed,
-        violation_severity: EnumsPacketViolationSeverity::Terminatingconnection,
-        violation_packet_id: 147,
-        violation_context:
-            "expected a valid ItemStackRequestId\nreadNoHeader failed! packetId: 147".into(),
-    }
+    use jolyne::valentine::{EnumsPacketViolationSeverity, EnumsPacketViolationType};
+    crate::network::violation::packet_violation(
+        EnumsPacketViolationType::Packetmalformed,
+        EnumsPacketViolationSeverity::Terminatingconnection,
+        147,
+        Some("expected a valid ItemStackRequestId"),
+    )
 }
 
 /// BDS follows a committed armour change with `InventorySlot` for the armour
@@ -658,7 +671,7 @@ pub(crate) fn wire_item(stack: &ItemStack, block_ids: BlockNetworkIds) -> Option
     })
 }
 
-fn validated_item(
+pub(crate) fn validated_item(
     wire: &WireItem,
     items: &ItemRegistry,
     block_ids: BlockNetworkIds,
@@ -725,7 +738,7 @@ fn apply_normal_actions(
         let Some(from) = validated_item(&action.from_item, items, block_ids) else {
             return false;
         };
-        if expected != action.from_item || from.nbt != actual.nbt {
+        if expected != action.from_item || from.nbt() != actual.nbt() {
             return false;
         }
         let Some(item) = validated_item(&action.to_item, items, block_ids) else {
@@ -1101,7 +1114,7 @@ mod tests {
             .item(0)
             .unwrap();
         assert_eq!(
-            (stack.runtime_id, stack.damage, stack.nbt.as_deref()),
+            (stack.runtime_id, stack.damage, stack.nbt().map(|b| &b[..])),
             (33, 7, Some([1, 2].as_slice()))
         );
         let mut from = descriptor(16);
@@ -1649,10 +1662,21 @@ mod drop_tests {
             panic!("captured request")
         };
         assert_eq!(request.requests[0].client_request_id.id, 1);
-        let McpePacketData::PacketViolationWarningPacket(warning) = &packets[1] else {
+        let McpePacketData::PacketViolationWarningPacket(captured) = &packets[1] else {
             panic!("captured terminating warning")
         };
-        assert_eq!(&invalid_request_warning(), warning);
+        let ours = invalid_request_warning();
+        assert!(!crate::network::violation::has_reader_failure(
+            &ours.violation_context
+        ));
+        let captured = jolyne::valentine::PacketViolationWarningPacket {
+            violation_context: crate::network::violation::redact_violation_message(
+                &captured.violation_context,
+            )
+            .into(),
+            ..captured.clone()
+        };
+        assert_eq!(ours, captured);
     }
 }
 

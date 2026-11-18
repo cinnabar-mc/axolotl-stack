@@ -13,6 +13,8 @@
 //! [`ACCEPTED_WITHOUT_BEHAVIOUR`] for the list and the reason for each.
 
 pub mod ambient;
+pub mod angry;
+pub mod bandwidth;
 pub mod body;
 pub mod breeding;
 pub mod color;
@@ -21,6 +23,8 @@ pub mod damage_sensor;
 pub mod despawn;
 pub mod doors;
 pub mod equipment;
+pub mod explode;
+pub mod flight;
 pub mod goals;
 pub mod hostile;
 pub mod hurt_on_condition;
@@ -28,15 +32,24 @@ pub mod interact;
 pub mod knockback;
 pub mod loot;
 pub mod movement;
+pub mod ranged;
 pub mod sensors;
 pub mod shearing;
+pub mod silverfish;
+pub mod slime;
 pub mod spawn_entity;
+pub mod stats;
+pub mod target_triggers;
+pub mod transformation;
+pub mod variant;
+pub mod vex;
 
 use std::sync::Arc;
 
 use unastar_data::actor_components::{ActorComponent, body as bodies};
 
 pub use ambient::AmbientSoundConfig;
+pub use bandwidth::{BandwidthOptimization, BandwidthValues};
 pub use body::{BreathableConfig, NameableConfig, Pushable};
 pub use breeding::{AgeableConfig, BreedableConfig, FeedEntry, OffspringConfig};
 pub use color::{ActorColor, DyeableConfig};
@@ -46,21 +59,34 @@ pub use despawn::DespawnConfig;
 pub use equipment::{
     EquipItemConfig, EquipItemGoal, EquipmentConfig, PickupItemsGoal, ShareablesConfig,
 };
+pub use flight::{FloatNavigation, FloatWanderGoal};
 pub use goals::{
-    BreedGoal, EatBlockGoal, EatBlockPair, FloatGoal, FollowParentGoal, GoalBase, LookAtPlayerGoal,
-    PanicGoal, RandomLookAroundGoal, RandomStrollGoal, TemptGoal,
+    BreedGoal, EatBlockGoal, EatBlockPair, FleeSunGoal, FloatGoal, FollowParentGoal, GoalBase,
+    LookAtEntityGoal, LookAtPlayerGoal, PanicGoal, RandomLookAroundGoal, RandomStrollGoal,
+    TemptGoal,
 };
 pub use hostile::{
-    AttackConfig, BurnsInDaylightConfig, HurtByTargetGoal, MeleeBoxAttackGoal,
-    NearestAttackableTargetGoal,
+    AttackConfig, BurnsInDaylightConfig, HurtByTargetGoal, MeleeAttackGoal, MeleeReach,
+    NearestAttackableTargetGoal, SwellGoal,
 };
 pub use hurt_on_condition::{HurtCondition, HurtOnConditionConfig};
-pub use interact::{InteractConfig, Interaction, SpawnEggInteraction, SpawnItems};
+pub use interact::{
+    InteractConfig, InteractParticle, Interaction, SpawnEggInteraction, SpawnItems,
+};
 pub use knockback::{KnockbackPower, KnockbackRules};
 pub use loot::{ExperienceRewardConfig, LootConfig};
 pub use movement::{BasicMovementConfig, JumpConfig, WalkNavigationConfig};
-pub use sensors::{EnvironmentSensorConfig, Timer};
-pub use spawn_entity::{SpawnEntityConfig, SpawnEntityTimers, SpawnRule, SpawnTimer};
+pub use ranged::{AvoidEntry, AvoidMobTypeGoal, RangedAttackGoal, ShooterConfig};
+pub use sensors::{EnvironmentSensorConfig, TargetNearbySensorConfig, TargetZone, Timer};
+pub use silverfish::{InfestedBlocks, MergeWithStoneGoal, WakeUpFriendsGoal};
+pub use slime::{
+    AreaAttackConfig, HopAttackGoal, HopFloatGoal, HopKeepJumpingGoal, HopMovementConfig,
+    HopRandomDirectionGoal,
+};
+pub use spawn_entity::{SpawnEntityConfig, SpawnEntityTimers, SpawnRule, SpawnTimer, Spawned};
+pub use target_triggers::{OnFriendlyAnger, OnTargetAcquired, OnTargetEscape, TargetTrigger};
+pub use transformation::{TransformationConfig, TransformationDue};
+pub use vex::{ChargeAttackGoal, DamageOverTime};
 
 use crate::entity::definition::{ComponentKindsBuilder, DefinitionError};
 use crate::registry::ItemRegistry;
@@ -70,10 +96,6 @@ use common::inert;
 /// server-side behaviour implemented yet, and why that is acceptable now.
 /// `docs/research/mob-runtime-constants.md` mirrors this list.
 pub const ACCEPTED_WITHOUT_BEHAVIOUR: &[(ActorComponent, &str)] = &[
-    (
-        ActorComponent::ConditionalBandwidthOptimization,
-        "network send-rate tuning only; unastar replicates every significant change",
-    ),
     (
         ActorComponent::Leashable,
         "leads are not implemented; using a lead on the mob does nothing",
@@ -108,11 +130,11 @@ pub const ACCEPTED_WITHOUT_BEHAVIOUR: &[(ActorComponent, &str)] = &[
     ),
     (
         ActorComponent::Transformation,
-        "the pig gains it only when struck by lightning (not implemented); \
-         the zombie gains it after 30 s underwater, but its target, the \
-         drowned, is not spawnable yet (it needs swim navigation, the \
-         trident ranged attack and target_nearby_sensor), so an underwater \
-         zombie shakes (is_shaking) without converting",
+        "a transformation with added component groups, a delay nearby blocks \
+         shorten (zombie villager curing), a starting sound or the \
+         drop/keep flags has no behaviour: what BDS keeps across those is \
+         not measured; the pig gains its transformation only when struck by \
+         lightning (not implemented)",
     ),
     (
         ActorComponent::BehaviorStompTurtleEgg,
@@ -135,6 +157,24 @@ pub const ACCEPTED_WITHOUT_BEHAVIOUR: &[(ActorComponent, &str)] = &[
          is not implemented",
     ),
     (
+        ActorComponent::BlockClimber,
+        "lets the mob climb scaffolding, and scaffolding climbing is not \
+         implemented for any actor",
+    ),
+    (
+        ActorComponent::CanStandOnPowderSnow,
+        "keeps the mob from sinking into powder snow, and powder snow has no \
+         sinking or freezing behaviour on the server",
+    ),
+    (
+        ActorComponent::FreezingImmune,
+        "keeps powder snow from freezing the mob, and powder snow has no \n         freezing behaviour on the server: no actor freezes",
+    ),
+    (
+        ActorComponent::FreezingVulnerable,
+        "makes freezing hurt the mob more, and powder snow has no freezing \n         behaviour on the server: no actor freezes",
+    ),
+    (
         ActorComponent::GameEventMovementTracking,
         "emits flap/move/swim game events, which only vibration listeners \
          (sculk sensors, wardens, allays) consume; vibrations are not implemented",
@@ -149,15 +189,17 @@ pub fn register_component_kinds(
     items: &Arc<ItemRegistry>,
 ) -> Result<(), DefinitionError> {
     goals::register_component_kinds(builder)?;
+    flight::register_component_kinds(builder)?;
     movement::register_component_kinds(builder)?;
     body::register_component_kinds(builder)?;
     hurt_on_condition::register_component_kinds(builder)?;
     despawn::register_component_kinds(builder)?;
+    explode::register_component_kinds(builder)?;
     doors::register_component_kinds(builder)?;
     breeding::register_component_kinds(builder)?;
     loot::register_component_kinds(builder)?;
     interact::register_component_kinds(builder)?;
-    inert::<bodies::ConditionalBandwidthOptimization>(builder)?;
+    bandwidth::register_component_kinds(builder)?;
     inert::<bodies::Leashable>(builder)?;
     inert::<bodies::LeashableTo>(builder)?;
     inert::<bodies::Balloonable>(builder)?;
@@ -166,19 +208,31 @@ pub fn register_component_kinds(
     inert::<bodies::Boostable>(builder)?;
     inert::<bodies::ItemControllable>(builder)?;
     inert::<bodies::BehaviorControlledByPlayer>(builder)?;
-    inert::<bodies::Transformation>(builder)?;
+    transformation::register_component_kinds(builder)?;
     inert::<bodies::GameEventMovementTracking>(builder)?;
     inert::<bodies::BehaviorStompTurtleEgg>(builder)?;
     inert::<bodies::BehaviorFindMount>(builder)?;
     inert::<bodies::BehaviorUseKineticWeapon>(builder)?;
     inert::<bodies::DimensionBound>(builder)?;
+    inert::<bodies::BlockClimber>(builder)?;
+    inert::<bodies::CanStandOnPowderSnow>(builder)?;
+    inert::<bodies::FreezingImmune>(builder)?;
+    inert::<bodies::FreezingVulnerable>(builder)?;
+    ranged::register_component_kinds(builder)?;
     hostile::register_component_kinds(builder)?;
     sensors::register_component_kinds(builder)?;
     color::register_component_kinds(builder)?;
     shearing::register_component_kinds(builder)?;
+    silverfish::register_component_kinds(builder)?;
+    slime::register_component_kinds(builder)?;
     damage_sensor::register_component_kinds(builder)?;
     ambient::register_component_kinds(builder)?;
     spawn_entity::register_component_kinds(builder, items)?;
-    equipment::register_component_kinds(builder)?;
-    knockback::register_component_kinds(builder)
+    equipment::register_component_kinds(builder, items)?;
+    knockback::register_component_kinds(builder)?;
+    variant::register_component_kinds(builder)?;
+    target_triggers::register_component_kinds(builder)?;
+    stats::register_component_kinds(builder)?;
+    vex::register_component_kinds(builder)?;
+    angry::register_component_kinds(builder)
 }

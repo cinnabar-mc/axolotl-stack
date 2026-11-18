@@ -7,7 +7,8 @@
 //! animation, [`constants::DEATH_TICKS`] after the death tick (the native
 //! death counter is 1 on the death tick and the body goes once it passes
 //! 20); then the mob's `experience_reward.on_death` is spawned as
-//! experience orbs and the entity is removed (viewers get `RemoveActor`).
+//! experience orbs, a slime splits (`mob::life::split`) and the entity is
+//! removed (viewers get `RemoveActor`).
 
 use bevy_ecs::prelude::*;
 use jolyne::valentine::actor_flags;
@@ -17,6 +18,8 @@ use rand::{Rng, SeedableRng};
 use tracing::warn;
 use unastar_rules::molang::eval::{MolangContext, Value as MolangValue, evaluate_num};
 use unastar_rules::molang::{BuiltinQuery, Expr, QueryId};
+
+use unastar_rules::ids::Enchantment;
 
 use crate::ecs::resources::TickCounter;
 use crate::entity::components::{Health, OnGround, Position};
@@ -28,7 +31,6 @@ use crate::entity::mob::state::{Dead, LastHurt};
 use crate::entity::mob::{MobKind, constants};
 use crate::entity::xp_orb::spawn_experience;
 use crate::entity::{EntityRandom, spawn_item_drop};
-use crate::item::enchant::{Enchantment, enchantment_level};
 use crate::server::game::types::{ItemRegistryResource, RecipeRegistryResource};
 use crate::server::game::{LootContext, LootLevel, loot_stacks};
 
@@ -104,13 +106,14 @@ fn drop_loot(world: &mut World, mob: Entity) {
         killed_by_pet: false,
         looting: tool
             .as_ref()
-            .map_or(0, |tool| enchantment_level(tool, Enchantment::Looting)),
+            .map_or(0, |tool| tool.enchantment_level(Enchantment::Looting)),
         on_fire: Some(on_fire),
         recipes: recipes.as_deref(),
         color_index: crate::entity::mob::components::color::color_of(world, mob),
         is_baby: world
             .get::<ActorFlags>(mob)
             .is_some_and(|flags| flags.get(actor_flags::BABY).unwrap_or(false)),
+        mark_variant: crate::entity::mob::components::variant::mark_variant_of(world, mob),
         // Riding is not implemented: no mob has a vehicle.
         vehicle: None,
         level: LootLevel::of(world),
@@ -184,6 +187,17 @@ impl MolangContext for RewardMolang<'_> {
             BuiltinQuery::IsOnGround => {
                 molang_bool(self.world.get::<OnGround>(self.mob).is_some_and(|g| g.0))
             }
+            BuiltinQuery::Variant => MolangValue::Num(
+                self.world
+                    .get::<crate::entity::definition::metadata::EntityMetadata>(self.mob)
+                    .and_then(|metadata| {
+                        crate::entity::mob::components::variant::appearance_id(
+                            metadata,
+                            jolyne::valentine::actor_data_i_ds::VARIANT,
+                        )
+                    })
+                    .unwrap_or(0) as f32,
+            ),
             BuiltinQuery::EquipmentCount => MolangValue::Num(
                 crate::entity::mob::gear::equipment_count(self.world, self.mob) as f32,
             ),
@@ -253,6 +267,9 @@ pub fn tick_dying(
         if let (Some(expr), Some(position)) = (reward, position) {
             let amount = experience_reward(world, mob, &expr);
             spawn_experience(world, position, amount);
+        }
+        if let Err(error) = crate::entity::mob::life::split::split(world, mob) {
+            warn!(%error, "A dying mob could not split");
         }
         world.despawn(mob);
     }

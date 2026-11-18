@@ -4,8 +4,10 @@
 //! (items, blocks, creative content, etc.) for code generation, or records a
 //! whole session as packet fixtures (`--capture-dir`).
 
+mod actions;
 mod capture;
 mod debug_json;
+mod input;
 mod output;
 
 use anyhow::{Context, Result};
@@ -86,6 +88,31 @@ struct Args {
     #[arg(long, requires = "capture_dir")]
     uuid: Option<uuid::Uuid>,
 
+    /// Capture mode: a JSON object of login ClientData fields (as the client
+    /// sends them, e.g. `SkinData`, `PersonaPieces`) replacing jolyne's defaults
+    #[arg(long, requires = "capture_dir")]
+    client_data: Option<PathBuf>,
+
+    /// Capture mode: claim a chunk blob cache in ClientCacheStatus
+    #[arg(long, requires = "capture_dir")]
+    blob_cache: bool,
+
+    /// Capture mode: send PlayerAuthInput every 50 ms after the spawn (a
+    /// player standing still), as a real client does
+    #[arg(long, requires = "capture_dir")]
+    input: bool,
+
+    /// Decode a recorded `packets.jsonl` (from `--capture-dir` or
+    /// `bds-sweep-client --capture-dir`) instead of connecting: one JSON line
+    /// per record `{seq, t_ms, dir, name, packet}` to `--output`
+    #[arg(long, conflicts_with_all = ["fixture", "capture_dir"])]
+    decode: Option<PathBuf>,
+
+    /// Decode mode: only records whose packet name is in this comma-separated
+    /// list (`MobEffectPacket,SetActorDataPacket`); all records without it
+    #[arg(long, requires = "decode", value_delimiter = ',')]
+    only: Vec<String>,
+
     /// Log level filter
     #[arg(long, default_value = "info")]
     log: String,
@@ -134,6 +161,20 @@ async fn run(args: Args) -> Result<()> {
         return Ok(());
     }
 
+    if let Some(capture) = args.decode.as_ref() {
+        let lines = capture::decode_capture(capture, &args.only)?;
+        let mut text = lines.join("\n");
+        text.push('\n');
+        std::fs::write(&args.output, text)
+            .with_context(|| format!("writing {}", args.output.display()))?;
+        info!(
+            records = lines.len(),
+            "decoded to {}",
+            args.output.display()
+        );
+        return Ok(());
+    }
+
     let addr: SocketAddr = args.addr.parse().context("Invalid server address format")?;
 
     info!("Connecting to BDS at {}...", addr);
@@ -145,6 +186,18 @@ async fn run(args: Args) -> Result<()> {
             .map(read_commands)
             .transpose()?
             .unwrap_or_default();
+        let client_data = args
+            .client_data
+            .as_deref()
+            .map(
+                |path| -> Result<serde_json::Map<String, serde_json::Value>> {
+                    let text = std::fs::read_to_string(path)
+                        .with_context(|| format!("reading {}", path.display()))?;
+                    serde_json::from_str(&text)
+                        .with_context(|| format!("{} is not a JSON object", path.display()))
+                },
+            )
+            .transpose()?;
         return capture::run(&capture::Options {
             addr,
             name: args.name,
@@ -156,6 +209,9 @@ async fn run(args: Args) -> Result<()> {
             commands,
             command_wait: Duration::from_millis(args.command_wait),
             uuid: args.uuid,
+            client_data,
+            blob_cache: args.blob_cache,
+            input: args.input,
         })
         .await;
     }
@@ -177,7 +233,9 @@ async fn run(args: Args) -> Result<()> {
     Ok(())
 }
 
-/// The steps of a `--commands` script.
+/// The steps of a `--commands` script: commands without their leading `/`,
+/// console and second-player directives and `!` client actions
+/// ([`capture::Step`]).
 fn read_commands(path: &Path) -> Result<Vec<capture::Step>> {
     let text = std::fs::read_to_string(path)
         .with_context(|| format!("reading commands from {}", path.display()))?;

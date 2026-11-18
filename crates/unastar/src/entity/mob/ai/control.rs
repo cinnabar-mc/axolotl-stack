@@ -10,12 +10,12 @@
 use glam::DVec3;
 
 use crate::entity::mob::constants::{
-    JUMP_COOLDOWN_TICKS, LIQUID_JUMP_IMPULSE, LOOK_IDLE_HEAD_TURN, MOVE_ARRIVAL_FLOOR,
-    MOVE_ARRIVE_DIST_SQ, MOVE_ARRIVE_HEIGHT, MOVE_DESCEND_CAP, MOVE_JUMP_HEIGHT_IN_WATER,
-    MOVE_SPEED_RAMP, NORMAL_GROUND_FRICTION, PATH_STUCK_CHECK_TICKS, PATH_STUCK_DISTANCE_FACTOR,
-    PATH_WAYPOINT_REACH, WATER_MOVE_SPEED,
+    JUMP_COOLDOWN_TICKS, LIQUID_JUMP_IMPULSE, LOOK_IDLE_HEAD_TURN, MOB_AIR_ACCELERATION,
+    MOVE_ARRIVAL_FLOOR, MOVE_ARRIVE_DIST_SQ, MOVE_ARRIVE_HEIGHT, MOVE_DESCEND_CAP,
+    MOVE_INPUT_DECAY, MOVE_JUMP_HEIGHT_IN_WATER, MOVE_SPEED_RAMP, NORMAL_GROUND_FRICTION,
+    PATH_STUCK_CHECK_TICKS, PATH_STUCK_DISTANCE_FACTOR, PATH_WAYPOINT_REACH,
 };
-use crate::entity::navigation::{WalkNavigation, WalkWaypoint};
+use crate::entity::navigation::{WalkMovement, WalkNavigation, WalkWaypoint};
 use crate::registry::block::LiquidKind;
 
 /// What the controls know about the mob this tick.
@@ -29,6 +29,9 @@ pub struct Body {
     pub liquid: Option<LiquidKind>,
     /// Current value of the movement speed attribute.
     pub movement: f32,
+    /// Current value of the underwater movement attribute: the push per
+    /// unit of forward input in water.
+    pub underwater: f32,
 }
 
 impl Body {
@@ -64,6 +67,26 @@ fn forward(yaw: f32) -> DVec3 {
     DVec3::new(-radians.sin(), 0.0, radians.cos())
 }
 
+/// Whether a body at `feet` moving at `velocity` toward `wanted` makes no
+/// headway along `yaw` although the waypoint is still across from it: the
+/// last move ran into a wall ahead.
+pub fn blocked_ahead(
+    feet: DVec3,
+    wanted: Option<DVec3>,
+    velocity: DVec3,
+    yaw: f32,
+    width: f64,
+) -> bool {
+    let Some(wanted) = wanted else {
+        return false;
+    };
+    let across = (wanted - feet).with_y(0.0).length();
+    across > width / 2.0 && velocity.dot(forward(yaw)) < BLOCKED_HEADWAY
+}
+
+/// Headway per tick below which a mob counts as blocked.
+const BLOCKED_HEADWAY: f64 = 1.0e-3;
+
 /// The land move control.
 #[derive(Debug, Default)]
 pub struct MoveControl {
@@ -75,6 +98,13 @@ pub struct MoveControl {
     /// Current speed; also the forward input of the travel step.
     pub speed: f32,
     pub jump_cooldown: u32,
+    /// `wanted` is a swim waypoint: in water the mob pushes straight at it
+    /// (pitch included) and has no gravity (`navigation::swim`).
+    pub swim: bool,
+    /// Sine of the pitch from the feet to a swim waypoint, set by [`tick`].
+    ///
+    /// [`tick`]: MoveControl::tick
+    pub swim_pitch: f64,
 }
 
 impl MoveControl {
@@ -82,6 +112,18 @@ impl MoveControl {
         self.wanted = Some(position);
         self.speed_multiplier = speed_multiplier;
         self.final_node = final_node;
+        self.swim = false;
+    }
+
+    /// [`set_wanted`](Self::set_wanted) for a swim waypoint.
+    pub fn set_swim_wanted(&mut self, position: DVec3, speed_multiplier: f32, final_node: bool) {
+        self.set_wanted(position, speed_multiplier, final_node);
+        self.swim = true;
+    }
+
+    /// Whether the mob swims this tick: a swim waypoint while in water.
+    pub fn swimming(&self, body: &Body) -> bool {
+        self.swim && self.wanted.is_some() && body.liquid == Some(LiquidKind::Water)
     }
 
     /// Advance one tick: update speed, turn `yaw` (the body yaw) and return
@@ -99,8 +141,15 @@ impl MoveControl {
         } else {
             body.centre()
         };
+        let swimming = self.swimming(body);
+        let reference = if swimming { body.feet } else { reference };
         let distance_sq = (wanted - reference).length_squared();
         let rise = wanted.y - body.feet.y;
+        self.swim_pitch = if swimming && distance_sq > 0.0 {
+            rise / distance_sq.sqrt()
+        } else {
+            0.0
+        };
         if distance_sq < MOVE_ARRIVE_DIST_SQ && rise < MOVE_ARRIVE_HEIGHT {
             self.wanted = None;
             self.speed = 0.0;
@@ -117,8 +166,8 @@ impl MoveControl {
         } else {
             (previous + MOVE_SPEED_RAMP * target).min(goal)
         };
-        if rise < 0.0 && speed > MOVE_DESCEND_CAP {
-            speed = (speed - MOVE_SPEED_RAMP * target).max(MOVE_DESCEND_CAP);
+        if rise < 0.0 && !swimming {
+            speed = speed.min(MOVE_DESCEND_CAP);
         }
         self.speed = speed;
 
@@ -203,6 +252,11 @@ impl PathFollower {
         control.wanted = None;
     }
 
+    /// Change the speed of the path being followed.
+    pub fn set_speed(&mut self, speed_multiplier: f32) {
+        self.speed_multiplier = speed_multiplier;
+    }
+
     pub fn is_done(&self) -> bool {
         !self.active || self.index >= self.path.waypoints.len()
     }
@@ -232,6 +286,14 @@ impl PathFollower {
         let level = body.feet.y.floor();
         for (k, waypoint) in self.path.waypoints.iter().enumerate().skip(self.index) {
             let node = waypoint.feet;
+            if waypoint.movement == WalkMovement::Swim {
+                // A swim waypoint is passed within reach in three dimensions.
+                if body.feet.distance_squared(node) < reach * reach {
+                    self.index = k + 1;
+                    continue;
+                }
+                break;
+            }
             if node.y.floor() != level {
                 break;
             }
@@ -245,11 +307,14 @@ impl PathFollower {
             return;
         }
         let last = self.index == self.path.waypoints.len() - 1;
-        control.set_wanted(
-            self.path.waypoints[self.index].feet,
-            self.speed_multiplier,
-            last,
-        );
+        let waypoint = self.path.waypoints[self.index];
+        if waypoint.movement == WalkMovement::Swim
+            || (body.liquid.is_some() && self.path.waypoints[0].movement == WalkMovement::Swim)
+        {
+            control.set_swim_wanted(waypoint.feet, self.speed_multiplier, last);
+        } else {
+            control.set_wanted(waypoint.feet, self.speed_multiplier, last);
+        }
 
         self.stuck_ticks += 1;
         if self.stuck_ticks >= PATH_STUCK_CHECK_TICKS {
@@ -267,16 +332,23 @@ impl PathFollower {
     }
 }
 
-/// The travel step: jump, then accelerate along the body yaw by the move
-/// control's speed. On the ground the acceleration is
-/// `speed × (0.546 / (friction × 0.91))³` times the forward input (which
-/// equals the speed); in the air the friction factor is 1; in liquid the
-/// underwater speed replaces it. Returns the new velocity.
+/// The travel step: jump, then accelerate along the body yaw by the forward
+/// input, the move control's speed × [`MOVE_INPUT_DECAY`] (at most 1). On
+/// the ground the acceleration is `speed × (0.546 / (friction × 0.91))³`
+/// times the input; in the air it is [`MOB_AIR_ACCELERATION`] times the
+/// input; in liquid the underwater speed attribute replaces it, pushed
+/// along the pitch to the waypoint for a swimmer (BDS 1.26.51 drowned:
+/// 0.06 × 0.23 × 0.98 a tick along the line to its target's feet). A jump
+/// in liquid is the small liquid impulse, except a swimmer `blocked` by a
+/// wall jumps its full jump out of the water. `body.on_ground` and
+/// `block_friction` describe the mob before this tick's move. Returns the
+/// new velocity.
 #[allow(clippy::too_many_arguments)]
 pub fn travel(
     body: &Body,
     control: &mut MoveControl,
     jump: bool,
+    blocked: bool,
     jump_power: f32,
     yaw: f32,
     block_friction: f64,
@@ -285,9 +357,9 @@ pub fn travel(
     use crate::entity::mob::constants::LIVING_FRICTION_FACTOR;
     let mut velocity = velocity;
     if jump {
-        if body.liquid.is_some() {
+        if body.liquid.is_some() && !(control.swimming(body) && blocked) {
             velocity.y += LIQUID_JUMP_IMPULSE;
-        } else if body.on_ground && control.jump_cooldown == 0 {
+        } else if (body.on_ground || body.liquid.is_some()) && control.jump_cooldown == 0 {
             velocity.y = velocity.y.max(f64::from(jump_power));
             control.jump_cooldown = JUMP_COOLDOWN_TICKS;
         }
@@ -299,15 +371,22 @@ pub fn travel(
         return velocity;
     }
     let amount = if body.liquid.is_some() {
-        f64::from(WATER_MOVE_SPEED)
+        f64::from(body.underwater)
     } else if body.on_ground {
         let friction = block_friction * LIVING_FRICTION_FACTOR;
         speed * (NORMAL_GROUND_FRICTION / friction).powi(3)
     } else {
-        speed
+        MOB_AIR_ACCELERATION
     };
-    // The forward input is the speed itself, normalised when above 1.
-    let input = speed.abs().min(1.0) * speed.signum();
+    // The forward input is the decayed speed, normalised when above 1.
+    let input = speed * f64::from(MOVE_INPUT_DECAY);
+    let input = input.abs().min(1.0) * input.signum();
+    if control.swimming(body) {
+        // A swimmer pushes straight at its waypoint, pitch included.
+        let pitch = control.swim_pitch.clamp(-1.0, 1.0);
+        let along = forward(yaw) * (1.0 - pitch * pitch).sqrt() + DVec3::Y * pitch;
+        return velocity + along * (amount * input);
+    }
     velocity + forward(yaw) * (amount * input)
 }
 
@@ -340,6 +419,7 @@ mod tests {
             on_ground: true,
             liquid: None,
             movement: 0.25,
+            underwater: 0.02,
         }
     }
 
@@ -378,18 +458,146 @@ mod tests {
     }
 
     #[test]
-    fn ground_acceleration_on_normal_blocks_is_speed_squared() {
+    fn ground_acceleration_on_normal_blocks_is_decayed_speed_squared() {
         let mut control = MoveControl {
             speed: 0.2,
             ..MoveControl::default()
         };
-        let v = travel(&body(), &mut control, false, 0.42, 0.0, 0.6, DVec3::ZERO);
-        assert!((v.z - 0.04).abs() < 1e-6, "{v}");
+        let v = travel(
+            &body(),
+            &mut control,
+            false,
+            false,
+            0.42,
+            0.0,
+            0.6,
+            DVec3::ZERO,
+        );
+        assert!((v.z - 0.98 * 0.04).abs() < 1e-6, "{v}");
         assert!(v.x.abs() < 1e-12);
     }
 
+    #[test]
+    fn air_acceleration_is_a_fiftieth_of_the_decayed_speed() {
+        let mut control = MoveControl {
+            speed: 0.3125,
+            ..MoveControl::default()
+        };
+        let airborne = Body {
+            on_ground: false,
+            ..body()
+        };
+        let v = travel(
+            &airborne,
+            &mut control,
+            false,
+            false,
+            0.42,
+            0.0,
+            0.6,
+            DVec3::ZERO,
+        );
+        assert!((v.z - 0.02 * 0.98 * 0.3125).abs() < 1e-9, "{v}");
+    }
+
+    /// The cow BDS 1.26.51 tempted with wheat over a one-block step
+    /// (`combat/testdata/bds-1.26.51-knockback.json`): from rest it walks up
+    /// to speed 0.3125 in ten ticks, then jumps; it clears the step top on
+    /// tick 26 and lands on tick 32. Each tick's gain is its move minus the
+    /// previous move × the friction of where it stood before that move.
+    #[test]
+    fn walking_and_airborne_gains_match_the_tempted_bds_cow() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../combat/testdata/bds-1.26.51-knockback.json"
+        ))
+        .unwrap();
+        let rows = fixture["trials"]["cow|tempt-step-plain|natural"]["positions"]
+            .as_array()
+            .unwrap();
+        let x = |tick: usize| rows[tick][0].as_f64().unwrap();
+        let grounded = |tick: usize| rows[tick][3].as_u64().unwrap() == 1;
+        let gain = |tick: usize| {
+            let friction = if grounded(tick - 2) { 0.546 } else { 0.91 };
+            (x(tick) - x(tick - 1)) - friction * (x(tick - 1) - x(tick - 2))
+        };
+        // The cow faces +x (yaw -90) and is tempted at 1.25 × 0.25.
+        let measured_gain = |on_ground: bool, speed: f32| {
+            let mut control = MoveControl {
+                speed,
+                ..MoveControl::default()
+            };
+            let body = Body {
+                on_ground,
+                ..body()
+            };
+            travel(
+                &body,
+                &mut control,
+                false,
+                false,
+                0.42,
+                -90.0,
+                0.6,
+                DVec3::ZERO,
+            )
+            .x
+        };
+        let mut control = MoveControl::default();
+        let mut yaw = -90.0;
+        control.set_wanted(DVec3::new(100.0, 0.0, 0.0), 1.25, false);
+        for tick in 2..=11 {
+            assert!(grounded(tick - 2) && grounded(tick));
+            control.tick(&body(), &mut yaw, 30.0);
+            let ours = measured_gain(true, control.speed);
+            assert!(
+                (ours - gain(tick)).abs() < 2e-6,
+                "tick {tick}: {ours}, BDS {}",
+                gain(tick)
+            );
+        }
+        assert_eq!(control.speed, 0.3125);
+        // First tick clear of the step: its top is still above the feet.
+        assert!(!grounded(24) && !grounded(25));
+        let ours = measured_gain(false, 0.3125);
+        assert!(
+            (ours - gain(26)).abs() < 2e-6,
+            "tick 26: {ours}, BDS {}",
+            gain(26)
+        );
+        // Above the step top the speed is capped until the cow lands.
+        control.set_wanted(DVec3::new(100.0, -0.2, 0.0), 1.25, false);
+        for tick in 27..=32 {
+            assert!(!grounded(tick - 1));
+            control.tick(&body(), &mut yaw, 30.0);
+            let ours = measured_gain(false, control.speed);
+            assert!(
+                (ours - gain(tick)).abs() < 2e-6,
+                "tick {tick}: {ours}, BDS {}",
+                gain(tick)
+            );
+        }
+    }
+
+    #[test]
+    fn a_mob_above_its_wanted_position_drops_to_the_descend_cap_at_once() {
+        let mut yaw = 0.0;
+        for target_speed in [0.3125, 0.4375] {
+            let mut control = MoveControl {
+                speed: target_speed,
+                ..MoveControl::default()
+            };
+            control.set_wanted(DVec3::new(0.0, -0.01, 3.0), target_speed / 0.25, false);
+            control.tick(&body(), &mut yaw, 30.0);
+            assert_eq!(control.speed, MOVE_DESCEND_CAP, "from {target_speed}");
+            // Back on its level the speed ramps up again from the cap.
+            control.set_wanted(DVec3::new(0.0, 0.0, 3.0), target_speed / 0.25, false);
+            control.tick(&body(), &mut yaw, 30.0);
+            let ramped = MOVE_DESCEND_CAP + MOVE_SPEED_RAMP * target_speed;
+            assert!((control.speed - ramped).abs() < 1e-6, "{}", control.speed);
+        }
+    }
+
     fn follow(points: &[DVec3]) -> (PathFollower, MoveControl) {
-        use crate::entity::navigation::WalkMovement;
         let mut path = WalkNavigation {
             waypoints: points
                 .iter()

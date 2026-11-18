@@ -18,9 +18,12 @@ use super::path::{PathBlockTable, WalkPolicy, find_path, ground_below, random_ta
 use crate::entity::components::PhysicsBody;
 use crate::entity::goal_selector::{GoalCallbacks, GoalControls, GoalId, GoalKind, GoalSpec};
 use crate::entity::mob::components::{
-    BreedGoal, BreedableConfig, EatBlockGoal, EquipItemGoal, FloatGoal, FollowParentGoal,
-    HurtByTargetGoal, LookAtPlayerGoal, MeleeBoxAttackGoal, NearestAttackableTargetGoal, PanicGoal,
-    PickupItemsGoal, RandomLookAroundGoal, RandomStrollGoal, TemptGoal, WalkNavigationConfig,
+    AvoidMobTypeGoal, BreedGoal, BreedableConfig, ChargeAttackGoal, EatBlockGoal, EquipItemGoal,
+    FleeSunGoal, FloatGoal, FloatWanderGoal, FollowParentGoal, HopAttackGoal, HopFloatGoal,
+    HopKeepJumpingGoal, HopRandomDirectionGoal, HurtByTargetGoal, LookAtEntityGoal,
+    LookAtPlayerGoal, MeleeAttackGoal, MergeWithStoneGoal, NearestAttackableTargetGoal, PanicGoal,
+    PickupItemsGoal, RandomLookAroundGoal, RandomStrollGoal, RangedAttackGoal, SwellGoal,
+    TemptGoal, WakeUpFriendsGoal, WalkNavigationConfig,
 };
 use crate::entity::mob::constants::{
     BREED_CHECK_TICKS, BREED_HEAD_TURN, BREED_MAX_PARTNER_DIST, BREED_SEARCH, BREED_TOUCH_DIST,
@@ -51,13 +54,26 @@ pub enum Goal {
     EatBlock,
     HurtByTarget,
     NearestAttackableTarget,
-    MeleeBoxAttack,
+    MeleeAttack,
     PickupItems,
     EquipItem,
+    FleeSun,
+    RangedAttack,
+    AvoidMobType,
+    MergeWithStone,
+    WakeUpFriends,
+    Swell,
+    HopFloat,
+    HopAttack,
+    HopRandomDirection,
+    HopKeepJumping,
+    FloatWander,
+    ChargeAttack,
+    LookAtEntity,
 }
 
 impl Goal {
-    const ALL: [Goal; 14] = [
+    const ALL: [Goal; 27] = [
         Goal::Float,
         Goal::Panic,
         Goal::Breed,
@@ -69,9 +85,22 @@ impl Goal {
         Goal::EatBlock,
         Goal::HurtByTarget,
         Goal::NearestAttackableTarget,
-        Goal::MeleeBoxAttack,
+        Goal::MeleeAttack,
         Goal::PickupItems,
         Goal::EquipItem,
+        Goal::FleeSun,
+        Goal::RangedAttack,
+        Goal::AvoidMobType,
+        Goal::MergeWithStone,
+        Goal::WakeUpFriends,
+        Goal::Swell,
+        Goal::HopFloat,
+        Goal::HopAttack,
+        Goal::HopRandomDirection,
+        Goal::HopKeepJumping,
+        Goal::FloatWander,
+        Goal::ChargeAttack,
+        Goal::LookAtEntity,
     ];
 
     pub fn id(self) -> GoalId {
@@ -83,19 +112,30 @@ impl Goal {
     }
 
     /// The goal kind's native controls; `behavior.eat_block`,
-    /// `behavior.pickup_items` and `behavior.equip_item` may author their own.
+    /// `behavior.pickup_items`, `behavior.equip_item`, `behavior.flee_sun`,
+    /// `behavior.float_wander` and the silverfish goals may author their
+    /// own.
     fn controls(self) -> GoalControls {
         match self {
             Goal::Float => GoalControls::JUMP,
-            Goal::Panic | Goal::FollowParent | Goal::RandomStroll => GoalControls::MOVE,
+            Goal::Panic | Goal::FollowParent | Goal::RandomStroll | Goal::FleeSun => {
+                GoalControls::MOVE
+            }
             Goal::Breed | Goal::Tempt | Goal::RandomLookAround => {
                 GoalControls::MOVE | GoalControls::LOOK
             }
-            Goal::LookAtPlayer => GoalControls::LOOK,
+            Goal::LookAtPlayer | Goal::LookAtEntity => GoalControls::LOOK,
             Goal::EatBlock => crate::entity::mob::constants::EAT_BLOCK_DEFAULT_CONTROLS,
             Goal::HurtByTarget | Goal::NearestAttackableTarget => GoalControls::TARGET,
-            Goal::MeleeBoxAttack | Goal::PickupItems => GoalControls::MOVE | GoalControls::LOOK,
+            Goal::MeleeAttack | Goal::PickupItems => GoalControls::MOVE | GoalControls::LOOK,
             Goal::EquipItem => GoalControls::NONE,
+            Goal::RangedAttack => GoalControls::MOVE | GoalControls::LOOK,
+            Goal::AvoidMobType | Goal::MergeWithStone | Goal::Swell => GoalControls::MOVE,
+            Goal::WakeUpFriends => GoalControls::NONE,
+            Goal::HopFloat | Goal::HopKeepJumping => GoalControls::MOVE | GoalControls::JUMP,
+            Goal::HopAttack | Goal::HopRandomDirection => GoalControls::LOOK,
+            Goal::FloatWander => GoalControls::NONE,
+            Goal::ChargeAttack => GoalControls::MOVE | GoalControls::LOOK,
         }
     }
 }
@@ -131,6 +171,10 @@ pub fn goal_specs(world: &World, entity: Entity, out: &mut Vec<GoalSpec>) {
             entity.get::<LookAtPlayerGoal>().map(|g| g.priority),
         ),
         (
+            Goal::LookAtEntity,
+            entity.get::<LookAtEntityGoal>().map(|g| g.0.priority),
+        ),
+        (
             Goal::RandomLookAround,
             entity.get::<RandomLookAroundGoal>().map(|g| g.priority),
         ),
@@ -148,6 +192,30 @@ pub fn goal_specs(world: &World, entity: Entity, out: &mut Vec<GoalSpec>) {
             id: Goal::EatBlock.id(),
             kind: GoalKind::Normal,
             priority: goal.priority,
+            controls: goal.controls,
+        });
+    }
+    if let Some(goal) = entity.get::<FloatWanderGoal>() {
+        out.push(GoalSpec {
+            id: Goal::FloatWander.id(),
+            kind: GoalKind::Normal,
+            priority: goal.priority,
+            controls: goal.controls,
+        });
+    }
+    if let Some(goal) = entity.get::<ChargeAttackGoal>() {
+        out.push(GoalSpec {
+            id: Goal::ChargeAttack.id(),
+            kind: GoalKind::Normal,
+            priority: goal.priority,
+            controls: goal.controls,
+        });
+    }
+    if let Some(goal) = entity.get::<FleeSunGoal>() {
+        out.push(GoalSpec {
+            id: Goal::FleeSun.id(),
+            kind: GoalKind::Normal,
+            priority: goal.base.priority,
             controls: goal.controls,
         });
     }
@@ -171,9 +239,9 @@ pub fn goal_specs(world: &World, entity: Entity, out: &mut Vec<GoalSpec>) {
             controls: goal.controls(),
         })
     }));
-    if let Some(goal) = entity.get::<MeleeBoxAttackGoal>() {
+    if let Some(goal) = entity.get::<MeleeAttackGoal>() {
         out.push(GoalSpec {
-            id: Goal::MeleeBoxAttack.id(),
+            id: Goal::MeleeAttack.id(),
             kind: GoalKind::Normal,
             priority: goal.priority,
             controls: goal.controls,
@@ -195,6 +263,86 @@ pub fn goal_specs(world: &World, entity: Entity, out: &mut Vec<GoalSpec>) {
             controls: goal.controls,
         });
     }
+    if let Some(goal) = entity.get::<RangedAttackGoal>() {
+        out.push(GoalSpec {
+            id: Goal::RangedAttack.id(),
+            kind: GoalKind::Normal,
+            priority: goal.priority,
+            controls: goal.controls,
+        });
+    }
+    if let Some(goal) = entity.get::<AvoidMobTypeGoal>() {
+        out.push(GoalSpec {
+            id: Goal::AvoidMobType.id(),
+            kind: GoalKind::Normal,
+            priority: goal.priority,
+            controls: goal.controls,
+        });
+    }
+    if let Some(goal) = entity.get::<MergeWithStoneGoal>() {
+        out.push(GoalSpec {
+            id: Goal::MergeWithStone.id(),
+            kind: GoalKind::Normal,
+            priority: goal.priority,
+            controls: goal.controls,
+        });
+    }
+    if let Some(goal) = entity.get::<WakeUpFriendsGoal>() {
+        out.push(GoalSpec {
+            id: Goal::WakeUpFriends.id(),
+            kind: GoalKind::Normal,
+            priority: goal.priority,
+            controls: goal.controls,
+        });
+    }
+    if let Some(goal) = entity.get::<SwellGoal>() {
+        out.push(GoalSpec {
+            id: Goal::Swell.id(),
+            kind: GoalKind::Normal,
+            priority: goal.priority,
+            controls: goal.controls,
+        });
+    }
+    let hops = [
+        (
+            Goal::HopFloat,
+            entity
+                .get::<HopFloatGoal>()
+                .map(|g| (g.priority, g.controls)),
+        ),
+        (
+            Goal::HopAttack,
+            entity
+                .get::<HopAttackGoal>()
+                .map(|g| (g.priority, g.controls)),
+        ),
+        (
+            Goal::HopRandomDirection,
+            entity
+                .get::<HopRandomDirectionGoal>()
+                .map(|g| (g.priority, g.controls)),
+        ),
+        (
+            Goal::HopKeepJumping,
+            entity
+                .get::<HopKeepJumpingGoal>()
+                .map(|g| (g.priority, g.controls)),
+        ),
+    ];
+    out.extend(hops.into_iter().filter_map(|(goal, authored)| {
+        let (priority, controls) = authored?;
+        Some(GoalSpec {
+            id: goal.id(),
+            kind: GoalKind::Normal,
+            priority,
+            controls,
+        })
+    }));
+}
+
+/// A mob's eyes, as the look goals see them.
+fn mob_eye(mob: &MobView) -> DVec3 {
+    mob.feet + DVec3::Y * mob.height * crate::entity::mob::constants::MOB_EYE_HEIGHT_RATIO
 }
 
 /// World writes the goals request; applied after the mob's tick.
@@ -211,8 +359,24 @@ pub struct Effects {
     pub target: Option<Option<Entity>>,
     /// The melee goal hits this actor now.
     pub attack: Option<Entity>,
+    /// The ranged goal shoots at this actor now.
+    pub shoot: Option<Entity>,
+    /// The ranged goal started (`true`) or stopped: the
+    /// `FACING_TARGET_TO_RANGE_ATTACK` flag follows.
+    pub ranged_facing: Option<bool>,
     /// The pickup and equip goals' item work (`super::pickup`).
     pub gear: super::pickup::GearWork,
+    /// A silverfish merging into a block or waking its friends.
+    pub silverfish: Option<super::silverfish::SilverfishWork>,
+    /// The swell goal started: the mob hisses (`fuse`).
+    pub swell_started: bool,
+    /// The `STANDING` flag changes (a stomp goal stopped while reared up).
+    pub standing: Option<bool>,
+    /// The `RESTING` flag changes (a bat settles or wakes, `super::roost`).
+    pub resting: Option<bool>,
+    /// The `CHARGING` flag changes (a vex's charge starts or ends,
+    /// `super::vex`).
+    pub charging: Option<bool>,
 }
 
 #[derive(Debug, Default)]
@@ -235,10 +399,14 @@ struct BreedState {
 pub struct GoalStates {
     panic_target: DVec3,
     panic_repath: u32,
+    /// The covered block `behavior.flee_sun` walks to.
+    pub(super) flee_target: DVec3,
     tempt: TemptState,
     parent: Option<Entity>,
     parent_repath: u32,
     look_player: Option<Entity>,
+    /// The mob `behavior.look_at_entity` looks at.
+    look_mob: Option<Entity>,
     look_ticks: i32,
     look_point: DVec3,
     breed: BreedState,
@@ -247,11 +415,18 @@ pub struct GoalStates {
     /// A path prepared by `can_start`, installed by `start`.
     pub(super) staging: WalkNavigation,
     scratch: NavigationScratch,
+    swim: crate::entity::navigation::swim::SwimScratch,
     candidates: Vec<(f32, DVec3)>,
     boxes: Vec<Aabb>,
     pub(super) targets: super::targeting::TargetStates,
     pub(super) melee: super::melee::MeleeState,
+    pub(super) ranged: super::ranged::RangedState,
+    pub(super) avoid: super::avoid::AvoidState,
     pub(super) pickup: super::pickup::PickupState,
+    pub(super) silverfish: super::silverfish::SilverfishState,
+    pub(super) hop: super::hop::HopState,
+    pub(super) fly: super::fly::FlyState,
+    pub(super) charge: super::vex::ChargeState,
 }
 
 /// Everything a goal reads and writes during one mob's tick.
@@ -294,8 +469,26 @@ impl<'a> GoalContext<'a> {
         self.body.feet + DVec3::Y * self.body.height
     }
 
+    /// Whether this tick's paths are swim paths: the navigation can swim
+    /// and the mob is in water.
+    pub(super) fn swimming(&self) -> bool {
+        self.policy.can_swim && self.body.liquid == Some(LiquidKind::Water)
+    }
+
     /// Search a path to `goal` into the staging buffer.
-    fn path_to(&mut self, goal: DVec3) -> bool {
+    pub(super) fn path_to(&mut self, goal: DVec3) -> bool {
+        if self.swimming() {
+            return super::path::find_swim(
+                self.world,
+                self.table,
+                self.physics,
+                self.policy,
+                self.body.feet,
+                goal,
+                &mut self.states.swim,
+                &mut self.states.staging,
+            );
+        }
         find_path(
             self.world,
             self.table,
@@ -311,6 +504,10 @@ impl<'a> GoalContext<'a> {
 
     /// Search a path onto the ground under `point` into the staging buffer.
     pub(super) fn path_toward(&mut self, point: DVec3) -> bool {
+        // A swimming mob heads for the point itself, not the ground under it.
+        if self.swimming() {
+            return self.path_to(point);
+        }
         let Some(goal) = ground_below(self.world, point, &mut self.states.boxes) else {
             return false;
         };
@@ -330,7 +527,12 @@ impl<'a> GoalContext<'a> {
     }
 
     /// Prepare a path to the best reachable random position.
-    fn prepare_random_path(&mut self, xz: i32, y: i32, away: Option<DVec3>) -> Option<DVec3> {
+    pub(super) fn prepare_random_path(
+        &mut self,
+        xz: i32,
+        y: i32,
+        away: Option<DVec3>,
+    ) -> Option<DVec3> {
         let mut candidates = std::mem::take(&mut self.states.candidates);
         random_targets(
             self.world,
@@ -384,7 +586,11 @@ impl<'a> GoalContext<'a> {
     }
 
     fn in_view(&self, goal: &LookAtPlayerGoal, player: &PlayerView) -> bool {
-        let delta = player.eye - self.eye();
+        self.eye_in_view(goal, player.eye)
+    }
+
+    fn eye_in_view(&self, goal: &LookAtPlayerGoal, eye: DVec3) -> bool {
+        let delta = eye - self.eye();
         if goal.half_angle_horizontal < 180.0 {
             let off = wrap_degrees(yaw_toward(delta) - self.yaw).abs();
             if off > goal.half_angle_horizontal {
@@ -399,6 +605,48 @@ impl<'a> GoalContext<'a> {
             }
         }
         true
+    }
+
+    fn look_at_entity_can_start(&mut self) -> bool {
+        let Some(goal) = self.config::<LookAtEntityGoal>() else {
+            return false;
+        };
+        let goal = &goal.0;
+        if self.rng.r#gen::<f32>() >= goal.probability {
+            return false;
+        }
+        let range = f64::from(goal.look_distance);
+        let feet = self.body.feet;
+        let target = self
+            .nearby
+            .mobs_in(self.aabb().inflate(DVec3::splat(range)))
+            .filter(|m| {
+                m.entity != self.entity
+                    && !m.dead
+                    && m.feet.distance_squared(feet) <= range * range
+                    && self.eye_in_view(goal, mob_eye(m))
+            })
+            .min_by(|a, b| {
+                a.feet
+                    .distance_squared(feet)
+                    .total_cmp(&b.feet.distance_squared(feet))
+            })
+            .map(|m| m.entity);
+        self.states.look_mob = target;
+        target.is_some()
+    }
+
+    fn look_at_entity_can_continue(&self) -> bool {
+        let Some(goal) = self.config::<LookAtEntityGoal>() else {
+            return false;
+        };
+        let Some(mob) = self.mob(self.states.look_mob) else {
+            return false;
+        };
+        let range = f64::from(goal.0.look_distance);
+        self.states.look_ticks > 0
+            && mob.feet.distance_squared(self.body.feet) <= range * range
+            && self.eye_in_view(&goal.0, mob_eye(&mob))
     }
 
     fn breed_partner(&self) -> Option<Entity> {
@@ -422,6 +670,17 @@ impl<'a> GoalContext<'a> {
                     .total_cmp(&b.feet.distance_squared(self.body.feet))
             })
             .map(|m| m.entity)
+    }
+
+    /// Whether the mob's fuse is lit (`IGNITED`).
+    fn lit(&self) -> bool {
+        self.world
+            .get::<crate::entity::definition::flags::ActorFlags>(self.entity)
+            .is_some_and(|flags| {
+                flags
+                    .get(jolyne::valentine::actor_flags::IGNITED)
+                    .unwrap_or(false)
+            })
     }
 
     pub(super) fn aabb(&self) -> Aabb {
@@ -587,6 +846,7 @@ impl GoalCallbacks for GoalContext<'_> {
                 };
                 self.rng.r#gen::<f32>() < goal.probability
             }
+            Goal::LookAtEntity => self.look_at_entity_can_start(),
             Goal::Breed => {
                 if self.config::<BreedGoal>().is_none() || self.baby || !self.self_in_love() {
                     return false;
@@ -613,16 +873,38 @@ impl GoalCallbacks for GoalContext<'_> {
             }
             Goal::HurtByTarget => self.hurt_by_can_start(),
             Goal::NearestAttackableTarget => self.nearest_target_can_start(),
-            Goal::MeleeBoxAttack => self.melee_can_start(),
+            Goal::MeleeAttack => self.melee_can_start(),
             Goal::PickupItems => self.pickup_can_start(),
             Goal::EquipItem => self.equip_can_start(),
+            Goal::FleeSun => self.flee_sun_can_start(),
+            Goal::RangedAttack => self.ranged_can_start(),
+            Goal::AvoidMobType => self.avoid_can_start(),
+            Goal::MergeWithStone => self.merge_can_start(),
+            Goal::WakeUpFriends => self.wake_can_start(),
+            Goal::Swell => self.config::<SwellGoal>().is_some() && self.lit(),
+            Goal::HopFloat => self.hop_float_can_start(),
+            Goal::HopAttack => self.hop_attack_can_start(),
+            Goal::HopRandomDirection => self.hop_direction_can_start(),
+            Goal::HopKeepJumping => self.config::<HopKeepJumpingGoal>().is_some(),
+            Goal::FloatWander => self.float_wander_can_start(),
+            Goal::ChargeAttack => self.charge_can_start(),
         }
     }
 
     fn can_continue(&mut self, id: GoalId) -> bool {
         match Goal::from_id(id) {
             Goal::Float => self.body.liquid.is_some(),
-            Goal::Panic | Goal::RandomStroll => !self.nav.is_done(),
+            Goal::Panic | Goal::RandomStroll | Goal::FleeSun | Goal::MergeWithStone => {
+                !self.nav.is_done()
+            }
+            Goal::WakeUpFriends => self.config::<WakeUpFriendsGoal>().is_some(),
+            Goal::Swell => self.lit(),
+            Goal::HopFloat => self.hop_float_can_start(),
+            Goal::HopAttack => self.hop_attack_can_continue(),
+            Goal::HopRandomDirection => self.hop_direction_can_start(),
+            Goal::HopKeepJumping => self.config::<HopKeepJumpingGoal>().is_some(),
+            Goal::FloatWander => self.float_wander_can_start(),
+            Goal::ChargeAttack => self.charge_can_continue(),
             Goal::Tempt => {
                 let Some(goal) = self.config::<TemptGoal>() else {
                     return false;
@@ -667,12 +949,15 @@ impl GoalCallbacks for GoalContext<'_> {
                     && self.in_view(goal, &player)
             }
             Goal::RandomLookAround => self.states.look_ticks > 0,
+            Goal::LookAtEntity => self.look_at_entity_can_continue(),
             Goal::EatBlock => self.states.eat_ticks > 0,
             Goal::HurtByTarget => self.hurt_by_can_continue(),
             Goal::NearestAttackableTarget => self.nearest_target_can_continue(),
-            Goal::MeleeBoxAttack => self.melee_can_continue(),
+            Goal::MeleeAttack => self.melee_can_continue(),
             Goal::PickupItems => self.pickup_can_continue(),
             Goal::EquipItem => self.equip_can_start(),
+            Goal::RangedAttack => self.ranged_can_start(),
+            Goal::AvoidMobType => self.avoid_can_continue(),
             Goal::Breed => {
                 let Some(partner) = self.mob(self.states.breed.partner) else {
                     return false;
@@ -719,6 +1004,12 @@ impl GoalCallbacks for GoalContext<'_> {
                     .map_or((0, 0), |g| g.look_ticks);
                 self.states.look_ticks = view_range(ticks, self.rng);
             }
+            Goal::LookAtEntity => {
+                let ticks = self
+                    .config::<LookAtEntityGoal>()
+                    .map_or((0, 0), |g| g.0.look_ticks);
+                self.states.look_ticks = view_range(ticks, self.rng);
+            }
             Goal::RandomLookAround => {
                 let Some(goal) = self.config::<RandomLookAroundGoal>() else {
                     return;
@@ -744,16 +1035,41 @@ impl GoalCallbacks for GoalContext<'_> {
             }
             Goal::HurtByTarget => self.hurt_by_start(),
             Goal::NearestAttackableTarget => self.nearest_target_start(),
-            Goal::MeleeBoxAttack => self.melee_start(),
+            Goal::MeleeAttack => self.melee_start(),
             Goal::PickupItems => self.pickup_start(),
             Goal::EquipItem => {}
+            Goal::FleeSun => self.flee_sun_start(),
+            Goal::RangedAttack => self.ranged_start(),
+            Goal::AvoidMobType => self.avoid_start(),
+            Goal::MergeWithStone => self.merge_start(),
+            Goal::WakeUpFriends => self.wake_start(),
+            Goal::HopAttack => self.hop_attack_start(),
+            Goal::HopFloat
+            | Goal::HopRandomDirection
+            | Goal::HopKeepJumping
+            | Goal::FloatWander => {}
+            Goal::ChargeAttack => self.charge_start(),
+            Goal::Swell => {
+                self.nav.stop(self.movement);
+                self.effects.swell_started = true;
+            }
         }
     }
 
     fn stop(&mut self, id: GoalId) {
         match Goal::from_id(id) {
             Goal::Float => {}
-            Goal::Panic | Goal::RandomStroll => self.nav.stop(self.movement),
+            Goal::Panic | Goal::RandomStroll | Goal::FleeSun | Goal::MergeWithStone => {
+                self.nav.stop(self.movement)
+            }
+            Goal::WakeUpFriends
+            | Goal::Swell
+            | Goal::HopFloat
+            | Goal::HopAttack
+            | Goal::HopRandomDirection
+            | Goal::HopKeepJumping => {}
+            Goal::FloatWander => self.float_wander_stop(),
+            Goal::ChargeAttack => self.charge_stop(),
             Goal::FollowParent => {
                 self.nav.stop(self.movement);
                 self.states.parent = None;
@@ -770,15 +1086,18 @@ impl GoalCallbacks for GoalContext<'_> {
                 self.effects.tempted = Some(false);
             }
             Goal::LookAtPlayer => self.states.look_player = None,
+            Goal::LookAtEntity => self.states.look_mob = None,
             Goal::RandomLookAround => self.states.look_ticks = 0,
             Goal::EatBlock => self.states.eat_ticks = 0,
             Goal::HurtByTarget => self.target_stop(super::targeting::TargetSource::HurtBy),
             Goal::NearestAttackableTarget => {
                 self.target_stop(super::targeting::TargetSource::Nearest)
             }
-            Goal::MeleeBoxAttack => self.melee_stop(),
+            Goal::MeleeAttack => self.melee_stop(),
             Goal::PickupItems => self.pickup_stop(),
             Goal::EquipItem => {}
+            Goal::RangedAttack => self.ranged_stop(),
+            Goal::AvoidMobType => self.avoid_stop(),
         }
     }
 
@@ -805,7 +1124,15 @@ impl GoalCallbacks for GoalContext<'_> {
                     }
                 }
             }
-            Goal::RandomStroll => {}
+            Goal::RandomStroll | Goal::FleeSun | Goal::MergeWithStone => {}
+            Goal::WakeUpFriends => self.wake_tick(),
+            Goal::Swell => self.nav.stop(self.movement),
+            Goal::HopFloat => self.hop_float_tick(),
+            Goal::HopAttack => self.hop_attack_tick(),
+            Goal::HopRandomDirection => self.hop_direction_tick(),
+            Goal::HopKeepJumping => self.hop_keep_jumping_tick(),
+            Goal::FloatWander => self.float_wander_tick(),
+            Goal::ChargeAttack => self.charge_tick(),
             Goal::EatBlock => {
                 self.states.eat_ticks = self.states.eat_ticks.max(1) - 1;
                 if self.states.eat_ticks == 0 {
@@ -813,9 +1140,11 @@ impl GoalCallbacks for GoalContext<'_> {
                 }
             }
             Goal::HurtByTarget | Goal::NearestAttackableTarget => self.target_tick(),
-            Goal::MeleeBoxAttack => self.melee_tick(),
+            Goal::MeleeAttack => self.melee_tick(),
             Goal::PickupItems => self.pickup_tick(),
             Goal::EquipItem => self.equip_tick(),
+            Goal::RangedAttack => self.ranged_tick(),
+            Goal::AvoidMobType => self.avoid_tick(),
             Goal::Tempt => {
                 let Some(goal) = self.config::<TemptGoal>() else {
                     return;
@@ -863,6 +1192,12 @@ impl GoalCallbacks for GoalContext<'_> {
             Goal::LookAtPlayer => {
                 if let Some(player) = self.player(self.states.look_player) {
                     self.look.look_at(player.eye, LOOK_AT_PLAYER_HEAD_TURN);
+                }
+                self.states.look_ticks -= 1;
+            }
+            Goal::LookAtEntity => {
+                if let Some(mob) = self.mob(self.states.look_mob) {
+                    self.look.look_at(mob_eye(&mob), LOOK_AT_PLAYER_HEAD_TURN);
                 }
                 self.states.look_ticks -= 1;
             }

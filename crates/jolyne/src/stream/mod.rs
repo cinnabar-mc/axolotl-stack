@@ -185,6 +185,12 @@ impl<S: PhaseOf<R>, R: Role, T: Transport> BedrockStream<S, R, T> {
         self.parts_ref().transport.latency()
     }
 
+    /// Reports the bytes the transport has queued towards the peer, when it
+    /// tracks them (see [`transport::SendQueueProbe`]).
+    pub fn send_queue_probe(&self) -> Option<transport::SendQueueProbe> {
+        self.parts_ref().transport.send_queue_probe()
+    }
+
     /// A snapshot of the connection's packet, batch and byte counters.
     pub fn metrics(&self) -> ConnectionMetrics {
         self.parts_ref().owner.connection_ref().metrics()
@@ -250,6 +256,17 @@ macro_rules! packet_recv {
         /// The next packet as a borrowed view (no payload allocation).
         pub async fn recv_packet_borrowed(&mut self) -> Result<BorrowedMcpePacket, JolyneError> {
             let packet = self.recv_packet_raw().await?;
+            self.decode_borrowed(packet)
+        }
+
+        /// Decodes a packet [`Self::recv_packet_raw`] returned as a borrowed
+        /// view, counting a decode failure in the connection metrics as
+        /// [`Self::recv_packet_borrowed`] does (for callers that check the
+        /// raw packet first).
+        pub fn decode_borrowed(
+            &mut self,
+            packet: RawPacket,
+        ) -> Result<BorrowedMcpePacket, JolyneError> {
             let result = packet.decode_borrowed();
             if result
                 .as_ref()

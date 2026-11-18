@@ -46,6 +46,13 @@ impl UnastarServer {
     /// Create a new server instance from config.
     pub async fn new(config: Arc<UnastarConfig>) -> Result<Self, Box<dyn std::error::Error>> {
         let player_data_store = Arc::new(PlayerDataStore::new(config.players.data_dir.clone()));
+        if let Some(radius) = config.server.default_chunk_radius {
+            warn!(
+                default_chunk_radius = radius,
+                max_chunk_radius = config.server.max_chunk_radius,
+                "`server.default_chunk_radius` is ignored: each player gets the view distance it requests, up to `server.max_chunk_radius`"
+            );
+        }
 
         // Create ECS-based game server
         let mut server = GameServer::with_config(config.server_config());
@@ -55,94 +62,59 @@ impl UnastarServer {
             );
         }
 
-        // Initialize LevelDB player provider (if enabled)
+        // A configured player database that won't open (e.g. locked by
+        // another instance) stops startup, like the world database: running
+        // without it would let everyone join with first-join state while their
+        // saved data sits on disk.
         if config.players.leveldb_enabled {
             let player_db_path = config.players.data_dir.join("db");
-            match LevelDBPlayerProvider::open(&player_db_path) {
-                Ok(provider) => {
-                    info!(path = %player_db_path.display(), "Opened player LevelDB");
-                    server.ecs.world_mut().insert_resource(
-                        crate::server::game::types::PlayerProviderResource(Arc::new(provider)),
-                    );
-                }
-                Err(e) => {
-                    warn!(error = %e, "Failed to open player LevelDB, persistence disabled");
-                }
-            }
+            let provider = LevelDBPlayerProvider::open(&player_db_path).map_err(|e| {
+                format!(
+                    "Failed to open player storage at {}: {e}",
+                    player_db_path.display()
+                )
+            })?;
+            info!(path = %player_db_path.display(), "Opened player LevelDB");
+            server.ecs.world_mut().insert_resource(
+                crate::server::game::types::PlayerProviderResource(Arc::new(provider)),
+            );
         }
 
-        // Initialize world provider based on config
+        // Without its world database the server can't load or save terrain,
+        // so a database that won't open (e.g. locked by another instance)
+        // stops startup instead of running with persistence off.
         let world_db_path = std::path::PathBuf::from("worlds")
             .join("default")
             .join("db");
-        let dimension = config.server_config().world.dimension;
-        let storage_provider = config.server_config().world.storage_provider;
-
-        // The world database serves chunks and the level records.
-        type Providers = (
-            Arc<dyn crate::storage::WorldProvider>,
-            Arc<dyn crate::storage::level::LevelRecordStore>,
-        );
-        let providers: Option<Providers> = match storage_provider {
-            crate::world::StorageProvider::LevelDb => {
-                match crate::storage::LevelDBWorldProvider::open(&world_db_path, dimension) {
-                    Ok(provider) => {
-                        info!(path = %world_db_path.display(), "Opened world LevelDB");
-                        let provider = Arc::new(provider);
-                        Some((provider.clone(), provider))
-                    }
-                    Err(e) => {
-                        warn!(error = %e, "Failed to open world LevelDB, chunk persistence disabled");
-                        None
-                    }
-                }
-            }
-            crate::world::StorageProvider::BlazeDb => {
-                let cache_capacity = config.server_config().world.blazedb_cache_chunks;
-                let blaze_config = crate::storage::blazedb::BlazeConfig {
-                    cache_capacity,
-                    ..Default::default()
-                };
-                match crate::storage::BlazeDBProvider::open(&world_db_path, Some(blaze_config)) {
-                    Ok(provider) => {
-                        info!(path = %world_db_path.display(), cache_capacity, "Opened world BlazeDB");
-                        Some((provider.clone(), provider))
-                    }
-                    Err(e) => {
-                        warn!(error = %e, "Failed to open world BlazeDB, chunk persistence disabled");
-                        None
-                    }
-                }
-            }
-        };
-
-        if let Some((provider, level_records)) = providers {
-            // The world's level.dat and level records (clock, game rules,
-            // spawn, scoreboard, ...). Data that cannot be read stops the
-            // start rather than being replaced.
-            let new_world = crate::world::level_data::new_world(&config.server_config());
-            let level = crate::world::level_data::open(
-                crate::storage::level::LevelFiles::new(
-                    std::path::PathBuf::from("worlds").join("default"),
-                ),
-                level_records,
-                &new_world,
-            )
-            .await
+        let (provider, level_records) =
+            open_world_provider(&world_db_path, &config.server_config().world).map_err(|e| {
+                format!(
+                    "Failed to open world storage at {}: {e}",
+                    world_db_path.display()
+                )
+            })?;
+        // The world's level.dat and level records (clock, game rules, spawn,
+        // scoreboard, ...). Data that cannot be read stops the start rather
+        // than being replaced.
+        let new_world = crate::world::level_data::new_world(&config.server_config());
+        let level = crate::world::level_data::open(
+            crate::storage::level::LevelFiles::new(
+                std::path::PathBuf::from("worlds").join("default"),
+            ),
+            level_records,
+            &new_world,
+        )
+        .await
+        .map_err(|e| format!("cannot load the world's level data: {e}"))?;
+        level
+            .apply(server.ecs.world_mut())
             .map_err(|e| format!("cannot load the world's level data: {e}"))?;
-            level
-                .apply(server.ecs.world_mut())
-                .map_err(|e| format!("cannot load the world's level data: {e}"))?;
-            info!("Loaded level data");
-
-            // Set provider on ChunkManager resource for load-before-generate
-            let world = server.ecs.world_mut();
-            if let Some(mut chunk_manager) =
-                world.get_resource_mut::<crate::world::ecs::ChunkManager>()
-            {
-                chunk_manager.set_provider(provider);
-            }
-        }
+        info!("Loaded level data");
+        server
+            .ecs
+            .world_mut()
+            .resource_mut::<crate::world::ecs::ChunkManager>()
+            .set_provider(provider);
 
         // BDS keeps its server files (allowlist, permissions, identity key)
         // next to the executable; unastar keeps them in its working directory.
@@ -151,10 +123,10 @@ impl UnastarServer {
             let world = server.ecs.world_mut();
             world
                 .resource_mut::<crate::command::exec::OperatorList>()
-                .load_permissions(&files);
+                .load_permissions(&files)?;
             world.insert_resource(crate::command::exec::Allowlist {
                 enabled: config.server.allow_list,
-                entries: crate::command::exec::Allowlist::load(&files),
+                entries: crate::command::exec::Allowlist::load(&files)?,
             });
             world.insert_resource(crate::command::exec::WorldFiles {
                 root: std::path::PathBuf::from("worlds"),
@@ -210,6 +182,10 @@ impl UnastarServer {
             online_mode: self.config.server.online_mode,
             allow_legacy_auth: self.config.server.allow_legacy_auth,
             encryption_enabled: self.config.server.encryption_enabled,
+            compression: jolyne::config::CompressionConfig {
+                level: self.config.server.compression_level,
+                ..Default::default()
+            },
             resource_packs: Arc::new(ServerPacks {
                 required: self.config.server.require_resource_packs,
                 ..ServerPacks::default()
@@ -318,6 +294,12 @@ impl UnastarServer {
                     .world()
                     .resource::<crate::world::rules::StartGameWorldState>()
                     .clone(),
+                roster: self
+                    .server
+                    .ecs
+                    .world()
+                    .resource::<crate::server::game::roster::OnlineRoster>()
+                    .clone(),
                 key: self.server_key.clone(),
                 config: self.config.clone(),
                 player_data_store: self.player_data_store.clone(),
@@ -392,6 +374,8 @@ impl UnastarServer {
 
                     let tick_logic_start = std::time::Instant::now();
                     let plugin_manager = &mut self.plugin_manager;
+                    // When the game tick started and ended, and the plugins ended.
+                    let mut stages = (tick_logic_start, tick_logic_start, tick_logic_start);
                     let events_processed = network_tick(
                         &mut self.server,
                         &mut event_rx,
@@ -399,19 +383,24 @@ impl UnastarServer {
                         self.config.players.save_on_disconnect,
                         |server| {
                             // Game tick (queues packets to broadcast systems), then plugins.
+                            let ecs_start = std::time::Instant::now();
                             server.tick();
+                            let ecs_end = std::time::Instant::now();
                             plugin_manager.tick(server.ecs.world_mut());
+                            stages = (ecs_start, ecs_end, std::time::Instant::now());
                         },
                     )
                     .await;
+                    let (ecs_start, ecs_end, plugins_end) = stages;
+                    let events_elapsed = ecs_start.saturating_duration_since(tick_logic_start);
                     let tick_logic_elapsed = tick_logic_start.elapsed();
+                    let plugins_elapsed = plugins_end.saturating_duration_since(ecs_end);
 
                     // Signal all network tasks to flush their buffers
                     let _ = tick_tx.send(());
 
                     let total_elapsed = tick_start.elapsed();
 
-                    // Log slow ticks (> 20ms = taking more than half our budget)
                     if total_elapsed.as_millis() > 20 || tick_count.is_multiple_of(200) {
                         trace!(
                             tick = tick_count,
@@ -421,10 +410,20 @@ impl UnastarServer {
                             "Tick timing"
                         );
                     }
-                    if total_elapsed.as_millis() > 40 {
+                    // Over the 50 ms tick budget: name the slow stages.
+                    if total_elapsed > TICK_DURATION {
+                        let stages = self
+                            .server
+                            .ecs
+                            .world()
+                            .resource::<crate::ecs::TickStages>()
+                            .slowest(ecs_end, 4);
                         warn!(
                             tick = tick_count,
                             total_ms = total_elapsed.as_millis(),
+                            network_events_ms = events_elapsed.as_millis(),
+                            plugins_ms = plugins_elapsed.as_millis(),
+                            slowest_stages_ms = %stages,
                             "SLOW TICK detected"
                         );
                     }
@@ -441,22 +440,71 @@ impl UnastarServer {
         }
     }
 
-    /// Saves players and chunks before the process exits.
+    /// Unloads plugins, then saves players and chunks and flushes and closes
+    /// storage, before the process exits.
     async fn shutdown(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        let players_saved = self.server.save_all_players().await;
-        info!(players = players_saved, "Player data saved");
-        let chunks_saved = self.server.save_all_chunks().await;
-        info!(chunks = chunks_saved, "Chunk data saved");
-        // After the chunks, so every saved mob has its unique id for the
-        // scoreboard.
-        if let Some(save) = crate::world::level_data::capture(self.server.ecs.world_mut()) {
-            match save.write().await {
-                Ok(()) => info!("Level data saved"),
-                Err(e) => error!(error = %e, "Failed to save the level data"),
-            }
+        // Plugins see every online player quit, then unload, before saving, so
+        // `on-player-quit` and `on-unload` still see the live world, and storage is
+        // still open while they run.
+        let online = self.server.queue_quit_for_online_players();
+        self.plugin_manager.shutdown(self.server.ecs.world_mut());
+        info!(players = online, "Plugins unloaded");
+        let result = self.server.save_and_close_storage().await;
+        info!(
+            players = result.players_saved,
+            chunks = result.chunks_saved,
+            "Player and chunk data saved"
+        );
+        if !result.is_clean() {
+            return Err(format!(
+                "shutdown lost data: {} player saves and {} chunk saves failed{}{}",
+                result.players_failed,
+                result.chunks_failed,
+                if result.level_saved {
+                    ""
+                } else {
+                    ", the level data was not saved"
+                },
+                if result.closed {
+                    ""
+                } else {
+                    ", and storage did not close cleanly"
+                }
+            )
+            .into());
         }
         info!("Server shutdown complete");
         Ok(())
+    }
+}
+
+/// Open the world provider `world.storage_provider` selects at `path`.
+/// The world database: it serves the chunks and the level records.
+type WorldStores = (
+    Arc<dyn crate::storage::WorldProvider>,
+    Arc<dyn crate::storage::level::LevelRecordStore>,
+);
+
+fn open_world_provider(
+    path: &std::path::Path,
+    world: &crate::world::WorldConfig,
+) -> crate::storage::StorageResult<WorldStores> {
+    match world.storage_provider {
+        crate::world::StorageProvider::LevelDb => {
+            let provider = Arc::new(crate::storage::LevelDBWorldProvider::open(path)?);
+            info!(path = %path.display(), "Opened world LevelDB");
+            Ok((provider.clone(), provider))
+        }
+        crate::world::StorageProvider::BlazeDb => {
+            let cache_capacity = world.blazedb_cache_chunks;
+            let blaze_config = crate::storage::blazedb::BlazeConfig {
+                cache_capacity,
+                ..Default::default()
+            };
+            let provider = crate::storage::BlazeDBProvider::open(path, Some(blaze_config))?;
+            info!(path = %path.display(), cache_capacity, "Opened world BlazeDB");
+            Ok((provider.clone(), provider))
+        }
     }
 }
 
@@ -486,15 +534,18 @@ async fn network_tick(
                 runtime_id,
                 initial_position,
                 saved_data,
+                client_data,
                 chunk_radius,
                 outbound_tx,
                 inbound_rx,
+                send_queue,
             } => {
                 // Registered even when the spawn is refused: the router drops packets
                 // of sessions without a player.
                 inbound.register(session_id, inbound_rx);
-                spawn_or_reject(
+                let player = spawn_or_reject(
                     server,
+                    client_data,
                     PlayerSpawnData {
                         session_id,
                         display_name,
@@ -507,6 +558,9 @@ async fn network_tick(
                         chunk_radius,
                     },
                 );
+                if let (Some(player), Some(probe)) = (player, send_queue) {
+                    server.attach_send_queue(player, probe);
+                }
             }
             NetworkEvent::Disconnected { session_id } => disconnected.push(session_id),
         }
@@ -538,7 +592,11 @@ const UNRESTORABLE_PLAYER_MESSAGE: &str = "Unable to restore player inventory.";
 /// Spawn a joined player, or refuse the join with a `Disconnect` when its saved data
 /// cannot be restored (for example an item the registry does not know). A refused
 /// player never enters the world, so its stored record is left untouched.
-fn spawn_or_reject(server: &mut GameServer, data: PlayerSpawnData) -> bool {
+fn spawn_or_reject(
+    server: &mut GameServer,
+    client_data: Option<Box<jolyne::auth::ClientData>>,
+    data: PlayerSpawnData,
+) -> Option<bevy_ecs::entity::Entity> {
     use jolyne::valentine::{
         DisconnectPacket, DisconnectPacketMessages, DisconnectPacketMessagesUnion,
         EnumsConnectionDisconnectFailReason, McpePacket,
@@ -562,12 +620,20 @@ fn spawn_or_reject(server: &mut GameServer, data: PlayerSpawnData) -> bool {
                 },
             ),
         }));
-        return false;
+        return None;
     }
-    let Err(error) = server.spawn_player(data) else {
-        return true;
+    let error = match server.spawn_player_with_login(data, client_data.as_deref()) {
+        Ok(player) => return Some(player),
+        Err(error) => error,
     };
     warn!(session_id, %error, "Rejecting player with invalid saved data");
+    // The refused player no longer counts as online; the later
+    // `Disconnected` finds the place already given back.
+    server
+        .ecs
+        .world()
+        .resource::<crate::server::game::roster::OnlineRoster>()
+        .leave(session_id);
     let _ = reject_tx.try_send(McpePacket::from(DisconnectPacket {
         reason: EnumsConnectionDisconnectFailReason::Disconnected,
         messages: DisconnectPacketMessagesUnion::DisconnectPacketMessages(
@@ -577,12 +643,13 @@ fn spawn_or_reject(server: &mut GameServer, data: PlayerSpawnData) -> bool {
             },
         ),
     }));
-    false
+    None
 }
 
 struct AcceptLoopState {
     template: Arc<jolyne::WorldTemplate>,
     world_state: crate::world::rules::StartGameWorldState,
+    roster: crate::server::game::roster::OnlineRoster,
     key: SecretKey,
     config: Arc<UnastarConfig>,
     player_data_store: Arc<PlayerDataStore>,
@@ -599,6 +666,7 @@ fn spawn_accept_loop(mut listener: BedrockListener<RaknetListener>, state: Accep
         let AcceptLoopState {
             template,
             world_state,
+            roster,
             key,
             config,
             player_data_store,
@@ -628,6 +696,7 @@ fn spawn_accept_loop(mut listener: BedrockListener<RaknetListener>, state: Accep
 
                     let template = template.clone();
                     let world_state = world_state.clone();
+                    let roster = roster.clone();
                     let key = key.clone();
                     let config = config.clone();
                     let player_data_store = player_data_store.clone();
@@ -643,6 +712,7 @@ fn spawn_accept_loop(mut listener: BedrockListener<RaknetListener>, state: Accep
                             crate::server::connect::JoinWorld {
                                 template: &template,
                                 state: &world_state,
+                                roster: &roster,
                             },
                             &key,
                             &config,
@@ -653,7 +723,14 @@ fn spawn_accept_loop(mut listener: BedrockListener<RaknetListener>, state: Accep
                         )
                         .await
                         {
-                            Ok((mut play_stream, identity, initial_position, saved_data)) => {
+                            Ok(crate::server::connect::AcceptedJoin {
+                                play: mut play_stream,
+                                identity,
+                                position: initial_position,
+                                saved_data,
+                                client_data,
+                                reservation,
+                            }) => {
                                 let display_name = identity.display_name().to_string();
 
                                 info!(%addr, name = %display_name, "Player joined");
@@ -689,15 +766,20 @@ fn spawn_accept_loop(mut listener: BedrockListener<RaknetListener>, state: Accep
                                         runtime_id: session_id as i64,
                                         initial_position: spawn_to_dvec3(&initial_position),
                                         saved_data: saved_data.map(Box::new),
+                                        client_data: Some(Box::new(client_data)),
                                         chunk_radius,
                                         outbound_tx: outbound_tx.clone(),
                                         inbound_rx,
+                                        send_queue: play_stream.send_queue_probe(),
                                     })
                                     .await
                                     .is_err()
                                 {
                                     return; // Server shutting down
                                 }
+                                // The game loop frees the place when the
+                                // session's Disconnected arrives.
+                                reservation.keep();
 
                                 run_network_loop(
                                     play_stream,
@@ -726,6 +808,40 @@ fn spawn_accept_loop(mut listener: BedrockListener<RaknetListener>, state: Accep
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::world::{StorageProvider, WorldConfig};
+
+    fn temp_path(name: &str) -> std::path::PathBuf {
+        std::env::temp_dir().join(format!("unastar-{name}-{}", uuid::Uuid::new_v4()))
+    }
+
+    /// A held world database is an error, not a server running with
+    /// persistence off. This holds it from the same process at the same path,
+    /// which LevelDB's in-process lock table refuses on every platform (a
+    /// different spelling of the path would get past it on Linux).
+    /// `tests/startup_storage.rs` covers the failure through `UnastarServer::new`.
+    #[test]
+    fn a_locked_world_leveldb_fails_to_open() {
+        let path = temp_path("locked-world");
+        let world = WorldConfig::default();
+        let first = open_world_provider(&path, &world).expect("first open");
+        assert!(open_world_provider(&path, &world).is_err());
+        drop(first);
+        let _ = std::fs::remove_dir_all(&path);
+    }
+
+    #[test]
+    fn an_unopenable_world_blazedb_fails_to_open() {
+        // A regular file where the database directory should be.
+        let path = temp_path("file-not-dir");
+        std::fs::write(&path, b"not a database").unwrap();
+        let world = WorldConfig {
+            storage_provider: StorageProvider::BlazeDb,
+            ..WorldConfig::default()
+        };
+        assert!(open_world_provider(&path, &world).is_err());
+        let _ = std::fs::remove_file(&path);
+    }
+
     use crate::storage::{PlayerData, StoredItemStack};
     use jolyne::valentine::{DisconnectPacketMessagesUnion, McpePacketData};
 
@@ -772,7 +888,15 @@ mod tests {
                 };
 
                 let (data, mut rx) = join(1, "minecraft:not_a_real_item");
-                assert!(!spawn_or_reject(&mut server, data));
+                // The connection task reserved the place before StartGame.
+                let roster = server
+                    .ecs
+                    .world()
+                    .resource::<crate::server::game::roster::OnlineRoster>()
+                    .clone();
+                roster.reserve(1).keep();
+                assert!(spawn_or_reject(&mut server, None, data).is_none());
+                assert!(roster.is_empty(), "a refused player no longer counts");
                 assert!(
                     server
                         .ecs
@@ -796,7 +920,7 @@ mod tests {
                 assert_eq!(messages.message, UNRESTORABLE_PLAYER_MESSAGE);
 
                 let (data, _rx) = join(2, "minecraft:stone");
-                assert!(spawn_or_reject(&mut server, data));
+                assert!(spawn_or_reject(&mut server, None, data).is_some());
             })
             .unwrap()
             .join()
@@ -834,10 +958,6 @@ mod network_tick_tests {
             self.0.lock().insert(uuid, data.clone());
             Ok(())
         }
-        async fn delete(&self, uuid: uuid::Uuid) -> StorageResult<()> {
-            self.0.lock().remove(&uuid);
-            Ok(())
-        }
         async fn close(&self) -> StorageResult<()> {
             Ok(())
         }
@@ -852,14 +972,16 @@ mod network_tick_tests {
         (McpePacketArgs, Box::new(borrowed))
     }
 
-    /// One `PlayerAuthInput` moving the player to `x` (eye height kept).
-    fn move_to(x: f64) -> InboundPacket {
+    /// One `PlayerAuthInput` turning the player to `yaw` where it stands (a
+    /// count of the inputs applied that the movement rules leave alone).
+    fn turn_to(yaw: f32) -> InboundPacket {
         inbound(PlayerAuthInputPacket {
             position: Vec3 {
-                x: x as f32,
-                y: 17.0 + 1.62,
+                x: START_X as f32,
+                y: 17.0,
                 z: 0.5,
             },
+            player_rotation: jolyne::valentine::types::Vec2 { x: 0.0, y: yaw },
             ..Default::default()
         })
     }
@@ -904,9 +1026,11 @@ mod network_tick_tests {
                 runtime_id: SESSION as i64,
                 initial_position: glam::DVec3::new(START_X, 17.0, 0.5),
                 saved_data: None,
+                client_data: None,
                 chunk_radius: 0,
                 outbound_tx,
                 inbound_rx,
+                send_queue: None,
             })
             .unwrap();
         Harness {
@@ -943,12 +1067,12 @@ mod network_tick_tests {
                 .unwrap();
         }
 
-        fn saved_x(&self) -> Option<f64> {
+        fn saved_yaw(&self) -> Option<f32> {
             self.players
                 .0
                 .lock()
                 .get(&uuid())
-                .map(|data| data.position[0])
+                .map(|data| data.rotation[0])
         }
 
         fn joined(&self) -> bool {
@@ -989,11 +1113,9 @@ mod network_tick_tests {
     fn a_leaving_session_is_saved_after_its_budgeted_packets_and_the_rest_are_dropped() {
         on_big_stack(|| async {
             let mut h = harness();
-            // 100 one-block steps east, all queued before the tick that sees the leave.
+            // 100 one-degree turns, all queued before the tick that sees the leave.
             for step in 1..=100 {
-                h.packets
-                    .try_send(move_to(START_X + f64::from(step)))
-                    .unwrap();
+                h.packets.try_send(turn_to(step as f32)).unwrap();
             }
             h.leave();
             let taken = h.tick().await;
@@ -1005,8 +1127,8 @@ mod network_tick_tests {
             );
             assert!(!h.joined(), "the leaver is despawned");
             assert_eq!(
-                h.saved_x(),
-                Some(START_X + crate::network::inbound::MAX_PACKETS_PER_SESSION_PER_TICK as f64),
+                h.saved_yaw(),
+                Some(crate::network::inbound::MAX_PACKETS_PER_SESSION_PER_TICK as f32),
                 "the save sees the 64 packets applied this tick and none of the rest"
             );
             assert!(h.inbound.is_empty());
@@ -1019,7 +1141,7 @@ mod network_tick_tests {
     fn a_client_disconnect_packet_still_saves_the_player() {
         on_big_stack(|| async {
             let mut h = harness();
-            h.packets.try_send(move_to(START_X + 3.0)).unwrap();
+            h.packets.try_send(turn_to(3.0)).unwrap();
             h.packets
                 .try_send(inbound(jolyne::valentine::DisconnectPacket::default()))
                 .unwrap();
@@ -1027,7 +1149,7 @@ mod network_tick_tests {
             h.tick().await;
 
             assert!(!h.joined(), "the leaver is despawned");
-            assert_eq!(h.saved_x(), Some(START_X + 3.0), "the leaver is saved");
+            assert_eq!(h.saved_yaw(), Some(3.0), "the leaver is saved");
         });
     }
 }

@@ -49,14 +49,14 @@ impl OperatorList {
         }
     }
 
-    /// Reads `permissions.json` from the server files (empty when missing
-    /// or unreadable).
-    pub fn load_permissions(&mut self, files: &super::admin::ServerFiles) {
-        self.permissions = files
-            .path("permissions.json")
-            .and_then(|path| std::fs::read_to_string(path).ok())
-            .and_then(|text| serde_json::from_str(&text).ok())
-            .unwrap_or_default();
+    /// Reads `permissions.json` from the server files (empty when missing);
+    /// a damaged file leaves the permissions as they were.
+    pub fn load_permissions(
+        &mut self,
+        files: &super::admin::ServerFiles,
+    ) -> Result<(), super::admin::ServerFileError> {
+        self.permissions = files.read_json("permissions.json")?;
+        Ok(())
     }
 
     fn save_permissions(&self, files: &super::admin::ServerFiles) {
@@ -145,8 +145,11 @@ fn change(ctx: &mut CommandContext<'_>, target: &Target, grant: bool) -> Command
             continue;
         }
         set_level(ctx, player, grant);
-        // Measured: the target is told before the answer.
+        // Measured: the target is told before the answer. [INFERENCE] The
+        // lang's line to the target, sent as BDS sends its other target
+        // messages; BDS sends it before the abilities.
         ctx.notify(player, &format!("{key_prefix}.message"), vec![]);
+        resend_abilities(ctx, player, grant);
         output.add_success(format!("{key_prefix}.success"), vec![name]);
     }
     if output.is_success() {
@@ -156,8 +159,8 @@ fn change(ctx: &mut CommandContext<'_>, target: &Target, grant: bool) -> Command
     }
 }
 
-/// Makes `player` an operator or a member: the component, the persisted or
-/// session level, and its abilities resent to everyone.
+/// Makes `player` an operator or a member: the component and the persisted
+/// or session level. The caller resends its abilities.
 fn set_level(ctx: &mut CommandContext<'_>, player: Entity, operator: bool) {
     let name = ctx.name(player);
     let xuid = ctx
@@ -188,7 +191,6 @@ fn set_level(ctx: &mut CommandContext<'_>, player: Entity, operator: bool) {
     } else {
         ctx.world.entity_mut(player).remove::<Operator>();
     }
-    resend_abilities(ctx, player, operator);
 }
 
 arg_enum! {
@@ -249,7 +251,10 @@ pub fn run_permission(ctx: &mut CommandContext<'_>, args: PermissionArgs) -> Com
             let files = super::admin::server_files(ctx.world);
             ctx.world
                 .get_resource_or_insert_with(OperatorList::default)
-                .load_permissions(&files);
+                .load_permissions(&files)
+                .unwrap_or_else(|error| {
+                    tracing::warn!(%error, "permissions reload kept the current permissions");
+                });
             // Every online player's level again: the file decides for the
             // players it lists, the others keep theirs.
             let players: Vec<(Entity, Option<String>)> = {
@@ -286,8 +291,10 @@ pub fn run_permission(ctx: &mut CommandContext<'_>, args: PermissionArgs) -> Com
             };
             let players = ctx.players(Some(&target))?;
             if let Some(level) = level {
+                let operator = level == PermissionLevel::Operator;
                 for player in players {
-                    set_level(ctx, player, level == PermissionLevel::Operator);
+                    set_level(ctx, player, operator);
+                    resend_abilities(ctx, player, operator);
                 }
             }
             // Measured: without an XUID only the not-persisted line prints;
@@ -297,8 +304,9 @@ pub fn run_permission(ctx: &mut CommandContext<'_>, args: PermissionArgs) -> Com
     }
 }
 
-/// The player's abilities with its new permission, to every player (as a
-/// game mode change resends them).
+/// The player's abilities with its new permission, to every player
+/// (2026-11-11 `protocol_probe.py abilities`: the target and everyone else
+/// get the same `UpdateAbilities`).
 fn resend_abilities(ctx: &mut CommandContext<'_>, player: Entity, operator: bool) {
     let runtime_id = ctx
         .world
@@ -478,7 +486,8 @@ mod tests {
         restarted
             .world()
             .resource_mut::<OperatorList>()
-            .load_permissions(&server_files);
+            .load_permissions(&server_files)
+            .unwrap();
         let erin = join(&mut restarted, 61, "Erin", Some("2535400000000001"));
         assert!(restarted.world().get::<Operator>(erin).is_some());
         assert!(console(&mut restarted, "/deop Erin").is_success());

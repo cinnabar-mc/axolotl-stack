@@ -11,6 +11,12 @@
 //! as NBT byte 1 = lock_in_slot / 2 = lock_in_inventory,
 //! `minecraft:keep_on_death` as NBT byte 1).
 //!
+//! What lands in the slot, and the items `/give` refuses, are measured for
+//! every item of the native registry (`unastar_data::give`): a legacy name
+//! gives its first flattened item (`wool` gives `white_wool`), three items
+//! the item list names answer `commands.give.item.notFound` with an empty
+//! name, and `air` is "given" (a success; the slot stays empty).
+//!
 //! Not in unastar: recipe unlocking (BDS follows with `UnlockedRecipes`),
 //! and legacy data values of flattened families (`/give @s wool 3 14` is
 //! red wool on BDS) for which unastar has no measured remapping.
@@ -97,6 +103,20 @@ pub(super) fn given_stack(
     {
         return given_stack(world, &current, 0);
     }
+    // Measured (`unastar_data::give`): a few listed items are not given,
+    // with an empty item name, and a legacy name gives its flattened item.
+    let qualified = unastar_data::item_identity::qualify(name);
+    let qualified: &str = &qualified;
+    let table = unastar_data::give::vanilla();
+    if table.not_found.iter().any(|n| n == qualified) {
+        return failure!("commands.give.item.notFound", "");
+    }
+    if data == 0
+        && let Some(given) = table.given.get(qualified)
+        && given.item != qualified
+    {
+        return given_stack(world, &given.item, 0);
+    }
     let spelled = if data == 0 {
         name.to_owned()
     } else {
@@ -107,7 +127,10 @@ pub(super) fn given_stack(
     let stack = items
         .stack_with_block(entry.identifier(), 1, blocks)
         .ok_or_else(invalid)?;
-    let qualified = unastar_data::item_identity::qualify(name);
+    let stack = with_given_user_data(
+        stack,
+        crate::server::game::durability::max_durability(entry) > 0,
+    );
     let aliased = entry.identifier() != qualified;
     let aux = identity.data.unwrap_or(0);
     if data == 0 || aliased {
@@ -128,6 +151,71 @@ pub(super) fn given_stack(
         vec![],
     ))
 }
+
+/// The NBT compound BDS 1.26.51 writes into a stack it gives, beyond
+/// `Damage` (capture of `tools/bds-sweep/scripts/give.txt`,
+/// `testdata/bds-give.json`).
+fn given_tag(item_id: &str) -> Option<tag::Compound> {
+    let compound = |entries: Vec<(&str, NBTTag)>| {
+        tag::Compound(
+            entries
+                .into_iter()
+                .map(|(name, value)| (name.to_owned(), value))
+                .collect(),
+        )
+    };
+    let byte = |value: u8| NBTTag::Byte(tag::Byte(value));
+    Some(match item_id {
+        "minecraft:banner" => compound(vec![("Type", NBTTag::Int(tag::Int(0)))]),
+        "minecraft:firework_rocket" => compound(vec![(
+            "Fireworks",
+            NBTTag::Compound(compound(vec![
+                ("Explosions", NBTTag::List(tag::List(Vec::new()))),
+                ("Flight", byte(1)),
+            ])),
+        )]),
+        "minecraft:firework_star" => compound(vec![
+            (
+                "FireworksItem",
+                NBTTag::Compound(compound(vec![
+                    ("FireworkColor", NBTTag::ByteArray(tag::ByteArray(vec![0]))),
+                    (
+                        "FireworkFade",
+                        NBTTag::ByteArray(tag::ByteArray(Vec::new())),
+                    ),
+                    ("FireworkFlicker", byte(0)),
+                    ("FireworkTrail", byte(0)),
+                    ("FireworkType", byte(0)),
+                ])),
+            ),
+            // ARGB 0xff1d1d21, the black dye's firework colour.
+            ("customColor", NBTTag::Int(tag::Int(0xff1d_1d21_u32 as i32))),
+        ]),
+        _ => return None,
+    })
+}
+
+/// A given stack as BDS writes it: an item with durability carries
+/// `Damage` 0 (the flint and steel, every tool, weapon and armour piece, the
+/// shield...), and the banner and fireworks their measured tags. (BDS also
+/// gives a filled map a new `map_uuid`; maps are not implemented.)
+fn with_given_user_data(stack: ItemStack, durable: bool) -> ItemStack {
+    if let Some(compound) = given_tag(stack.item_id()) {
+        return with_item_tag(&stack, compound);
+    }
+    if durable || UNDECLARED_DURABLE.contains(&stack.item_id()) {
+        return with_durability_damage(&stack, 0);
+    }
+    stack
+}
+
+/// Items BDS gives with `Damage` 0 though the native item data declares no
+/// durability for them (the `/give` sweep); this server does not wear them.
+const UNDECLARED_DURABLE: [&str; 3] = [
+    "minecraft:fishing_rod",
+    "minecraft:warped_fungus_on_a_stick",
+    "minecraft:wolf_armor",
+];
 
 /// `stack` carrying the vanilla item components of `/give`'s JSON.
 pub(super) fn with_components(
@@ -439,6 +527,84 @@ mod tests {
             CommandOutput::failure("commands.give.tagError", vec!["minecraft:item_lock".into()])
         );
     }
+
+    /// Every item of the native registry given on BDS 1.26.51
+    /// (`testdata/bds-give.json`): the same user data for every item BDS
+    /// gives. (The table's `refused` items, which BDS's `/give` does not
+    /// accept, are given here: a commands-lane gap.)
+    #[test]
+    fn every_item_is_given_like_bds() {
+        #[derive(serde::Deserialize)]
+        struct Given {
+            id: i32,
+            aux: u32,
+            block: u32,
+            user_data: String,
+        }
+        #[derive(serde::Deserialize)]
+        struct Table {
+            given: std::collections::BTreeMap<String, Given>,
+        }
+        let table: Table = serde_json::from_str(include_str!("testdata/bds-give.json")).unwrap();
+        let mut h = Harness::new();
+        let world = h.world();
+        let items = world.resource::<ItemRegistryResource>().0.clone();
+        let block_ids = crate::server::game::types::block_network_ids(world);
+        let hex = |bytes: &[u8]| bytes.iter().map(|b| format!("{b:02x}")).collect::<String>();
+        let mut wrong = Vec::new();
+        for (name, bds) in &table.given {
+            // A new map id each time; maps are not implemented.
+            if name == "minecraft:filled_map" {
+                continue;
+            }
+            let short = name.trim_start_matches("minecraft:");
+            let Ok(stack) = given_stack(world, short, 0) else {
+                wrong.push(format!("{name}: refused, BDS gives it"));
+                continue;
+            };
+            let ours = crate::server::game::item_descriptor(&stack, &items, block_ids).unwrap();
+            // Compared as NBT (a compound's key order is not kept) and as
+            // the bytes after it.
+            let bds_bytes: Vec<u8> = (0..bds.user_data.len())
+                .step_by(2)
+                .map(|i| u8::from_str_radix(&bds.user_data[i..i + 2], 16).unwrap())
+                .collect();
+            let bds_stack = stack.clone().with_nbt(bds_bytes.clone());
+            // Equal tags encode to the same length in any key order, so the
+            // lengths and the last 8 bytes (the can-place-on and
+            // can-destroy counts) compare what follows the NBT.
+            let tail = |bytes: &[u8]| bytes[bytes.len().saturating_sub(8)..].to_vec();
+            if item_tag(&stack) != item_tag(&bds_stack)
+                || ours.user_data_buffer.len() != bds_bytes.len()
+                || tail(&ours.user_data_buffer) != tail(&bds_bytes)
+            {
+                wrong.push(format!(
+                    "{name}: user data BDS {}, ours {}",
+                    bds.user_data,
+                    hex(&ours.user_data_buffer)
+                ));
+            }
+            // Legacy names give their flattened item and stacks carry BDS's
+            // block state (`every_item_is_given_as_bds_gives_it`).
+            if (i32::from(ours.id), ours.auxvalue, ours.block_runtime_id)
+                != (bds.id, bds.aux, bds.block)
+            {
+                wrong.push(format!(
+                    "{name}: item, aux, block BDS {:?}, ours {:?}",
+                    (bds.id, bds.aux, bds.block),
+                    (ours.id, ours.auxvalue, ours.block_runtime_id)
+                ));
+            }
+        }
+        assert!(
+            wrong.is_empty(),
+            "{}",
+            wrong.join(
+                "
+"
+            )
+        );
+    }
 }
 
 /// Replays of the committed BDS 1.26.51 command capture
@@ -451,5 +617,149 @@ mod bds_capture {
     fn give_and_clear_match_the_bds_capture() {
         let steps = Replay::new().assert_segment("give", &[]);
         assert_same_packets(&steps, &["TextPacket"], &[]);
+    }
+}
+
+/// The BDS 1.26.51 `/give` sweep (`testdata/bds-give.json`, every item of
+/// the native registry).
+#[cfg(test)]
+mod sweep {
+    use std::collections::BTreeMap;
+
+    use sha2::Digest;
+
+    use crate::command::exec::test_support::Harness;
+    use crate::server::game::types::ItemRegistryResource;
+
+    /// One given stack: hotbar slot 0 after `/give @s <item>`.
+    #[derive(serde::Deserialize)]
+    struct Given {
+        id: i32,
+        block: u32,
+    }
+
+    #[derive(serde::Deserialize)]
+    struct Sweep {
+        given: BTreeMap<String, Given>,
+        refused: Vec<String>,
+    }
+
+    const SWEEP: &str = include_str!("testdata/bds-give.json");
+
+    fn sweep() -> Sweep {
+        serde_json::from_str(SWEEP).expect("the give sweep")
+    }
+
+    /// Every item BDS gives lands as the item and block state BDS's did.
+    #[test]
+    fn every_item_is_given_as_bds_gives_it() {
+        let mut h = Harness::new();
+        let world = h.world();
+        let ids = crate::server::game::types::block_network_ids(world);
+        let mut wrong = Vec::new();
+        for (name, bds) in &sweep().given {
+            let short = name.trim_start_matches("minecraft:");
+            let stack = match super::given_stack(world, short, 0) {
+                Ok(stack) => stack,
+                Err(output) => {
+                    wrong.push(format!("{name}: refused ({output:?})"));
+                    continue;
+                }
+            };
+            let id = stack.item().map(|item| item.network_id());
+            let block = ids.item_block_to_wire(
+                id.unwrap_or_default(),
+                u32::try_from(stack.runtime_id).unwrap_or_default(),
+            );
+            if (id, block, stack.damage) != (Some(bds.id), bds.block, 0) {
+                wrong.push(format!(
+                    "{name}: ours {id:?} {block} {}, BDS {} {}",
+                    stack.damage, bds.id, bds.block
+                ));
+            }
+        }
+        assert!(
+            wrong.is_empty(),
+            "{}",
+            wrong.join(
+                "
+"
+            )
+        );
+    }
+
+    /// The command probe's refusals (`testdata/bds-command-probe.json`).
+    #[test]
+    fn refusals_answer_like_bds() {
+        use crate::command::exec::probe::{Probe, captured_player, player_commands};
+        let mut probe = Probe::new();
+        let player = probe.player();
+        let commands = player_commands("/give @s ");
+        assert!(commands.len() >= 7);
+        for command in commands {
+            let output = probe.h.run(player, &command);
+            assert_eq!(output.messages, captured_player(&command), "{command}");
+        }
+        // Every refused item outside the command's item list is a syntax error.
+        let sweep = sweep();
+        let not_found = &unastar_data::give::vanilla().not_found;
+        for name in &sweep.refused {
+            let short = name.trim_start_matches("minecraft:");
+            let output = probe.h.run(player, &format!("/give @s {short}"));
+            let key = &output.messages[0].key;
+            if not_found.contains(name) {
+                assert_eq!(key, "commands.give.item.notFound", "{name}");
+            } else if name != "minecraft:air" {
+                assert_eq!(key, "commands.generic.syntax", "{name}");
+            }
+        }
+    }
+
+    /// Writes `crates/unastar-data/data/measured/give_items.json` from the
+    /// sweep: `UNASTAR_GIVE_TABLE_OUT=<path> cargo test -p unastar --lib
+    /// writes_the_give_table -- --ignored`.
+    #[test]
+    #[ignore = "writes unastar-data's give table from testdata/bds-give.json"]
+    fn writes_the_give_table() {
+        let out = std::env::var("UNASTAR_GIVE_TABLE_OUT").expect("UNASTAR_GIVE_TABLE_OUT");
+        let mut h = Harness::new();
+        let world = h.world();
+        let items = world.resource::<ItemRegistryResource>().0.clone();
+        let schema = crate::command::schema::CommandSchema::vanilla();
+        let sweep = sweep();
+        let given: serde_json::Map<String, serde_json::Value> = sweep
+            .given
+            .iter()
+            .map(|(name, given)| {
+                let item = items.get_by_network_id(given.id).expect("an item BDS gave");
+                let value = serde_json::json!({
+                    "item": item.identifier(),
+                });
+                (name.clone(), value)
+            })
+            .collect();
+        // Air is "given" (the answer is a success; the slot stays empty).
+        let not_found: Vec<&String> = sweep
+            .refused
+            .iter()
+            .filter(|name| *name != "minecraft:air")
+            .filter(|name| schema.enum_value("Item", name).is_some())
+            .collect();
+        let source_sha256: String = sha2::Sha256::digest(SWEEP.as_bytes())
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect();
+        let table = serde_json::json!({
+            "source_sha256": source_sha256,
+            "//": "BDS 1.26.51 /give @s <item> for every item of the native registry: the item in \
+                   hotbar slot 0 (from crates/unastar/src/command/exec/testdata/bds-give.json by the \
+                   ignored test writes_the_give_table in crates/unastar/src/command/exec/give.rs); \
+                   not_found: in the command's item list, answered commands.give.item.notFound. The \
+                   block state a stack carries is unastar_data::item_blocks.",
+            "given": given,
+            "not_found": not_found,
+        });
+        let text = serde_json::to_string_pretty(&table).expect("JSON") + "\n";
+        std::fs::write(out, text).expect("write the give table");
     }
 }

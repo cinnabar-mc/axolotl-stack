@@ -50,7 +50,12 @@ pub struct ConnectionOptions {
     /// Outbound packets per batch before the pending batch is sealed
     /// automatically (gophertunnel listeners reject more than 812).
     pub max_packets_per_outbound_batch: usize,
-    /// Pending (unsealed) payload bytes before the batch is sealed automatically.
+    /// Pending (unsealed) payload bytes before the batch is sealed
+    /// automatically. RakNet peers reassemble a message from at most 512
+    /// split parts (about 700 KB at a 1400-byte MTU) and drop larger ones,
+    /// which stalls the ordered channel for good; the 256 KiB default keeps a
+    /// sealed batch well under that (compression only shrinks it, apart from
+    /// a few header bytes). One packet larger than this is still sealed alone.
     pub max_pending_bytes: usize,
     /// Sealed batches waiting for the transport, in bytes. A batch that would
     /// exceed it is dropped and the send fails with
@@ -76,7 +81,7 @@ impl Default for ConnectionOptions {
             custom_packets: PacketRegistry::default(),
             flush: FlushMode::Immediate,
             max_packets_per_outbound_batch: 812,
-            max_pending_bytes: 4 * 1024 * 1024,
+            max_pending_bytes: 256 * 1024,
             max_queued_bytes: 64 * 1024 * 1024,
             max_deferred_packets: 4096,
             max_deferred_bytes: 16 * 1024 * 1024,
@@ -258,6 +263,10 @@ pub struct ClientConfig {
     /// without first starting encryption (`ServerToClientHandshake`).
     /// Default: `false` (servers that skip encryption are accepted).
     pub require_encryption: bool,
+    /// The value of the `ClientCacheStatus` sent after `LoginSuccess`: whether
+    /// the client claims a chunk blob cache. Default: `false`. jolyne keeps no
+    /// blob cache; `true` is for probing what a server does with it.
+    pub blob_cache: bool,
 }
 
 impl Default for ClientConfig {
@@ -271,6 +280,7 @@ impl Default for ClientConfig {
             chunk_radius: 16,
             packs: ClientPackPolicy::default(),
             require_encryption: false,
+            blob_cache: false,
         }
     }
 }

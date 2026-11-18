@@ -49,6 +49,18 @@ fn generated_and_shipped_configs_load_with_the_same_safe_defaults() {
     }
 }
 
+/// Config files written before players got their requested view distance
+/// still load: `default_chunk_radius` is accepted (and reported as ignored at
+/// startup), and `max_chunk_radius` is what caps the grant.
+#[test]
+fn legacy_default_chunk_radius_still_loads() {
+    let config: UnastarConfig =
+        toml_edit::de::from_str("[server]\ndefault_chunk_radius = 4\nmax_chunk_radius = 12\n")
+            .unwrap();
+    assert_eq!(config.server.default_chunk_radius, Some(4));
+    assert_eq!(config.server_config().max_chunk_radius, 12);
+}
+
 /// Without `java-worldgen` the default (Java-style) world is refused with an error that
 /// names the feature and the jar, instead of starting a world without structures.
 #[cfg(not(feature = "java-worldgen"))]
@@ -160,6 +172,38 @@ fn difficulty_defaults_to_easy_and_reaches_runtime_configuration() {
     std::fs::write(
         &file.0,
         format!("{VOID_WORLD}[server]\ndifficulty = 'brutal'"),
+    )
+    .unwrap();
+    assert!(matches!(
+        UnastarConfig::load_or_create(&file.0),
+        Err(ConfigError::Parse { .. })
+    ));
+}
+
+/// Survival breaking is guarded unless `[gameplay] block_breaking = "bds"`
+/// (decision 0056); other values fail to load.
+#[test]
+fn block_breaking_defaults_to_guarded_and_reaches_runtime_configuration() {
+    use crate::server::config::BlockBreaking;
+    let file = ConfigFile::new();
+    std::fs::write(&file.0, VOID_WORLD).unwrap();
+    let config = UnastarConfig::load_or_create(&file.0).unwrap();
+    assert_eq!(
+        config.server_config().block_breaking,
+        BlockBreaking::Guarded
+    );
+
+    std::fs::write(
+        &file.0,
+        format!("{VOID_WORLD}[gameplay]\nblock_breaking = 'bds'"),
+    )
+    .unwrap();
+    let config = UnastarConfig::load_or_create(&file.0).unwrap();
+    assert_eq!(config.server_config().block_breaking, BlockBreaking::Bds);
+
+    std::fs::write(
+        &file.0,
+        format!("{VOID_WORLD}[gameplay]\nblock_breaking = 'lenient'"),
     )
     .unwrap();
     assert!(matches!(

@@ -45,7 +45,7 @@ async fn write_captured_world(world: &serde_json::Value, dir: &Path) -> Arc<Leve
         hex(world["level.dat"].as_str().expect("level.dat")),
     )
     .unwrap();
-    let provider = Arc::new(LevelDBWorldProvider::open(dir.join("db"), 0).unwrap());
+    let provider = Arc::new(LevelDBWorldProvider::open(dir.join("db")).unwrap());
     let puts = world["records"]
         .as_object()
         .expect("records")
@@ -105,7 +105,7 @@ fn loaded_harness() -> Harness {
 /// A harness whose level data lives in `dir` (new world).
 async fn harness_in(dir: &Path) -> (Harness, Arc<LevelDBWorldProvider>) {
     let mut h = loaded_harness();
-    let provider = Arc::new(LevelDBWorldProvider::open(dir.join("db"), 0).unwrap());
+    let provider = Arc::new(LevelDBWorldProvider::open(dir.join("db")).unwrap());
     load_into(&mut h, dir, provider.clone()).await;
     (h, provider)
 }
@@ -272,7 +272,7 @@ async fn unreadable_level_data_stops_the_start_and_stays_on_disk() {
 
     // A level.dat that does not parse is an error and is left alone.
     std::fs::write(&level_dat, &good[..good.len() - 1]).unwrap();
-    let provider = Arc::new(LevelDBWorldProvider::open(dir.path().join("db"), 0).unwrap());
+    let provider = Arc::new(LevelDBWorldProvider::open(dir.path().join("db")).unwrap());
     let new = new_world(&Default::default());
     assert!(
         open(LevelFiles::new(dir.path()), provider.clone(), &new)

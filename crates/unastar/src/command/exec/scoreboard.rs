@@ -30,7 +30,8 @@
 //!   or `…list.player.empty [name]` for a holder without scores.
 //!
 //! A name that is not an online player is a fake player. The score shown
-//! under player names (`belowname`) is not sent as actor data yet.
+//! under player names (`belowname`) is sent as each player's `SCORE` actor
+//! data ([`crate::world::scoreboard::sync_score_tags`]).
 
 use crate::command::args::Operation;
 use crate::command::prelude::*;
@@ -144,6 +145,12 @@ overloads! {
 }
 
 pub fn run(ctx: &mut CommandContext<'_>, args: ScoreboardArgs) -> CommandResult {
+    let result = run_subcommand(ctx, args);
+    crate::world::scoreboard::sync_score_tags(ctx.world);
+    result
+}
+
+fn run_subcommand(ctx: &mut CommandContext<'_>, args: ScoreboardArgs) -> CommandResult {
     ctx.world.get_resource_or_insert_with(Scoreboard::default);
     use ScoreboardArgs as S;
     match args {
@@ -832,7 +839,9 @@ fn change_entry(
 /// (`crates/bds-extractor/captures/1.26.51/operator-commands`).
 #[cfg(test)]
 mod bds_capture {
-    use crate::command::exec::evidence::{Replay, assert_same_packets, packet_name};
+    use crate::command::exec::evidence::{
+        Replay, assert_same_packets, assert_same_score_tags, packet_name,
+    };
     use jolyne::valentine::McpePacketData;
     use jolyne::valentine::types::SetScorePacketScoreInfoItem;
 
@@ -874,7 +883,8 @@ mod bds_capture {
             "/scoreboard players list",
             "/scoreboard players list @e[type=cow,r=16]",
         ];
-        let steps = Replay::new().assert_segment("scoreboard", &cow_lines);
+        let mut replay = Replay::new();
+        let steps = replay.assert_segment("scoreboard", &cow_lines);
         // Each server's name for the cow: the holder its score was set for.
         let holder = |output: &crate::command::CommandOutput| -> i64 {
             output
@@ -890,6 +900,17 @@ mod bds_capture {
             .expect("the cow line");
         let cow = holder(&set.ours);
         let bds_cow = holder(&set.captured.output().expect("an answer"));
+        // unastar's name must be the cow's own id, not one the answer made up.
+        let world = replay.h.world();
+        let actors: Vec<bevy_ecs::entity::Entity> = world
+            .query_filtered::<bevy_ecs::entity::Entity, bevy_ecs::query::Without<crate::entity::components::Player>>()
+            .iter(world)
+            .collect();
+        let cows: Vec<i64> = actors
+            .into_iter()
+            .filter_map(|entity| crate::command::exec::visuals::runtime_id(world, entity))
+            .collect();
+        assert!(cows.contains(&cow), "{cow} is no actor's id ({cows:?})");
         let ids = [(BDS_PLAYER, 1), (bds_cow, cow)];
         for step in steps
             .iter()
@@ -914,6 +935,8 @@ mod bds_capture {
             ],
             &[],
         );
+        // The score under the player's name (`belowname`).
+        assert_same_score_tags(&steps);
         for step in &steps {
             let theirs: Vec<McpePacketData> = step
                 .captured

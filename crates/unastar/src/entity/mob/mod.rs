@@ -23,6 +23,7 @@
 
 pub mod ai;
 pub mod archetype;
+pub mod attributes;
 pub mod combat;
 pub mod components;
 pub mod constants;
@@ -52,8 +53,8 @@ pub use derive::derive_mob_state;
 pub use events::EventError;
 
 use crate::entity::components::{
-    ActorViewers, Age, FallDistance, Living, Mob, OnGround, PhysicsBody, Position, Rotation,
-    RuntimeId, Velocity,
+    ActorViewers, Age, FallDistance, Living, Mob, OnGround, PhysicsBody, PhysicsModel, Position,
+    Rotation, RuntimeId, Velocity,
 };
 use crate::entity::definition::attributes::ActorAttributes;
 use crate::entity::definition::flags::ActorFlags;
@@ -81,6 +82,83 @@ pub enum MobSpawnError {
     /// The lifecycle event failed; the mob was removed again.
     #[error(transparent)]
     Event(#[from] EventError),
+    /// The spawn event a reference names is not defined by the actor.
+    #[error("{identifier} defines no event {event}")]
+    UnknownEvent { identifier: String, event: String },
+}
+
+/// An actor to spawn, as definitions name one: `minecraft:drowned`, or
+/// `minecraft:drowned<minecraft:as_adult>` with the event fired on it
+/// instead of its lifecycle event.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ActorReference {
+    pub identifier: Arc<str>,
+    pub event: Option<Arc<str>>,
+}
+
+/// An actor reference that is not `identifier` or `identifier<event>`.
+#[derive(Debug, Clone, PartialEq, Eq, Error)]
+#[error("malformed actor reference {0:?}")]
+pub struct ActorReferenceError(pub String);
+
+impl std::str::FromStr for ActorReference {
+    type Err = ActorReferenceError;
+
+    fn from_str(text: &str) -> Result<Self, Self::Err> {
+        let malformed = || ActorReferenceError(text.to_owned());
+        let (identifier, event) = match text.split_once('<') {
+            Some((identifier, rest)) => {
+                let event = rest
+                    .strip_suffix('>')
+                    .filter(|event| !event.is_empty())
+                    .ok_or_else(malformed)?;
+                (identifier, Some(Arc::from(event)))
+            }
+            None => (text, None),
+        };
+        if identifier.is_empty() {
+            return Err(malformed());
+        }
+        Ok(Self {
+            identifier: Arc::from(identifier),
+            event,
+        })
+    }
+}
+
+/// Spawn `reference` at `position`: its event, when it names one, replaces
+/// the lifecycle event of `cause`.
+pub fn spawn_mob_as(
+    world: &mut World,
+    reference: &ActorReference,
+    position: DVec3,
+    yaw: f32,
+    cause: SpawnCause,
+) -> Result<Entity, MobSpawnError> {
+    let Some(name) = &reference.event else {
+        return spawn_mob(world, &reference.identifier, position, yaw, cause);
+    };
+    let event = archetype_of(world, &reference.identifier)?
+        .events
+        .event(name)
+        .ok_or_else(|| MobSpawnError::UnknownEvent {
+            identifier: reference.identifier.to_string(),
+            event: name.to_string(),
+        })?;
+    let entity = spawn_mob(
+        world,
+        &reference.identifier,
+        position,
+        yaw,
+        SpawnCause::Event,
+    )?;
+    if let Err(error) = events::fire_event(world, entity, &event, None) {
+        world.despawn(entity);
+        return Err(error.into());
+    }
+    apply_pending_definitions(world);
+    derive_entity(world, entity);
+    Ok(entity)
 }
 
 /// The compiled archetype of a mob entity.
@@ -96,6 +174,12 @@ pub enum SpawnCause {
     Born,
     /// Restored from storage: no event; the saved groups are re-applied.
     Loaded,
+    /// Another mob's `minecraft:transformation`:
+    /// `minecraft:entity_transformed`.
+    Transformed,
+    /// The caller fires a named spawn event instead (`/summon … <event>`,
+    /// [`spawn_mob_as`]): no lifecycle event.
+    Event,
 }
 
 /// Create a mob of `identifier` with its feet at `position`, fire its
@@ -108,24 +192,64 @@ pub fn spawn_mob(
     yaw: f32,
     cause: SpawnCause,
 ) -> Result<Entity, MobSpawnError> {
+    spawn_mob_with(world, identifier, position, yaw, cause, None)
+}
+
+/// [`spawn_mob`] with `SpawnCause::Spawned` whose `minecraft:entity_spawned`
+/// sees `other` as its `other` subject: the shooter of a projectile (the
+/// arrow's spawn event picks its group by the shooter's family and hand).
+pub fn spawn_mob_by(
+    world: &mut World,
+    identifier: &str,
+    position: DVec3,
+    yaw: f32,
+    other: Entity,
+) -> Result<Entity, MobSpawnError> {
+    spawn_mob_with(
+        world,
+        identifier,
+        position,
+        yaw,
+        SpawnCause::Spawned,
+        Some(other),
+    )
+}
+
+/// The archetype of `identifier`, or why it cannot be spawned.
+fn archetype_of(world: &World, identifier: &str) -> Result<Arc<MobArchetype>, MobSpawnError> {
     let registry = world
         .get_resource::<MobRegistry>()
         .ok_or(MobSpawnError::NoRegistry)?;
-    let archetype = match registry.get(identifier) {
-        Some(archetype) => Arc::clone(archetype),
-        None => {
-            return Err(match registry.unsupported(identifier) {
-                Some(reason) => MobSpawnError::Unsupported {
-                    identifier: identifier.to_owned(),
-                    reason: Arc::clone(reason),
-                },
-                None => MobSpawnError::UnknownActor(identifier.to_owned()),
-            });
-        }
-    };
+    match registry.get(identifier) {
+        Some(archetype) => Ok(Arc::clone(archetype)),
+        None => Err(match registry.unsupported(identifier) {
+            Some(reason) => MobSpawnError::Unsupported {
+                identifier: identifier.to_owned(),
+                reason: Arc::clone(reason),
+            },
+            None => MobSpawnError::UnknownActor(identifier.to_owned()),
+        }),
+    }
+}
+
+fn spawn_mob_with(
+    world: &mut World,
+    identifier: &str,
+    position: DVec3,
+    yaw: f32,
+    cause: SpawnCause,
+    other: Option<Entity>,
+) -> Result<Entity, MobSpawnError> {
+    let archetype = archetype_of(world, identifier)?;
     let entity = spawn_unattached(world, &archetype, position, yaw)?;
     if cause == SpawnCause::Loaded {
-        world.entity_mut(entity).insert(persistence::Restoring);
+        // The spawn bonuses were rolled once and saved; restoring puts them
+        // back (BDS 1.26.51 keeps them across a save and load).
+        world
+            .entity_mut(entity)
+            .insert(persistence::Restoring)
+            .remove::<attributes::KnockbackResistance>()
+            .remove::<attributes::FollowRange>();
     }
     attach_definition(world, entity, Arc::clone(&archetype.definition))
         .expect("a freshly spawned mob exists and has no definition stack");
@@ -133,16 +257,42 @@ pub fn spawn_mob(
     let event = match cause {
         SpawnCause::Spawned => archetype.lifecycle.spawned.as_ref(),
         SpawnCause::Born => archetype.lifecycle.born.as_ref(),
-        SpawnCause::Loaded => None,
+        SpawnCause::Transformed => archetype.lifecycle.transformed.as_ref(),
+        SpawnCause::Loaded | SpawnCause::Event => None,
     };
     if let Some(event) = event
-        && let Err(error) = events::fire_event(world, entity, event, None)
+        && let Err(error) = events::fire_event(world, entity, event, other)
     {
         world.despawn(entity);
         return Err(error.into());
     }
     apply_pending_definitions(world);
     derive_entity(world, entity);
+    // What the mob spawned with is what `UpdateAttributes` reports as the
+    // defaults; its viewers get every attribute once more after the
+    // `AddActor`, as BDS 1.26.51 sends them.
+    if let Some(mut attributes) = world.get_mut::<ActorAttributes>(entity) {
+        attributes.reset_defaults();
+        attributes.mark_all_changed();
+    }
+    let falls = world
+        .get::<PhysicsBody>(entity)
+        .is_some_and(|body| body.model == PhysicsModel::Living && body.gravity > 0.0);
+    if cause != SpawnCause::Loaded
+        && falls
+        && let Some(mut velocity) = world.get_mut::<Velocity>(entity)
+    {
+        velocity.0.y = constants::MOB_SPAWN_VELOCITY_Y;
+    }
+    // BDS reports a new living mob on the ground until its first move, also
+    // in mid-air, so the first update of one spawned in the air is a change
+    // of ground contact (BDS 1.26.51 replication captures).
+    let reported_on_ground = if cause == SpawnCause::Loaded {
+        None
+    } else {
+        Some(falls)
+    };
+    net::network::record_spawn_state(world, entity, reported_on_ground);
     Ok(entity)
 }
 
@@ -163,6 +313,27 @@ fn spawn_unattached(
     };
     let mut molang = PropertyDefaults(rand::SeedableRng::seed_from_u64(seed));
     let properties = ActorProperties::new(Arc::clone(&archetype.properties), &mut molang)?;
+    // The native class's spawn bonuses, from the mob's own seed so the
+    // shared random sequence is unchanged; the definition's components set
+    // the bases when it applies.
+    let knockback_resistance =
+        archetype
+            .native
+            .knockback_resistance_bonus
+            .map(|max| attributes::KnockbackResistance {
+                spawn_bonus: Some(attributes::KnockbackResistance::roll_bonus(
+                    &mut molang.0,
+                    max,
+                )),
+                ..attributes::KnockbackResistance::NONE
+            });
+    let follow_range = archetype
+        .native
+        .follow_range_bonus
+        .then(|| attributes::FollowRange {
+            spawn_bonus: attributes::FollowRange::roll_bonus(&mut molang.0),
+            ..attributes::FollowRange::DEFAULT
+        });
     let attributes = ActorAttributes::new(
         Arc::clone(&archetype.attributes),
         archetype.attribute_seed.clone(),
@@ -174,11 +345,15 @@ fn spawn_unattached(
             .update(actor_flags::USES_LEGACY_FRICTION, true)
             .expect("catalogue flag index");
     }
-    let metadata = if archetype.projectile {
-        // Projectiles are spawned invisible (shown from their second tick).
+    if archetype.native.bat.is_some() {
+        // A bat is born resting (its BDS 1.26.51 summon's `AddActor`).
         flags
-            .update(actor_flags::INVISIBLE, true)
+            .update(actor_flags::RESTING, true)
             .expect("catalogue flag index");
+    }
+    let metadata = if archetype.projectile {
+        // Turned invisible once its definition applies
+        // (`projectile::derive_projectile`).
         EntityMetadata::actor_base()
     } else {
         let mut metadata = EntityMetadata::living_base();
@@ -189,6 +364,13 @@ fn spawn_unattached(
         if let Some(kind) = archetype.native.aux_value {
             metadata.set_short(jolyne::valentine::actor_data_i_ds::AUX_VALUE_DATA, kind);
         }
+        if let Some(kind) = archetype.native.variant {
+            metadata.set_int(jolyne::valentine::actor_data_i_ds::VARIANT, kind);
+        }
+        if archetype.native.slime.is_some() {
+            // The slime classes' summons carry it at 0 (nothing yet).
+            metadata.set_byte(jolyne::valentine::actor_data_i_ds::CLIENT_EVENT, 0);
+        }
         metadata
     };
     let launched_tick = world
@@ -198,7 +380,12 @@ fn spawn_unattached(
         (
             MobKind(Arc::clone(archetype)),
             Position(position),
-            Rotation::new(yaw, 0.0),
+            // A projectile's head yaw is 0 (its BDS 1.26.51 `AddActor`).
+            if archetype.projectile {
+                Rotation::with_head_yaw(yaw, 0.0, 0.0)
+            } else {
+                Rotation::new(yaw, 0.0)
+            },
             Velocity::default(),
             OnGround(false),
             Age::default(),
@@ -228,6 +415,12 @@ fn spawn_unattached(
             FallDistance::default(),
             ai::MobBrain::default(),
         ));
+        if let Some(resistance) = knockback_resistance {
+            entity.insert(resistance);
+        }
+        if let Some(range) = follow_range {
+            entity.insert(range);
+        }
     }
     Ok(entity.id())
 }

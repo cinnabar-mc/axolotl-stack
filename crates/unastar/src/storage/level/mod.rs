@@ -298,7 +298,7 @@ mod tests {
     #[tokio::test]
     async fn leveldb_keeps_only_level_records() {
         let dir = tempfile::tempdir().unwrap();
-        let provider = LevelDBWorldProvider::open(dir.path(), 0).unwrap();
+        let provider = LevelDBWorldProvider::open(dir.path()).unwrap();
         provider
             .save_level_records(
                 vec![

@@ -581,8 +581,8 @@ impl WorldReady {
         &self.login
     }
 
-    /// Sends `DimensionData` (when set), `JigsawStructureData`, `VoxelShapes`,
-    /// `StartGame`, `ItemRegistry` and the definition lists as one batch
+    /// Sends the application's `before_start_game` packets, `DimensionData`
+    /// (when set), `JigsawStructureData`, `VoxelShapes`, `StartGame`, `ItemRegistry` and the definition lists as one batch
     /// whatever the flush mode (BDS order and batching; definitions precede
     /// the client's `RequestChunkRadius`). jolyne answers the radius request
     /// with `ChunkRadiusUpdated` and `PlayStatus(PlayerSpawn)` and hands over
@@ -619,6 +619,9 @@ impl WorldReady {
         streamed: bool,
     ) -> Result<ServerSpawn, Failure<Self>> {
         let result = self.conn.queue_group(|conn| {
+            for packet in &params.before_start_game {
+                conn.queue_packet(packet, now)?;
+            }
             if let Some(dimensions) = &params.dimension_data {
                 conn.queue_body(
                     McpePacketName::DimensionDataPacket,
@@ -673,6 +676,7 @@ impl WorldReady {
             deadline: deadline_after(now, self.config.spawn_timeout),
             runtime_id: params.start_game.runtime_id.actor_runtime_id,
             radius_override: params.chunk_radius,
+            radius_limit: params.max_chunk_radius,
             chunk_radius: None,
             initialized: false,
             streamed,
@@ -706,6 +710,8 @@ pub struct ServerSpawn {
     deadline: Instant,
     runtime_id: u64,
     radius_override: Option<i32>,
+    /// Upper bound on a granted request.
+    radius_limit: Option<i32>,
     chunk_radius: Option<i32>,
     /// A matching `SetLocalPlayerAsInitialized` arrived before the radius
     /// request; the spawn completes when the radius is answered.
@@ -722,7 +728,10 @@ impl ServerSpawn {
         if requested < 1 {
             return Err(ProtocolError::InvalidChunkRadius(requested).into());
         }
-        let radius = self.radius_override.unwrap_or(requested);
+        let radius = self.radius_override.unwrap_or_else(|| {
+            self.radius_limit
+                .map_or(requested, |limit| requested.min(limit.max(1)))
+        });
         self.chunk_radius = Some(radius);
         let updated = McpePacket::from(ChunkRadiusUpdatedPacket {
             chunk_radius: radius,

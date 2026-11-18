@@ -19,6 +19,8 @@ worldgen-coverage = ["unastar_noise/worldgen-coverage"]
 
 [dependencies]
 bytes.workspace = true
+# Estimates the compressed size of chunk answers (chunk streaming pacing).
+flate2.workspace = true
 jolyne = { workspace = true, features = ["server", "raknet"] }
 unastar_noise.workspace = true
 unastar-packs = { path = "../unastar-packs" }
@@ -37,6 +39,7 @@ thiserror.workspace = true
 toml_edit = { workspace = true, features = ["serde"] }
 glam.workspace = true
 uuid.workspace = true
+base64.workspace = true
 bevy_ecs.workspace = true
 bevy_tasks.workspace = true
 async-trait.workspace = true
@@ -64,8 +67,7 @@ bitflags = "2.6"
 unastar_bedrock_codegen = { path = "../unastar_bedrock_codegen", optional = true }
 
 [dev-dependencies]
-jolyne = { workspace = true, features = ["client", "raknet"] }
-flate2.workspace = true
+jolyne = { workspace = true, features = ["client", "raknet", "bench"] }
 crc32c = "0.6"
 tempfile = "3"
 
