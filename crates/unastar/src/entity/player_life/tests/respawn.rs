@@ -104,12 +104,20 @@ fn the_client_ready_respawn_restores_the_player_at_the_world_spawn() {
     });
     h.tick();
     let packets = h.drain();
+    // Searching names the world spawn by BDS's marker (0, 32767, 0), then
+    // ready-to-spawn the spawn itself (`tests/respawn_screen.rs`).
     assert_eq!(
         respawns(&packets),
-        [(
-            EnumsPlayerRespawnState::Readytospawn,
-            reported_eyes(world_spawn(&mut h))
-        )]
+        [
+            (
+                EnumsPlayerRespawnState::Searchingforspawn,
+                DVec3::new(0.0, 32767.0, 0.0)
+            ),
+            (
+                EnumsPlayerRespawnState::Readytospawn,
+                reported_eyes(world_spawn(&mut h))
+            )
+        ]
     );
     assert_respawned(&mut h, &packets);
 
@@ -226,8 +234,11 @@ fn the_copy_of_the_player_respawns_with_it() {
     }
 }
 
+/// With `doImmediateRespawn` on, BDS 1.26.51 still waits for the client's
+/// answer: its client skips the death screen and answers at once
+/// (`respawn.txt` capture, `tests/respawn_screen.rs`).
 #[test]
-fn immediate_respawn_skips_the_death_screen() {
+fn immediate_respawn_still_waits_for_the_client() {
     let mut h = harness(Difficulty::Normal);
     h.rules().do_immediate_respawn = true;
     let player = h.player;
@@ -240,6 +251,18 @@ fn immediate_respawn_skips_the_death_screen() {
         death_infos(&packets).len() == 1,
         "the death is still reported"
     );
+    assert!(h.dead(), "dead until the client answers");
+    h.route(PlayerActionPacket {
+        player_runtime_id: ActorRuntimeId {
+            actor_runtime_id: SESSION,
+        },
+        action: EnumsPlayerActionType::Respawn,
+        block_position: BlockPos { x: 0, y: 0, z: 0 },
+        result_pos: BlockPos { x: 0, y: 0, z: 0 },
+        face: -1,
+    });
+    h.tick();
+    let packets = h.drain();
     assert_respawned(&mut h, &packets);
 }
 

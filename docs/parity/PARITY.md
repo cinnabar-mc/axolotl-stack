@@ -20,7 +20,7 @@ Each domain's first line is its headline: the rows its family table, gap list an
 | [Commands](#commands) | 82 | 1 | 38 | 2 | 40 | 1 | 51.9% |
 | [Protocol](#protocol) | 231 | 112 | 33 | 40 | 31 | 15 | 32.9% |
 | [World generation](#world-generation) | 1275 | 87 | 430 | 642 | 9 | 107 | 55.7% |
-| [Gameplay systems](#gameplay-systems) | 72 | 28 | 39 | 4 | 1 | 0 | 6.9% |
+| [Gameplay systems](#gameplay-systems) | 72 | 26 | 40 | 4 | 2 | 0 | 8.3% |
 
 ## Where to help
 
@@ -93,14 +93,14 @@ Nothing in this domain is claimed.
 | Bedrock world generation | lane BED | 2026-10-29 | 491 |
 | Java world generation | lane JAVA | 2026-10-29 | 26 |
 
-**Gameplay systems**: 48 open rows free, 19 claimed.
+**Gameplay systems**: 47 open rows free, 19 claimed.
 
 | Free family | Open | Missing | Partial |
 |---|---:|---:|---:|
-| player (part claimed) | 14 | 4 | 10 |
+| player (part claimed) | 13 | 4 | 9 |
 | world (part claimed) | 11 | 4 | 7 |
 | mobs | 10 | 8 | 2 |
-| interface | 6 | 3 | 3 |
+| interface | 6 | 1 | 5 |
 | crafting (part claimed) | 4 | 2 | 2 |
 | platform | 3 | 0 | 3 |
 
@@ -109,7 +109,7 @@ Nothing in this domain is claimed.
 | Gravity, fire, redstone, block updates and random ticks | lane BLOCKS | 2026-10-29 | 6 |
 | Liquids: water and lava flow, mixing, the liquid layer | lane LIQUIDS | 2026-11-11 | 1 |
 | Workstations: crafting, smelting, anvil, grindstone, smithing, brewing, enchanting | lane ITEMS | 2026-10-29 | 8 |
-| Sleeping in beds and the night skip | lane SYSTEMS | 2026-11-17 | 1 |
+| Sleeping in beds, the night skip and respawning | lane SYSTEMS | 2026-11-17 | 1 |
 | Survival block breaking | lane ITEMS | 2026-11-10 | 1 |
 | Generation speed | lane PERF | 2026-10-29 | 1 |
 | Chunk streaming | lane LOAD | 2026-10-29 | 1 |
@@ -721,12 +721,12 @@ Cross-cutting gameplay systems with no data source to enumerate them from; this 
 | Family | Rows | Missing | Partial | Done | Verified | N/A | Done+verified |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | crafting | 12 | 8 | 4 | 0 | 0 | 0 | 0.0% |
-| interface | 6 | 3 | 3 | 0 | 0 | 0 | 0.0% |
+| interface | 6 | 1 | 5 | 0 | 0 | 0 | 0.0% |
 | mobs | 10 | 8 | 2 | 0 | 0 | 0 | 0.0% |
 | performance | 2 | 0 | 2 | 0 | 0 | 0 | 0.0% |
 | platform | 6 | 0 | 3 | 3 | 0 | 0 | 50.0% |
 | player | 17 | 4 | 11 | 1 | 1 | 0 | 11.8% |
-| world | 19 | 5 | 14 | 0 | 0 | 0 | 0.0% |
+| world | 19 | 5 | 13 | 0 | 1 | 0 | 5.3% |
 
 ### Gameplay systems gaps
 
@@ -742,8 +742,10 @@ Cross-cutting gameplay systems with no data source to enumerate them from; this 
 
 - `interface.chat`: plain chat is relayed (cancellable by plugins) and /tell, /me, /say and /list answer like BDS; no /tellraw, and plain chat formatting is not checked against BDS
 - `interface.player_list`: the player list, classic and persona skins and emotes match BDS; in-game skin changes (PlayerSkinPacket) and the locator bar are not implemented
+- `interface.scoreboard`: objectives, scores and the sidebar, list and belowname displays answer and reach players as BDS sends them, saved with the world (the scoreboard command row); the scores of actors that die are not measured; Bedrock has no teams
 - `interface.sounds_particles`: block break/place, cracking, container, door-break and some mob sounds and particles; no PlaySound/SpawnParticleEffect, client sounds are not relayed, most actions are silent
-- missing: `interface.camera`, `interface.scoreboard`, `interface.titles_hud`
+- `interface.titles_hud`: titles, subtitles, the action bar and their times (/title, /titleraw) and HUD elements (/hud) send what BDS sends; no boss bars (no wither or ender dragon fight, mobs.end_fight, mobs.wither_summoning)
+- missing: `interface.camera`
 
 **mobs**
 
@@ -776,9 +778,9 @@ Cross-cutting gameplay systems with no data source to enumerate them from; this 
 
 - `world.block_updates`: neighbour updates, survival checks and shapes follow BDS; scheduled block ticks exist only for buttons, coral blocks, redstone and gravity (no general scheduled-tick queue)
 - `world.chunk_ticking`: chunks load around players in a view disk (nearest first with look-ahead; storage reads, generation and network encoding off the tick; spawning loaded columns, restoring their actors and unloading take at most 4 ms of a tick each; sending paced by acknowledgements and the transport's queue; timings in tools/perf/README.md) and entities tick in loaded chunks; the disk is centred on the player's chunk, BDS appears to centre it on the block position (153 columns at radius 6 against our 149); no ticking areas and no random block ticks
-- `world.day_cycle`: clock, daylight cycle and moon phase work; the night skip jumps to the next sunrise as BDS does (player.sleeping); time is not persisted
 - `world.difficulty`: mob damage scaling, peaceful monsters, regional difficulty and hard-only door breaking; no hunger effects (starvation floors, peaceful regeneration) and effects of unimplemented mobs
 - `world.explosions`: the blast pattern, block resistance, drops (every block by hand), damage with exposure and the TNT fuse follow BDS; knockback is not measured (applied along the line from the centre with the impact); fire from explosions, underwater explosions, the max_resistance of other sources, creepers and other exploding mobs (their components are not implemented) and beds and respawn anchors are missing; block changes are sent at once, not with the next tick
-- 9 more partial rows with other gaps (see [systems.toml](systems.toml))
+- `world.falling_blocks`: gravity blocks fall, land and drop on non-full blocks; no falling anvil/dripstone damage, anvil wear or concrete powder hardening
+- 8 more partial rows with other gaps (see [systems.toml](systems.toml))
 - missing: `world.dimensions`, `world.fire`, `world.structure_blocks`, `world.structures_hardcoded`, `world.world_border`
 

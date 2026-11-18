@@ -66,13 +66,12 @@ fn a_player_killed_by_a_mob_dies_drops_everything_and_sees_the_respawn_screen() 
     );
     assert_eq!(death_infos(&packets), std::slice::from_ref(&message));
     assert_eq!(translations(&packets), std::slice::from_ref(&message));
-    let spawn = reported_eyes(world_spawn(&mut h));
+    // The screen opens searching at the position the player died at
+    // (`respawn_screen.rs` replays BDS's).
+    let died_at = reported_eyes(eyes(HOME));
     assert_eq!(
         respawns(&packets),
-        [
-            (EnumsPlayerRespawnState::Searchingforspawn, spawn),
-            (EnumsPlayerRespawnState::Readytospawn, spawn),
-        ]
+        [(EnumsPlayerRespawnState::Searchingforspawn, died_at)]
     );
     let seen = drain(&mut viewer);
     assert_eq!(actor_events(&seen, SESSION), [EnumsActorEvent::Death]);

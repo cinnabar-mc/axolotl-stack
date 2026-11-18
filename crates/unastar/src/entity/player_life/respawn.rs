@@ -1,12 +1,15 @@
 //! The respawn screen and respawning.
 //!
-//! When a player dies the server opens the respawn screen with `Respawn`
-//! searching-for-spawn and then ready-to-spawn, both at its respawn position
-//! (its [`PlayerSpawnPoint`], else the world spawn; the layout BDS sends at
-//! join: the player's eye position and runtime ID 0).
-//! The client answers with `Respawn` client-ready-to-spawn, which the server
-//! acknowledges with ready-to-spawn, and `PlayerAction` respawn; the first
-//! of them respawns the player ([`respawn`]): full health, fresh hunger,
+//! As BDS 1.26.51 does it (`tools/bds-sweep/scripts/respawn.txt`, distilled
+//! into `testdata/bds-1.26.51-respawn.json`): when a player dies the server
+//! opens the respawn screen with `Respawn` searching-for-spawn at the
+//! position it died at (the layout BDS sends at join: the player's eye
+//! position and runtime ID 0). The client answers with `Respawn`
+//! client-ready-to-spawn, which the server answers with searching-for-spawn
+//! at its point's block (or `(0, 32767, 0)` for the world spawn) and
+//! ready-to-spawn at its respawn position (its [`PlayerSpawnPoint`], else
+//! the world spawn), and with `PlayerAction` respawn; the first of them
+//! respawns the player ([`respawn`]): full health, fresh hunger,
 //! full air, no fire or fall, back at the respawn position (`MovePlayer` in
 //! respawn mode), `ActorEvent` spawn-alive and its living box again
 //! (`actor_data::respawned`).
@@ -81,11 +84,33 @@ pub fn spawn_position_packet(
     }
 }
 
-/// Where `player` respawns: its own spawn point, else the world spawn.
+/// Where `player` respawns: its own spawn point, else the world spawn. A
+/// point whose block or the one above has a collision box moves up to the
+/// first block with room for the player (BDS 1.26.51 `respawn.txt`: a
+/// point at y -60 with stone at -60 and -59 respawned the player at -58).
 pub fn respawn_position(world: &World, player: Entity) -> DVec3 {
-    world
-        .get::<PlayerSpawnPoint>(player)
-        .map_or_else(|| world.resource::<WorldSpawn>().0, |point| point.position)
+    let Some(point) = world.get::<PlayerSpawnPoint>(player) else {
+        return world.resource::<WorldSpawn>().0;
+    };
+    let Some(registry) = world.get_resource::<crate::server::game::types::BlockRegistryResource>()
+    else {
+        return point.position;
+    };
+    use crate::entity::systems::BlockSource;
+    let open = |pos: glam::IVec3| {
+        world.block_at(pos).is_none_or(|state| {
+            crate::server::game::placement::placed_boxes(&registry.0, pos, state).is_empty()
+        })
+    };
+    let feet = (point.position - DVec3::Y * crate::entity::PLAYER_EYE_HEIGHT)
+        .floor()
+        .as_ivec3();
+    let top = crate::world::chunk::MIN_Y + crate::world::chunk::SUBCHUNK_COUNT as i32 * 16;
+    let free = (feet.y..top)
+        .map(|y| feet.with_y(y))
+        .find(|&at| open(at) && open(at + glam::IVec3::Y))
+        .unwrap_or(feet);
+    point.position + DVec3::Y * f64::from(free.y - feet.y)
 }
 
 /// A player's request to respawn.
@@ -122,16 +147,57 @@ pub(super) fn respawn_packet(spawn: DVec3, state: EnumsPlayerRespawnState) -> Mc
     })
 }
 
-/// Open the respawn screen of a dead `player`.
+/// The searching-for-spawn position BDS names for the world spawn, which it
+/// has not placed yet (BDS 1.26.51 `respawn.txt` capture).
+const WORLD_SPAWN_SEARCH: Vec3 = Vec3 {
+    x: 0.0,
+    y: 32767.0,
+    z: 0.0,
+};
+
+/// Open the respawn screen of a dead `player`: searching for a spawn, at
+/// the position it died at (BDS 1.26.51 `respawn.txt` capture, also with
+/// `doImmediateRespawn` on).
 pub fn open_respawn_screen(world: &World, player: Entity) {
+    let Some(died_at) = world.get::<Position>(player).map(|position| position.0) else {
+        return;
+    };
+    if let Some(session) = world.get::<PlayerSession>(player) {
+        let _ = session.send(respawn_packet(
+            died_at,
+            EnumsPlayerRespawnState::Searchingforspawn,
+        ));
+    }
+}
+
+/// The client is ready to spawn: drop a spawn point whose bed is gone, then
+/// tell it where it comes back. Searching for a spawn names the player's
+/// own point's block (its coordinates as they are) or [`WORLD_SPAWN_SEARCH`],
+/// then ready-to-spawn the position itself.
+fn answer_ready_client(world: &mut World, player: Entity) {
+    super::sleep::check_spawn_bed(world, player);
+    let search = world
+        .get::<PlayerSpawnPoint>(player)
+        .map_or(WORLD_SPAWN_SEARCH, |point| {
+            let block = (point.position - DVec3::Y * crate::entity::PLAYER_EYE_HEIGHT)
+                .floor()
+                .as_vec3();
+            Vec3 {
+                x: block.x,
+                y: block.y,
+                z: block.z,
+            }
+        });
     let spawn = respawn_position(world, player);
     if let Some(session) = world.get::<PlayerSession>(player) {
-        for state in [
-            EnumsPlayerRespawnState::Searchingforspawn,
-            EnumsPlayerRespawnState::Readytospawn,
-        ] {
-            let _ = session.send(respawn_packet(spawn, state));
-        }
+        let _ = session.send(McpePacket::from(RespawnPacket {
+            position: search,
+            state: EnumsPlayerRespawnState::Searchingforspawn,
+            player_runtime_id: ActorRuntimeId {
+                actor_runtime_id: 0,
+            },
+        }));
+        let _ = session.send(respawn_packet(spawn, EnumsPlayerRespawnState::Readytospawn));
     }
 }
 
@@ -147,10 +213,7 @@ pub fn apply_respawn_requests(
             continue;
         }
         if request == RespawnRequest::ClientReady {
-            let spawn = respawn_position(world, player);
-            if let Some(session) = world.get::<PlayerSession>(player) {
-                let _ = session.send(respawn_packet(spawn, EnumsPlayerRespawnState::Readytospawn));
-            }
+            answer_ready_client(world, player);
         }
         respawn(world, player);
     }

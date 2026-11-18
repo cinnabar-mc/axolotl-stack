@@ -16,9 +16,9 @@
 //! 4. the last death's block and dimension and the died flag change in the
 //!    player's actor data (`actor_data::died`: sent at once, or with the
 //!    tick's update and the dead box when the player tick killed it);
-//! 5. the respawn position goes to the client (`respawn::open_respawn_screen`)
-//!    and, with `do_immediate_respawn`, the player respawns at once (the
-//!    client skips its death screen by the same game rule).
+//! 5. the respawn screen opens (`respawn::open_respawn_screen`); with
+//!    `doImmediateRespawn` on as well, the player respawning when its client
+//!    answers (the client skips its death screen by the same game rule).
 //!
 //! Death messages use the native translation keys: the cause's own key
 //! (`death.attack.lava`, `death.attack.outOfWorld`, …; falls of more than
@@ -130,10 +130,9 @@ pub(super) fn die(world: &mut World, player: Entity, cause: DeathCause) {
     }
     super::actor_data::died(world, player);
     super::sleep::player_died(world, player);
+    // With `doImmediateRespawn` on BDS still waits for the client's answer
+    // (its client skips the screen): BDS 1.26.51 `respawn.txt` capture.
     respawn::open_respawn_screen(world, player);
-    if rules.do_immediate_respawn {
-        respawn::respawn(world, player);
-    }
 }
 
 /// The death message for `player` killed by `cause`.

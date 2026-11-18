@@ -13,6 +13,7 @@ mod input_tick;
 mod movement;
 mod pvp;
 mod respawn;
+mod respawn_screen;
 mod rules;
 
 use bevy_ecs::prelude::*;

@@ -1,0 +1,44 @@
+# The respawn screen against BDS: `python tools/bds-sweep/script.py
+# tools/bds-sweep/scripts/respawn.txt --out DIR` (plain BDS, flat world, an
+# operator). The player dies by `/kill` and its client answers the respawn
+# screen at once (`bds-sweep-client` sends client-ready and the respawn
+# action). Ticks are the client's input ticks.
+20 /gamerule domobspawning false
+21 /gamerule doimmediaterespawn false
+22 /gamerule dodaylightcycle false
+23 /time set 6000
+24 /fill -12 -61 -12 16 -61 12 stone
+25 /fill -12 -60 -12 16 -50 12 air
+26 /gamemode survival @s
+27 /tp @s 3.5 -60 2.5 -90 0
+
+# 1. No spawn point of its own: the world spawn.
+40 /kill @s
+80 /tp @s 3.5 -60 2.5 -90 0
+
+# 2. A /spawnpoint point.
+90 /spawnpoint @s 5 -60 -4
+100 /kill @s
+140 /tp @s 3.5 -60 2.5 -90 0
+
+# 3. Dying away from it, in the air.
+150 /tp @s -6.5 -55 6.5 -90 0
+151 /kill @s
+190 /tp @s 3.5 -60 2.5 -90 0
+
+# 4. The point's block filled with stone (no room to stand).
+200 /fill 5 -60 -4 5 -59 -4 stone
+202 /kill @s
+240 /fill 5 -60 -4 5 -59 -4 air
+241 /tp @s 3.5 -60 2.5 -90 0
+
+# 5. /clearspawnpoint, then death: the world spawn again.
+250 /clearspawnpoint @s
+252 /kill @s
+290 /tp @s 3.5 -60 2.5 -90 0
+
+# 6. doimmediaterespawn on.
+300 /gamerule doimmediaterespawn true
+302 /kill @s
+340 /gamerule doimmediaterespawn false
+360 exit
