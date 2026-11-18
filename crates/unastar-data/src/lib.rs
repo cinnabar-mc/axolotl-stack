@@ -8,6 +8,7 @@
 pub mod actor_components;
 pub mod actor_definitions;
 pub mod actor_identifiers;
+pub mod actor_picks;
 pub mod actor_wire;
 pub mod armour;
 pub mod bds_packets;
@@ -21,6 +22,7 @@ pub mod equipment;
 pub mod fuel;
 pub mod game_rules;
 pub mod help;
+pub mod infested;
 pub mod item_blocks;
 pub mod item_components;
 pub mod item_identity;

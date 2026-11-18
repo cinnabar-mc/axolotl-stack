@@ -36,7 +36,13 @@ fn execute(body: TokenStream, assertions: TokenStream) {
         .join("../unastar/src/world/generator/bedrock")
         .canonicalize()
         .unwrap();
-    let rng = runtime.join("rng.rs").to_string_lossy().into_owned();
+    // The generator's `rng` module re-exports `world::bedrock_random`.
+    let rng = runtime
+        .join("../../bedrock_random.rs")
+        .canonicalize()
+        .unwrap()
+        .to_string_lossy()
+        .into_owned();
     let scatter = runtime.join("scatter.rs").to_string_lossy().into_owned();
     let source = quote! {
         #[path = #rng] mod rng;

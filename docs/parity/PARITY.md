@@ -12,15 +12,15 @@ Each domain's first line is its headline: the rows its family table, gap list an
 
 | Domain | Rows | Missing | Partial | Done | Verified | N/A | Done+verified |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| [Entities](#entities): actor rows (summon and replication) | 137 | 110 | 2 | 2 | 19 | 4 | 15.8% |
-| Entities: behaviour sub-rows (components, spawn rules) | 4082 | 998 | 2648 | 329 | 61 | 46 | 9.7% |
+| [Entities](#entities): actor rows (summon and replication) | 137 | 98 | 2 | 3 | 30 | 4 | 24.8% |
+| Entities: behaviour sub-rows (components, spawn rules) | 4082 | 905 | 2579 | 439 | 113 | 46 | 13.7% |
 | [Blocks](#blocks) | 1477 | 0 | 408 | 511 | 391 | 167 | 68.9% |
 | [Items](#items): behaviour sub-rows (food, durability, placement, ...) | 2347 | 99 | 832 | 619 | 620 | 177 | 57.1% |
 | Items: registered (exists in the registry, no behaviour) | 2076 | 0 | 0 | 2076 | 0 | 0 | 100.0% |
 | [Commands](#commands) | 82 | 8 | 35 | 2 | 36 | 1 | 46.9% |
-| [Protocol](#protocol) | 231 | 124 | 28 | 42 | 22 | 15 | 29.6% |
+| [Protocol](#protocol) | 231 | 112 | 33 | 40 | 31 | 15 | 32.9% |
 | [World generation](#world-generation) | 1275 | 87 | 430 | 642 | 9 | 107 | 55.7% |
-| [Gameplay systems](#gameplay-systems) | 72 | 30 | 38 | 4 | 0 | 0 | 5.6% |
+| [Gameplay systems](#gameplay-systems) | 72 | 29 | 39 | 4 | 0 | 0 | 5.6% |
 
 ## Where to help
 
@@ -30,20 +30,20 @@ Open rows are missing or partial headline rows (the first summary line of each d
 
 Add a `[[claim]]` to [claims.toml](claims.toml) in your first pull request for the area: `area`, `owner` (your `@github-handle`), `since` (the date), `domain`, and the `families`, `ids` or id `prefixes` you are taking, and `change` (the OpenSpec change doing the work, if any); remove it when you stop or when the change is archived. `parity check` rejects unknown families or ids and claims that overlap, so talk to the owner of a claimed area before working inside it. The rest of the workflow is in [CONTRIBUTING.md](../../CONTRIBUTING.md).
 
-**Entities**: 60 open rows free, 52 claimed.
+**Entities**: 58 open rows free, 42 claimed.
 
 | Free family | Open | Missing | Partial |
 |---|---:|---:|---:|
-| passive (part claimed) | 20 | 20 | 0 |
+| passive (part claimed) | 19 | 19 | 0 |
 | object | 16 | 15 | 1 |
-| projectile | 14 | 13 | 1 |
+| projectile | 13 | 12 | 1 |
 | built_in | 4 | 4 | 0 |
 | village | 4 | 4 | 0 |
 | boss | 2 | 2 | 0 |
 
 | Claimed area | Claimed by | Since | Open |
 |---|---|---|---:|
-| Mobs: hostile, tameable and aquatic (with dolphins, turtles, axolotls and bats) | lane ENT | 2026-10-29 | 52 |
+| Mobs: hostile, tameable and aquatic (with dolphins, turtles, axolotls and bats) | lane ENT | 2026-10-29 | 42 |
 
 **Blocks**: 240 open rows free, 168 claimed.
 
@@ -77,13 +77,12 @@ Add a `[[claim]]` to [claims.toml](claims.toml) in your first pull request for t
 |---|---|---|---:|
 | Commands | lane COMMANDS | 2026-10-29 | 43 |
 
-**Protocol**: 152 open rows free, 0 claimed.
+**Protocol**: 145 open rows free, 0 claimed.
 
 | Free family | Open | Missing | Partial |
 |---|---:|---:|---:|
-| clientbound | 90 | 75 | 15 |
-| bidirectional | 57 | 44 | 13 |
-| serverbound | 5 | 5 | 0 |
+| clientbound | 90 | 73 | 17 |
+| bidirectional | 55 | 39 | 16 |
 
 Nothing in this domain is claimed.
 
@@ -101,7 +100,7 @@ Nothing in this domain is claimed.
 | player (part claimed) | 15 | 5 | 10 |
 | world (part claimed) | 12 | 4 | 8 |
 | mobs | 10 | 8 | 2 |
-| interface | 6 | 4 | 2 |
+| interface | 6 | 3 | 3 |
 | crafting (part claimed) | 4 | 2 | 2 |
 | platform | 3 | 0 | 3 |
 
@@ -123,11 +122,11 @@ One row per vanilla actor (`minecraft:cow`): it can be spawned/summoned and is r
 | aquatic | 8 | 8 | 0 | 0 | 0 | 0 | 0.0% |
 | boss | 2 | 2 | 0 | 0 | 0 | 0 | 0.0% |
 | built_in | 9 | 4 | 0 | 0 | 2 | 3 | 33.3% |
-| hostile | 38 | 30 | 0 | 0 | 8 | 0 | 21.1% |
+| hostile | 38 | 21 | 0 | 0 | 17 | 0 | 44.7% |
 | object | 18 | 15 | 1 | 0 | 1 | 1 | 5.9% |
-| passive | 39 | 34 | 0 | 0 | 5 | 0 | 12.8% |
+| passive | 39 | 32 | 0 | 0 | 7 | 0 | 17.9% |
 | player | 1 | 0 | 0 | 1 | 0 | 0 | 100.0% |
-| projectile | 18 | 13 | 1 | 1 | 3 | 0 | 22.2% |
+| projectile | 18 | 12 | 1 | 2 | 3 | 0 | 27.8% |
 | village | 4 | 4 | 0 | 0 | 0 | 0 | 0.0% |
 
 Sub-rows by facet, most incomplete first (30 of 371):
@@ -136,34 +135,34 @@ Sub-rows by facet, most incomplete first (30 of 371):
 |---|---:|---:|---:|---:|---:|---:|---:|
 | pushable_by_block | 117 | 2 | 115 | 0 | 0 | 0 | 0.0% |
 | conditional_bandwidth_optimization | 116 | 98 | 12 | 0 | 5 | 1 | 4.3% |
-| physics | 125 | 0 | 107 | 13 | 4 | 1 | 13.7% |
-| type_family | 124 | 1 | 105 | 17 | 0 | 1 | 13.8% |
-| collision_box | 124 | 0 | 105 | 10 | 8 | 1 | 14.6% |
-| pushable_by_entity | 109 | 0 | 97 | 12 | 0 | 0 | 11.0% |
+| type_family | 124 | 1 | 98 | 24 | 0 | 1 | 19.5% |
+| physics | 125 | 0 | 96 | 19 | 9 | 1 | 22.6% |
+| collision_box | 124 | 0 | 94 | 20 | 9 | 1 | 23.6% |
 | nameable | 93 | 0 | 93 | 0 | 0 | 0 | 0.0% |
+| pushable_by_entity | 109 | 0 | 92 | 17 | 0 | 0 | 15.6% |
 | breathable | 84 | 1 | 83 | 0 | 0 | 0 | 0.0% |
-| health | 94 | 1 | 83 | 6 | 3 | 1 | 9.7% |
-| is_hidden_when_invisible | 92 | 1 | 79 | 0 | 12 | 0 | 13.0% |
-| movement | 92 | 0 | 80 | 6 | 6 | 0 | 13.0% |
-| hurt_on_condition | 87 | 0 | 76 | 10 | 0 | 1 | 11.6% |
-| jump.static | 79 | 0 | 68 | 11 | 0 | 0 | 13.9% |
-| experience_reward | 80 | 0 | 67 | 13 | 0 | 0 | 16.2% |
-| loot | 78 | 0 | 65 | 12 | 0 | 1 | 15.6% |
-| despawn | 76 | 0 | 64 | 12 | 0 | 0 | 15.8% |
-| behavior.look_at_player | 69 | 0 | 58 | 11 | 0 | 0 | 15.9% |
+| is_hidden_when_invisible | 92 | 1 | 78 | 0 | 13 | 0 | 14.1% |
+| health | 94 | 1 | 76 | 12 | 4 | 1 | 17.2% |
+| movement | 92 | 0 | 72 | 11 | 9 | 0 | 21.7% |
+| hurt_on_condition | 87 | 0 | 71 | 15 | 0 | 1 | 17.4% |
+| experience_reward | 80 | 0 | 65 | 15 | 0 | 0 | 18.8% |
+| loot | 78 | 0 | 63 | 14 | 0 | 1 | 18.2% |
+| jump.static | 79 | 0 | 62 | 15 | 2 | 0 | 21.5% |
 | can_climb | 57 | 0 | 57 | 0 | 0 | 0 | 0.0% |
-| movement.basic | 65 | 0 | 56 | 9 | 0 | 0 | 13.8% |
+| despawn | 76 | 0 | 57 | 19 | 0 | 0 | 25.0% |
 | spawn_rules | 59 | 5 | 50 | 4 | 0 | 0 | 6.8% |
-| navigation.walk | 66 | 0 | 54 | 12 | 0 | 0 | 18.2% |
+| behavior.look_at_player | 69 | 0 | 54 | 15 | 0 | 0 | 21.7% |
 | behavior.random_stroll | 64 | 0 | 52 | 12 | 0 | 0 | 18.8% |
-| behavior.random_look_around | 55 | 0 | 44 | 11 | 0 | 0 | 20.0% |
+| movement.basic | 65 | 0 | 50 | 15 | 0 | 0 | 23.1% |
+| navigation.walk | 66 | 0 | 49 | 17 | 0 | 0 | 25.8% |
 | behavior.float | 49 | 0 | 43 | 6 | 0 | 0 | 12.2% |
-| behavior.nearest_attackable_target | 49 | 0 | 43 | 6 | 0 | 0 | 12.2% |
 | leashable | 43 | 38 | 5 | 0 | 0 | 0 | 0.0% |
 | leashable_to | 42 | 37 | 5 | 0 | 0 | 0 | 0.0% |
-| attack | 48 | 0 | 41 | 7 | 0 | 0 | 14.6% |
-| damage_sensor | 39 | 0 | 38 | 1 | 0 | 0 | 2.6% |
-| behavior.hurt_by_target | 42 | 0 | 37 | 5 | 0 | 0 | 11.9% |
+| behavior.random_look_around | 55 | 0 | 40 | 15 | 0 | 0 | 27.3% |
+| attack | 48 | 0 | 37 | 11 | 0 | 0 | 22.9% |
+| damage_sensor | 39 | 0 | 37 | 1 | 1 | 0 | 5.1% |
+| behavior.hurt_by_target | 42 | 0 | 36 | 6 | 0 | 0 | 14.3% |
+| rideable | 36 | 28 | 8 | 0 | 0 | 0 | 0.0% |
 
 ### Entities gaps
 
@@ -183,7 +182,7 @@ Top-level rows only; sub-row gaps are in the status file and rolled up by facet 
 
 **hostile**
 
-- missing: `minecraft:blaze`, `minecraft:bogged`, `minecraft:breeze`, `minecraft:cave_spider`, `minecraft:creaking`, `minecraft:creeper`, `minecraft:drowned`, `minecraft:elder_guardian`, `minecraft:enderman`, `minecraft:evocation_illager`, `minecraft:ghast`, `minecraft:guardian` and 18 more
+- missing: `minecraft:blaze`, `minecraft:breeze`, `minecraft:cave_spider`, `minecraft:creaking`, `minecraft:creeper`, `minecraft:elder_guardian`, `minecraft:enderman`, `minecraft:evocation_illager`, `minecraft:ghast`, `minecraft:guardian`, `minecraft:phantom`, `minecraft:piglin` and 9 more
 
 **object**
 
@@ -192,12 +191,12 @@ Top-level rows only; sub-row gaps are in the status file and rolled up by facet 
 
 **passive**
 
-- missing: `minecraft:allay`, `minecraft:armadillo`, `minecraft:axolotl`, `minecraft:bat`, `minecraft:bee`, `minecraft:camel`, `minecraft:camel_husk`, `minecraft:cat`, `minecraft:copper_golem`, `minecraft:dolphin`, `minecraft:donkey`, `minecraft:ender_crystal` and 22 more
+- missing: `minecraft:allay`, `minecraft:armadillo`, `minecraft:axolotl`, `minecraft:bee`, `minecraft:camel`, `minecraft:camel_husk`, `minecraft:cat`, `minecraft:copper_golem`, `minecraft:dolphin`, `minecraft:donkey`, `minecraft:ender_crystal`, `minecraft:fox` and 20 more
 
 **projectile**
 
 - `minecraft:xp_bottle`: AddActor/RemoveActor timing differs from BDS by a tick (see notes)
-- missing: `minecraft:breeze_wind_charge_projectile`, `minecraft:dragon_fireball`, `minecraft:ender_pearl`, `minecraft:fireball`, `minecraft:fishing_hook`, `minecraft:lingering_potion`, `minecraft:llama_spit`, `minecraft:shulker_bullet`, `minecraft:small_fireball`, `minecraft:thrown_trident`, `minecraft:wind_charge_projectile`, `minecraft:wither_skull` and 1 more
+- missing: `minecraft:breeze_wind_charge_projectile`, `minecraft:dragon_fireball`, `minecraft:ender_pearl`, `minecraft:fireball`, `minecraft:fishing_hook`, `minecraft:lingering_potion`, `minecraft:llama_spit`, `minecraft:shulker_bullet`, `minecraft:small_fireball`, `minecraft:wind_charge_projectile`, `minecraft:wither_skull`, `minecraft:wither_skull_dangerous`
 
 **village**
 
@@ -574,35 +573,31 @@ One row per 1.26.51 packet: inbound packets are handled, outbound packets are se
 
 | Family | Rows | Missing | Partial | Done | Verified | N/A | Done+verified |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| bidirectional | 80 | 44 | 13 | 15 | 2 | 6 | 23.0% |
-| clientbound | 146 | 75 | 15 | 27 | 20 | 9 | 34.3% |
-| serverbound | 5 | 5 | 0 | 0 | 0 | 0 | 0.0% |
+| bidirectional | 80 | 39 | 16 | 14 | 5 | 6 | 25.7% |
+| clientbound | 146 | 73 | 17 | 26 | 21 | 9 | 34.3% |
+| serverbound | 5 | 0 | 0 | 0 | 5 | 0 | 100.0% |
 
 ### Protocol gaps
 
 **bidirectional**
 
 - `ActorEventPacket`: sent for hurt, death, respawn and mob events; client-sent actor events (eating particles, feeding) are ignored
-- `AnimatePacket`: client swings are relayed to nearby players; the server never originates animations (critical hits, wake up, rowing)
+- `ActorPickRequestPacket`: a pick with data of a chest boat or chest minecart adds its 27 slots as user data; unastar cannot spawn those actors, so the pick is ignored; the survival reach is not measured (the creative 14 blocks is used)
+- `AnimatePacket`: client swings are relayed to nearby players (other client actions are not, as BDS); the server never originates animations (critical hits, wake up, rowing)
 - `BlockActorDataPacket`: sent for containers and jukeboxes (matching the BDS chest and jukebox captures); client edits such as signs are not handled
-- `InteractPacket`: only open-inventory is handled; leave-vehicle, mouse-over and other actions are ignored
-- `InventoryTransactionPacket`: block clicks, use-on-actor and throwables handled; item use in the air (eating, bows) and release actions are ignored
-- 8 more partial rows with other gaps (see [protocol.toml](protocol.toml))
-- missing: `ActorPickRequestPacket`, `AnvilDamagePacket`, `AutomationClientConnectPacket`, `BookEditPacket`, `BossEventPacket`, `ClientCacheBlobStatusPacket`, `ClientCacheStatusPacket`, `ClientCameraAimAssistPacket`, `ClientMovementPredictionSyncPacket`, `CommandBlockUpdatePacket`, `DebugInfoPacket`, `EmoteListPacket` and 32 more
+- `BookEditPacket`: the attribute and full actor-data resend BDS sends on every use of a book on air is not sent (unastar's player actor data does not match BDS's whole list)
+- 11 more partial rows with other gaps (see [protocol.toml](protocol.toml))
+- missing: `AnvilDamagePacket`, `AutomationClientConnectPacket`, `BossEventPacket`, `ClientCacheStatusPacket`, `ClientCameraAimAssistPacket`, `ClientMovementPredictionSyncPacket`, `CommandBlockUpdatePacket`, `DebugInfoPacket`, `LecternUpdatePacket`, `MapCreateLockedCopyPacket`, `MapInfoRequestPacket`, `ModalFormResponsePacket` and 27 more
 
 **clientbound**
 
 - `SetCommandsEnabledPacket`, `SetHealthPacket`: the test compares a hand-built packet with the capture; the value and timing the server sends are not compared
-- `AddPlayerPacket`: sent to the players in send range like BDS (when and to whom are verified) with the feet position, game type and actor data of the BDS player-data capture; not preceded by a PlayerList entry (no skin)
+- `AddPlayerPacket`: sent to the players in send range like BDS (when and to whom are verified) with the feet position, game type and actor data of the BDS player-data capture and the player's abilities (protocol/relay captures); device id, build platform and held item differ from BDS
 - `BlockEventPacket`: chest lid open/close only; note blocks, pistons, bells and other block events missing
+- `ClientCacheMissResponsePacket`: always empty: unastar never sends cached chunks, so it has no blobs to answer with
 - `CompletedUsingItemPacket`: sent when food is eaten, milk, potions and ominous bottles are drunk and a crossbow finishes loading; the honey bottle and the other consumables are not compared with BDS
-- `ContainerSetDataPacket`: furnace-family progress only; brewing stands and other data-bearing containers missing
-- 9 more partial rows with other gaps (see [protocol.toml](protocol.toml))
-- missing: `AddBehaviorTreePacket`, `AddPaintingPacket`, `AddVolumeEntityPacket`, `AnimateEntityPacket`, `AwardAchievementPacket`, `CameraAimAssistActorPriorityPacket`, `CameraAimAssistPacket`, `CameraInstructionPacket`, `CameraPacket`, `CameraShakePacket`, `ChangeDimensionPacket`, `ChangeMobPropertyPacket` and 63 more
-
-**serverbound**
-
-- missing: `PartyChangedPacket`, `PartyDestinationCookieResponsePacket`, `ResourcePacksReadyForValidationPacket`, `ServerboundDataDrivenScreenClosedPacket`, `ServerboundDataStorePacket`
+- 11 more partial rows with other gaps (see [protocol.toml](protocol.toml))
+- missing: `AddBehaviorTreePacket`, `AddPaintingPacket`, `AddVolumeEntityPacket`, `AnimateEntityPacket`, `AwardAchievementPacket`, `CameraAimAssistActorPriorityPacket`, `CameraAimAssistPacket`, `CameraInstructionPacket`, `CameraPacket`, `CameraShakePacket`, `ChangeDimensionPacket`, `ChangeMobPropertyPacket` and 61 more
 
 ## World generation
 
@@ -728,7 +723,7 @@ Cross-cutting gameplay systems with no data source to enumerate them from; this 
 | Family | Rows | Missing | Partial | Done | Verified | N/A | Done+verified |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | crafting | 12 | 8 | 4 | 0 | 0 | 0 | 0.0% |
-| interface | 6 | 4 | 2 | 0 | 0 | 0 | 0.0% |
+| interface | 6 | 3 | 3 | 0 | 0 | 0 | 0.0% |
 | mobs | 10 | 8 | 2 | 0 | 0 | 0 | 0.0% |
 | performance | 2 | 0 | 2 | 0 | 0 | 0 | 0.0% |
 | platform | 6 | 0 | 3 | 3 | 0 | 0 | 50.0% |
@@ -748,8 +743,9 @@ Cross-cutting gameplay systems with no data source to enumerate them from; this 
 **interface**
 
 - `interface.chat`: plain chat is relayed (cancellable by plugins) and /tell, /me, /say and /list answer like BDS; no /tellraw, and plain chat formatting is not checked against BDS
+- `interface.player_list`: the player list, classic and persona skins and emotes match BDS; in-game skin changes (PlayerSkinPacket) and the locator bar are not implemented
 - `interface.sounds_particles`: block break/place, cracking, container, door-break and some mob sounds and particles; no PlaySound/SpawnParticleEffect, client sounds are not relayed, most actions are silent
-- missing: `interface.camera`, `interface.player_list`, `interface.scoreboard`, `interface.titles_hud`
+- missing: `interface.camera`, `interface.scoreboard`, `interface.titles_hud`
 
 **mobs**
 

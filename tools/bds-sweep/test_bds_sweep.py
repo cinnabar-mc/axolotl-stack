@@ -13,6 +13,8 @@ from unittest import mock
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import base64  # noqa: E402
+
 import authority_fixture  # noqa: E402
 import bds_runtime  # noqa: E402
 import breaking_fixture  # noqa: E402
@@ -21,17 +23,20 @@ import experience_table  # noqa: E402
 import food_table  # noqa: E402
 import capture  # noqa: E402
 import commit_fixtures  # noqa: E402
+import commit_protocol_fixtures  # noqa: E402
 import effects_fixture  # noqa: E402
 import knockback_fixture  # noqa: E402
-import replication_fixture  # noqa: E402
 import leveldb_read  # noqa: E402
 import native  # noqa: E402
+import pick_table  # noqa: E402
 import player_fixture  # noqa: E402
 import player_relay_fixture  # noqa: E402
 import player_script  # noqa: E402
+import protocol_probe  # noqa: E402
 import pvp_fixture  # noqa: E402
 import pvp_items  # noqa: E402
 import range_fixture  # noqa: E402
+import replication_fixture  # noqa: E402
 import scenarios  # noqa: E402
 import spawn_bonus_fixture  # noqa: E402
 import subchunk_fixture  # noqa: E402
@@ -464,6 +469,76 @@ class PairCaptureTest(unittest.TestCase):
         self.assertEqual(command[command.index('--name') + 1], 'G')
         self.assertEqual(command[command.index('--settle') + 1], '4')
         self.assertNotIn('--commands', command)
+
+
+class ProtocolProbeTest(unittest.TestCase):
+    def test_client_data_images_match_their_dimensions(self):
+        for data in [protocol_probe.client_data('classic'), protocol_probe.client_data('persona'),
+                     *(protocol_probe.variant(kind) for kind in ('all-pieces', 'floats', 'odd'))]:
+            width, height = data.get('SkinImageWidth', 64), data.get('SkinImageHeight', 64)
+            self.assertEqual(len(base64.b64decode(data['SkinData'])), width * height * 4)
+            self.assertEqual(len(base64.b64decode(data['CapeData'])), 64 * 32 * 4)
+
+    def test_skin_cases_cover_every_type_once_for_pieces_and_tints(self):
+        cases = protocol_probe.skin_cases()
+        types = len(protocol_probe.PIECE_TYPES) + 1  # and persona_bogus
+        self.assertEqual(sum(name.startswith('piece-') for name in cases), types)
+        self.assertEqual(sum(name.startswith('tint-') for name in cases), types + 1)  # and bogus_type
+        self.assertNotIn('persona_hands', protocol_probe.PIECE_TYPES)
+
+    def test_extractor_command_passes_skins_and_the_blob_cache(self):
+        command = capture.extractor_command(Path('x.exe'), Path('out'), client_data=Path('skin.json'),
+                                            blob_cache=True)
+        self.assertEqual(command[command.index('--client-data') + 1], 'skin.json')
+        self.assertIn('--blob-cache', command)
+        self.assertNotIn('--input', command)
+
+    def test_extractor_command_sends_input_on_request(self):
+        command = capture.extractor_command(Path('x.exe'), Path('out'), player_input=True)
+        self.assertIn('--input', command)
+
+    def test_fixture_timelines_start_after_the_join(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            session, target = Path(tmp) / 'guest', Path(tmp) / 'out'
+            session.mkdir()
+            (session / 'manifest.json').write_text(json.dumps({'phases': {'join_end': 2}}), encoding='utf-8')
+            records = [
+                {'seq': 0, 't_ms': 0, 'dir': 's2c', 'name': 'EmotePacket', 'hex': '8a01'},
+                {'seq': 2, 't_ms': 5, 'dir': 'c2s', 'name': 'EmotePacket', 'hex': '8a01'},
+                {'seq': 3, 't_ms': 6, 'dir': 's2c', 'name': 'MoveActorDeltaPacket', 'hex': '6f'},
+            ]
+            (session / 'packets.jsonl').write_text(''.join(json.dumps(r) + '\n' for r in records),
+                                                   encoding='utf-8')
+            copied = commit_protocol_fixtures.copy_session(session, target, None, False)
+            self.assertEqual(copied, 2)
+            self.assertTrue((target / '00000-EmotePacket.bin').exists())
+            self.assertTrue((target / 'sent' / '00002-EmotePacket.bin').exists())
+            timeline = json.loads((target / 'timeline.json').read_text(encoding='utf-8'))
+            self.assertEqual([entry[0] for entry in timeline], [2, 3])
+
+    def test_sent_sizes_replace_the_sent_packets(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            session, target = Path(tmp) / 'command', Path(tmp) / 'out'
+            session.mkdir()
+            records = [
+                {'seq': 1, 't_ms': 0, 'dir': 'c2s', 'name': 'CommandRequestPacket', 'hex': '4d0102'},
+                {'seq': 2, 't_ms': 1, 'dir': 's2c', 'name': 'PacketViolationWarningPacket', 'hex': '9c01'},
+            ]
+            (session / 'packets.jsonl').write_text(''.join(json.dumps(r) + '\n' for r in records),
+                                                   encoding='utf-8')
+            copied = commit_protocol_fixtures.copy_session(session, target, None, False, sent_sizes=True)
+            self.assertEqual(copied, 1)
+            self.assertFalse((target / 'sent').exists())
+            sizes = json.loads((target / 'sent.json').read_text(encoding='utf-8'))
+            self.assertEqual(sizes, [[1, 'CommandRequestPacket', 3]])
+
+    def test_size_commands_have_the_exact_byte_length(self):
+        for length in (480, 507, 508, 540):
+            for fill in ('a', 'é'):
+                self.assertEqual(len(protocol_probe.say(length, fill).encode()), length)
+        scripts = protocol_probe.size_scripts()
+        self.assertIn('!command-request ' + 'r' * 40 + ' say hi', scripts['request-id'])
+        self.assertTrue(all(script.startswith(('!wait', '/gamerule')) for script in scripts.values()))
 
 
 class PlayerScript(unittest.TestCase):
@@ -911,6 +986,165 @@ class EffectTrials(unittest.TestCase):
             self.assertTrue(item['frozen'])
             self.assertTrue(any('resistance 100000 4' in line for line in item['setup']))
 
+    def test_ranged_item_sets_pin_geometry_spread_damage_and_avoidance(self):
+        geometry = sweep.ranged_items(self.args('geometry'))
+        self.assertEqual(len({tuple(item['at'][:3]) for item in geometry}), len(geometry))
+        for item in geometry:
+            self.assertEqual(item['mob'], 'minecraft:' + item['key'].split('|')[0])
+            self.assertTrue(any('resistance 100000 4' in line for line in item['setup']))
+        spread = sweep.ranged_items(self.args('spread'))
+        for item in spread:
+            # Every barrier the setup places, the cleanup clears.
+            placed = [line for line in item['setup'] if line.endswith(' barrier')]
+            self.assertEqual(len(placed), 3)
+            for line in placed:
+                self.assertIn(line.replace(' barrier', ' air'), item['cleanup'])
+        damage = sweep.ranged_items(self.args('damage'))
+        for item in damage:
+            self.assertFalse(any('resistance' in line for line in item['setup']))
+            self.assertTrue(any('health_boost' in line for line in item['setup']))
+        avoid = sweep.ranged_items(self.args('avoid'))
+        for item in avoid:
+            self.assertFalse(item['frozen'])
+            self.assertTrue(any('summon minecraft:wolf' in line for line in item['setup']))
+        with self.assertRaises(SystemExit):
+            sweep.ranged_items(self.args('every'))
+
+    def test_ranged_fixture_structures_setup_and_scripted_commands(self):
+        import ranged_fixture
+        self.assertEqual(ranged_fixture.block_change('fill 0 -60 -1 1 -58 -1 barrier'),
+                         {'from': [0, -60, -1], 'to': [1, -58, -1], 'block': 'minecraft:barrier'})
+        self.assertEqual(ranged_fixture.block_change('setblock 1 -56 0 dispenser ["facing_direction"=0]'),
+                         {'from': [1, -56, 0], 'to': [1, -56, 0], 'block': 'minecraft:dispenser',
+                          'states': {'facing_direction': 0}})
+        self.assertIsNone(ranged_fixture.block_change('gamemode survival "BDSSweep"'))
+        actions = [{'t': 5, 'commands': ['replaceitem entity @e[type=minecraft:skeleton] slot.weapon.mainhand 0 '
+                                         'minecraft:air', 'event entity @e[type=minecraft:skeleton] '
+                                                          'minecraft:spring_trap']},
+                   {'t': 65, 'commands': ['tp "BDSSweep" 0.5 -60 0.5 -90 0']}]
+        self.assertEqual(ranged_fixture.scripted(actions),
+                         {'hand': [{'t': 5, 'item': None}], 'teleports': [{'t': 65, 'to': [0.5, -60.0, 0.5]}],
+                          'fired_events': [{'t': 5, 'event': 'minecraft:spring_trap'}]})
+
+    def test_silverfish_items_restore_every_block_they_place(self):
+        merge = sweep.silverfish_items(self.args('merge'))
+        self.assertEqual(len(merge), 10)
+        wake = sweep.silverfish_items(self.args('wake'))
+        for item in wake:
+            placed = [line for line in item['setup'] if line.endswith(' infested_stone')]
+            self.assertTrue(placed)
+            for line in placed:
+                self.assertIn(line.replace(' infested_stone', ' air'), item['cleanup'])
+            self.assertEqual(item['actions'][0]['t'], 40)
+        nogrief = sweep.silverfish_items(self.args('wake-nogrief'))
+        self.assertTrue(all('gamerule mobgriefing false' in item['setup'] for item in nogrief))
+        self.assertTrue(all('gamerule mobgriefing true' in item['cleanup'] for item in nogrief))
+        pits = sweep.silverfish_items(self.args('blocks'))
+        self.assertIn('silverfish|blocks-deepslate-0', [item['key'] for item in pits])
+        self.assertIn('silverfish|blocks-deepslate-x-0', [item['key'] for item in pits])
+        for item in pits + sweep.silverfish_items(self.args('pit')) + sweep.silverfish_items(self.args('griefing')):
+            self.assertIn('fill 4 -61 0 6 -58 2 air', item['cleanup'])
+        with self.assertRaises(SystemExit):
+            sweep.silverfish_items(self.args('every'))
+
+    def test_silverfish_fixture_reads_the_pit_block_and_its_states(self):
+        import silverfish_fixture
+        result = {'key': 'silverfish|blocks-deepslate-0', 'spec': {'setup': [
+            'fill 4 -61 0 6 -58 2 deepslate ["pillar_axis"="x"]', 'fill 5 -60 1 5 -59 1 air']}}
+        self.assertEqual(silverfish_fixture.setup_block(result), ('minecraft:deepslate', {'pillar_axis': 'x'}))
+        result['spec']['setup'][0] = 'fill 4 -61 0 6 -58 2 stone'
+        self.assertEqual(silverfish_fixture.setup_block(result), ('minecraft:stone', {}))
+
+    def test_creeper_fixture_reads_actor_data_by_id(self):
+        import creeper_fixture
+        entries = [{'id': 0, 'payload': {'DataItemInt64Payload': {'type_': 'Int64', 'value': 1 << 10}}},
+                   {'id': 55, 'payload': {'DataItemIntPayload': {'type_': 'Int', 'value': 29}}}]
+        self.assertEqual(creeper_fixture.data_items(entries), {0: 1 << 10, 55: 29})
+
+    def test_creeper_items_rebuild_the_floor_and_pick_items_by_name(self):
+        items = sweep.creeper_items(self.args())
+        keys = [item['key'] for item in items]
+        self.assertIn('creeper|flint', keys)
+        for item in items:
+            self.assertIn('fill -8 -61 -8 14 -61 8 grass_block', item['cleanup'])
+            self.assertIn('gamerule mobgriefing true', item['cleanup'])
+        flint = next(item for item in items if item['key'] == 'creeper|flint')
+        self.assertEqual([action['t'] for action in flint['actions'] if action.get('order') == 'interact'], [10, 20])
+        alone = next(item for item in items if item['key'] == 'creeper|flint-alone')
+        self.assertNotIn('gamemode survival "BDSSweep"', alone['setup'])
+        chosen = sweep.creeper_items(self.args('cancel,sight'))
+        self.assertEqual([item['key'] for item in chosen], ['creeper|cancel', 'creeper|sight'])
+        with self.assertRaises(SystemExit):
+            sweep.creeper_items(self.args('nothing'))
+
+    def test_tracked_mob_items_summon_with_their_event_and_clean_up(self):
+        bears = sweep.polar_bear_items(self.args('all'))
+        keys = [item['key'] for item in bears]
+        self.assertIn('polar_bear|stomp-22', keys)
+        self.assertIn('polar_bear|swim-push-0', keys)
+        for item in bears:
+            self.assertTrue(any(line.startswith('summon minecraft:polar_bear') for line in item['setup']))
+            self.assertEqual(item['track'], ['minecraft:polar_bear'])
+            if sweep.PEN[0] in item['setup']:
+                self.assertIn(sweep.UNPEN[0], item['cleanup'])
+        attack = next(item for item in bears if item['key'] == 'polar_bear|attack-0')
+        self.assertTrue(attack['setup'][-1].endswith('minecraft:ageable_grow_up'))
+        self.assertIn('damage @e[type=minecraft:polar_bear]', attack['actions'][1]['commands'][0])
+        bats = sweep.bat_items(self.args('room'))
+        self.assertEqual(len(bats), 4)
+        self.assertEqual(bats[0]['setup'][-1], 'summon minecraft:bat 20.5 -56 0.5 0 0')
+        self.assertEqual(bats[0]['cleanup'][-2:], sweep.UNROOM)
+        low = sweep.bat_items(self.args('low'))
+        self.assertEqual(len(low), 8)
+        self.assertEqual([action['t'] for action in low[0]['actions']], [20, 120, 220, 320])
+        self.assertEqual(low[0]['cleanup'][-2:], sweep.UNLOW)
+        canopy = sweep.bat_items(self.args('canopy'))
+        self.assertEqual(canopy[1]['actions'][0]['commands'], ['tp "BDSSweep" 18.4 -60 0.5'])
+        tadpoles = sweep.tadpole_items(self.args('all'))
+        self.assertEqual(len(tadpoles), 7)
+        # The tadpole's grow-up event has no namespace.
+        self.assertEqual(tadpoles[-1]['setup'][-1], 'summon minecraft:tadpole 11.5 -57 0.5 90 0 ageable_grow_up')
+        self.assertEqual(tadpoles[-1]['track'], ['minecraft:tadpole', 'minecraft:frog'])
+        vexes = sweep.vex_items(self.args('all'))
+        self.assertEqual([item['key'] for item in vexes],
+                         ['vex|idle-0', 'vex|idle-1'] + [f'vex|charge-{n}' for n in range(6)]
+                         + ['vex|look-0', 'vex|look-1', 'vex|decay-0', 'vex|decay-1'])
+        self.assertTrue(vexes[-1]['setup'][-1].endswith('minecraft:add_damage_timer'))
+        # The player follows the decaying vex so it stays in view.
+        self.assertEqual(vexes[-1]['actions'][0]['commands'],
+                         ['execute at @e[type=minecraft:vex] run tp "BDSSweep" ~ ~4 ~'])
+        goats = sweep.goat_items(self.args('all'))
+        self.assertEqual(len(goats), 19)
+        self.assertEqual(goats[0]['actions'][0]['commands'][-1],
+                         'event entity @e[type=minecraft:goat] minecraft:born_screamer')
+        self.assertEqual(sweep.goat_items(self.args('horn'))[0]['track'], ['minecraft:goat', 'minecraft:item'])
+        self.assertEqual(len(sweep.ghast_items(self.args('all'))), 2)
+        with self.assertRaises(SystemExit):
+            sweep.polar_bear_items(self.args('nothing'))
+
+    def test_mob_fixture_reads_flag_words_and_flag_changes(self):
+        import mob_fixture
+        word = {'id': 0, 'payload': {'DataItemInt64Payload': {'type_': 'Int64', 'value': 1 << 39}}}
+        self.assertEqual(mob_fixture.flags_of(mob_fixture.data_items([word]), None), 1 << 39)
+        rows = [(3, {'name': 'AddActorPacket', 'packet': {
+                    'target_runtime_id': {'actor_runtime_id': 7}, 'target_actor_id': {'actor_unique_id': -7},
+                    'actor_data': {'data': [{'id': 0, 'payload': {'DataItemInt64Payload': {'value': 0}}}]}}}),
+                (5, {'name': 'SetActorDataPacket', 'packet': {
+                    'target_runtime_id': {'actor_runtime_id': 7}, 'actor_data': {'data': [word]}}}),
+                (6, {'name': 'ActorEventPacket', 'packet': {
+                    'target_runtime_id': {'actor_runtime_id': 7}, 'event_id': 'StartAttacking', 'data': 0}})]
+        out = mob_fixture.actor_packets(rows, {7}, {})[7]
+        self.assertEqual(out['added'], 3)
+        self.assertEqual(out['flag_changes'], [{'t': 5, 'flag': 39, 'set': True}])
+        self.assertEqual(out['events'], [{'t': 6, 'event': 'StartAttacking', 'data': 0}])
+        # An AddActor before the item's first mark still gives the flags
+        # its changes are counted from.
+        adds = mob_fixture.added_flags([rows[0][1]])
+        self.assertEqual(adds, {7: 0})
+        late = mob_fixture.actor_packets(rows[1:], {7}, adds)[7]
+        self.assertEqual(late['flags'], '0')
+        self.assertEqual(late['flag_changes'], [{'t': 5, 'flag': 39, 'set': True}])
+
     def test_mooshroom_items_interact_twice_with_the_held_item(self):
         items = sweep.mooshroom_items(self.args())
         self.assertEqual([item['hold']['item'] for item in items],
@@ -1050,6 +1284,47 @@ class PvpFixture(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+class PickTable(unittest.TestCase):
+    @staticmethod
+    def slot(item_id, user_data='00000000000000000000'):
+        return {'id': item_id, 'auxvalue': 0, 'user_data_buffer': user_data}
+
+    def test_summons_become_items_data_and_actors_without_one(self):
+        def row(name, packet):
+            return {'name': name, 'packet': packet}
+        empty = {'id': 0, 'auxvalue': 0, 'user_data_buffer': ''}
+        rows = [
+            row('CommandRequestPacket', {'command': '/summon cow ~ ~ ~3'}),
+            row('AddActorPacket', {'actor_type': 'minecraft:cow'}),
+            row('ActorPickRequestPacket', {'with_data': False}),
+            row('GuiDataPickItemPacket', {'item_name': 'item.spawn_egg.entity.cow.name', 'slot': 0}),
+            row('InventoryContentPacket', {'container_id': 0, 'slots': [self.slot(440)]}),
+            row('ActorPickRequestPacket', {'with_data': True}),
+            row('GuiDataPickItemPacket', {'item_name': 'item.spawn_egg.entity.cow.name', 'slot': 0}),
+            row('InventoryContentPacket', {'container_id': 0, 'slots': [self.slot(440)]}),
+            row('CommandRequestPacket', {'command': '/summon chest_minecart ~ ~ ~3'}),
+            row('AddActorPacket', {'actor_type': 'minecraft:chest_minecart'}),
+            row('ActorPickRequestPacket', {'with_data': False}),
+            row('GuiDataPickItemPacket', {'item_name': 'item.chest_minecart.name', 'slot': 0}),
+            row('InventoryContentPacket', {'container_id': 0, 'slots': [self.slot(9)]}),
+            row('ActorPickRequestPacket', {'with_data': True}),
+            row('GuiDataPickItemPacket', {'item_name': 'item.chest_minecart.name', 'slot': 1}),
+            row('InventoryContentPacket', {'container_id': 0, 'slots': [self.slot(9), self.slot(9, 'ffff')]}),
+            row('CommandRequestPacket', {'command': '/summon tnt ~ ~ ~3'}),
+            row('AddActorPacket', {'actor_type': 'minecraft:tnt'}),
+            row('ActorPickRequestPacket', {'with_data': False}),
+            row('InventoryContentPacket', {'container_id': 120, 'slots': [empty]}),
+            row('CommandRequestPacket', {'command': '/summon painting ~ ~ ~3'}),
+        ]
+        actors, no_item = pick_table.table(pick_table.summons(rows),
+                                           {440: 'minecraft:cow_spawn_egg', 9: 'minecraft:chest_minecart'})
+        self.assertEqual(actors['minecraft:cow'],
+                         {'item': 'minecraft:cow_spawn_egg', 'aux': 0, 'name': 'item.spawn_egg.entity.cow.name'})
+        self.assertEqual(actors['minecraft:chest_minecart']['item'], 'minecraft:chest_minecart')
+        self.assertEqual(actors['minecraft:chest_minecart']['data_user_data'], 'ffff')
+        self.assertEqual(no_item, ['minecraft:tnt'])
+
 
 
 class PlacementCases(unittest.TestCase):
