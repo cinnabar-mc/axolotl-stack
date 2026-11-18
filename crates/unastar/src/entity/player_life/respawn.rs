@@ -32,17 +32,60 @@ use crate::entity::mob::state::LastHurt;
 #[derive(Resource, Debug, Clone, Copy, PartialEq)]
 pub struct WorldSpawn(pub DVec3);
 
-/// A player's own respawn point (`/spawnpoint`), in the same `Position`
-/// convention as [`WorldSpawn`]; players without one respawn at the world
-/// spawn.
+/// A player's own respawn point (`/spawnpoint`, or a bed), in the same
+/// `Position` convention as [`WorldSpawn`]; players without one respawn at
+/// the world spawn.
 #[derive(Component, Debug, Clone, Copy, PartialEq)]
-pub struct PlayerSpawnPoint(pub DVec3);
+pub struct PlayerSpawnPoint {
+    pub position: DVec3,
+    /// The head of the bed that set the point: a point set by a bed is
+    /// dropped when the player respawns and the bed is gone
+    /// ([`super::sleep::check_spawn_bed`]).
+    pub bed: Option<glam::IVec3>,
+}
+
+impl PlayerSpawnPoint {
+    /// A point `/spawnpoint` set.
+    pub const fn at(position: DVec3) -> Self {
+        Self {
+            position,
+            bed: None,
+        }
+    }
+}
+
+/// A player standing in the middle of `block`, in the `Position` convention.
+pub fn standing_in(block: glam::IVec3) -> DVec3 {
+    block.as_dvec3() + DVec3::new(0.5, crate::entity::PLAYER_EYE_HEIGHT, 0.5)
+}
+
+/// `SetSpawnPosition` for `block` in the overworld: `bed` is the head of
+/// the bed that set a player's point (BDS 1.26.51 sleeping captures), all
+/// `i32::MIN` otherwise (`/spawnpoint`, `/setworldspawn`).
+pub fn spawn_position_packet(
+    kind: jolyne::valentine::types::EnumsSpawnPositionType,
+    block: glam::IVec3,
+    bed: Option<glam::IVec3>,
+) -> jolyne::valentine::SetSpawnPositionPacket {
+    use jolyne::valentine::types::{BlockPos, DimensionType};
+    let pos = |at: glam::IVec3| BlockPos {
+        x: at.x,
+        y: at.y,
+        z: at.z,
+    };
+    jolyne::valentine::SetSpawnPositionPacket {
+        spawn_position_type: kind,
+        block_position: pos(block),
+        dimensiontype: DimensionType { value: 0 },
+        spawn_block_pos: pos(bed.unwrap_or(glam::IVec3::splat(i32::MIN))),
+    }
+}
 
 /// Where `player` respawns: its own spawn point, else the world spawn.
 pub fn respawn_position(world: &World, player: Entity) -> DVec3 {
     world
         .get::<PlayerSpawnPoint>(player)
-        .map_or_else(|| world.resource::<WorldSpawn>().0, |point| point.0)
+        .map_or_else(|| world.resource::<WorldSpawn>().0, |point| point.position)
 }
 
 /// A player's request to respawn.
@@ -118,6 +161,7 @@ pub fn respawn(world: &mut World, player: Entity) {
     if world.get::<Dead>(player).is_none() {
         return;
     }
+    super::sleep::check_spawn_bed(world, player);
     let spawn = respawn_position(world, player);
     {
         let mut entity = world.entity_mut(player);

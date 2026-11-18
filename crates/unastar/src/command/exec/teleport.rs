@@ -348,6 +348,12 @@ pub(super) fn move_entity_as(
         }
         return;
     }
+    // A teleport wakes a sleeper (BDS 1.26.51 sleeping captures).
+    crate::entity::player_life::sleep::wake(
+        world,
+        entity,
+        crate::entity::player_life::sleep::WakeCause::Moved,
+    );
     let eye = position + DVec3::Y * PLAYER_EYE_HEIGHT;
     if let Some(mut current) = world.get_mut::<Position>(entity) {
         current.0 = eye;

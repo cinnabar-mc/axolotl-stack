@@ -1,0 +1,156 @@
+# Sleeping in a bed against BDS: `python tools/bds-sweep/script.py
+# tools/bds-sweep/scripts/sleeping.txt --out DIR` (plain BDS, flat world, an
+# operator). The bed lies along +x: foot (1,-60,0), head (2,-60,0)
+# (direction 3; `/setblock` of the half at (2,-60,0) places the head there
+# and the foot west of it). The player stands at (0.5,-60,0.5) facing east
+# and clicks the top face (1) of the head or the foot with an empty hand. Every
+# scenario starts from the player back at its spot, the bed free and clear
+# weather. Ticks are the client's input ticks.
+21 /gamerule domobspawning false
+22 /gamerule randomtickspeed 0
+23 /gamerule doweathercycle false
+24 /gamerule dodaylightcycle true
+25 /time set 6000
+26 /fill -12 -61 -12 16 -61 12 stone
+27 /fill -12 -60 -12 16 -50 12 air
+28 /gamemode survival @s
+29 /clear @s
+30 /tp @s 0.5 -60 0.5 -90 0
+31 /setblock 2 -60 0 bed ["direction"=3,"head_piece_bit"=false]
+33 /testforblock 1 -60 0 bed ["direction"=3,"head_piece_bit"=false,"occupied_bit"=false]
+34 /testforblock 2 -60 0 bed ["direction"=3,"head_piece_bit"=true,"occupied_bit"=false]
+
+# 1. Day: the head, then the foot, at noon; then the head from south of
+#    it and the foot from north-west of it (the respawn point each sets).
+40 use-on 2 -60 0 1
+46 use-on 1 -60 0 1
+50 /tp @s 2.5 -60 2.5 180 0
+52 use-on 2 -60 0 1
+54 /tp @s -0.5 -60 -1.5 -90 0
+56 use-on 1 -60 0 1
+58 /tp @s 0.5 -60 0.5 -90 0
+
+# 2. Where the night starts and ends for a bed: one click at each time,
+#    leaving the bed at once when it worked.
+60 /time set 12000
+62 use-on 2 -60 0 1
+72 stop-sleeping
+80 /tp @s 0.5 -60 0.5 -90 0
+90 /time set 12541
+92 use-on 2 -60 0 1
+102 stop-sleeping
+110 /tp @s 0.5 -60 0.5 -90 0
+120 /time set 12542
+122 use-on 2 -60 0 1
+132 stop-sleeping
+140 /tp @s 0.5 -60 0.5 -90 0
+150 /time set 23458
+152 use-on 2 -60 0 1
+162 stop-sleeping
+170 /tp @s 0.5 -60 0.5 -90 0
+180 /time set 23459
+182 use-on 2 -60 0 1
+192 stop-sleeping
+200 /tp @s 0.5 -60 0.5 -90 0
+
+# 3. A whole night through: clicking the foot at 13000, then waiting for
+#    the morning.
+210 /time set 13000
+212 use-on 1 -60 0 1
+400 /tp @s 0.5 -60 0.5 -90 0
+401 /time query daytime
+
+# 4. A thunderstorm at noon: sleeping allowed? Slept through, what happens
+#    to the weather and the time?
+410 /weather thunder
+412 /time set 6000
+420 use-on 2 -60 0 1
+600 /tp @s 0.5 -60 0.5 -90 0
+601 /time query daytime
+602 /weather query
+605 /weather clear
+
+# 5. Rain at noon and rain at 12100.
+610 /weather rain
+612 /time set 6000
+620 use-on 2 -60 0 1
+630 stop-sleeping
+640 /tp @s 0.5 -60 0.5 -90 0
+650 /time set 12100
+652 use-on 2 -60 0 1
+662 stop-sleeping
+670 /tp @s 0.5 -60 0.5 -90 0
+680 /weather clear
+
+# 6. Leaving early: asleep for 40 inputs, then the wake-up button.
+690 /time set 14000
+692 use-on 2 -60 0 1
+732 stop-sleeping
+742 /tp @s 0.5 -60 0.5 -90 0
+743 /time query daytime
+
+# 7. Too far: clicking from 3, 4, 5 and 6 blocks west of the foot.
+750 /time set 14000
+751 /tp @s -1.5 -60 0.5 -90 0
+752 use-on 1 -60 0 1
+762 stop-sleeping
+770 /tp @s -2.5 -60 0.5 -90 0
+772 use-on 1 -60 0 1
+782 stop-sleeping
+790 /tp @s -3.5 -60 0.5 -90 0
+792 use-on 1 -60 0 1
+802 stop-sleeping
+810 /tp @s -5.5 -60 0.5 -90 0
+812 use-on 1 -60 0 1
+822 stop-sleeping
+830 /tp @s 0.5 -60 0.5 -90 0
+
+# 8. A block on the head (stone above it), then removed.
+840 /setblock 2 -59 0 stone
+842 use-on 2 -60 0 1
+852 stop-sleeping
+860 /tp @s 0.5 -60 0.5 -90 0
+861 /setblock 2 -59 0 air
+
+# 9. Monsters: easy difficulty, a zombie in a glass box 6 blocks east of
+#    the head, then one 10 blocks east, then one 5 blocks below.
+870 /difficulty easy
+871 /time set 14000
+872 /fill 8 -60 -1 10 -57 1 glass hollow
+873 /summon zombie 9 -60 0
+880 use-on 2 -60 0 1
+890 stop-sleeping
+900 /tp @s 0.5 -60 0.5 -90 0
+901 /kill @e[type=zombie]
+902 /fill 8 -60 -1 10 -57 1 air
+903 /fill 12 -60 -1 14 -57 1 glass hollow
+904 /summon zombie 13 -60 0
+910 use-on 2 -60 0 1
+920 stop-sleeping
+930 /tp @s 0.5 -60 0.5 -90 0
+931 /kill @e[type=zombie]
+932 /fill 12 -60 -1 14 -57 1 air
+933 /difficulty peaceful
+
+# 10. The daylight cycle off: a whole night through at 14000.
+940 /gamerule dodaylightcycle false
+941 /time set 14000
+942 use-on 2 -60 0 1
+1100 /tp @s 0.5 -60 0.5 -90 0
+1101 /time query daytime
+1102 /gamerule dodaylightcycle true
+
+# 11. Creative: a whole night through.
+1110 /gamemode creative @s
+1111 /time set 14000
+1112 use-on 2 -60 0 1
+1280 /tp @s 0.5 -60 0.5 -90 0
+1281 /time query daytime
+1282 /gamemode survival @s
+
+# 12. The bed broken under the sleeper.
+1290 /time set 14000
+1292 use-on 2 -60 0 1
+1320 /setblock 1 -60 0 air
+1340 /tp @s 0.5 -60 0.5 -90 0
+1350 exit

@@ -1,0 +1,3 @@
+# The observer of sleeping-2.txt: it only follows the orders that script
+# sends it, and leaves after the player's script ended.
+1400 exit

@@ -39,7 +39,7 @@ mod packet_domains;
 pub(crate) mod packet_queues;
 mod packets;
 mod place_sounds;
-mod placement;
+pub(crate) mod placement;
 #[cfg(test)]
 mod placement_capture_tests;
 mod plugins;
@@ -170,7 +170,8 @@ pub(crate) fn player_record(world: &World, entity: Entity) -> Option<(uuid::Uuid
     let position = if dead {
         crate::entity::player_life::respawn::respawn_position(world, entity)
     } else {
-        world.get::<Position>(entity)?.0
+        crate::entity::player_life::sleep::saved_eye(world, entity)
+            .unwrap_or(world.get::<Position>(entity)?.0)
     };
     let rotation = world.get::<Rotation>(entity)?;
     let mut health = world.get::<Health>(entity).cloned().unwrap_or_default();
@@ -202,7 +203,11 @@ pub(crate) fn player_record(world: &World, entity: Entity) -> Option<(uuid::Uuid
             experience_progress: experience.progress,
             spawn_point: world
                 .get::<crate::entity::player_life::respawn::PlayerSpawnPoint>(entity)
-                .map(|point| point.0.to_array()),
+                .map(|point| point.position.to_array()),
+            spawn_bed: world
+                .get::<crate::entity::player_life::respawn::PlayerSpawnPoint>(entity)
+                .and_then(|point| point.bed)
+                .map(|bed| bed.to_array()),
             tags: world
                 .get::<crate::entity::components::Tags>(entity)
                 .map(|tags| tags.0.clone())
@@ -808,6 +813,16 @@ impl GameServer {
                 .in_set(EntityLogicSet)
                 .after(crate::entity::mob::life::despawn::despawn_mobs_by_filters),
         );
+        // Sleepers: leaving beds, beds gone, the night skip (exclusive: edits
+        // chunks), after the clock and this tick's block changes.
+        ecs.schedule_mut().add_systems(
+            crate::entity::player_life::sleep::tick_sleepers
+                .in_set(EntityLogicSet)
+                .after(crate::world::clock::tick_world_clock)
+                .after(plugins::process_plugin_actions)
+                .after(block_use::tick_scheduled_blocks)
+                .before(tick_block_breaking),
+        );
         // The world clock advances before anything reads the time of day.
         ecs.schedule_mut().add_systems(
             crate::world::clock::tick_world_clock
@@ -1085,11 +1100,12 @@ impl GameServer {
         let mut health = crate::entity::components::Health::default();
         let mut hunger = crate::entity::components::Hunger::default();
         let mut experience = crate::entity::components::Experience::default();
-        let (spawn_point, tags, unlocked_recipes) = saved_data
+        let (spawn_point, spawn_bed, tags, unlocked_recipes) = saved_data
             .as_mut()
             .map(|saved| {
                 (
                     saved.spawn_point,
+                    saved.spawn_bed,
                     std::mem::take(&mut saved.tags),
                     saved.unlocked_recipes.take(),
                 )
@@ -1214,9 +1230,10 @@ impl GameServer {
         // The `/spawnpoint`, `/tag` and `/recipe` state saved with the player.
         let mut player = self.ecs.world_mut().entity_mut(entity);
         if let Some(point) = spawn_point {
-            player.insert(crate::entity::player_life::respawn::PlayerSpawnPoint(
-                glam::DVec3::from_array(point),
-            ));
+            player.insert(crate::entity::player_life::respawn::PlayerSpawnPoint {
+                position: glam::DVec3::from_array(point),
+                bed: spawn_bed.map(glam::IVec3::from_array),
+            });
         }
         if !tags.is_empty() {
             player.insert(crate::entity::components::Tags(tags));
@@ -1285,6 +1302,12 @@ impl GameServer {
             }
         };
         if let Some(entity) = entity {
+            // A sleeper leaving frees its bed.
+            crate::entity::player_life::sleep::wake(
+                self.ecs.world_mut(),
+                entity,
+                crate::entity::player_life::sleep::WakeCause::Gone,
+            );
             self.announce_leave(entity);
             // Every leave path (disconnect packet, network drop) ends here, so
             // plugins see exactly one `on-player-quit` per online player.
@@ -2470,7 +2493,7 @@ mod saved_inventory_validation_tests {
         let world = server.ecs.world_mut();
         let recipes = vec!["minecraft:crafting_table".to_owned()];
         world.entity_mut(entity).insert((
-            PlayerSpawnPoint(glam::DVec3::new(3.5, 71.62, -2.5)),
+            PlayerSpawnPoint::at(glam::DVec3::new(3.5, 71.62, -2.5)),
             Tags(vec!["second".into(), "first".into()]),
             UnlockedRecipes(recipes.clone()),
         ));
@@ -2483,7 +2506,7 @@ mod saved_inventory_validation_tests {
         let world = server.ecs.world();
         assert_eq!(
             world.get::<PlayerSpawnPoint>(entity),
-            Some(&PlayerSpawnPoint(glam::DVec3::new(3.5, 71.62, -2.5)))
+            Some(&PlayerSpawnPoint::at(glam::DVec3::new(3.5, 71.62, -2.5)))
         );
         assert_eq!(
             world.get::<Tags>(entity).map(|t| t.0.clone()),

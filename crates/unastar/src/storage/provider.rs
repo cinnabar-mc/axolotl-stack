@@ -126,6 +126,10 @@ pub struct PlayerData {
     /// convention (eyes above the feet). Missing: the world spawn.
     #[serde(default)]
     pub spawn_point: Option<[f64; 3]>,
+    /// The head of the bed that set `spawn_point`, if a bed did. Missing
+    /// on points set by `/spawnpoint` and on records saved before beds.
+    #[serde(default)]
+    pub spawn_bed: Option<[i32; 3]>,
     /// `/tag` tags, in the order they were added.
     #[serde(default)]
     pub tags: Vec<String>,
@@ -162,6 +166,7 @@ impl Default for PlayerData {
             exhaustion: 0.0,
             experience_progress: 0.0,
             spawn_point: None,
+            spawn_bed: None,
             tags: Vec::new(),
             unlocked_recipes: None,
             air: default_air(),

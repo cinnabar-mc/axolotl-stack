@@ -1,0 +1,196 @@
+# Sleeping, part 2, against BDS with a second player: `python
+# tools/bds-sweep/script.py tools/bds-sweep/scripts/sleeping-2.txt --observer
+# tools/bds-sweep/scripts/sleeping-2-observer.txt --out DIR`. The observer
+# (BDSObserver) only follows the orders this script sends it with
+# `/tellraw`. Bed A: foot (1,-60,0), head (2,-60,0); bed B: foot
+# (1,-60,4), head (2,-60,4) (both direction 3, set as in sleeping.txt).
+# The player stands at (0.5,-60,0.5), the observer at (0.5,-60,4.5), both
+# facing east. Ticks are the player's input ticks.
+20 /gamerule domobspawning false
+21 /gamerule randomtickspeed 0
+22 /gamerule doweathercycle false
+23 /gamerule dodaylightcycle true
+24 /time set 6000
+25 /fill -12 -61 -12 30 -61 12 stone
+26 /fill -12 -60 -12 30 -50 12 air
+27 /gamemode survival @a
+28 /clear @s
+29 /tp @s 0.5 -60 0.5 -90 0
+30 /tp BDSObserver 0.5 -60 4.5 -90 0
+31 /setblock 2 -60 0 bed ["direction"=3,"head_piece_bit"=false]
+32 /setblock 2 -60 4 bed ["direction"=3,"head_piece_bit"=false]
+
+# 1. Two players, one asleep: the observer sleeps in bed B through 120
+#    inputs (no morning: one of two asleep), the player clicks bed B
+#    (occupied), then the observer leaves.
+40 /time set 14000
+42 /tellraw BDSObserver {"rawtext":[{"text":"bds-sweep:use-on 2 -60 4 1"}]}
+80 /tp @s 0.5 -60 3.5 -90 0
+82 use-on 2 -60 4 1
+90 /tp @s 0.5 -60 0.5 -90 0
+170 /time query daytime
+172 /tellraw BDSObserver {"rawtext":[{"text":"bds-sweep:stop-sleeping"}]}
+180 /tp BDSObserver 0.5 -60 4.5 -90 0
+
+# 2. Both asleep: the player in bed A, the observer in bed B ten inputs
+#    later; the morning comes.
+190 /time set 14000
+192 use-on 2 -60 0 1
+202 /tellraw BDSObserver {"rawtext":[{"text":"bds-sweep:use-on 2 -60 4 1"}]}
+340 /time query daytime
+341 /tp @s 0.5 -60 0.5 -90 0
+342 /tp BDSObserver 0.5 -60 4.5 -90 0
+
+# 3. playersSleepingPercentage 50: only the player sleeps.
+350 /gamerule playerssleepingpercentage 50
+351 /time set 14000
+352 use-on 2 -60 0 1
+480 /time query daytime
+481 /tp @s 0.5 -60 0.5 -90 0
+482 /gamerule playerssleepingpercentage 100
+
+# 4. Rain at night, slept through: the weather afterwards.
+490 /weather rain
+491 /time set 14000
+492 use-on 2 -60 0 1
+620 /time query daytime
+621 /weather query
+622 /tp @s 0.5 -60 0.5 -90 0
+623 /weather clear
+
+# 5. Where the night starts and ends, with the clock stopped: one click
+#    per time, leaving at once when it worked (rain fades out first).
+640 /gamerule dodaylightcycle false
+641 /time set 12540
+642 use-on 2 -60 0 1
+645 stop-sleeping
+647 /tp @s 0.5 -60 0.5 -90 0
+651 /time set 12541
+652 use-on 2 -60 0 1
+655 stop-sleeping
+657 /tp @s 0.5 -60 0.5 -90 0
+661 /time set 12542
+662 use-on 2 -60 0 1
+665 stop-sleeping
+667 /tp @s 0.5 -60 0.5 -90 0
+671 /time set 12543
+672 use-on 2 -60 0 1
+675 stop-sleeping
+677 /tp @s 0.5 -60 0.5 -90 0
+681 /time set 23440
+682 use-on 2 -60 0 1
+685 stop-sleeping
+687 /tp @s 0.5 -60 0.5 -90 0
+691 /time set 23450
+692 use-on 2 -60 0 1
+695 stop-sleeping
+697 /tp @s 0.5 -60 0.5 -90 0
+701 /time set 23455
+702 use-on 2 -60 0 1
+705 stop-sleeping
+707 /tp @s 0.5 -60 0.5 -90 0
+711 /time set 23457
+712 use-on 2 -60 0 1
+715 stop-sleeping
+717 /tp @s 0.5 -60 0.5 -90 0
+721 /time set 23458
+722 use-on 2 -60 0 1
+725 stop-sleeping
+727 /tp @s 0.5 -60 0.5 -90 0
+731 /time set 23459
+732 use-on 2 -60 0 1
+735 stop-sleeping
+737 /tp @s 0.5 -60 0.5 -90 0
+741 /time set 23460
+742 use-on 2 -60 0 1
+745 stop-sleeping
+747 /tp @s 0.5 -60 0.5 -90 0
+751 /time set 18000
+752 /gamerule dodaylightcycle true
+
+# 6. Reach: the foot clicked from feet x -1.0, -0.5 and 0.0; the head
+#    from x -0.5 and 0.0 and from (2.5, z 3.0) and (2.5, z 3.5); the foot
+#    from y 2 above (standing on a glass pillar).
+760 /tp @s -1.0 -60 0.5 -90 0
+762 use-on 1 -60 0 1
+765 stop-sleeping
+770 /tp @s -0.5 -60 0.5 -90 0
+772 use-on 1 -60 0 1
+775 stop-sleeping
+780 /tp @s 0.0 -60 0.5 -90 0
+782 use-on 1 -60 0 1
+785 stop-sleeping
+790 /tp @s -0.5 -60 0.5 -90 0
+792 use-on 2 -60 0 1
+795 stop-sleeping
+800 /tp @s 0.0 -60 0.5 -90 0
+802 use-on 2 -60 0 1
+805 stop-sleeping
+810 /tp @s 2.5 -60 3.0 180 0
+812 use-on 2 -60 0 1
+815 stop-sleeping
+820 /tp @s 2.5 -60 3.5 180 0
+822 use-on 2 -60 0 1
+825 stop-sleeping
+830 /setblock 0 -60 0 glass
+831 /setblock 0 -59 0 glass
+832 /tp @s 0.5 -58 0.5 -90 0
+834 use-on 1 -60 0 1
+837 stop-sleeping
+840 /fill 0 -60 0 0 -59 0 air
+841 /tp @s 0.5 -60 0.5 -90 0
+
+# 7. Monsters: easy, a zombie in a glass box centred 12, 14, 16, 18 and
+#    20 blocks east of the head (x 14 ... 22), then 6 above it.
+850 /difficulty easy
+851 /time set 14000
+852 /fill 13 -60 -1 15 -57 1 glass hollow
+853 /summon zombie 14 -60 0
+856 use-on 2 -60 0 1
+859 stop-sleeping
+861 /tp @s 0.5 -60 0.5 -90 0
+862 /kill @e[type=zombie]
+863 /fill 13 -60 -1 15 -57 1 air
+864 /fill 15 -60 -1 17 -57 1 glass hollow
+865 /summon zombie 16 -60 0
+868 use-on 2 -60 0 1
+871 stop-sleeping
+873 /tp @s 0.5 -60 0.5 -90 0
+874 /kill @e[type=zombie]
+875 /fill 15 -60 -1 17 -57 1 air
+876 /fill 17 -60 -1 19 -57 1 glass hollow
+877 /summon zombie 18 -60 0
+880 use-on 2 -60 0 1
+883 stop-sleeping
+885 /tp @s 0.5 -60 0.5 -90 0
+886 /kill @e[type=zombie]
+887 /fill 17 -60 -1 19 -57 1 air
+888 /fill 19 -60 -1 21 -57 1 glass hollow
+889 /summon zombie 20 -60 0
+892 use-on 2 -60 0 1
+895 stop-sleeping
+897 /tp @s 0.5 -60 0.5 -90 0
+898 /kill @e[type=zombie]
+899 /fill 19 -60 -1 21 -57 1 air
+900 /fill 21 -60 -1 23 -57 1 glass hollow
+901 /summon zombie 22 -60 0
+904 use-on 2 -60 0 1
+907 stop-sleeping
+909 /tp @s 0.5 -60 0.5 -90 0
+910 /kill @e[type=zombie]
+911 /fill 21 -60 -1 23 -57 1 air
+912 /fill 1 -55 -1 3 -52 1 glass hollow
+913 /summon zombie 2 -54 0
+916 use-on 2 -60 0 1
+919 stop-sleeping
+921 /tp @s 0.5 -60 0.5 -90 0
+922 /kill @e[type=zombie]
+923 /fill 1 -55 -1 3 -52 1 air
+924 /difficulty peaceful
+
+# 8. Death after the bed set the spawn: respawned at the bed; then the
+#    bed broken and death again.
+930 /kill @s
+990 /setblock 2 -60 0 air
+992 /kill @s
+1050 exit

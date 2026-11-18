@@ -13,10 +13,13 @@
 //!   while invisible, `FIRE_IMMUNE` under fire resistance, and
 //!   `CAN_SHOW_NAME` once an invisibility has ended;
 //! - 7, the air supply (`breath`);
+//! - 26, the player flags: bit 1 while asleep; 28, the head of the bed it
+//!   last lay in; 133, where it was when it lay down (`super::sleep`);
 //! - 53 and 54, the box: 0.6 × 1.8 standing, 1.49 tall sneaking, 0.6 tall
 //!   swimming, gliding or crawling (a block's collision box is in the
-//!   standing box but not in the crawling one) and 0.2 × 0.2 dead;
-//! - 92, the second flag word: `HIDDEN_WHEN_INVISIBLE` and
+//!   standing box but not in the crawling one) and 0.2 × 0.2 dead or
+//!   asleep;
+//! - 92, the second flag word: `SLEEPING` while asleep, `HIDDEN_WHEN_INVISIBLE` and
 //!   `PUSH_TOWARDS_CLOSEST_SPACE`, `CRAWLING`, `BLOCKING` while sneaking and
 //!   `TRANSITION_BLOCKING` from the first sneak on;
 //! - 127, 128 and 129: the block and dimension of the last death and whether
@@ -73,8 +76,10 @@ const STANDING_HEIGHT: f32 = Pose::Standing.height();
 const SNEAKING_HEIGHT: f32 = Pose::Sneaking.height();
 /// Height of a crawling, swimming or gliding player's box.
 const CRAWLING_HEIGHT: f32 = Pose::Low.height();
-/// Width and height of a dead player's box.
+/// Width and height of a dead player's box, and of a sleeping player's.
 const DEAD_SIZE: f32 = 0.2;
+/// Key 26's bit of a sleeping player (BDS 1.26.51 sleeping captures).
+pub const PLAYER_FLAG_SLEEPING: i8 = 1 << 1;
 /// The air supply a player's actor data starts with (keys 7 and 42).
 pub(crate) const FULL_AIR: i16 = 300;
 
@@ -102,6 +107,12 @@ pub struct Synced {
     pub death_pos: IVec3,
     pub death_dimension: i32,
     pub has_died: bool,
+    /// Key 26: [`PLAYER_FLAG_SLEEPING`] while asleep.
+    pub player_flags: i8,
+    /// Key 28: the head of the bed the player last lay in.
+    pub bed: IVec3,
+    /// Key 133: where the player was when it last lay down.
+    pub entered_bed: [f32; 3],
 }
 
 impl Synced {
@@ -117,6 +128,9 @@ impl Synced {
             death_pos: IVec3::ZERO,
             death_dimension: 0,
             has_died: false,
+            player_flags: 0,
+            bed: IVec3::ZERO,
+            entered_bed: [0.0; 3],
         }
     }
 }
@@ -132,6 +146,10 @@ pub struct PlayerActorData {
     pub death_pos: IVec3,
     pub death_dimension: i32,
     pub has_died: bool,
+    /// Keys 28 and 133: the head of the bed the player last lay in and
+    /// where it was then (its eye position); they stay after it wakes.
+    pub bed: IVec3,
+    pub entered_bed: [f32; 3],
     /// The player was invisible: `CAN_SHOW_NAME` is set once it no longer is.
     was_invisible: bool,
     /// The player sneaked: `TRANSITION_BLOCKING` stays set.
@@ -161,6 +179,8 @@ impl PlayerActorData {
             death_pos: IVec3::ZERO,
             death_dimension: 0,
             has_died: false,
+            bed: IVec3::ZERO,
+            entered_bed: [0.0; 3],
             was_invisible: false,
             sneaked: false,
             resync: false,
@@ -190,6 +210,13 @@ impl PlayerActorData {
     /// What the player's clients last received.
     pub fn sent(&self) -> &Synced {
         &self.sent
+    }
+
+    /// Record that the player lay down in the bed with its head at `head`
+    /// from `entered` (its position as the wire carries it).
+    pub fn lay_down(&mut self, head: IVec3, entered: DVec3) {
+        self.bed = head;
+        self.entered_bed = entered.as_vec3().to_array();
     }
 
     /// Record a death at `position` (the player's eye position) in
@@ -334,7 +361,8 @@ fn current(world: &World, player: Entity, data: &PlayerActorData) -> Synced {
     let sneaking = state.sneaking;
     let sent_crawling = data.sent.flags2 & flag2(actor_flags::CRAWLING) != 0;
     let crawling = !dead && crawls(world, player).unwrap_or(sent_crawling);
-    let (width, height) = if dead {
+    let sleeping = world.get::<super::sleep::Sleeping>(player).is_some();
+    let (width, height) = if dead || sleeping {
         (DEAD_SIZE, DEAD_SIZE)
     } else if crawling || state.swimming || state.gliding {
         (WIDTH, CRAWLING_HEIGHT)
@@ -350,10 +378,18 @@ fn current(world: &World, player: Entity, data: &PlayerActorData) -> Synced {
             .map_or(FULL_AIR, |breath| breath.air),
         width,
         height,
-        flags2: player_flags2(data, sneaking, crawling),
+        flags2: player_flags2(data, sneaking, crawling)
+            | if sleeping {
+                flag2(actor_flags::SLEEPING)
+            } else {
+                0
+            },
         death_pos: data.death_pos,
         death_dimension: data.death_dimension,
         has_died: data.has_died,
+        player_flags: if sleeping { PLAYER_FLAG_SLEEPING } else { 0 },
+        bed: data.bed,
+        entered_bed: data.entered_bed,
     }
 }
 
@@ -465,6 +501,12 @@ fn changed_rows(before: &Synced, now: &Synced, keys: Keys) -> Vec<DataItemEntry>
     if !box_only && now.air != before.air {
         rows.push(short(ids::AIR_SUPPLY, now.air));
     }
+    if !box_only && now.player_flags != before.player_flags {
+        rows.push(byte(ids::PLAYER_FLAGS, now.player_flags));
+    }
+    if !box_only && now.bed != before.bed {
+        rows.push(pos(ids::BED_POSITION, now.bed));
+    }
     if with_box && now.width != before.width {
         rows.push(float(ids::RESERVED_053, now.width));
     }
@@ -482,6 +524,10 @@ fn changed_rows(before: &Synced, now: &Synced, keys: Keys) -> Vec<DataItemEntry>
     }
     if !box_only && now.has_died != before.has_died {
         rows.push(byte(ids::PLAYER_HAS_DIED, i8::from(now.has_died)));
+    }
+    if !box_only && now.entered_bed != before.entered_bed {
+        let [x, y, z] = now.entered_bed;
+        rows.push(vec3(ids::ENTER_BED_POSITION, x, y, z));
     }
     rows
 }
@@ -741,9 +787,9 @@ pub fn full_actor_data(name: &str, data: &PlayerActorData) -> Vec<DataItemEntry>
     m.set_short(ids::AIR_SUPPLY, sent.air);
     m.set_byte(ids::RESERVED_010, 0);
     m.set_byte(ids::CHARGE_AMOUNT, 0);
-    m.set_byte(ids::PLAYER_FLAGS, 0);
+    m.set_byte(ids::PLAYER_FLAGS, sent.player_flags);
     m.set_int(ids::PLAYER_INDEX, data.index);
-    m.set_payload(ids::BED_POSITION, pos(0, IVec3::ZERO).payload);
+    m.set_payload(ids::BED_POSITION, pos(0, sent.bed).payload);
     m.set_long(ids::LEASH_HOLDER, data.leash_holder);
     m.set_float(ids::RESERVED_038, 1.0);
     m.set_byte(ids::HAS_NPC, 0);
@@ -811,7 +857,8 @@ pub fn full_actor_data(name: &str, data: &PlayerActorData) -> Vec<DataItemEntry>
     );
     m.set_long(ids::VISIBLE_MOB_EFFECTS, 0);
     m.set_string(ids::FILTERED_NAME, "");
-    m.set_payload(ids::ENTER_BED_POSITION, vec3(0, 0.0, 0.0, 0.0).payload);
+    let [x, y, z] = sent.entered_bed;
+    m.set_payload(ids::ENTER_BED_POSITION, vec3(0, x, y, z).payload);
     m.set_float(ids::SEAT_THIRD_PERSON_CAMERA_RADIUS, 0.0);
     m.set_float(ids::SEAT_CAMERA_RELAX_DISTANCE_SMOOTHING, 0.0);
     m.set_int(ids::AIM_ASSIST_PRIORITY_PRESET_ID, -1);

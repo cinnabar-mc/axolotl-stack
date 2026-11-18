@@ -111,12 +111,33 @@ impl Horizontal {
     }
 
     /// The next direction clockwise seen from above (south -> west).
-    fn clockwise(self) -> Self {
+    pub(crate) fn clockwise(self) -> Self {
         match self {
             Self::South => Self::West,
             Self::West => Self::North,
             Self::North => Self::East,
             Self::East => Self::South,
+        }
+    }
+
+    /// The direction of a legacy `direction` ordinal (0 south, 1 west,
+    /// 2 north, 3 east; taken modulo 4).
+    pub(crate) fn from_legacy(direction: i32) -> Self {
+        match direction.rem_euclid(4) {
+            0 => Self::South,
+            1 => Self::West,
+            2 => Self::North,
+            _ => Self::East,
+        }
+    }
+
+    /// One block this way.
+    pub(crate) fn step(self) -> IVec3 {
+        match self {
+            Self::South => IVec3::Z,
+            Self::West => IVec3::NEG_X,
+            Self::North => IVec3::NEG_Z,
+            Self::East => IVec3::X,
         }
     }
 

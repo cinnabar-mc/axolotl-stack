@@ -132,6 +132,25 @@ impl GameRule {
     }
 }
 
+/// One of the integer game rules gameplay reads. Their values stay in
+/// [`GameRules`]' captured list; this names them without strings at the
+/// call site.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum IntGameRule {
+    /// `playersSleepingPercentage`: the share of players that must sleep
+    /// for the night to pass.
+    PlayersSleepingPercentage,
+}
+
+impl IntGameRule {
+    /// The rule's name as BDS sends it.
+    pub const fn name(self) -> &'static str {
+        match self {
+            Self::PlayersSleepingPercentage => "playersSleepingPercentage",
+        }
+    }
+}
+
 /// BDS's game rules with BDS's defaults (`unastar_data::game_rules`, the
 /// captured join `GameRulesChanged`). The rules gameplay reads are typed
 /// fields; every other captured rule keeps its value in `other`, so
@@ -220,6 +239,15 @@ impl GameRules {
             GameRule::ShowDeathMessages => self.show_death_messages,
             GameRule::FreezeDamage => self.freeze_damage,
             GameRule::Pvp => self.pvp,
+        }
+    }
+
+    /// The value of an integer rule. Every [`IntGameRule`] is a captured
+    /// BDS integer rule (checked by the rules tests).
+    pub fn int(&self, rule: IntGameRule) -> i32 {
+        match self.value(rule.name()) {
+            Some((_, GameRuleValue::Int(value))) => value,
+            other => unreachable!("{} is a captured integer rule, got {other:?}", rule.name()),
         }
     }
 

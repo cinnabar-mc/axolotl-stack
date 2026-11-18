@@ -109,9 +109,9 @@ fn respawn_and_teleport_into_a_stored_view_stay_under_the_session_queue_limit() 
     // Die and respawn far away.
     {
         let world = server.ecs.world_mut();
-        world
-            .entity_mut(player.entity)
-            .insert(unastar::entity::player_life::respawn::PlayerSpawnPoint(B));
+        world.entity_mut(player.entity).insert(
+            unastar::entity::player_life::respawn::PlayerSpawnPoint::at(B),
+        );
         assert!(unastar::entity::player_life::kill_player(
             world,
             player.entity

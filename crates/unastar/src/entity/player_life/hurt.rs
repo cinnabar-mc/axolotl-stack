@@ -200,6 +200,9 @@ pub(super) fn apply_player_hit(
         _ => damage,
     };
     let dealt = crate::entity::effects::absorbed(world, player, dealt);
+    // Damage wakes a sleeper before the hurt event (BDS 1.26.51:
+    // `sleeping-5.txt`).
+    super::sleep::wake(world, player, super::sleep::WakeCause::Woken);
     let until_tick = at + u64::from(HURT_TICKS);
 
     let (applied, dead) = {

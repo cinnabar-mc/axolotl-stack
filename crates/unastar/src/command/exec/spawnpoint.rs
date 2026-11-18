@@ -13,11 +13,12 @@
 //! spawn is not saved; a player's spawn point is saved with its player record.
 
 use crate::command::prelude::*;
-use crate::entity::PLAYER_EYE_HEIGHT;
-use crate::entity::player_life::respawn::{PlayerSpawnPoint, WorldSpawn};
+use crate::entity::player_life::respawn::{
+    PlayerSpawnPoint, WorldSpawn, spawn_position_packet, standing_in,
+};
 use crate::server::game::ServerConfigResource;
 use jolyne::valentine::SetSpawnPositionPacket;
-use jolyne::valentine::types::{BlockPos, DimensionType, EnumsSpawnPositionType};
+use jolyne::valentine::types::EnumsSpawnPositionType;
 
 /// The Overworld, the only dimension spawns can be set in.
 const OVERWORLD: i32 = 0;
@@ -58,7 +59,7 @@ pub fn run_spawnpoint(ctx: &mut CommandContext<'_>, args: SpawnPointArgs) -> Com
     for &player in &players {
         ctx.world
             .entity_mut(player)
-            .insert(PlayerSpawnPoint(standing_in(block)));
+            .insert(PlayerSpawnPoint::at(standing_in(block)));
         ctx.send(
             player,
             spawn_packet(EnumsSpawnPositionType::Playerrespawn, block),
@@ -117,32 +118,15 @@ fn dimension(world: &World) -> i32 {
         .map_or(OVERWORLD, |config| config.0.world.dimension)
 }
 
-/// A player standing in the middle of `block`, in the `Position` convention.
-fn standing_in(block: IVec3) -> DVec3 {
-    block.as_dvec3() + DVec3::new(0.5, PLAYER_EYE_HEIGHT, 0.5)
-}
-
 fn spawn_packet(kind: EnumsSpawnPositionType, block: IVec3) -> SetSpawnPositionPacket {
-    SetSpawnPositionPacket {
-        spawn_position_type: kind,
-        block_position: BlockPos {
-            x: block.x,
-            y: block.y,
-            z: block.z,
-        },
-        dimensiontype: DimensionType { value: OVERWORLD },
-        spawn_block_pos: BlockPos {
-            x: i32::MIN,
-            y: i32::MIN,
-            z: i32::MIN,
-        },
-    }
+    spawn_position_packet(kind, block, None)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::command::exec::test_support::Harness;
+    use crate::entity::PLAYER_EYE_HEIGHT;
     use crate::entity::player_life::respawn::respawn_position;
     use jolyne::valentine::McpePacketData;
 

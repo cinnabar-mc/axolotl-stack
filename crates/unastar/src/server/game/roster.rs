@@ -148,14 +148,15 @@ pub fn remove_packet(uuid: Uuid) -> PlayerListPacket {
     }
 }
 
-/// The sleeping-player event: how many players are in the Overworld and how
-/// many of them sleep. `ableToSleep` is 1 in every BDS capture, day or night.
-pub fn sleeping_players(overworld_players: i32, sleeping_players: i32) -> LevelEventGenericPacket {
+/// The sleeping-player event: how many players must sleep for the night to
+/// pass (every Overworld player while `playersSleepingPercentage` is 100;
+/// `player_life::sleep::sleepers_needed`) and how many sleep. `ableToSleep` is 1 in every BDS capture, day or night.
+pub fn sleeping_players(needed: i32, sleeping_players: i32) -> LevelEventGenericPacket {
     let mut body = BytesMut::new();
     // Network NBT compound body: int tags in name order, then TAG_End.
     for (name, value) in [
         ("ableToSleep", 1),
-        ("overworldPlayerCount", overworld_players),
+        ("overworldPlayerCount", needed),
         ("sleepingPlayerCount", sleeping_players),
     ] {
         body.put_u8(3);

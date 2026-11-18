@@ -1182,6 +1182,22 @@ of `docs/quirks/bds.md`.
 | Order: attacks after their player's input of the tick, and different players' attacks in one tick | not done | needs packets applied in BDS's order (decision 0045); ignored tests |
 | Shields, thrown tridents, mace smash, totems | not done | not measured |
 
+### Sleeping
+
+`entity/player_life/sleep.rs` is beds: the click checks, lying down, waking, where a sleeper
+stands up, the night skip and a bed's respawn point. Evidence: four scripted `bds-sweep-client`
+captures of BDS 1.26.51 (`tools/bds-sweep/scripts/sleeping*.txt`, distilled by
+`tools/bds-sweep/sleeping_fixture.py` into `entity/player_life/testdata/bds-1.26.51-sleeping.json`),
+replayed by `entity/player_life/sleep/tests.rs`; the copied oddities are the "Player / sleeping"
+rows of `docs/quirks/bds.md`.
+
+| Behaviour | Status | Evidence |
+|---|---|---|
+| Click answers: occupied, too far, the respawn point, day (with rain and lightning darkening the sky), monsters | done | 55 clicks |
+| Lying down and waking: event, actor data, the stand-up search; waking when asked, at day, on damage, by a teleport, a broken bed or leaving (the bed freed, the player saved standing) | done | 18 stand-ups, actor data of the first sleep and wake |
+| Night skip: as many sleepers as needed with 100 ticks each, `playersSleepingPercentage`, the clock to the next sunrise, the weather kept | done | 7 nights; the weather with `doWeatherCycle` on not measured |
+| Respawn at a bed's point; `tile.bed.notValid` once the bed is gone | done | death after a bed click; the respawn screen's packets differ |
+
 
 ## Plugin Isolation
 

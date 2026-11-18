@@ -129,6 +129,7 @@ pub(super) fn die(world: &mut World, player: Entity, cause: DeathCause) {
         drop_everything(world, player);
     }
     super::actor_data::died(world, player);
+    super::sleep::player_died(world, player);
     respawn::open_respawn_screen(world, player);
     if rules.do_immediate_respawn {
         respawn::respawn(world, player);

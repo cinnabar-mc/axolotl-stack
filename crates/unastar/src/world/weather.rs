@@ -126,6 +126,19 @@ impl WeatherLevels {
         };
     }
 
+    /// Levels held at `rain` and `lightning` from `tick` on (tests that
+    /// recreate a capture's weather mid-fade).
+    #[cfg(test)]
+    pub(crate) fn holding(tick: u64, rain: f32, lightning: f32) -> Self {
+        Self {
+            rain,
+            lightning,
+            since_tick: tick,
+            rain_target: rain,
+            lightning_target: lightning,
+        }
+    }
+
     /// What `/weather query` answers at `tick`.
     pub fn reported(&self, tick: u64) -> WeatherState {
         match self.at(tick) {
