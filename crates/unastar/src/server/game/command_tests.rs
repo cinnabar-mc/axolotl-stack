@@ -266,7 +266,19 @@ fn time_set_night_moves_the_clock_and_syncs_players() {
             .collect();
         assert_eq!(synced, [13_001]);
     }
-    assert_eq!(start_game(&server).level_current_time, 13_001);
+    // A joining player's StartGame carries the clock as the day cycle's
+    // stop time and the ticks the level has run as its time (both measured
+    // on BDS 1.26.51; see `world::level_data`).
+    // (The clock system publishes the tick count before the tick ends.)
+    assert_eq!(start_game(&server).settings.day_cycle_stop_time, 13_001);
+    assert_eq!(
+        start_game(&server).level_current_time + 1,
+        server
+            .ecs
+            .world()
+            .resource::<crate::ecs::resources::TickCounter>()
+            .current
+    );
 
     command(&mut server, &op, "/time query daytime");
     assert_eq!(
@@ -301,18 +313,13 @@ fn gamemode_creative_switches_mode_with_the_bds_packets() {
             McpePacketData::UpdatePlayerGameTypePacket(p)
                 if p.player_game_type == EnumsGameType::Creative
                     && p.targetplayer.actor_unique_id == 1)));
-        let abilities = packets
-            .iter()
-            .find_map(|packet| match packet {
-                McpePacketData::UpdateAbilitiesPacket(p) if p.data.target_player_raw_id == 1 => {
-                    Some(p.data.layers[0].ability_values)
-                }
-                _ => None,
-            })
-            .expect("the new abilities reach every player");
-        assert_eq!(
-            abilities & (MAY_FLY | INSTANT_BUILD),
-            MAY_FLY | INSTANT_BUILD
+        // BDS sends no abilities on a game mode change (`protocol/relay`,
+        // `protocol/abilities`): the client follows the game type.
+        assert!(
+            !packets
+                .iter()
+                .any(|packet| matches!(packet, McpePacketData::UpdateAbilitiesPacket(_))),
+            "{packets:?}"
         );
     }
     assert_eq!(
@@ -331,6 +338,26 @@ fn gamemode_creative_switches_mode_with_the_bds_packets() {
     assert!(drain(&mut other).iter().any(|packet| matches!(packet,
         McpePacketData::UpdatePlayerGameTypePacket(p)
             if p.player_game_type == EnumsGameType::Adventure && p.targetplayer.actor_unique_id == 2)));
+    // The next abilities update (here a console `/deop`) carries the
+    // creative bits.
+    crate::command::execute(
+        server.ecs.world_mut(),
+        crate::command::CommandSource::server(),
+        "/deop Op",
+    );
+    let abilities = drain(&mut other)
+        .into_iter()
+        .find_map(|packet| match packet {
+            McpePacketData::UpdateAbilitiesPacket(p) if p.data.target_player_raw_id == 1 => {
+                Some(p.data.layers[0].ability_values)
+            }
+            _ => None,
+        })
+        .expect("a deop reaches every player");
+    assert_eq!(
+        abilities & (MAY_FLY | INSTANT_BUILD),
+        MAY_FLY | INSTANT_BUILD
+    );
 }
 
 #[test]

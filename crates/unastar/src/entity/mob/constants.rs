@@ -112,7 +112,8 @@ pub const WATER_DRAG: f64 = 0.8;
 pub const LIQUID_GRAVITY: f64 = 0.02;
 /// Lava drag; provisional (the Java Edition value).
 pub const LAVA_DRAG: f64 = 0.5;
-/// Acceleration input while swimming (underwater movement attribute).
+/// Push per unit of forward input in water of a mob without an
+/// `minecraft:underwater_movement` attribute row (the native default).
 pub const WATER_MOVE_SPEED: f32 = 0.02;
 /// Native chicken wing-flap drag: travelling through air with a negative
 /// vertical velocity after gravity and drag, that velocity is multiplied by
@@ -201,6 +202,11 @@ pub const MOB_HEAD_DISGUISES: [(&str, &str); 5] = [
     ("minecraft:piglin", "minecraft:piglin_head"),
     ("minecraft:piglin_brute", "minecraft:piglin_head"),
 ];
+/// `behavior.stomp_attack`: the mob rears up (`STANDING`) this many ticks
+/// before its cooldown runs out while its target is in the no-damage range
+/// (measured: BDS 1.26.51 polar bears stood ten ticks before every hit).
+pub const STOMP_WARNING_TICKS: i32 = 10;
+
 /// `behavior.melee_box_attack` `can_spread_on_fire`: a burning attacker with
 /// an empty main hand sets the target alight with probability
 /// `U(0, 1) < this[difficulty]` (peaceful, easy, normal, hard) for
@@ -818,3 +824,171 @@ pub const PICKUP_REPATH_FAIL_TICKS: i32 = 15;
 /// Head turn speed toward the item, degrees per tick (confirmed: 30, the
 /// same both axes).
 pub const PICKUP_HEAD_TURN: f32 = 30.0;
+
+// --- Ranged attacks (`mob::ai::ranged`, `mob::combat::ranged`) ---------------------
+
+/// Held items `has_ranged_weapon` counts (measured: a BDS 1.26.51 skeleton
+/// whose hand is replaced keeps shooting with a bow only; with a crossbow,
+/// trident, snowball, stick or nothing it never shoots and its ranged goal
+/// never raises `FACING_TARGET_TO_RANGE_ATTACK`, `sweep.py ranged --items
+/// weapon`).
+pub const RANGED_WEAPONS: [&str; 1] = ["minecraft:bow"];
+/// A shot waits one tick more than its `attack_interval`: BDS 1.26.51
+/// skeletons, strays, bogged and parched shoot every 61 / 71 ticks on easy
+/// and normal and every 41 / 51 on hard (intervals 3 / 3.5 / 2 / 2.5 s),
+/// the first shot one tick later still after the target is taken
+/// (measured: `sweep.py ranged`, every difficulty).
+pub const RANGED_RELOAD_EXTRA_TICKS: i32 = 1;
+/// The projectile starts this far from the shooter's feet, horizontally,
+/// toward the target's feet (measured: the BDS 1.26.51 off-axis, diagonal
+/// and raised shots land on it to 1e-6) …
+pub const RANGED_SHOT_FORWARD: f64 = 1.0;
+/// … at this fraction of the shooter's height above its feet, plus the
+/// projectile's own `offset` (measured: arrows of the 1.9-tall skeleton
+/// family start 1.61 above the feet with the arrow's -0.1 offset).
+pub const RANGED_SHOT_EYE_RATIO: f64 = 0.9;
+/// The projectile is created at the shooter's feet with the centre of its
+/// box this far up, and only then moved to its start: its `disappeared`
+/// sound plays there (measured on the 1.9-tall skeleton family).
+pub const RANGED_SHOT_CREATED_CENTRE: f64 = 0.9;
+// A shot aims at the centre of the target's box along the drag-free
+// parabola of the projectile's power and gravity, measured from the
+// shooter's horizontal position (`combat::ranged::aim_direction`; measured:
+// BDS 1.26.51 hard shots at a pinned player 4 to 12 blocks away and up to 6
+// blocks above or below the skeleton fit it with chi²/dof 0.44 over 8
+// geometries and 121 shots).
+/// Each axis of a shot's unit direction gets a gaussian times this times
+/// the projectile's uncertainty (measured: the BDS 1.26.51 spread is
+/// 0.0070 to 0.0080 per uncertainty on easy, normal and hard, gaussian:
+/// kurtosis 3.2 over 91 shots, past the bound of a triangle draw).
+pub const RANGED_SPREAD_SCALE: f64 = 0.0075;
+/// `difficulty_randomization: multiplicative` (a mob's arrows): the speed
+/// damage multiplier is scaled by `1 + this × difficulty` (easy 1 … hard
+/// 3) …
+pub const SHOT_DAMAGE_PER_DIFFICULTY: f32 = 0.05;
+/// … plus a uniform draw within ± this (measured: 291 BDS 1.26.51 skeleton
+/// arrow hits on a pinned player, the hit damage `ceil(speed × 2 × f)`
+/// fitted by maximum likelihood: mean factor 1.035 / 1.095 / 1.155 on easy
+/// / normal / hard, uniform width 0.45; a gaussian of sd 0.13 fits 1.5 log
+/// units worse, so the shape of the draw is provisional).
+pub const SHOT_DAMAGE_SPREAD: f32 = 0.225;
+/// The tipped arrows mobs shoot whose hit was measured, by aux value
+/// (potion data value + 1): long slowness (stray), poison (bogged) and
+/// weakness (parched). Their effects are the potion's
+/// ([`potion_effects`](crate::server::game::item_use::food::potion_effects))
+/// for a [`TIPPED_ARROW_DURATION_DIVISOR`]th of its duration; a shooter
+/// with any other aux is refused.
+pub const MEASURED_TIPPED_ARROWS: [u8; 3] = [19, 26, 35];
+/// A tipped arrow's hit lasts this fraction of its potion's duration
+/// (measured: BDS 1.26.51 stray, bogged and parched hits on the sweep
+/// player sent `MobEffect` adds of 600, 112 and 225 ticks on every
+/// difficulty: 4800, 900 and 1800 divided by 8, rounded down).
+pub const TIPPED_ARROW_DURATION_DIVISOR: u32 = 8;
+/// A shot plays this unnamed sound (no actor) at the centre of the
+/// shooter's box, before the shooter's own `sound` (measured: BDS 1.26.51
+/// sends `undefined` with an empty actor identifier on every shot).
+pub const RANGED_SHOT_SOUND: &str = "undefined";
+
+// --- Silverfish (`mob::ai::silverfish`, `mob::life::infested`) ---------------------
+
+/// The merge goal tries to merge on one roll in this many per tick it may
+/// start, then draws one of the feet block's six faces (BDS 1.26.51: 101
+/// silverfish in 1 × 1 pits with five host faces waited 8.9 ticks on
+/// average; the most likely whole roll is 8, with 9 close and 10 about two
+/// standard errors off).
+pub const SILVERFISH_MERGE_ROLL: u32 = 8;
+/// Ticks from the wake-up goal's start to its first scan, and between
+/// scans (BDS 1.26.51: hurt on tick 40, blocks broke on 60, 80, 100, …).
+pub const SILVERFISH_WAKE_INTERVAL_TICKS: u32 = 20;
+/// How far the wake-up scan reaches along x and z (BDS 1.26.51: blocks 10
+/// away broke, 11 and 12 away never did).
+pub const SILVERFISH_WAKE_RANGE_XZ: i32 = 10;
+/// How far the wake-up scan reaches along y (BDS 1.26.51: 5 above broke, 6
+/// above never did).
+pub const SILVERFISH_WAKE_RANGE_Y: i32 = 5;
+/// A silverfish let out of an infested block stands at the block's corner
+/// moved this far along x (BDS 1.26.51: every released silverfish's
+/// `AddActor`).
+pub const SILVERFISH_RELEASE_OFFSET_X: f64 = -0.2;
+
+// --- Slimes and magma cubes (`mob::ai::hop`, `mob::life::split`) ------------------
+
+/// A dying slime or magma cube bigger than the smallest size leaves this
+/// many children at least and at most (BDS 1.26.51, `sweep.py slime
+/// --items split`: 18, 26 and 16 of 60 splits left 2, 3 and 4 children, and
+/// none any other number).
+pub const SPLIT_MIN_CHILDREN: u32 = 2;
+pub const SPLIT_MAX_CHILDREN: u32 = 4;
+/// Split children stand this far above the floor of the block the body
+/// ended in, at its centre on x and z (BDS 1.26.51: every child `AddActor`
+/// of the split sweeps).
+pub const SPLIT_CHILD_RISE: f64 = 0.5;
+/// A chunk's slime-chunk generator is seeded with
+/// `chunk_x × SLIME_CHUNK_SEED_MULTIPLIER ^ chunk_z`, and the chunk is a
+/// slime chunk when its first output is a multiple of
+/// [`SLIME_CHUNK_CHANCE`] (`entity::spawning::slime_chunk`; every slime of
+/// the BDS 1.26.51 `sweep.py slime-spawn` runs stood in such a chunk).
+pub const SLIME_CHUNK_SEED_MULTIPLIER: u32 = 0x1f1f_1f1f;
+pub const SLIME_CHUNK_CHANCE: u32 = 10;
+/// The slime's native spawn check passes in a slime chunk only for feet
+/// below this height (provisional: the superflat floor the spawn sweep
+/// measured is far below it; the bound itself is not measured).
+pub const SLIME_CHUNK_MAX_FEET_Y: i32 = 40;
+/// A magma cube's jump impulse grows by this per size step (`VARIANT`) above
+/// the authored `jump.static` power (BDS 1.26.51, `sweep.py slime --items
+/// hop`: first-tick rises 0.52, 0.62 and 0.82 for sizes 1, 2 and 4).
+pub const MAGMA_CUBE_JUMP_PER_SIZE: f64 = 0.1;
+/// `CLIENT_EVENT` values a slime class sends: on the tick it leaves the
+/// ground, and on the tick it lands (BDS 1.26.51: every hop of the hop
+/// sweeps; 0 in the summon).
+pub const SLIME_CLIENT_EVENT_LEFT_GROUND: i8 = 2;
+pub const SLIME_CLIENT_EVENT_LANDED: i8 = 1;
+/// The magma cube class starts with this `FALL_DAMAGE_MULTIPLIER` (BDS
+/// 1.26.51: the native magma cube summon; its definition's fall damage
+/// sensor deals none either way).
+pub const MAGMA_CUBE_FALL_DAMAGE_MULTIPLIER: f32 = 0.0;
+
+// --- Flyers (`mob::ai::fly`, the bat) -------------------------------------------
+
+/// The bat class's vertical air drag is this times the 0.91 every axis of a
+/// float-navigating flyer keeps (BDS 1.26.51, `sweep.py bat`: the bat's
+/// vertical motion kept 0.546 a tick on every tick it did not push).
+pub const BAT_FLIGHT_VERTICAL_FACTOR: f64 = 0.6;
+/// The chance per tick that a flying bat under a solid block starts resting
+/// (BDS 1.26.51, `sweep.py bat --items low`: 21 bats in a room one block
+/// tall settled after 3 to 288 ticks, and two had not after 280; the rate
+/// they fit is about 1 in 90).
+pub const BAT_REST_CHANCE: f32 = 0.01;
+/// A resting bat wakes when a player's eyes come closer than this to its
+/// feet (BDS 1.26.51, `sweep.py bat --items wake,canopy`).
+pub const BAT_WAKE_RANGE: f64 = 4.0;
+// --- The vex (`mob::ai::vex`) -----------------------------------------------
+
+/// The vex's move control pushes movement x speed multiplier x this a tick
+/// toward its point (BDS 1.26.51, `sweep.py vex`: 0.0125 while it wanders,
+/// 0.05 while it charges, with `minecraft:movement` 1).
+pub const VEX_PUSH_SCALE: f64 = 0.05;
+/// The speed multiplier of the vex's native wander (0.0125 / 0.05).
+pub const VEX_WANDER_SPEED: f64 = 0.25;
+/// The chance per tick that a vex with no point starts a wander (BDS
+/// 1.26.51: 44 waits after an arrival averaged 7.6 samples, from 1 to 35).
+pub const VEX_WANDER_CHANCE: f32 = 1.0 / 7.0;
+/// A wander point is the centre of a block within this many blocks of the
+/// vex's block on x and z (BDS 1.26.51: every measured point within 7).
+pub const VEX_WANDER_XZ: i32 = 7;
+/// ... and on y (every measured point within 5).
+pub const VEX_WANDER_Y: i32 = 5;
+/// The vex's move control lets its velocity drop to this share on the tick
+/// it arrives (BDS 1.26.51: 0.455 = 0.5 x 0.91 of the last move).
+pub const VEX_ARRIVAL_SLOWDOWN: f64 = 0.5;
+/// A charging vex steers again at its target's eyes while their feet are
+/// within this distance (3 blocks).
+pub const VEX_CHARGE_STEER_DIST: f64 = 3.0;
+/// A charging vex flies at this far below its target's eyes (BDS 1.26.51:
+/// 1.52 above a player's feet in 33 charges, `sweep.py vex --items charge`).
+pub const VEX_CHARGE_AIM_DROP: f64 = 0.1;
+
+/// The bat class starts with this `FALL_DAMAGE_MULTIPLIER` (BDS 1.26.51:
+/// the native bat summon; its definition's fall damage sensor deals none
+/// either way).
+pub const BAT_FALL_DAMAGE_MULTIPLIER: f32 = 0.0;

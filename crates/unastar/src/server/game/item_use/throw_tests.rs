@@ -36,6 +36,7 @@ use crate::entity::projectile::potion::{splash_colour, splash_factor};
 use crate::entity::xp_orb::orb_values;
 use crate::item::test_support::stack;
 use crate::server::game::capture_replay::{BDS_PLAYER, Record, Replay, SESSION, records};
+use crate::world::rules::GameRules;
 
 const BDS: &str = include_str!("testdata/bds-throwables.jsonl");
 const SPLASH: &str = include_str!("testdata/bds-splash-potions.jsonl");
@@ -290,6 +291,8 @@ fn throwables_answer_like_bds() {
     let records = records(BDS);
     let mut h = Replay::new();
     let player = h.player;
+    // Only the throws are compared: no natural spawns (slimes) in the replay.
+    h.world().resource_mut::<GameRules>().do_mob_spawning = false;
     // BDS's world is a superflat: a floor wherever the throws land.
     for x in 7..=24 {
         for z in -2..=2 {
