@@ -292,3 +292,44 @@ fn every_food_answers_like_bds() {
     assert!(wrong.is_empty(), "{}", wrong.join("\n"));
     assert!(compared >= 69, "{compared} foods compared");
 }
+
+/// `testdata/bds-food-chances.json`: per food, the eats BDS finished and
+/// how many gave each effect, by effect id (`tools/bds-sweep/items6_table.py food` over a
+/// capture of `tools/bds-sweep/scripts/items-6-food.txt`, 150 eats of each).
+#[derive(Deserialize)]
+struct BdsChance {
+    eats: u32,
+    effects: std::collections::BTreeMap<u8, u32>,
+}
+
+/// The chance foods' effects land as often as on BDS: each document effect
+/// rolled 20000 times through [`super::food::effect_lands`] from a seeded RNG
+/// against BDS's eats, within four standard errors.
+#[test]
+fn chance_food_effects_land_as_often_as_on_bds() {
+    use rand::SeedableRng;
+
+    let bds: std::collections::BTreeMap<String, BdsChance> =
+        serde_json::from_str(include_str!("testdata/bds-food-chances.json")).unwrap();
+    assert_eq!(bds.len(), 3);
+    let mut rng = rand::rngs::StdRng::seed_from_u64(17);
+    let rolls = 20_000;
+    for (food, row) in &bds {
+        let stack = crate::item::test_support::stack(&format!("minecraft:{food}"), 1);
+        let entry = stack.item().unwrap();
+        let effects = &entry.components().food.as_ref().unwrap().effects;
+        assert_eq!(effects.len(), 1, "{food}");
+        let effect = &effects[0];
+        assert!(effect.chance < 1.0, "{food}");
+        let id = EffectType::from_name(&effect.name).unwrap().0;
+        let theirs = row.effects.get(&id).copied().unwrap_or(0);
+        let ours = (0..rolls)
+            .filter(|_| super::food::effect_lands(effect.chance, &mut rng))
+            .count() as u32;
+        assert!(
+            crate::server::game::durability::same_share(ours, rolls, theirs, row.eats),
+            "{food}: ours {ours}/{rolls}, BDS {theirs}/{}",
+            row.eats
+        );
+    }
+}

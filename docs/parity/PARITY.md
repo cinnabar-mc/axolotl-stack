@@ -15,7 +15,7 @@ Each domain's first line is its headline: the rows its family table, gap list an
 | [Entities](#entities): actor rows (summon and replication) | 137 | 110 | 2 | 2 | 19 | 4 | 15.8% |
 | Entities: behaviour sub-rows (components, spawn rules) | 4082 | 998 | 2648 | 329 | 61 | 46 | 9.7% |
 | [Blocks](#blocks) | 1477 | 0 | 408 | 511 | 391 | 167 | 68.9% |
-| [Items](#items): behaviour sub-rows (food, durability, placement, ...) | 2347 | 99 | 811 | 619 | 641 | 177 | 58.1% |
+| [Items](#items): behaviour sub-rows (food, durability, placement, ...) | 2347 | 97 | 808 | 619 | 646 | 177 | 58.3% |
 | Items: registered (exists in the registry, no behaviour) | 2076 | 0 | 0 | 2076 | 0 | 0 | 100.0% |
 | [Commands](#commands) | 82 | 8 | 35 | 2 | 36 | 1 | 46.9% |
 | [Protocol](#protocol) | 231 | 124 | 28 | 42 | 22 | 15 | 29.6% |
@@ -65,11 +65,11 @@ Add a `[[claim]]` to [claims.toml](claims.toml) in your first pull request for t
 | Liquids: water and lava flow, mixing, the liquid layer | lane LIQUIDS | 2026-11-11 | 5 |
 | Workstation blocks | lane ITEMS | 2026-10-29 | 10 |
 
-**Items**: 0 open rows free, 910 claimed.
+**Items**: 0 open rows free, 905 claimed.
 
 | Claimed area | Claimed by | Since | Open |
 |---|---|---|---:|
-| Item use | lane ITEMS | 2026-10-29 | 910 |
+| Item use | lane ITEMS | 2026-10-29 | 905 |
 
 **Commands**: 0 open rows free, 43 claimed.
 
@@ -418,7 +418,7 @@ The family table and gaps below count sub-rows; top-level rows are counted in th
 | buckets | 9 | 3 | 2 | 0 | 4 | 0 | 44.4% |
 | education | 121 | 0 | 0 | 0 | 0 | 121 | n/a |
 | entity_placers | 57 | 31 | 0 | 0 | 24 | 2 | 43.6% |
-| food | 46 | 4 | 4 | 0 | 37 | 1 | 82.2% |
+| food | 46 | 4 | 1 | 0 | 40 | 1 | 88.9% |
 | materials_misc | 40 | 0 | 0 | 0 | 40 | 0 | 100.0% |
 | melee_weapons | 17 | 0 | 1 | 0 | 16 | 0 | 94.1% |
 | other_tools | 1 | 0 | 0 | 0 | 1 | 0 | 100.0% |
@@ -426,7 +426,7 @@ The family table and gaps below count sub-rows; top-level rows are counted in th
 | ranged_weapons | 8 | 0 | 2 | 2 | 4 | 0 | 75.0% |
 | spawn_eggs | 91 | 0 | 85 | 1 | 4 | 1 | 5.6% |
 | throwables | 16 | 6 | 2 | 0 | 8 | 0 | 50.0% |
-| tools | 280 | 31 | 33 | 1 | 211 | 4 | 76.8% |
+| tools | 280 | 29 | 33 | 1 | 213 | 4 | 77.5% |
 
 Sub-rows by facet, most incomplete first (25 of 25):
 
@@ -436,19 +436,18 @@ Sub-rows by facet, most incomplete first (25 of 25):
 | spawn_egg | 91 | 0 | 85 | 1 | 4 | 1 | 5.6% |
 | entity_placer | 33 | 31 | 0 | 0 | 0 | 2 | 0.0% |
 | bundle | 17 | 17 | 0 | 0 | 0 | 0 | 0.0% |
-| durability | 83 | 3 | 9 | 2 | 67 | 2 | 85.2% |
+| durability | 83 | 2 | 9 | 2 | 68 | 2 | 86.4% |
 | kinetic_weapon | 7 | 0 | 7 | 0 | 0 | 0 | 0.0% |
 | piercing_weapon | 7 | 0 | 7 | 0 | 0 | 0 | 0.0% |
 | repairable | 7 | 7 | 0 | 0 | 0 | 0 | 0.0% |
 | bucket | 8 | 3 | 2 | 0 | 3 | 0 | 37.5% |
 | throwable | 8 | 4 | 1 | 0 | 3 | 0 | 37.5% |
-| food | 40 | 0 | 4 | 0 | 36 | 0 | 90.0% |
 | compostable | 2 | 2 | 0 | 0 | 0 | 0 | 0.0% |
 | shooter | 2 | 0 | 2 | 0 | 0 | 0 | 0.0% |
 | brush | 1 | 1 | 0 | 0 | 0 | 0 | 0.0% |
 | cooldown | 8 | 1 | 0 | 0 | 7 | 0 | 87.5% |
 | drink | 5 | 1 | 0 | 0 | 3 | 1 | 75.0% |
-| shield | 1 | 1 | 0 | 0 | 0 | 0 | 0.0% |
+| food | 40 | 0 | 1 | 0 | 39 | 0 | 97.5% |
 | weapon | 44 | 0 | 1 | 0 | 43 | 0 | 97.7% |
 | wearable | 30 | 0 | 1 | 1 | 28 | 0 | 96.7% |
 | digger | 141 | 0 | 0 | 0 | 139 | 2 | 100.0% |
@@ -456,6 +455,7 @@ Sub-rows by facet, most incomplete first (25 of 25):
 | fuel | 277 | 0 | 0 | 0 | 277 | 0 | 100.0% |
 | instrument | 1 | 0 | 0 | 0 | 1 | 0 | 100.0% |
 | record | 22 | 0 | 0 | 0 | 22 | 0 | 100.0% |
+| shield | 1 | 0 | 0 | 0 | 1 | 0 | 100.0% |
 | spyglass | 1 | 0 | 0 | 0 | 1 | 0 | 100.0% |
 
 ### Items gaps
@@ -487,7 +487,6 @@ Sub-rows by facet, most incomplete first (25 of 25):
 
 **food**
 
-- `minecraft:chicken/food`, `minecraft:poisonous_potato/food`, `minecraft:rotten_flesh/food`: the effect chance itself is not compared with BDS
 - `minecraft:chorus_fruit/food`: the teleport landing spot is not compared with BDS
 - missing: `minecraft:carrot/block_placer`, `minecraft:glow_berries/block_placer`, `minecraft:potato/block_placer`, `minecraft:sweet_berries/block_placer`
 
@@ -522,7 +521,7 @@ Sub-rows by facet, most incomplete first (25 of 25):
 - `minecraft:copper_spear/kinetic_weapon`, `minecraft:diamond_spear/kinetic_weapon`, `minecraft:golden_spear/kinetic_weapon`, `minecraft:iron_spear/kinetic_weapon`, `minecraft:netherite_spear/kinetic_weapon`, `minecraft:stone_spear/kinetic_weapon`, `minecraft:wooden_spear/kinetic_weapon`: the charge is not implemented: no kinetic damage, knockback or dismount from the relative speed while the spear is held
 - `minecraft:copper_spear/piercing_weapon`, `minecraft:diamond_spear/piercing_weapon`, `minecraft:golden_spear/piercing_weapon`, `minecraft:iron_spear/piercing_weapon`, `minecraft:netherite_spear/piercing_weapon`, `minecraft:stone_spear/piercing_weapon`, `minecraft:wooden_spear/piercing_weapon`: a jab that hits several entities in a line is not implemented: BDS damaged only the hit target, never the entities behind it, in every form the scripted client sent a jab (UseAsAttack alone or packed into the input, a hit with the camera orientation, three hits in one input); what the vanilla client sends for a piercing jab is not captured
 - `minecraft:frame/block_placer`, `minecraft:glow_frame/block_placer`: facing_direction is not set from the click or look
-- missing: `minecraft:black_bundle/bundle`, `minecraft:blue_bundle/bundle`, `minecraft:brown_bundle/bundle`, `minecraft:brush/brush`, `minecraft:brush/durability`, `minecraft:bundle/bundle`, `minecraft:carrot_on_a_stick/durability`, `minecraft:copper_spear/repairable`, `minecraft:cyan_bundle/bundle`, `minecraft:diamond_spear/repairable`, `minecraft:golden_spear/repairable`, `minecraft:gray_bundle/bundle` and 19 more
+- missing: `minecraft:black_bundle/bundle`, `minecraft:blue_bundle/bundle`, `minecraft:brown_bundle/bundle`, `minecraft:brush/brush`, `minecraft:brush/durability`, `minecraft:bundle/bundle`, `minecraft:carrot_on_a_stick/durability`, `minecraft:copper_spear/repairable`, `minecraft:cyan_bundle/bundle`, `minecraft:diamond_spear/repairable`, `minecraft:golden_spear/repairable`, `minecraft:gray_bundle/bundle` and 17 more
 
 ## Commands
 

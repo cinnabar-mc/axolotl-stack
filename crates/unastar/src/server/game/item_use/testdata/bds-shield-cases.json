@@ -1,0 +1,135 @@
+[
+ {
+  "name": "front_1",
+  "inputs": [
+   45,
+   90
+  ]
+ },
+ {
+  "name": "front_2",
+  "inputs": [
+   90,
+   135
+  ]
+ },
+ {
+  "name": "front_3",
+  "inputs": [
+   135,
+   180
+  ]
+ },
+ {
+  "name": "front_4",
+  "inputs": [
+   180,
+   225
+  ]
+ },
+ {
+  "name": "front_5",
+  "inputs": [
+   225,
+   270
+  ]
+ },
+ {
+  "name": "front_8",
+  "inputs": [
+   270,
+   315
+  ]
+ },
+ {
+  "name": "front_12",
+  "inputs": [
+   315,
+   360
+  ]
+ },
+ {
+  "name": "behind_4",
+  "inputs": [
+   360,
+   405
+  ]
+ },
+ {
+  "name": "standing_4",
+  "inputs": [
+   405,
+   438
+  ]
+ },
+ {
+  "name": "mainhand_4",
+  "inputs": [
+   438,
+   483
+  ]
+ },
+ {
+  "name": "projectile_4",
+  "inputs": [
+   483,
+   528
+  ]
+ },
+ {
+  "name": "fire_4",
+  "inputs": [
+   528,
+   573
+  ]
+ },
+ {
+  "name": "delay_1",
+  "inputs": [
+   573,
+   610
+  ]
+ },
+ {
+  "name": "delay_2",
+  "inputs": [
+   610,
+   647
+  ]
+ },
+ {
+  "name": "delay_3",
+  "inputs": [
+   647,
+   685
+  ]
+ },
+ {
+  "name": "delay_4",
+  "inputs": [
+   685,
+   724
+  ]
+ },
+ {
+  "name": "delay_5",
+  "inputs": [
+   724,
+   764
+  ]
+ },
+ {
+  "name": "delay_6",
+  "inputs": [
+   764,
+   805
+  ]
+ },
+ {
+  "name": "delay_8",
+  "inputs": [
+   805,
+   848
+  ]
+ }
+]

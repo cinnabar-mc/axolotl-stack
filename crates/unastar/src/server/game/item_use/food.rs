@@ -128,6 +128,14 @@ pub fn start(
     }
 }
 
+/// Whether a food effect with `chance` (0-1, the document's) is given: a
+/// uniform roll below it. Raw chicken's Hunger (0.3), rotten flesh's Hunger
+/// (0.8) and the poisonous potato's Poison (0.6) landed as often on BDS
+/// 1.26.51 (`item_use/testdata/bds-food-chances.json`).
+pub fn effect_lands(chance: f32, rng: &mut impl Rng) -> bool {
+    rng.r#gen::<f32>() < chance
+}
+
 /// Finish eating or drinking `stack` from hotbar `slot`.
 pub fn finish(world: &mut World, player: Entity, slot: u8, stack: &ItemStack, kind: ConsumeKind) {
     let Some(entry) = stack.item().cloned() else {
@@ -145,8 +153,10 @@ pub fn finish(world: &mut World, player: Entity, slot: u8, stack: &ItemStack, ki
                 );
             }
             for effect in &food.effects {
-                let roll: f32 = world.get_resource_or_init::<EntityRandom>().0.r#gen();
-                if roll >= effect.chance {
+                if !effect_lands(
+                    effect.chance,
+                    &mut world.get_resource_or_init::<EntityRandom>().0,
+                ) {
                     continue;
                 }
                 let Some(effect_type) =

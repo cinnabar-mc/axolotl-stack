@@ -161,6 +161,11 @@ pub(super) fn apply_player_hit(
     } else {
         hit.damage
     };
+    // A raised shield blocks a hit that would hurt whole
+    // (`item_use::shield`); its wear counts the hit before scaling.
+    if crate::server::game::item_use::shield::block(world, player, hit) {
+        return 0.0;
+    }
 
     let ignores_timer = matches!(
         hit.cause,
@@ -202,7 +207,7 @@ pub(super) fn apply_player_hit(
     let dealt = crate::entity::effects::absorbed(world, player, dealt);
     let until_tick = at + u64::from(HURT_TICKS);
 
-    let (applied, dead) = {
+    let (applied, mut dead) = {
         let mut entity = world.entity_mut(player);
         entity.insert((
             HurtTimer {
@@ -221,6 +226,10 @@ pub(super) fn apply_player_hit(
         health.damage(dealt);
         (before - health.current, health.is_dead())
     };
+    // A held totem of undying saves the player (`item_use::totem`).
+    if dead && crate::server::game::item_use::totem::revive(world, player, hit.cause) {
+        dead = false;
+    }
     // A hit inside the hurt window that exceeds it knocks back and shows
     // the hurt like a full one (BDS 1.26.51 PvP sweep: 4 then 7 two ticks
     // later pushes twice and sends two hurt events; a burst of rising hits

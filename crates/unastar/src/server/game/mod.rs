@@ -496,6 +496,12 @@ impl GameServer {
                 .in_set(PacketApplySet)
                 .after(movement::apply_movement),
         );
+        // A shield blocks from the sixth input of a sneak on.
+        ecs.schedule_mut().add_systems(
+            item_use::shield::count_sneak_ticks
+                .in_set(PacketApplySet)
+                .after(movement::apply_movement),
+        );
         // Command requests that arrived ahead of their player's inputs run
         // before every input system, like BDS (`commands::CommandOrder`).
         ecs.schedule_mut().add_systems(
