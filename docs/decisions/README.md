@@ -54,6 +54,7 @@ documents and still appear in code comments and research docs; the table maps th
 | [0041](0041-run-redstone-as-a-two-tick-circuit-update.md) | Run redstone as one circuit update every other tick, in BDS's phases | 2026-11-10 | accepted | |
 | [0042](0042-one-effect-system-for-mobs-and-players.md) | One status effect system for mobs and players | 2026-11-11 | accepted | |
 | [0044](0044-send-pre-start-game-roster-packets-before-start-game.md) | Send the roster packets BDS sends before StartGame before it | 2026-11-11 | accepted | |
+| [0045](0045-apply-client-packets-in-bds-network-and-player-passes.md) | Apply client packets in BDS's network pass and player pass | 2026-11-11 | accepted | |
 | [0046](0046-resolve-a-pvp-hit-with-the-attacker-state-passed-in.md) | Resolve a PvP hit with the attacker's state passed in, from before its first input of the tick | 2026-11-11 | proposed | |
 | [0048](0048-write-item-nbt-in-bds-key-order.md) | Write item NBT in BDS's key order | 2026-11-12 | proposed | |
 | [0050](0050-move-pistons-from-the-circuit-update.md) | Move pistons from the circuit update, with measured per-block movement | 2026-11-11 | proposed | |

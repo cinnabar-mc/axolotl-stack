@@ -38,6 +38,10 @@ mod loot;
 mod mining;
 mod movement;
 mod packet_domains;
+// The measured BDS packet order; the schedule does not use it until the
+// `ordered-packet-apply` change (decision 0045) wires it in.
+#[cfg_attr(not(test), allow(dead_code))]
+mod packet_order;
 pub(crate) mod packet_queues;
 mod packets;
 mod place_sounds;
