@@ -27,7 +27,7 @@ pub mod authority;
 #[cfg(test)]
 mod tests;
 
-use std::sync::LazyLock;
+use crate::math::{cos, sin, table_cos, table_sin};
 
 /// Gravity per tick.
 pub const GRAVITY: f32 = 0.08;
@@ -90,6 +90,19 @@ const SPRINT_WALL_ANGLE: f32 = std::f32::consts::FRAC_PI_4;
 /// a sprint (BDS 1.26.51, `dt_gap_*`: 5 idle inputs between the presses
 /// sprint, 6 do not).
 const SPRINT_TAP: u8 = 7;
+/// A current's push a tick ([`push_by_current`]).
+const CURRENT: f32 = 0.014;
+/// Bubble columns' pushes and their limits ([`bubble_columns`]).
+const BUBBLE_UP: f32 = 0.06;
+const BUBBLE_UP_MAX: f32 = 0.7;
+const BUBBLE_UP_TOP: f32 = 0.1;
+const BUBBLE_UP_TOP_MAX: f32 = 1.8;
+const BUBBLE_DOWN: f32 = 0.03;
+const BUBBLE_DOWN_MAX: f32 = 0.3;
+const BUBBLE_DOWN_TOP_MAX: f32 = 0.9;
+/// A body standing up into blocks less deep than this on x or z is pushed
+/// out of them ([`room_to_stand`]).
+const STAND_PUSH: f32 = 0.01;
 /// Penetrations this small count as touching (BDS 1.26.51, `random_248`: a
 /// box 3e-7 into a slab's side is stopped by it; 1e-7 lets it through).
 const EPSILON: f32 = 1.0e-6;
@@ -218,30 +231,6 @@ impl Aabb {
     }
 }
 
-/// The 65536-entry sine table Minecraft's movement trigonometry reads, its
-/// angles worked out in `f32` (`i × pi × 2 / 65536`): entry 32768 is
-/// sin(pi in f32) = -8.742278e-8, not 0, which is the sideways residue of a
-/// glide straight along z on BDS 1.26.51. The sine itself is taken in `f64`
-/// and rounded, so the table is the same on every platform.
-static SIN_TABLE: LazyLock<Vec<f32>> = LazyLock::new(|| {
-    (0u16..=u16::MAX)
-        .map(|i| {
-            let angle = f32::from(i) * std::f32::consts::PI * 2.0 / 65536.0;
-            f64::from(angle).sin() as f32
-        })
-        .collect()
-});
-
-/// `sin` from the table: entry `(r × 10430.378) & 65535`.
-pub fn table_sin(radians: f32) -> f32 {
-    SIN_TABLE[((radians * 10430.378) as i32 & 65535) as usize]
-}
-
-/// `cos` from the table: a quarter turn (16384 entries) on.
-pub fn table_cos(radians: f32) -> f32 {
-    SIN_TABLE[((radians * 10430.378 + 16384.0) as i32 & 65535) as usize]
-}
-
 /// The body's shape, which sets its box.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Pose {
@@ -278,6 +267,25 @@ pub struct Controls {
     pub jump: bool,
     pub sneak: bool,
     pub sprint: bool,
+}
+
+impl Controls {
+    /// The yaw the look vector is taken at: wrapped into -180..180 (BDS
+    /// 1.26.51, `glide_p4` and `glide_pm60`: a glide at yaw 180.33 or 180.86
+    /// moves as at -179.67 and -179.14 bit for bit, where the unwrapped yaw
+    /// reads other sine table entries). The walk and the sprint jump turn by
+    /// the yaw as sent (`sprint_turn_jump` differs from BDS with either
+    /// wrapped).
+    pub fn look_yaw(&self) -> f32 {
+        let yaw = self.yaw % 360.0;
+        if yaw >= 180.0 {
+            yaw - 360.0
+        } else if yaw < -180.0 {
+            yaw + 360.0
+        } else {
+            yaw
+        }
+    }
 }
 
 /// A liquid's material, resolved once from the block data.
@@ -325,11 +333,15 @@ impl Block {
 
     /// Whether BDS runs confirmed how this block moves a player, bit for bit
     /// (the movement differential, `tools/movement-diff`): its family
-    /// ([`BlockKind::confirmed`]) and its liquid: sources of water and lava.
-    /// A current (a liquid that is not a source) pushes, which the
-    /// simulation does not do yet.
+    /// ([`BlockKind::confirmed`]) and its liquid: sources of water and lava,
+    /// and flowing water ([`push_by_current`]). Falling water and flowing
+    /// lava push in ways no BDS run has measured yet.
     pub fn confirmed(&self) -> bool {
-        self.kind.confirmed() && self.liquid.is_none_or(|liquid| liquid.depth == 0)
+        self.kind.confirmed()
+            && self.liquid.is_none_or(|liquid| match liquid.kind {
+                LiquidKind::Water => liquid.depth < 8,
+                LiquidKind::Lava => liquid.depth == 0,
+            })
     }
 }
 
@@ -393,12 +405,9 @@ impl BlockKind {
     /// Whether BDS runs confirmed how this family moves a player, bit for
     /// bit (the movement differential's scenarios, `tools/movement-diff`):
     /// beds (the bounce) and powder snow (the freezing slowdown) are
-    /// simulated but not yet BDS's, bubble columns are not simulated.
+    /// simulated but not yet BDS's.
     pub fn confirmed(self) -> bool {
-        !matches!(
-            self,
-            Self::Bed | Self::PowderSnow | Self::BubbleColumn { .. }
-        )
+        !matches!(self, Self::Bed | Self::PowderSnow)
     }
 }
 
@@ -478,6 +487,9 @@ pub struct Body {
     pub jump_delay: u8,
     pub sprinting: bool,
     pub sneaking: bool,
+    /// The sneak key is let go but there is no room to stand: the body keeps
+    /// the sneaking box and the sneak's slow move ([`update_state`]).
+    pub crouched: bool,
     /// The move vector is slowed as a sneak's this tick: sneaking, or let
     /// go of the sneak in this input ([`update_state`]).
     pub sneak_slowed: bool,
@@ -523,6 +535,7 @@ impl Body {
             jump_delay: 0,
             sprinting: false,
             sneaking: false,
+            crouched: false,
             sneak_slowed: false,
             sprint_ready: false,
             sprint_tap: 0,
@@ -572,7 +585,7 @@ impl Body {
     pub fn pose(&self) -> Pose {
         if self.swimming || self.gliding {
             Pose::Low
-        } else if self.sneaking {
+        } else if self.sneaking || self.crouched {
             Pose::Sneaking
         } else {
             Pose::Standing
@@ -586,6 +599,15 @@ impl Body {
             Some((aabb, feet, pose)) if feet == self.feet && pose == self.pose() => aabb,
             _ => Aabb::from_feet(self.feet, WIDTH, self.pose().height()),
         }
+    }
+
+    /// The box the body would have standing up where it is, less the
+    /// collision tolerance on every side ([`EPSILON`]: `random_248`, a box
+    /// touching a top slab's side stands up).
+    fn standing_box(&self) -> Aabb {
+        let mut bb = self.aabb();
+        bb.max[1] = bb.min[1] + Pose::Standing.height();
+        bb.inflate([-EPSILON; 3])
     }
 
     /// The wire position.
@@ -649,9 +671,23 @@ pub struct Changes {
 /// sneak's, and no sprint starts with it (`random_a67` and the `sr_*`
 /// scenarios: the release's move accelerates like a sneak's; `flat_sneak`:
 /// the box is the standing one from that move on; `sprint_sneak_toggle`
-/// tick 31: the sprint starts with the next input).
-pub fn update_state(body: &mut Body, controls: &Controls, submerged: bool, changes: &mut Changes) {
-    body.sneak_slowed = body.sneaking || controls.sneak;
+/// tick 31: the sprint starts with the next input). A sneak let go where a
+/// standing body has no room keeps the sneaking box and the sneak's slow
+/// move until there is room; like a release, the input that stands it up is
+/// still slowed (BDS 1.26.51, `ceil_release_*`: under a top slab 1.5 above
+/// the floor the body walks at a sneak's 0.0648 a tick, also with the
+/// sprint key, and jumps 0.01 into the slab; `ceil_exit_*`: it walks at
+/// 0.098 from the second input after the move that took its box out).
+pub fn update_state(
+    body: &mut Body,
+    controls: &Controls,
+    surroundings: Surroundings,
+    changes: &mut Changes,
+) {
+    let crouched =
+        !controls.sneak && (body.sneaking || body.crouched) && !surroundings.room_to_stand;
+    body.sneak_slowed = body.sneaking || controls.sneak || body.crouched;
+    body.crouched = crouched;
     if controls.sneak && !body.sneaking {
         body.sneaking = true;
         changes.started_sneaking = true;
@@ -703,7 +739,7 @@ pub fn update_state(body: &mut Body, controls: &Controls, submerged: bool, chang
         && if body.swimming {
             body.in_water
         } else {
-            submerged
+            surroundings.submerged
         };
     if want_swim && !body.swimming {
         body.swimming = true;
@@ -713,10 +749,103 @@ pub fn update_state(body: &mut Body, controls: &Controls, submerged: bool, chang
     }
 }
 
+/// What [`update_state`] needs from around the body.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Surroundings {
+    /// The block at the eyes holds water ([`eyes_in_water`]).
+    pub submerged: bool,
+    /// A standing body's box fits where the body is, or within
+    /// [`STAND_PUSH`] of it ([`Surroundings::stand_push`]).
+    pub room_to_stand: bool,
+    /// How far a body standing up is pushed out of the blocks its standing
+    /// box overlaps by less than [`STAND_PUSH`] (zero for none).
+    pub stand_push: [f32; 3],
+}
+
+impl Default for Surroundings {
+    /// Dry, with room to stand and nothing to push out of.
+    fn default() -> Self {
+        Self {
+            submerged: false,
+            room_to_stand: true,
+            stand_push: [0.0; 3],
+        }
+    }
+}
+
+impl Surroundings {
+    /// Around `body`: the room to stand is looked at only for a body that
+    /// sneaks or is held crouching and lets go of the key.
+    pub fn of(body: &Body, controls: &Controls, terrain: &impl Terrain) -> Self {
+        let standing_up = !controls.sneak && (body.sneaking || body.crouched);
+        let (room_to_stand, stand_push) = if standing_up {
+            room_to_stand(body, terrain)
+        } else {
+            (true, [0.0; 3])
+        };
+        Self {
+            submerged: eyes_in_water(body, terrain),
+            room_to_stand,
+            stand_push,
+        }
+    }
+}
+
+/// Whether a body standing up where it is fits, and how far it is pushed
+/// out on x or z to fit: a standing box overlapping blocks by less than
+/// [`STAND_PUSH`] on the side it is least deep into stands, moved out to the
+/// blocks' faces (BDS 1.26.51, `ceil_push_*`: walking out from under a top
+/// slab, a box 0.005, 0.0075 or 0.009 into it stands and is moved out, one
+/// 0.0105 to 0.03 into it stays crouched).
+fn room_to_stand(body: &Body, terrain: &impl Terrain) -> (bool, [f32; 3]) {
+    let standing = body.standing_box();
+    let blocking: Vec<Aabb> = collisions(terrain, &standing)
+        .into_iter()
+        .filter(|b| b.intersects(&standing))
+        .collect();
+    if blocking.is_empty() {
+        return (true, [0.0; 3]);
+    }
+    let narrow = standing.inflate([-STAND_PUSH, 0.0, -STAND_PUSH]);
+    if blocking.iter().any(|b| b.intersects(&narrow)) {
+        return (false, [0.0; 3]);
+    }
+    let bb = Aabb::from_feet(body.feet, WIDTH, Pose::Standing.height());
+    let mut push = [0.0f32; 3];
+    for block in &blocking {
+        // Out through the face the box is least deep into.
+        let (axis, by) = [0, 2]
+            .into_iter()
+            .flat_map(|axis| {
+                [
+                    (axis, block.max[axis] - bb.min[axis]),
+                    (axis, block.min[axis] - bb.max[axis]),
+                ]
+            })
+            .min_by(|a, b| a.1.abs().total_cmp(&b.1.abs()))
+            .expect("two axes");
+        if by.abs() > push[axis].abs() {
+            push[axis] = by;
+        }
+    }
+    (true, push)
+}
+
 /// Move the body one tick.
 pub fn step(body: &mut Body, controls: &Controls, terrain: &impl Terrain) -> Changes {
     let mut changes = Changes::default();
-    update_state(body, controls, eyes_in_water(body, terrain), &mut changes);
+    let surroundings = Surroundings::of(body, controls, terrain);
+    update_state(body, controls, surroundings, &mut changes);
+    let push = surroundings.stand_push;
+    if push != [0.0; 3] {
+        // Standing up out of a block moves the standing box (rebuilt at the
+        // feet) out to its face, and stops the body on that axis after this
+        // move (`ceil_push_*`: the move is the push and the sneak's, and the
+        // next input walks from rest).
+        let bb = Aabb::from_feet(body.feet, WIDTH, Pose::Standing.height()).offset(push);
+        body.feet = bb.feet();
+        body.swept = Some((bb, body.feet, body.pose()));
+    }
     if !terrain.loaded(&body.aabb().inflate([1.0, 1.0, 1.0])) {
         body.velocity = [0.0; 3];
         changes.frozen = true;
@@ -731,6 +860,7 @@ pub fn step(body: &mut Body, controls: &Controls, terrain: &impl Terrain) -> Cha
         changes.stopped_gliding = true;
     }
     let y = body.feet[1];
+    push_by_current(body, terrain);
     if body.in_water {
         let swim = Swim {
             steering: body.swimming && !changes.stopped_swimming,
@@ -749,6 +879,12 @@ pub fn step(body: &mut Body, controls: &Controls, terrain: &impl Terrain) -> Cha
     } else {
         body.fall_distance + (y - body.feet[1]).max(0.0)
     };
+    for (axis, by) in push.into_iter().enumerate() {
+        if by != 0.0 {
+            body.velocity[axis] = 0.0;
+        }
+    }
+    bubble_columns(body, terrain);
     if !controls.jump {
         body.jump_delay = 0;
     } else if body.jump_delay > 0 {
@@ -756,6 +892,134 @@ pub fn step(body: &mut Body, controls: &Controls, terrain: &impl Terrain) -> Cha
     }
     finish(body, &changes);
     changes
+}
+
+/// The input after a teleport: the body stays where it was put, at rest,
+/// but what pushes it still does (BDS 1.26.51, `bubble_down_from_107_0`: a body put
+/// in a downward column moves 0.06 down on the first input after the
+/// resting one; `current_stand`: one in a current moves 0.028, two pushes).
+pub fn rest(body: &mut Body, terrain: &impl Terrain) {
+    body.velocity = [0.0; 3];
+    push_by_current(body, terrain);
+    bubble_columns(body, terrain);
+}
+
+/// The height of a liquid's surface in its block: a source's and a falling
+/// liquid's 8/9, a flowing one's `(8 - depth) / 9`.
+fn liquid_height(liquid: LiquidState) -> f32 {
+    let amount = if liquid.depth >= 8 {
+        8
+    } else {
+        8 - liquid.depth
+    };
+    f32::from(amount) / 9.0
+}
+
+/// The direction water flows in at `pos`: towards the lower neighbours,
+/// each weighted by how much lower it is (a neighbour without water that
+/// does not stop a body counts by the water under it), normalised.
+fn water_flow(terrain: &impl Terrain, pos: [i32; 3], own: LiquidState) -> [f32; 2] {
+    let height = liquid_height(own);
+    let (mut x, mut z) = (0.0f32, 0.0f32);
+    for (dx, dz) in [(0, -1), (1, 0), (0, 1), (-1, 0)] {
+        let side = [pos[0] + dx, pos[1], pos[2] + dz];
+        let neighbour = terrain.block(side);
+        let step = match neighbour.liquid {
+            Some(liquid) if liquid.kind == LiquidKind::Water => height - liquid_height(liquid),
+            Some(_) => continue,
+            None => {
+                let cell = Aabb {
+                    min: side.map(|v| v as f32),
+                    max: side.map(|v| v as f32 + 1.0),
+                };
+                let below = terrain.block([side[0], side[1] - 1, side[2]]).liquid;
+                match below {
+                    Some(liquid)
+                        if liquid.kind == LiquidKind::Water && !collides(terrain, &cell) =>
+                    {
+                        height - (liquid_height(liquid) - 8.0 / 9.0)
+                    }
+                    _ => 0.0,
+                }
+            }
+        };
+        x += dx as f32 * step;
+        z += dz as f32 * step;
+    }
+    let length = (x * x + z * z).sqrt();
+    if length < 1.0e-4 {
+        [0.0, 0.0]
+    } else {
+        [x / length, z / length]
+    }
+}
+
+/// A current pushes the velocity 0.014 along the sum of the flows of the
+/// water blocks the box is in, before the move (BDS 1.26.51,
+/// `current_stand`, `current_walk_up`, `current_source_edge`: 0.014 a tick
+/// along a channel, on its source too; `current_diamond_four`: 0.014
+/// diagonally across four blocks whose flows differ).
+fn push_by_current(body: &mut Body, terrain: &impl Terrain) {
+    let bb = body.aabb().inflate([-0.001; 3]);
+    let (min, max) = bb.block_range();
+    let mut flow = [0.0f32; 2];
+    for x in min[0]..=max[0] {
+        for y in min[1]..=max[1] {
+            for z in min[2]..=max[2] {
+                let Some(liquid) = terrain.block([x, y, z]).liquid else {
+                    continue;
+                };
+                if liquid.kind != LiquidKind::Water {
+                    continue;
+                }
+                let above = terrain.block([x, y + 1, z]).water();
+                let top = y as f32 + if above { 1.0 } else { liquid_height(liquid) };
+                if top >= bb.min[1] {
+                    let [fx, fz] = water_flow(terrain, [x, y, z], liquid);
+                    flow[0] += fx;
+                    flow[1] += fz;
+                }
+            }
+        }
+    }
+    let length = (flow[0] * flow[0] + flow[1] * flow[1]).sqrt();
+    if length < 1.0e-4 {
+        return;
+    }
+    body.velocity[0] += flow[0] / length * CURRENT;
+    body.velocity[2] += flow[1] / length * CURRENT;
+}
+
+/// Bubble columns push the velocity at the end of the tick, once for each
+/// column block the box touches, from the lowest: an upward column's block
+/// by 0.06 up to at most 0.7, its top block (air above) by 0.1 up to 1.8; a
+/// downward column's block by 0.03 down to at most 0.3, its top block to
+/// 0.9 (BDS 1.26.51, `bubble_up_from_*`, `bubble_down_from_*`: a body in three
+/// blocks of an upward column gains 0.18 a tick after the water's drag and
+/// sink, 0.22 with the top one; a sinking one falls 0.3 a tick, and lies on
+/// the bottom at -0.065, the water's -0.005 and two blocks' 0.03).
+fn bubble_columns(body: &mut Body, terrain: &impl Terrain) {
+    // Blocks the box overlaps, not those it only touches
+    // (`bubble_up_from_104_2`: a box ending on a block's bottom is not
+    // pushed by it).
+    let (min, max) = body.aabb().inner_block_range();
+    for x in min[0]..=max[0] {
+        for y in min[1]..=max[1] {
+            for z in min[2]..=max[2] {
+                let BlockKind::BubbleColumn { down } = terrain.block([x, y, z]).kind else {
+                    continue;
+                };
+                let top = terrain.block([x, y + 1, z]).kind == BlockKind::Air;
+                let v = &mut body.velocity[1];
+                *v = match (down, top) {
+                    (false, false) => (*v + BUBBLE_UP).min(BUBBLE_UP_MAX),
+                    (false, true) => (*v + BUBBLE_UP_TOP).min(BUBBLE_UP_TOP_MAX),
+                    (true, false) => (*v - BUBBLE_DOWN).max(-BUBBLE_DOWN_MAX),
+                    (true, true) => (*v - BUBBLE_DOWN).max(-BUBBLE_DOWN_TOP_MAX),
+                };
+            }
+        }
+    }
 }
 
 /// After the move: end a stopping swim.
@@ -773,12 +1037,12 @@ fn move_relative(body: &mut Body, controls: &Controls, speed: f32) {
         return;
     }
     let scale = speed / force.sqrt().max(1.0);
-    // The input turns by the exact sine and cosine (the sine table is only
-    // the sprint jump's): yaw 37.5 matches BDS only this way. Taken in
-    // `f64` and rounded, as the table is, so every platform's `f32` sine
-    // and cosine give the same bits.
-    let radians = f64::from(controls.yaw.to_radians());
-    let (sin, cos) = (radians.sin() as f32, radians.cos() as f32);
+    // The input turns by the C runtime's sine and cosine of the yaw, not the
+    // sine table (that is the sprint jump's and the look vector's): yaw 37.5
+    // matches BDS only this way, and the walks of the `sinx_*` probes take its
+    // one-ULP exceptions ([`crate::math`]).
+    let yaw = controls.yaw.to_radians();
+    let (sin, cos) = (sin(yaw), cos(yaw));
     let (strafe, forward) = (strafe * scale, forward * scale);
     body.velocity[0] += strafe * cos - forward * sin;
     body.velocity[2] += strafe * sin + forward * cos;
@@ -1128,6 +1392,12 @@ fn water_tick(body: &mut Body, controls: &Controls, terrain: &impl Terrain, swim
     move_relative(body, controls, WATER_SPEED);
     let y = body.feet[1];
     move_and_collide(body, terrain);
+    // A floor or ceiling the move hit stops it (BDS 1.26.51,
+    // `water_climb_out` tick 20: a jumper landing on the bottom rises
+    // 0.035 on its next jump, as from rest).
+    if body.vertical_collision {
+        body.velocity[1] = 0.0;
+    }
     let drag = if swim.sprint_drag {
         WATER_DRAG_SPRINTING
     } else {
@@ -1183,7 +1453,7 @@ fn climb_out_of_liquid(body: &mut Body, terrain: &impl Terrain, y: f32) {
 /// residue of table entry 32768 included).
 fn look_vector(controls: &Controls) -> [f32; 3] {
     const DEGREES: f32 = 0.017_453_292;
-    let heading = -controls.yaw * DEGREES - std::f32::consts::PI;
+    let heading = -controls.look_yaw() * DEGREES - std::f32::consts::PI;
     let (heading_cos, heading_sin) = (table_cos(heading), table_sin(heading));
     let pitch = -controls.pitch * DEGREES;
     let (pitch_cos, pitch_sin) = (-table_cos(pitch), table_sin(pitch));
@@ -1199,7 +1469,12 @@ fn glide_tick(body: &mut Body, controls: &Controls, terrain: &impl Terrain) {
     let horizontal_speed = (v[0] * v[0] + v[2] * v[2]).sqrt();
     let look_horizontal = (look[0] * look[0] + look[2] * look[2]).sqrt();
     let lift = pitch_cos * pitch_cos;
-    v[1] += -GRAVITY + lift * 0.06;
+    // Gravity less the lift, rounded as `(0.75 c² - 1) × g` (fitted to BDS
+    // 1.26.51 traces: of nine `f32` orderings only this one gives all 93
+    // corrected velocities of the `glide_p*` and `elytra_glide*` scenarios,
+    // and all 69 of the held-out `glide_h*` pitches; `-0.08 + 0.06 c²` misses
+    // 14 of them by 1 to 5 ULP).
+    v[1] -= (0.75 * lift - 1.0) * -GRAVITY;
     if v[1] < 0.0 && look_horizontal > 0.0 {
         let accel = v[1] * -0.1 * lift;
         v[1] += accel;
@@ -1220,6 +1495,11 @@ fn glide_tick(body: &mut Body, controls: &Controls, terrain: &impl Terrain) {
     v[1] *= 0.98;
     v[2] *= 0.99;
     move_and_collide(body, terrain);
+    // The ground or a ceiling stops the glide's vertical velocity (BDS
+    // 1.26.51, `glide_pm60`: 0 after the landing, not -0.55).
+    if body.vertical_collision {
+        body.velocity[1] = 0.0;
+    }
 }
 
 /// Sneaking on the ground: shorten the move until the body would still
@@ -1351,7 +1631,7 @@ fn wall_stops_sprint(meant: [f32; 3], made: [f32; 3]) -> bool {
         return true;
     }
     let dot = meant[0] * made[0] + meant[2] * made[2];
-    dot / (meant_sq * made_sq).sqrt() < SPRINT_WALL_ANGLE.cos()
+    dot / (meant_sq * made_sq).sqrt() < cos(SPRINT_WALL_ANGLE)
 }
 
 /// Whether a body box at `bb` overlaps any block's collision box.

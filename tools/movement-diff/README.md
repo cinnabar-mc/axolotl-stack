@@ -31,13 +31,23 @@ Each scenario is:
 A block lists only the states that differ from its first canonical state.
 `movement-diff resolve` spells out every state; the bedsim runner needs that, and the BDS runner
 places every state explicitly. Every scenario starts with at least 3 idle inputs (see "BDS" below).
-The player starts at rest and on the ground, as BDS's `/tp` leaves it, even in mid-air.
+The player starts at rest and on the ground, as BDS's `/tp` leaves it, even in mid-air. The input
+BDS rests after the teleport still takes the pushes of bubble columns and currents
+(`movement::rest`).
+
+A yaw of a sine probe goes on its input segment, not on the start: the start teleport rounds the
+yaw, and the setup check then fails the scenario.
 
 Besides the hand-written situations the corpus holds:
 
 - probes that vary one thing at a time: `sr_*` (letting go of sneak), `ss_*` (sprint stops),
-  `dt_*` (double-tap sprints), `sw_*` (sprinting into walls), `bed_drop_*` (bed bounces from
-  several heights, measured for a fit);
+  `dt_*` (double-tap sprints), `sw_*` (sprinting into walls), `bed_drop_*` and `bedfit_*` (bed
+  bounces from 20 heights, measured for a fit), `sinx_*` and `sinh_*` (one sprint jump or walk
+  from rest, which shows a sine at full precision: `sinx_*` at angles where the Windows C
+  runtime's sine is an ULP off the correctly rounded one, `sinh_*` at random yaws held out of the
+  fit), `glide_p*` (glides at eleven pitches), `ceil_*` (a sneak let go under a top slab, the
+  exit from under it and the push out of a shallow overlap), `current_*` (standing, walking and
+  jumping in flowing water), `bubble_*_from_*` (bubble columns entered at other heights);
 - seeds of randomised runs, kept as regression scenarios: `random_N` (`movement-diff random`
   seed N) and `random_aN` (seed N of a batch made before the generator dropped carpets and
   snow, so the same seed now gives another scenario);
@@ -227,9 +237,11 @@ committed result; `report.md` ("Harness validation") gives the numbers of the co
    the library's physics.
 8. **Mutations.** `mutate.py` changes the simulation a little (a constant one `f32` ULP off, two
    operations swapped, a threshold moved, a rule switched off), plays the corpus and lists the
-   scenarios that catch each change (`mutations.json`). A mutation no scenario catches is a
-   blind spot, and the next scenario to write. Write catchers by simulating candidates with and
-   without the mutation and keeping those that differ in what a BDS trace shows: the position on
+   scenarios that catch each change (`mutations.json`): those that differ from BDS earlier with
+   it than without it, so a known gap catches a mutation that moves its first difference
+   forward. A mutation no scenario catches is a blind spot, and the next scenario to write.
+   Write catchers by simulating candidates with and without the mutation and keeping those
+   that differ in what a BDS trace shows: the position on
    every tick (smallest ULPs near the origin), ground contact, and the velocity on every sixth
    tick. A constant whose one-ULP change no product can show (the swim rate, slow falling's
    gravity) is mutated by the smallest change that shows.

@@ -720,6 +720,7 @@ impl PlayerMotion {
             // The first input after a teleport: the copy stays at rest at
             // the destination, whatever the input says.
             let verdict = self.authority.judge_rest(self.body.feet, claim);
+            sim::rest(&mut self.body, terrain);
             let correction = (verdict == Verdict::Correct).then(|| {
                 self.corrections += 1;
                 correction_packet(&self.body, [0.0; 3], tick)
@@ -846,6 +847,9 @@ impl PlayerMotion {
         body.vertical_collision = has(Flag::Verticalcollision);
         body.horizontal_collision = has(Flag::Horizontalcollision);
         body.sneaking = has(Flag::Sneaking);
+        // A client that reports no sneak is taken as standing (a crouch under
+        // a ceiling is a crawl space, trusted on its own).
+        body.crouched = false;
         // A sprint with its speed: the simulation sets the speed only when a
         // sprint starts.
         body.sprinting = has(Flag::Sprinting);

@@ -69,5 +69,6 @@ documents and still appear in code comments and research docs; the table maps th
 | [0067](0067-find-movement-rules-from-random-seeds-and-probes.md) | Find movement rules from random seeds and targeted probes, and lay the fixtures out a tick a line | 2026-11-12 | proposed | |
 | [0068](0068-stomp-is-a-melee-reach-judged-after-the-move.md) | The stomp attack is a reach of the one melee goal, judged after the move | 2026-11-12 | proposed | |
 | [0069](0069-flyers-push-straight-at-their-point.md) | Float-navigating flyers push straight at their point, with no path and no gravity | 2026-11-12 | proposed | |
+| [0071](0071-take-the-windows-runtime-sine-on-every-platform.md) | Take the Windows C runtime's sine on every platform, as rounded sines plus shipped exceptions | 2026-11-16 | proposed | |
 
 Proposed records await the owner's approval; their work is an open OpenSpec change anyone can pick up.

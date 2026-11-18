@@ -450,8 +450,8 @@ fn a_survival_client_cannot_fly() {
 }
 
 /// A sprint the copy picks up after trusted inputs keeps its speed: a
-/// client that starts sprinting beside a block the copy trusts (bubble
-/// columns) goes on sprinting once the blocks are gone, and the copy
+/// client that starts sprinting beside a block the copy trusts (powder
+/// snow) goes on sprinting once the blocks are gone, and the copy
 /// follows it exactly, without a correction.
 #[test]
 fn a_sprint_goes_on_after_trusted_inputs() {
@@ -462,7 +462,7 @@ fn a_sprint_goes_on_after_trusted_inputs() {
         .world()
         .resource::<crate::server::game::types::BlockRegistryResource>()
         .0
-        .default_state_id_by_name("minecraft:bubble_column")
+        .default_state_id_by_name("minecraft:powder_snow")
         .unwrap();
     let beside: Vec<IVec3> = (0..4)
         .map(|z| start.floor().as_ivec3() + IVec3::new(1, 0, z))
@@ -685,9 +685,10 @@ fn a_riptide_spin_is_trusted_for_twenty_inputs() {
 /// Inputs the simulation does not reproduce are trusted, each for its
 /// reason, and only where it applies: swift sneak sneaking, depth strider
 /// next to water, soul speed on soul soil, a riptide trident's spin started
-/// in water, a block at eye height (a crawl space), a bubble column. What
+/// in water, a block at eye height (a crawl space), powder snow. What
 /// the movement differential verified is judged: speed, slowness,
-/// levitation, jump boost, ice, ladders, honey, scaffolding, lava.
+/// levitation, jump boost, ice, ladders, honey, scaffolding, lava, bubble
+/// columns.
 #[test]
 fn situations_the_simulation_does_not_cover_are_trusted() {
     use crate::entity::components::{
@@ -865,13 +866,13 @@ fn situations_the_simulation_does_not_cover_are_trusted() {
             None,
         ),
         (
-            "a bubble column beside",
+            "a bubble column beside (judged: the simulation matches BDS)",
             |h| {
                 let column = block_named(h, "minecraft:bubble_column");
                 h.set_block(HOME.floor().as_ivec3() + IVec3::X, column);
                 Vec::new()
             },
-            Some(Trust::Block),
+            None,
         ),
         (
             "ice underfoot (judged: the simulation matches BDS)",
@@ -937,7 +938,7 @@ fn situations_the_simulation_does_not_cover_are_trusted() {
 /// and flowing lava are not supported (a current pushes), sources of water
 /// and lava are (the movement differential's `lava_*` scenarios).
 #[test]
-fn waterlogged_blocks_are_water_and_flowing_water_is_trusted() {
+fn waterlogged_blocks_are_water_and_falling_water_is_trusted() {
     use crate::entity::player_life::authority::{MotionTable, WorldTerrain};
     use crate::server::game::types::BlockRegistryResource;
     use unastar_rules::movement::Terrain;
@@ -947,13 +948,16 @@ fn waterlogged_blocks_are_water_and_flowing_water_is_trusted() {
         .default_state_id_by_name("minecraft:seagrass")
         .unwrap();
     let water = registry.get_by_name("minecraft:water").unwrap();
-    let flowing = (water.min_state_id..=water.max_state_id)
-        .find(|&id| {
-            registry
-                .liquid_state(id)
-                .is_some_and(|liquid| liquid.depth != 0)
-        })
-        .unwrap();
+    let water_at = |depth: std::ops::RangeInclusive<u8>| {
+        (water.min_state_id..=water.max_state_id)
+            .find(|&id| {
+                registry
+                    .liquid_state(id)
+                    .is_some_and(|liquid| depth.contains(&liquid.depth))
+            })
+            .unwrap()
+    };
+    let (flowing, falling) = (water_at(1..=7), water_at(8..=15));
     let lava = registry.default_state_id_by_name("minecraft:lava").unwrap();
     let flowing_lava = registry
         .get_by_name("minecraft:flowing_lava")
@@ -988,7 +992,8 @@ fn waterlogged_blocks_are_water_and_flowing_water_is_trusted() {
     );
     assert!(!terrain.block((pos + IVec3::X).to_array()).water(), "air");
     assert!(table.reproduces(*blocks::WATER), "still water");
-    assert!(!table.reproduces(flowing), "flowing water");
+    assert!(table.reproduces(flowing), "flowing water");
+    assert!(!table.reproduces(falling), "falling water");
     assert!(table.reproduces(lava), "a lava source");
     assert!(!table.reproduces(flowing_lava), "flowing lava");
     assert!(table.reproduces(*blocks::STONE), "stone");

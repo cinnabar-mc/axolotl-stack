@@ -12,7 +12,7 @@ fn main() {
     let out_dir = PathBuf::from(std::env::var_os("OUT_DIR").unwrap());
     write_filter_subject(&out_dir);
     enchantments::write(&out_dir);
-    write_rotation_sine_table(&out_dir);
+    write_sine_exceptions(&out_dir);
 }
 
 fn write_filter_subject(out_dir: &Path) {
@@ -81,17 +81,35 @@ fn write_filter_subject(out_dir: &Path) {
     .expect("writing filter subject schema");
 }
 
-fn write_rotation_sine_table(out_dir: &Path) {
-    const SAMPLES: usize = 1 << 16;
-    let index_scale = SAMPLES as f32 / std::f32::consts::TAU;
-    let mut bytes = [0u8; SAMPLES * 4];
-    for (index, destination) in bytes.chunks_exact_mut(4).enumerate() {
-        // Invert the rounded f32 lookup scale. The algebraic alternative
-        // index * TAU / SAMPLES changes the captured -0.5-degree impulse;
-        // evaluating sin at an f64 angle also changes native impulses.
-        let angle = index as f32 / index_scale;
-        destination.copy_from_slice(&angle.sin().to_le_bytes());
+/// Decodes `data/sine-exceptions.bin` (format in `examples/sine_exceptions.rs`)
+/// into sorted `u32` LE entries: the angle's bits, bit 31 set for one ULP up.
+fn write_sine_exceptions(out_dir: &Path) {
+    let path = PathBuf::from(std::env::var_os("CARGO_MANIFEST_DIR").unwrap())
+        .join("data/sine-exceptions.bin");
+    println!("cargo:rerun-if-changed={}", path.display());
+    let bytes = std::fs::read(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+    let count = |at: usize| u32::from_le_bytes(bytes[at..at + 4].try_into().unwrap());
+    let counts = [count(0), count(4)];
+    let mut at = 8;
+    for (name, count) in ["sin", "cos"].into_iter().zip(counts) {
+        let (mut out, mut bits) = (Vec::new(), 0u32);
+        for _ in 0..count {
+            let (mut value, mut shift) = (0u64, 0);
+            loop {
+                let byte = bytes[at];
+                at += 1;
+                value |= u64::from(byte & 0x7f) << shift;
+                shift += 7;
+                if byte & 0x80 == 0 {
+                    break;
+                }
+            }
+            bits += u32::try_from(value >> 1).expect("an angle step fits u32");
+            let up = if value & 1 == 1 { 1u32 << 31 } else { 0 };
+            out.extend((bits | up).to_le_bytes());
+        }
+        std::fs::write(out_dir.join(format!("{name}_exceptions.bin")), out)
+            .expect("writing the sine exceptions");
     }
-    std::fs::write(out_dir.join("rotation_sine.bin"), bytes.as_slice())
-        .expect("writing native rotation sine table");
+    assert_eq!(at, bytes.len(), "trailing bytes in {}", path.display());
 }

@@ -324,7 +324,7 @@ fn sprinting_needs_forward_input_and_no_sneak() {
             sprint: true,
             ..Default::default()
         },
-        false,
+        Surroundings::default(),
         &mut changes,
     );
     assert!(!body.sprinting && !changes.started_sprinting);
@@ -334,7 +334,7 @@ fn sprinting_needs_forward_input_and_no_sneak() {
             sprint: true,
             ..walk(1.0)
         },
-        false,
+        Surroundings::default(),
         &mut changes,
     );
     assert!(body.sprinting && changes.started_sprinting);
@@ -558,4 +558,76 @@ fn a_far_height_still_takes_a_close_horizontal_position() {
         };
         assert_eq!(copy.feet, expected, "{claim:?}");
     }
+}
+
+/// A stone floor at y 0 with a top slab's box 1.5 above it over z 0..1.
+struct Ceiling;
+
+impl Terrain for Ceiling {
+    fn collisions(&self, area: &Aabb, out: &mut Vec<Aabb>) {
+        let boxes = [
+            Aabb {
+                min: [-1000.0, -1.0, -1000.0],
+                max: [1000.0, 0.0, 1000.0],
+            },
+            Aabb {
+                min: [-1000.0, 1.5, 0.0],
+                max: [1000.0, 2.0, 1.0],
+            },
+        ];
+        out.extend(boxes.into_iter().filter(|b| b.intersects(area)));
+    }
+    fn loaded(&self, _: &Aabb) -> bool {
+        true
+    }
+    fn block(&self, pos: [i32; 3]) -> Block {
+        if pos[1] == -1 || (pos[1] == 1 && pos[2] == 0) {
+            Block {
+                friction: 0.6,
+                kind: BlockKind::Plain,
+                liquid: None,
+            }
+        } else {
+            Block::AIR
+        }
+    }
+}
+
+fn sneaking_at(z: f32) -> Body {
+    let mut body = Body::at([0.5, 0.0, z]);
+    body.on_ground = true;
+    body.sneaking = true;
+    body
+}
+
+#[test]
+fn a_sneak_let_go_under_a_ceiling_stays_crouched_and_slow() {
+    let mut body = sneaking_at(0.5);
+    let changes = step(&mut body, &walk(0.0), &Ceiling);
+    assert!(changes.stopped_sneaking && !body.sneaking && body.crouched);
+    assert_eq!(body.pose(), Pose::Sneaking);
+    for _ in 0..3 {
+        step(&mut body, &walk(1.0), &Ceiling);
+        assert!(body.sneak_slowed && body.crouched);
+    }
+}
+
+#[test]
+fn standing_up_slightly_into_a_ceiling_pushes_out_and_stops() {
+    // The standing box would reach 0.005 into the slab's z 1 side.
+    let mut body = sneaking_at(1.295);
+    body.crouched = true;
+    body.sneaking = false;
+    body.velocity[2] = 0.0353;
+    step(&mut body, &walk(1.0), &Ceiling);
+    assert!(!body.crouched && body.pose() == Pose::Standing);
+    // Pushed to the face, then the move: the input is still slowed.
+    assert!((body.aabb().min[2] - 1.0 - 0.0647).abs() < 1.0e-3);
+    assert_eq!(body.velocity[2], 0.0);
+    // 0.0105 into it stays crouched.
+    let mut body = sneaking_at(1.2895);
+    body.crouched = true;
+    body.sneaking = false;
+    step(&mut body, &walk(0.0), &Ceiling);
+    assert!(body.crouched);
 }
