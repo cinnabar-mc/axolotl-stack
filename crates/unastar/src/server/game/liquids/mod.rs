@@ -44,7 +44,7 @@ use unastar_data::liquids::{Holds, LiquidBlock, Reaction};
 use super::block_update::shape::{CORNERABLE_STAIRS, stair_facing};
 use super::block_update::{self, NEIGHBOURS, UpdateTarget};
 use crate::registry::BlockRegistry;
-use crate::registry::block::{LiquidKind, StateValue};
+use crate::registry::block::{BlockId, LiquidKind, MissingBlock, StateValue};
 use crate::registry::collision::Side;
 
 pub(crate) mod live;
@@ -100,9 +100,10 @@ pub(crate) trait LiquidTarget: UpdateTarget {
     fn wash(&mut self, pos: IVec3, state: u32, kind: LiquidKind);
 }
 
-/// The liquid states this engine writes, resolved once.
-#[derive(Debug, Clone)]
-struct States {
+/// The liquid states this engine writes, resolved once when the server
+/// loads ([`LiquidStates::resolve`] fails there on a registry without them).
+#[derive(Resource, Debug, Clone, Copy)]
+pub(crate) struct LiquidStates {
     air: u32,
     water: [u32; 16],
     lava: [u32; 16],
@@ -115,44 +116,27 @@ struct States {
     blue_ice: u32,
 }
 
-impl States {
-    fn new(registry: &BlockRegistry) -> Self {
-        let id = |name: &str| {
-            registry
-                .default_state_id_by_name(name)
-                .unwrap_or_else(|| panic!("{name} in the block registry"))
+impl LiquidStates {
+    pub(crate) fn resolve(registry: &BlockRegistry) -> Result<Self, MissingBlock> {
+        let id = |block| registry.require(block).map(|entry| entry.default_state_id);
+        let depths = |block| -> Result<[u32; 16], MissingBlock> {
+            let mut states = [0; 16];
+            for (depth, state) in (0..).zip(&mut states) {
+                *state = registry.require_state(block, "liquid_depth", StateValue::Int(depth))?;
+            }
+            Ok(states)
         };
-        let depths = |name: &str| {
-            let entry = registry.get_by_name(name).expect(name);
-            std::array::from_fn(|depth| {
-                entry
-                    .with_state_value(
-                        entry.default_state_id,
-                        "liquid_depth",
-                        StateValue::Int(depth as i32),
-                    )
-                    .expect("liquid_depth 0..15")
-            })
-        };
-        let block = |name: &str| {
-            registry
-                .get_by_name(name)
-                .unwrap_or_else(|| panic!("{name} in the block registry"))
-        };
-        let basalt = block("minecraft:basalt");
-        Self {
-            air: id("minecraft:air"),
-            water: depths("minecraft:water"),
-            lava: depths("minecraft:lava"),
-            stone: id("minecraft:stone"),
-            cobblestone: id("minecraft:cobblestone"),
-            obsidian: id("minecraft:obsidian"),
-            basalt: basalt
-                .with_state_value(basalt.default_state_id, "pillar_axis", StateValue::Str("y"))
-                .unwrap_or(basalt.default_state_id),
-            soul_soil: block("minecraft:soul_soil").id,
-            blue_ice: block("minecraft:blue_ice").id,
-        }
+        Ok(Self {
+            air: id(BlockId::AIR)?,
+            water: depths(BlockId::WATER)?,
+            lava: depths(BlockId::LAVA)?,
+            stone: id(BlockId::STONE)?,
+            cobblestone: id(BlockId::COBBLESTONE)?,
+            obsidian: id(BlockId::OBSIDIAN)?,
+            basalt: registry.require_state(BlockId::BASALT, "pillar_axis", StateValue::Str("y"))?,
+            soul_soil: registry.require(BlockId::SOUL_SOIL)?.id,
+            blue_ice: registry.require(BlockId::BLUE_ICE)?.id,
+        })
     }
 
     fn fluid(&self, kind: LiquidKind, depth: u8) -> u32 {
@@ -195,18 +179,17 @@ pub(crate) struct Liquids {
     rng: StdRng,
     /// Lava ticks [`NETHER_LAVA_DELAY`] apart and spreads 1 per block.
     pub nether: bool,
-    states: Option<States>,
-}
-
-impl Default for Liquids {
-    fn default() -> Self {
-        Self::seeded(0x6c69_7175_6964)
-    }
+    states: LiquidStates,
 }
 
 impl Liquids {
+    /// The server's engine, writing `states`.
+    pub(crate) fn new(states: LiquidStates) -> Self {
+        Self::seeded(0x6c69_7175_6964, states)
+    }
+
     /// An engine whose chunk order draws come from `seed`.
-    pub(crate) fn seeded(seed: u64) -> Self {
+    pub(crate) fn seeded(seed: u64, states: LiquidStates) -> Self {
         Self {
             now: 0,
             queue: HashMap::new(),
@@ -215,14 +198,8 @@ impl Liquids {
             ticking: None,
             rng: StdRng::seed_from_u64(seed),
             nether: false,
-            states: None,
+            states,
         }
-    }
-
-    fn states(&mut self, registry: &BlockRegistry) -> States {
-        self.states
-            .get_or_insert_with(|| States::new(registry))
-            .clone()
     }
 
     fn delay(&self, kind: LiquidKind) -> u64 {
@@ -357,7 +334,7 @@ impl Liquids {
         depth: Option<u8>,
         layer: Layer,
     ) {
-        let states = self.states(target.registry());
+        let states = self.states;
         let state = depth.map_or(states.air, |depth| states.fluid(kind, depth));
         match layer {
             Layer::Block => target.write(pos, state),
@@ -414,7 +391,7 @@ impl Liquids {
         pos: IVec3,
         fluid: Fluid,
     ) -> bool {
-        let states = self.states(target.registry());
+        let states = self.states;
         let water = |target: &T, at: IVec3| {
             Self::fluid(target, at).is_some_and(|f| f.kind == LiquidKind::Water)
         };
@@ -589,7 +566,7 @@ impl Liquids {
         if kind == LiquidKind::Lava
             && Self::fluid(target, below).is_some_and(|f| f.kind == LiquidKind::Water)
         {
-            let states = self.states(target.registry());
+            let states = self.states;
             target.write(below, states.stone);
             self.rewrote(target, below);
             return;

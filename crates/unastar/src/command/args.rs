@@ -578,6 +578,16 @@ macro_rules! arg_enum {
         #[derive(Debug, Clone, Copy, PartialEq, Eq)]
         $vis enum $name { $($variant),* }
 
+        impl $name {
+            /// The variant's first (canonical) spelling.
+            #[allow(dead_code)]
+            $vis const fn spelling(self) -> &'static str {
+                match self {
+                    $(Self::$variant => $first,)*
+                }
+            }
+        }
+
         impl $crate::command::args::ArgEnum for $name {
             const ENUM: &'static str = $captured;
             const SPELLINGS: &'static [&'static str] = &[$($first $(, $more)*),*];

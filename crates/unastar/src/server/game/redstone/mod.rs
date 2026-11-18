@@ -94,6 +94,12 @@ pub(crate) trait Circuit: BlockSource {
     fn prime_tnt(&mut self, _pos: IVec3) {}
 }
 
+/// The circuit table of the server's block registry, built when the server
+/// loads ([`Table::build`] fails there on a registry without a block the
+/// circuit writes).
+#[derive(Resource, Debug, Clone)]
+pub(crate) struct CircuitTable(pub Arc<Table>);
+
 /// The circuit's state between ticks.
 #[derive(Resource, Debug, Default)]
 pub(crate) struct Redstone {
@@ -185,11 +191,12 @@ fn with_byte(registry: &BlockRegistry, state: u32, property: &str, value: bool) 
     with(registry, state, property, StateValue::Byte(u8::from(value)))
 }
 
-/// The same block state under another identifier (`powered_repeater` /
-/// `unpowered_repeater`, lit and unlit torches and lamps).
-fn renamed(registry: &BlockRegistry, state: u32, name: &str) -> Option<u32> {
+/// The same block state as block `target` (a registry id from
+/// [`kinds::CircuitBlocks`]: `powered_repeater` / `unpowered_repeater`, lit
+/// and unlit torches and lamps).
+fn renamed(registry: &BlockRegistry, state: u32, target: u32) -> Option<u32> {
     let entry = registry.get_by_runtime_id(state)?;
-    let target = registry.get_by_name(name)?;
+    let target = registry.get(target)?;
     let mut out = target.default_state_id;
     for property in entry.data.properties {
         if let Some(value) = entry.state_value(state, property.name) {
@@ -210,31 +217,25 @@ enum Change {
 }
 
 impl Redstone {
+    /// A circuit over the blocks of `table` ([`CircuitTable`]).
+    pub(crate) fn new(table: Arc<Table>) -> Self {
+        Self {
+            table: Some(table),
+            ..Self::default()
+        }
+    }
+
     /// A circuit whose next step is tick `now + 1`.
     #[cfg(test)]
-    pub(crate) fn starting_at(now: u64) -> Self {
+    pub(crate) fn starting_at(now: u64, table: Arc<Table>) -> Self {
         Self {
             now,
-            ..Self::default()
+            ..Self::new(table)
         }
     }
 
     fn update_tick(tick: u64) -> bool {
         tick.is_multiple_of(2)
-    }
-
-    fn table(&mut self, registry: &BlockRegistry) -> Arc<Table> {
-        static VANILLA: std::sync::LazyLock<Arc<Table>> =
-            std::sync::LazyLock::new(|| Arc::new(Table::build(BlockRegistry::vanilla())));
-        self.table
-            .get_or_insert_with(|| {
-                if registry.len() == BlockRegistry::vanilla().len() {
-                    VANILLA.clone()
-                } else {
-                    Arc::new(Table::build(registry))
-                }
-            })
-            .clone()
     }
 
     /// A block changed outside the circuit (a player, a command, a block
@@ -410,7 +411,10 @@ impl Redstone {
 
     /// One game tick.
     pub(crate) fn step(&mut self, registry: &BlockRegistry, world: &mut (impl Circuit + ?Sized)) {
-        let table = self.table(registry);
+        // Only `Redstone::new` makes a circuit that steps.
+        let Some(table) = self.table.clone() else {
+            return;
+        };
         self.now += 1;
         let now = self.now;
         let changed = std::mem::take(&mut self.changed);
@@ -455,7 +459,7 @@ impl Redstone {
                 if self.powered.get(&pos) == Some(&false)
                     && let Some(state) = world.block_at(pos)
                     && table.get(state).kind == Kind::Consumer(Consumer::Lamp { lit: true })
-                    && let Some(unlit) = renamed(registry, state, "minecraft:redstone_lamp")
+                    && let Some(unlit) = renamed(registry, state, table.blocks.redstone_lamp)
                 {
                     self.write(world, table, pos, unlit);
                 }
@@ -702,9 +706,9 @@ impl Redstone {
                         }
                     }
                     let name = if lit {
-                        "minecraft:redstone_torch"
+                        table.blocks.redstone_torch
                     } else {
-                        "minecraft:unlit_redstone_torch"
+                        table.blocks.unlit_redstone_torch
                     };
                     if let Some(state) = world.block_at(pos)
                         && let Some(next) = renamed(registry, state, name)
@@ -714,9 +718,9 @@ impl Redstone {
                 }
                 Change::Repeater(pos, powered) => {
                     let name = if powered {
-                        "minecraft:powered_repeater"
+                        table.blocks.powered_repeater
                     } else {
-                        "minecraft:unpowered_repeater"
+                        table.blocks.unpowered_repeater
                     };
                     if let Some(state) = world.block_at(pos)
                         && let Some(next) = renamed(registry, state, name)
@@ -727,9 +731,9 @@ impl Redstone {
                 Change::Comparator(pos, out) => {
                     self.comparators.insert(pos, out);
                     let name = if out > 0 {
-                        "minecraft:powered_comparator"
+                        table.blocks.powered_comparator
                     } else {
-                        "minecraft:unpowered_comparator"
+                        table.blocks.unpowered_comparator
                     };
                     if let Some(state) = world.block_at(pos)
                         && let Some(next) = renamed(registry, state, name)
@@ -802,7 +806,7 @@ impl Redstone {
             match consumer {
                 Consumer::Lamp { lit } => {
                     if powered && !lit {
-                        if let Some(next) = renamed(registry, state, "minecraft:lit_redstone_lamp")
+                        if let Some(next) = renamed(registry, state, table.blocks.lit_redstone_lamp)
                         {
                             self.write(world, table, pos, next);
                         }
@@ -862,7 +866,7 @@ impl Redstone {
                 // `explosions/tnt_prime.json`).
                 Consumer::Tnt => {
                     if powered && !was {
-                        let air = pistons::default_state(registry, "minecraft:air");
+                        let air = table.blocks.air;
                         self.write(world, table, pos, air);
                         world.prime_tnt(pos);
                     }

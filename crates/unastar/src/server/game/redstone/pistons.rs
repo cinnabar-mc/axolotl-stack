@@ -312,23 +312,15 @@ pub(crate) fn structure(
     resolver.resolve(if extend { piston + f } else { piston + f * 2 })
 }
 
+/// The default state of block `block` (a registry id) with `property` set.
 fn state_with(
     registry: &BlockRegistry,
-    name: &str,
+    block: u32,
     property: &str,
     value: StateValue,
 ) -> Option<u32> {
-    let entry = registry.get_by_name(name)?;
+    let entry = registry.get(block)?;
     entry.with_state_value(entry.default_state_id, property, value)
-}
-
-/// The default state of `name`, a block every registry the circuit runs on
-/// has (air, the moving block).
-pub(crate) fn default_state(registry: &BlockRegistry, name: &str) -> u32 {
-    registry
-        .get_by_name(name)
-        .map(|entry| entry.default_state_id)
-        .unwrap_or_else(|| panic!("the block registry has no {name}"))
 }
 
 fn ints(positions: &[IVec3]) -> NBTTag {
@@ -376,6 +368,7 @@ fn moving_actor(
     pos: IVec3,
     piston: IVec3,
     state: u32,
+    air: u32,
     expanding: bool,
     actor: Option<&tag::Compound>,
 ) -> tag::Compound {
@@ -385,10 +378,10 @@ fn moving_actor(
     if let Some(entry) = registry.get_by_runtime_id(state) {
         compound.insert("movingBlock".into(), block_actors::block_tag(entry, state));
     }
-    if let Some(air) = registry.get_by_name("minecraft:air") {
+    if let Some(entry) = registry.get_by_runtime_id(air) {
         compound.insert(
             "movingBlockExtra".into(),
-            block_actors::block_tag(air, air.default_state_id),
+            block_actors::block_tag(entry, air),
         );
     }
     if let Some(actor) = actor {
@@ -527,7 +520,7 @@ impl Pistons {
         now: u64,
         written: &mut Vec<IVec3>,
     ) {
-        let air = default_state(registry, "minecraft:air");
+        let air = table.blocks.air;
         let Some(structure) = structure(world, table, air, pos, facing, true) else {
             return;
         };
@@ -549,21 +542,30 @@ impl Pistons {
             world.break_block(*broken);
             written.push(*broken);
         }
-        let actors = self.shift(registry, world, pos, &structure.moved, dir, true, written);
+        let actors = self.shift(
+            registry,
+            world,
+            table,
+            pos,
+            &structure.moved,
+            dir,
+            true,
+            written,
+        );
         self.motions.push(Motion {
             start: now,
             dir,
             head: Some(pos + dir),
             blocks: structure.moved.iter().map(|at| *at + dir).collect(),
         });
-        let arm_name = if sticky {
-            "minecraft:sticky_piston_arm_collision"
+        let arm_block = if sticky {
+            table.blocks.sticky_piston_arm
         } else {
-            "minecraft:piston_arm_collision"
+            table.blocks.piston_arm
         };
         if let Some(arm) = state_with(
             registry,
-            arm_name,
+            arm_block,
             "facing_direction",
             StateValue::Int(piston_facing_value(facing)),
         ) {
@@ -601,7 +603,7 @@ impl Pistons {
     ) {
         let dir = facing.offset();
         let head = pos + dir;
-        let air = default_state(registry, "minecraft:air");
+        let air = table.blocks.air;
         let mut attached = Vec::new();
         let pulled = if sticky {
             let front = pos + dir * 2;
@@ -634,7 +636,16 @@ impl Pistons {
                     head: None,
                     blocks: pulled.moved.iter().map(|at| *at - dir).collect(),
                 });
-                self.shift(registry, world, pos, &pulled.moved, -dir, false, written)
+                self.shift(
+                    registry,
+                    world,
+                    table,
+                    pos,
+                    &pulled.moved,
+                    -dir,
+                    false,
+                    written,
+                )
             }
             None => Vec::new(),
         };
@@ -663,14 +674,15 @@ impl Pistons {
         &mut self,
         registry: &BlockRegistry,
         world: &mut (impl Circuit + ?Sized),
+        table: &Table,
         piston: IVec3,
         blocks: &[IVec3],
         dir: IVec3,
         expanding: bool,
         written: &mut Vec<IVec3>,
     ) -> Vec<(IVec3, tag::Compound)> {
-        let air = default_state(registry, "minecraft:air");
-        let moving_block = default_state(registry, "minecraft:moving_block");
+        let air = table.blocks.air;
+        let moving_block = table.blocks.moving_block;
         let taken: Vec<(IVec3, u32, Option<tag::Compound>)> = blocks
             .iter()
             .map(|source| {
@@ -684,7 +696,15 @@ impl Pistons {
             world.write(dest, moving_block);
             actors.push((
                 dest,
-                moving_actor(registry, dest, piston, state, expanding, actor.as_ref()),
+                moving_actor(
+                    registry,
+                    dest,
+                    piston,
+                    state,
+                    air,
+                    expanding,
+                    actor.as_ref(),
+                ),
             ));
             world.write(source, air);
             written.push(dest);
@@ -712,7 +732,7 @@ impl Pistons {
         now: u64,
     ) -> Vec<IVec3> {
         let mut written = Vec::new();
-        let moving_block = default_state(registry, "minecraft:moving_block");
+        let moving_block = table.blocks.moving_block;
         for (piston, extended) in self.ends.remove(&now).unwrap_or_default() {
             // BDS's order: the piston's actor, the landed blocks, their
             // actors.

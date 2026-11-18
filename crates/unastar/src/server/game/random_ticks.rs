@@ -34,7 +34,7 @@ use rand::Rng;
 
 use crate::entity::systems::BlockSource;
 use crate::registry::BlockRegistry;
-use crate::registry::block::{BlockEntry, StateValue};
+use crate::registry::block::{BlockEntry, BlockId, StateValue};
 use crate::server::game::block_update::{UpdateTarget, changed};
 
 /// Random picks per sub-chunk per game tick for each step of
@@ -216,6 +216,11 @@ fn named(blocks: &impl BlockSource, pos: IVec3) -> Option<&str> {
     entry(blocks, state).map(|entry| entry.string_id.as_str())
 }
 
+/// The block type at `pos`.
+fn block_id(blocks: &impl BlockSource, pos: IVec3) -> Option<BlockId> {
+    blocks.registry().block_id(blocks.block_at(pos)?)
+}
+
 fn default_state(blocks: &impl BlockSource, name: &str) -> Option<u32> {
     blocks.registry().default_state_id_by_name(name)
 }
@@ -247,7 +252,7 @@ pub(crate) fn random_tick<T: UpdateTarget>(
 }
 
 /// The growth factor of the crop at `pos` (see the module docs).
-fn growth_speed(world: &impl BlockSource, pos: IVec3, crop: &str) -> f32 {
+fn growth_speed(world: &impl BlockSource, pos: IVec3, crop: BlockId) -> f32 {
     let mut f = 1.0f32;
     let below = pos - IVec3::Y;
     for dx in -1..=1 {
@@ -255,7 +260,7 @@ fn growth_speed(world: &impl BlockSource, pos: IVec3, crop: &str) -> f32 {
             let soil = below + IVec3::new(dx, 0, dz);
             let mut g = 0.0f32;
             if let Some(state) = world.block_at(soil)
-                && named(world, soil) == Some("minecraft:farmland")
+                && block_id(world, soil) == Some(BlockId::FARMLAND)
             {
                 g = if int(world, state, "moisturized_amount").unwrap_or(0) > 0 {
                     3.0
@@ -269,7 +274,7 @@ fn growth_speed(world: &impl BlockSource, pos: IVec3, crop: &str) -> f32 {
             f += g;
         }
     }
-    let same = |dx: i32, dz: i32| named(world, pos + IVec3::new(dx, 0, dz)) == Some(crop);
+    let same = |dx: i32, dz: i32| block_id(world, pos + IVec3::new(dx, 0, dz)) == Some(crop);
     // The same crop on both axes, or on a diagonal, halves it.
     let east_west = same(-1, 0) || same(1, 0);
     let north_south = same(0, -1) || same(0, 1);
@@ -287,10 +292,10 @@ fn crop<T: UpdateTarget>(world: &mut T, pos: IVec3, state: u32, rng: &mut impl R
     if growth >= 7 {
         return;
     }
-    let Some(crop) = named(world, pos).map(str::to_owned) else {
+    let Some(crop) = block_id(world, pos) else {
         return;
     };
-    let f = growth_speed(world, pos, &crop);
+    let f = growth_speed(world, pos, crop);
     let range = (25.0 / f) as i32;
     if rng.gen_range(0..=range) == 0 {
         let next = with(world, state, "growth", StateValue::Int(growth + 1));
@@ -302,14 +307,14 @@ fn crop<T: UpdateTarget>(world: &mut T, pos: IVec3, state: u32, rng: &mut impl R
 /// and grows a block at age 15.
 fn column<T: UpdateTarget>(world: &mut T, pos: IVec3, state: u32) {
     let above = pos + IVec3::Y;
-    if named(world, above) != Some("minecraft:air") {
+    if block_id(world, above) != Some(BlockId::AIR) {
         return;
     }
-    let Some(name) = named(world, pos).map(str::to_owned) else {
+    let Some(block) = block_id(world, pos) else {
         return;
     };
     let mut height = 1;
-    while named(world, pos - IVec3::Y * height) == Some(name.as_str()) {
+    while block_id(world, pos - IVec3::Y * height) == Some(block) {
         height += 1;
     }
     if height >= 3 {
@@ -317,7 +322,7 @@ fn column<T: UpdateTarget>(world: &mut T, pos: IVec3, state: u32) {
     }
     let age = int(world, state, "age").unwrap_or(0);
     if age == 15 {
-        if let Some(fresh) = default_state(world, &name) {
+        if let Some(fresh) = world.registry().get(block.0).map(|e| e.default_state_id) {
             set(world, above, fresh);
         }
         let reset = with(world, state, "age", StateValue::Int(0));
@@ -333,8 +338,8 @@ fn near_water(world: &impl BlockSource, pos: IVec3) -> bool {
         (0..=1).any(|dy| {
             (-4..=4).any(|dz| {
                 matches!(
-                    named(world, pos + IVec3::new(dx, dy, dz)),
-                    Some("minecraft:water" | "minecraft:flowing_water")
+                    block_id(world, pos + IVec3::new(dx, dy, dz)),
+                    Some(BlockId::WATER | BlockId::FLOWING_WATER)
                 )
             })
         })
@@ -397,7 +402,7 @@ fn grass<T: UpdateTarget>(world: &mut T, pos: IVec3, rng: &mut impl Rng) {
         let Some(state) = world.block_at(target) else {
             continue;
         };
-        let is_dirt = named(world, target) == Some("minecraft:dirt")
+        let is_dirt = block_id(world, target) == Some(BlockId::DIRT)
             && entry(world, state)
                 .and_then(|e| e.state_value(state, "dirt_type"))
                 .is_none_or(|value| value == StateValue::Str("normal"));

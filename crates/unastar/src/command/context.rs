@@ -122,11 +122,8 @@ impl CommandSource {
 
 /// A player's command permission: operators run `gamedirectors` commands.
 pub fn player_permission(world: &World, entity: Entity) -> CommandPermission {
-    if world.get::<Operator>(entity).is_some() {
-        CommandPermission::GameDirectors
-    } else {
-        CommandPermission::Any
-    }
+    crate::command::exec::PermissionLevel::from_operator(world.get::<Operator>(entity).is_some())
+        .into()
 }
 
 /// Executor access: the whole world plus the source.

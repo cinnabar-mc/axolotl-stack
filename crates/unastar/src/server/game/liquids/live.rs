@@ -17,7 +17,7 @@ use jolyne::valentine::types::{
 };
 use jolyne::valentine::{McpePacket, UpdateBlockPacket, UpdateSubChunkBlocksPacket};
 
-use super::{LiquidTarget, Liquids};
+use super::{LiquidStates, LiquidTarget, Liquids};
 use crate::entity::components::PlayerSession;
 use crate::entity::systems::BlockSource;
 use crate::registry::BlockRegistry;
@@ -175,14 +175,27 @@ fn registry_ready(world: &World) -> bool {
     world.contains_resource::<BlockRegistryResource>() && world.contains_resource::<ChunkManager>()
 }
 
+/// Start the engine on the liquid states the server resolved when it loaded;
+/// `false` in a world without them (no liquids run there).
+fn start_engine(world: &mut World) -> bool {
+    if world.contains_resource::<Liquids>() {
+        return true;
+    }
+    let Some(states) = world.get_resource::<LiquidStates>().copied() else {
+        return false;
+    };
+    world.insert_resource(Liquids::new(states));
+    true
+}
+
 /// Step the liquids one game tick and send what changed (exclusive: edits
 /// chunks).
 pub(crate) fn tick_liquids(world: &mut World) {
     if !registry_ready(world) {
         return;
     }
-    if !world.contains_resource::<Liquids>() {
-        world.insert_resource(Liquids::default());
+    if !start_engine(world) {
+        return;
     }
     world.resource_scope(|world, mut liquids: Mut<Liquids>| {
         liquids.step(&mut Live(world));
@@ -294,8 +307,8 @@ pub(crate) fn take_source(world: &mut World, pos: IVec3) -> Option<LiquidKind> {
 /// A source was just put at `pos` by a bucket: it ticks after its delay
 /// (lava touching water hardens at once).
 fn wake_placed(world: &mut World, pos: IVec3) {
-    if !world.contains_resource::<Liquids>() {
-        world.insert_resource(Liquids::default());
+    if !start_engine(world) {
+        return;
     }
     world.resource_scope(|world, mut liquids: Mut<Liquids>| {
         let mut live = Live(world);

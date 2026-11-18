@@ -116,7 +116,12 @@ pub(crate) fn tick_redstone(world: &mut World) {
         return;
     };
     if !world.contains_resource::<Redstone>() {
-        world.insert_resource(Redstone::default());
+        // A world without a circuit table (no server loaded it) has no circuit.
+        let Some(table) = world.get_resource::<super::CircuitTable>() else {
+            return;
+        };
+        let redstone = Redstone::new(table.0.clone());
+        world.insert_resource(redstone);
     }
     // The block updates of the circuit's changes of the last tick run now,
     // as outside changes (a dust on a trapdoor the circuit opened pops).
@@ -271,6 +276,12 @@ mod tests {
         ));
         world.insert_resource(crate::server::game::types::BlockRegistryResource(
             std::sync::Arc::new(BlockRegistry::vanilla().clone()),
+        ));
+        world.insert_resource(crate::server::game::redstone::CircuitTable(
+            std::sync::Arc::new(
+                crate::server::game::redstone::kinds::Table::build(BlockRegistry::vanilla())
+                    .unwrap(),
+            ),
         ));
         world.insert_resource(Messages::<BlockBroadcastEvent>::default());
         let mut chunk = crate::world::chunk::Chunk::new(0, 0);

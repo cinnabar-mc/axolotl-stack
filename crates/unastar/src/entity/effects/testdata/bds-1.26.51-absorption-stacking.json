@@ -1,0 +1,26 @@
+{
+  "source": "BDS 1.26.51, tools/bds-sweep/scripts/absorption-stacking.txt played by script.py (survival player, plain BDS, 2026-11-17): the absorption attribute after each source, from UpdateAttributes",
+  "max": 16.0,
+  "cases": [
+    {
+      "name": "golden apple, then enchanted golden apple",
+      "given": [{"level": 0, "ticks": 2400}, {"level": 3, "ticks": 2400}],
+      "absorption": [4.0, 16.0]
+    },
+    {
+      "name": "enchanted golden apple, then golden apple (level IV kept)",
+      "given": [{"level": 3, "ticks": 2400}, {"level": 0, "ticks": 2400}],
+      "absorption": [16.0, 16.0]
+    },
+    {
+      "name": "golden apple twice",
+      "given": [{"level": 0, "ticks": 2400}, {"level": 0, "ticks": 2400}],
+      "absorption": [4.0, 8.0]
+    },
+    {
+      "name": "/effect absorption 60 1, then golden apple (level II kept, its amount added)",
+      "given": [{"level": 1, "ticks": 1200}, {"level": 0, "ticks": 2400}],
+      "absorption": [8.0, 16.0]
+    }
+  ]
+}

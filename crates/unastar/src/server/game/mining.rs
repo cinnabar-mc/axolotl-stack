@@ -27,6 +27,7 @@ use unastar_rules::ids::Enchantment;
 use crate::entity::components::{EffectType, Effects};
 use crate::item::ItemStack;
 use crate::registry::block::BlockEntry;
+use crate::registry::block::BlockId;
 use crate::registry::item::{ToolKind, ToolTier};
 
 /// Minimum tool tier a block needs for drops, from its
@@ -88,18 +89,18 @@ pub fn item_destroy_speed(tool: Option<&ItemStack>, block: &BlockEntry) -> f32 {
         Some(ToolKind::Sword) if item.identifier() == "minecraft:mace" => 1.0,
         // Swords: cobweb 15, plant-like blocks 1.5.
         Some(ToolKind::Sword) => {
-            if id == "minecraft:web" {
+            if block.block_id() == BlockId::WEB {
                 15.0
             } else if block.data.material == 7
                 || block.data.material == 8
                 || matches!(
-                    id,
-                    "minecraft:pumpkin"
-                        | "minecraft:melon_block"
-                        | "minecraft:vine"
-                        | "minecraft:glow_lichen"
-                        | "minecraft:cocoa"
-                        | "minecraft:moss_carpet"
+                    block.block_id(),
+                    BlockId::PUMPKIN
+                        | BlockId::MELON_BLOCK
+                        | BlockId::VINE
+                        | BlockId::GLOW_LICHEN
+                        | BlockId::COCOA
+                        | BlockId::MOSS_CARPET
                 )
             {
                 1.5
@@ -109,11 +110,11 @@ pub fn item_destroy_speed(tool: Option<&ItemStack>, block: &BlockEntry) -> f32 {
         }
         // Shears: cobweb and leaves 15, wool 5, vines and glow lichen 2.
         Some(ToolKind::Shears) => {
-            if id == "minecraft:web" || block.data.material == 7 {
+            if block.block_id() == BlockId::WEB || block.data.material == 7 {
                 15.0
             } else if id.ends_with("_wool") {
                 5.0
-            } else if matches!(id, "minecraft:vine" | "minecraft:glow_lichen") {
+            } else if matches!(block.block_id(), BlockId::VINE | BlockId::GLOW_LICHEN) {
                 2.0
             } else {
                 1.0

@@ -105,6 +105,16 @@ impl ChunkLoader {
         self.radius
     }
 
+    /// Whether `column` is in this viewer's view (the disk its columns are
+    /// sent from).
+    pub fn in_view(&self, column: (i32, i32)) -> bool {
+        Self::is_in_view_range(
+            column.0 - self.position.0,
+            column.1 - self.position.1,
+            self.radius,
+        )
+    }
+
     /// Check if a chunk is currently loaded for this viewer.
     pub fn is_loaded(&self, x: i32, z: i32) -> bool {
         self.loaded.contains(&(x, z))

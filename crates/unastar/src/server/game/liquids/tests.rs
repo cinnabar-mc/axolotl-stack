@@ -242,7 +242,7 @@ fn replay(row: &Value, nether: bool) -> Result<(Vec<Change>, bool), Skip> {
         .to_string()
         .bytes()
         .fold(7u64, |h, b| h.wrapping_mul(31).wrapping_add(u64::from(b)));
-    let mut liquids = Liquids::seeded(seed);
+    let mut liquids = Liquids::seeded(seed, super::LiquidStates::resolve(registry()).unwrap());
     liquids.nether = nether;
     let mut trace = Vec::new();
     let mut chunks = HashSet::new();
@@ -507,4 +507,13 @@ fn liquid_changes_are_batched_per_subchunk() {
         &packets[1].1.data,
         McpePacketData::UpdateBlockPacket(_)
     ));
+}
+
+#[test]
+fn a_registry_without_the_liquid_states_fails_when_they_are_resolved() {
+    use crate::registry::block::{BlockId, MissingBlock};
+    assert_eq!(
+        super::LiquidStates::resolve(&BlockRegistry::new()).unwrap_err(),
+        MissingBlock::Block(BlockId::AIR)
+    );
 }

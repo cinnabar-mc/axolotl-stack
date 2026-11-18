@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Two numeric backends selected per generator
-The noise layer SHALL keep two numeric backends: the calibrated backend (`NoiseRegistry::new`) and the native Java-exact backend (`NoiseRegistry::with_router_settings`, returning `NativeNoiseRegistry`). Both the Java-style generator and the Bedrock-style generator's shared terrain MUST use the native backend; the Bedrock-style terrain core runs it without Java's structure starts or beardifier and keeps its own biome lookup. Selecting one backend MUST NOT change the arithmetic of the other (decision 0053, proposed; supersedes 0032).
+The noise layer SHALL keep two numeric backends: the calibrated backend (`NoiseRegistry::new`) and the native Java-exact backend (`NoiseRegistry::with_router_settings`, returning `NativeNoiseRegistry`). Both the Java-style generator and the Bedrock-style generator's shared terrain MUST use the native backend; the Bedrock-style terrain core runs it without Java's structure starts or beardifier and keeps its own biome lookup. Selecting one backend MUST NOT change the arithmetic of the other (decision 0053, which supersedes 0032).
 
 #### Scenario: Native backend matches captured Java bits
 - **WHEN** the native registry samples legacy climate, blended noise or modern octave sums at the pinned seeds and positions

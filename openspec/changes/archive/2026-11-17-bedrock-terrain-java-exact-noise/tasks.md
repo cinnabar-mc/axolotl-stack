@@ -3,7 +3,7 @@
 ## 0. Decide
 
 - [x] 0.1 Decision proposed as record 0053
-- [ ] 0.2 Owner accepts 0053 (set `status: accepted`; 0032 becomes `superseded by 0053`)
+- [x] 0.2 Owner accepts 0053 (2026-11-17) (set `status: accepted`; 0032 becomes `superseded by 0053`)
 
 ## 1. Port
 
@@ -21,5 +21,5 @@
 
 ## 3. Archive
 
-- [ ] 3.1 Archive after 0.2: merge the delta into `openspec/specs/worldgen-pipeline/spec.md`
+- [x] 3.1 Archive after 0.2: merge the delta into `openspec/specs/worldgen-pipeline/spec.md`
 - [ ] 3.2 Follow-up: remove the calibrated backend once nothing outside tests uses it

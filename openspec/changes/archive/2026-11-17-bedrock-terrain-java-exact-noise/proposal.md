@@ -3,7 +3,7 @@
 ## Why
 
 The `worldgen-pipeline` spec ties the Bedrock-style generator's terrain to the calibrated noise
-backend ([decision 0032](../../../docs/decisions/0032-two-worldgen-numeric-backends.md)).
+backend ([decision 0032](../../../../docs/decisions/0032-two-worldgen-numeric-backends.md)).
 Measured against the seed-12345 BDS 1.26.51 fixture, the native Java-exact backend is closer to
 BDS, both in terrain heights and in underground open cells. The work was done in PR #71 (commit
 `848eb542`, never merged) and is ported to current main with the rest of #71's worldgen fixes.
@@ -25,8 +25,8 @@ mattered for BDS terrain). The measurements are in `crates/unastar_bedrock_codeg
 Out of scope: removing the now-unused calibrated backend (`NoiseRegistry::new`,
 `CachingNoiseChunk`), which only examples and unit tests still use.
 
-**Decision:** proposed as [record 0053](../../../docs/decisions/0053-bedrock-terrain-uses-java-exact-noise.md),
-which supersedes 0032 once the owner accepts it.
+**Decision:** [record 0053](../../../../docs/decisions/0053-bedrock-terrain-uses-java-exact-noise.md)
+(accepted 2026-11-17), which supersedes 0032.
 
 ## Capabilities
 

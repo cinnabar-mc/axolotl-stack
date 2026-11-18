@@ -31,6 +31,7 @@ use crate::entity::mob::net::sound::play_level_sound;
 use crate::entity::mob::state::Dead;
 use crate::entity::systems::BlockSource;
 use crate::registry::BlockRegistry;
+use crate::registry::block::BlockId;
 use crate::registry::block::StateValue;
 
 /// How a landing block changes a fall.
@@ -69,7 +70,7 @@ impl LandingTable {
                 }
                 let rule = if registry.liquid_state(id).is_some() {
                     LandingRule::NoDamage
-                } else if entry.string_id == "minecraft:pointed_dripstone" {
+                } else if entry.block_id() == BlockId::POINTED_DRIPSTONE {
                     let tip = entry.state_value(id, "dripstone_thickness")
                         == Some(StateValue::Str("tip"));
                     let hanging = entry.state_value(id, "hanging") == Some(StateValue::Byte(1));

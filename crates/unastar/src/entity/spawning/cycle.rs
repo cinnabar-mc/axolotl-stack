@@ -44,6 +44,7 @@ use crate::entity::mob::state::Persistent;
 use crate::entity::mob::{MobKind, SpawnCause, events, spawn_mob};
 use crate::entity::systems::physics::{BlockSource, collides_with_blocks};
 use crate::registry::BlockRegistry;
+use crate::registry::block::BlockId;
 use crate::registry::collision::Aabb;
 use crate::server::game::types::BlockRegistryResource;
 use crate::world::chunk::{MIN_Y, SUBCHUNK_COUNT};
@@ -219,7 +220,7 @@ fn spawn_cluster(
     };
     if blocks
         .get_by_runtime_id(ground)
-        .is_none_or(|entry| entry.string_id == "minecraft:air")
+        .is_none_or(|entry| entry.block_id() == BlockId::AIR)
     {
         return;
     }
