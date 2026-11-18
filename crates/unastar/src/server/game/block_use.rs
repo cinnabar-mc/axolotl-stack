@@ -266,6 +266,9 @@ fn button_ticks(entry: &BlockEntry) -> u64 {
 /// click (the click goes on to place what is held); `Some(false)` when it
 /// did (no block corrections follow).
 pub(crate) fn used(world: &mut World, player: Entity, pos: IVec3) -> Option<bool> {
+    if let Some(used) = super::respawn_anchor::used(world, player, pos) {
+        return Some(used);
+    }
     let (entry, state) = entry_at(world, pos)?;
     let id = entry.string_id.as_str();
     if entry.state_value(state, "door_hinge_bit").is_some() {

@@ -349,6 +349,15 @@ impl Arena {
                 unastar_data::game_rules::GameRuleValue::Int(0),
             )
             .expect("randomtickspeed is a game rule");
+        // ... and with mob spawning off: natural spawning draws from the
+        // entity random every tick by the chunks loaded so far, so how fast
+        // the arena's chunks loaded (a busy machine) moved where a case's
+        // drops landed (`candle_onto_candle_cake`: the candle a cake drops
+        // was picked up in some full test runs).
+        arena
+            .world()
+            .resource_mut::<crate::world::rules::GameRules>()
+            .set(crate::world::rules::GameRule::DoMobSpawning, false);
         // The superflat world BDS ran in, over the swept box.
         let registry = BlockRegistry::vanilla();
         let layer = |y: i32| {
@@ -392,6 +401,11 @@ impl Arena {
         arena.tick();
         arena.drain();
         arena.drain_watcher();
+        // The case starts from the same draws however many ticks the chunks
+        // took to load.
+        arena
+            .world()
+            .insert_resource(crate::entity::EntityRandom::seeded(ARENA_SEED));
         arena
     }
 

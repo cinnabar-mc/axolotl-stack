@@ -1,22 +1,21 @@
 //! What viewers are sent when something explodes (BDS 1.26.51 capture,
 //! `testdata/bds-placements-tnt.json`): `LevelEvent` 2025 at the centre
 //! with the power as data, `LevelEventGeneric` 2026 with the centre, the
-//! power and one in eight broken positions, a pushed player's new motion,
-//! and the explosion's level sound.
+//! power and one in eight broken positions, and the explosion's level
+//! sound (a pushed player's motion goes with its hurt,
+//! `player_life::hurt::push_player`).
 
 use bevy_ecs::prelude::*;
 use bytes::{BufMut, BytesMut};
 use glam::{DVec3, IVec3};
-use jolyne::valentine::types::{ActorRuntimeId, PlayerInputTick, Vec3};
+use jolyne::valentine::types::Vec3;
 use jolyne::valentine::{
     LevelEventGenericPacket, LevelEventPacket, LevelSoundEventPacket, McpePacket,
-    SetActorMotionPacket,
 };
 use rand::Rng;
 use valentine::bedrock::codec::NbtCompoundBody;
 
 use super::{Blast, ExplosionRandom};
-use crate::entity::components::{PlayerSession, RuntimeEntityId};
 use crate::server::game::block_actors;
 
 /// `LevelEvent` of the explosion's particles (data: the power).
@@ -74,6 +73,23 @@ pub(super) fn explosion(world: &mut World, blast: &Blast, blocks: &[IVec3]) {
 /// `LevelEvent` of the fuse sound a newly lit TNT plays (data 0).
 const FUSE_SOUND: i32 = 1005;
 
+/// `LevelEvent` a fire charge lighting a block sends at a block corner, with
+/// this data (BDS 1.26.51: the TNT's own corner in `tnt_lit.json`, the
+/// corner of the block on a candle's clicked face in
+/// `data/measured/candles/candles_lit.json`; flint and steel sends none).
+const FIRE_CHARGE_LIT: i32 = 1008;
+const FIRE_CHARGE_LIT_DATA: i32 = 78642;
+
+/// The event of a fire charge lighting a block, at the corner of `pos`.
+pub(crate) fn fire_charge_lit(world: &mut World, pos: IVec3) {
+    let packet = McpePacket::from(LevelEventPacket {
+        event_id: FIRE_CHARGE_LIT,
+        position: wire(pos.as_dvec3()),
+        data: FIRE_CHARGE_LIT_DATA,
+    });
+    block_actors::broadcast(world, pos, &packet, None);
+}
+
 /// The fuse sound at the feet of a TNT just lit.
 pub(super) fn fuse(world: &mut World, feet: DVec3) {
     let packet = McpePacket::from(LevelEventPacket {
@@ -82,23 +98,6 @@ pub(super) fn fuse(world: &mut World, feet: DVec3) {
         data: 0,
     });
     block_actors::broadcast(world, feet.floor().as_ivec3(), &packet, None);
-}
-
-/// A player pushed by an explosion is sent its push.
-pub(super) fn motion(world: &mut World, player: Entity, push: DVec3) {
-    let (Some(session), Some(runtime_id)) = (
-        world.get::<PlayerSession>(player),
-        world.get::<RuntimeEntityId>(player),
-    ) else {
-        return;
-    };
-    let _ = session.send(McpePacket::from(SetActorMotionPacket {
-        target_runtime_id: ActorRuntimeId {
-            actor_runtime_id: runtime_id.0 as u64,
-        },
-        motion: wire(push),
-        tick: PlayerInputTick { inputtick: 0 },
-    }));
 }
 
 fn put_varint(body: &mut BytesMut, mut value: u32) {

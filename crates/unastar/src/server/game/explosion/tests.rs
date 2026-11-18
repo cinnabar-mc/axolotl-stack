@@ -5,15 +5,16 @@
 
 use std::collections::HashMap;
 
+mod round2;
+
 use glam::{DVec3, IVec3};
 use rand::SeedableRng;
 use rand::rngs::StdRng;
 use serde_json::Value;
 
-use super::{ExplosionBlocks, blast_centre, blasted_blocks, damage, distance, exposure, impact};
-use crate::entity::systems::BlockSource;
+use super::{ExplosionBlocks, blast_centre, blasted_blocks, damage, exposure, impact};
+use crate::entity::systems::{BlockSource, LayeredBlocks};
 use crate::registry::BlockRegistry;
-use crate::registry::collision::Aabb;
 
 /// TNT's explosion power and its actor's height.
 const TNT_POWER: f32 = 4.0;
@@ -30,16 +31,20 @@ fn id(name: &str) -> u32 {
 }
 
 /// A sweep cell: the superflat floor (grass at y = -1, dirt, bedrock at -4,
-/// void below) and the blocks set in it.
-struct Cell(HashMap<IVec3, u32>);
+/// void below), the blocks set in it and the water waterlogged ones hold.
+struct Cell(HashMap<IVec3, u32>, HashMap<IVec3, u32>);
 
 impl Cell {
     fn new() -> Self {
-        Self(HashMap::new())
+        Self(HashMap::new(), HashMap::new())
     }
 
     fn set(&mut self, pos: IVec3, name: &str) {
         self.0.insert(pos, id(name));
+    }
+
+    fn waterlog(&mut self, pos: IVec3) {
+        self.1.insert(pos, id("water"));
     }
 }
 
@@ -55,6 +60,12 @@ impl BlockSource for Cell {
 
     fn registry(&self) -> &BlockRegistry {
         registry()
+    }
+}
+
+impl LayeredBlocks for Cell {
+    fn second_layer_at(&self, pos: IVec3) -> Option<u32> {
+        Some(self.1.get(&pos).copied().unwrap_or_else(|| id("air")))
     }
 }
 
@@ -147,6 +158,7 @@ fn tnt_breaks_blocks_like_bds_by_distribution() {
                     TNT_POWER,
                     f32::MAX,
                     &mut rng,
+                    None,
                 );
                 // The TNT's own (now air) block and the redstone block are
                 // air afterwards too, as in the sweep's reads.
@@ -313,17 +325,13 @@ fn explosions_hurt_mobs_like_bds() {
     let mut failures = Vec::new();
     let mut near = Vec::new();
     let mut compared = 0;
+    let bodies = round2::bodies();
     for hit in hits() {
-        let (width, height) = match hit.kind.as_str() {
-            "iron_golem" => (1.4, 2.9),
-            "pig" => (0.9, 0.9),
-            other => panic!("{other}"),
-        };
+        let target = round2::target(&bodies, &hit.kind, hit.mob);
         let cell = hit_cell(&hit.name);
-        let aabb = Aabb::from_feet(hit.mob, width, height);
         let centre = blast_centre(hit.tnt, TNT_HEIGHT);
-        let seen = exposure(&cell, centre, &aabb);
-        let impact = impact(distance(centre, hit.mob, width), TNT_POWER, seen);
+        let seen = exposure(&cell, centre, &target.aabb);
+        let impact = impact(target.distance(centre), TNT_POWER, seen);
         let dealt = f64::from(damage(impact, TNT_POWER));
         let (before, after) = hit.health;
         let lost = before - after;

@@ -18,7 +18,8 @@ import time
 import traceback
 from pathlib import Path
 
-from endstone.event import (ActorDamageEvent, ActorKnockbackEvent, BlockBreakEvent, EventPriority,
+from endstone.event import (ActorDamageEvent, ActorExplodeEvent, ActorKnockbackEvent, BlockBreakEvent,
+                            BlockExplodeEvent, EventPriority,
                             PacketReceiveEvent, PacketSendEvent, PlayerInteractEvent, PlayerJoinEvent,
                             ServerLoadEvent, event_handler)
 from endstone.plugin import Plugin
@@ -58,6 +59,12 @@ class BdsSweep(Plugin):
         self.events: list[tuple[int, str, tuple[int, int, int]]] = []
         # (tick, actor type, damage, cause) of every damage event.
         self.damage: list[tuple[int, str, float, str]] = []
+        # The same events with who took them, where, and the damaging actor
+        # and its owner (the `scenarios` job's actor boxes).
+        self.damage_events: list[dict] = []
+        # Every explosion: the tick, the exploding actor (or block), where it
+        # exploded and the blocks it removes, in BDS's order.
+        self.explosions: list[dict] = []
         # Every knockback an actor received: the tick, the pushed actor's and
         # the source's state, and the velocity change BDS applied.
         self.knockbacks: list[dict] = []
@@ -112,6 +119,14 @@ class BdsSweep(Plugin):
     @event_handler(priority=EventPriority.MONITOR, ignore_cancelled=True)
     def on_damage(self, event: ActorDamageEvent) -> None:
         self.damage.append((self.ticks, event.actor.type, event.damage, event.damage_source.type))
+        source = event.damage_source
+        loc = event.actor.location
+        self.damage_events.append({
+            'tick': self.ticks, 'id': event.actor.id, 'type': event.actor.type,
+            'pos': [loc.x, loc.y, loc.z], 'damage': event.damage, 'cause': source.type,
+            'actor': jobs.actor_ref(source.actor), 'damaging': jobs.actor_ref(source.damaging_actor),
+            'health_before': event.actor.health,
+        })
         if self.lockstep_players:
             source = event.damage_source
             attacker = source.actor
@@ -121,6 +136,23 @@ class BdsSweep(Plugin):
                 'attacker': attacker.name if attacker is not None else None,
                 'health_after': event.actor.health,
             })
+
+    @event_handler(priority=EventPriority.MONITOR, ignore_cancelled=True)
+    def on_actor_explode(self, event: ActorExplodeEvent) -> None:
+        loc = event.location
+        self.explosions.append({
+            'tick': self.ticks, 'source': jobs.actor_ref(event.actor), 'pos': [loc.x, loc.y, loc.z],
+            'blocks': [[b.x, b.y, b.z] for b in event.block_list],
+        })
+
+    @event_handler(priority=EventPriority.MONITOR, ignore_cancelled=True)
+    def on_block_explode(self, event: BlockExplodeEvent) -> None:
+        block = event.block
+        self.explosions.append({
+            'tick': self.ticks, 'source': {'block': block.type, 'pos': [block.x, block.y, block.z]},
+            'pos': [block.x + 0.5, block.y + 0.5, block.z + 0.5],
+            'blocks': [[b.x, b.y, b.z] for b in event.block_list],
+        })
 
     @event_handler(priority=EventPriority.MONITOR, ignore_cancelled=True)
     def on_packet_in(self, event: PacketReceiveEvent) -> None:
@@ -152,6 +184,7 @@ class BdsSweep(Plugin):
             'source_name': source.name if source is not None else None,
             'tick': self.ticks,
             'actor': event.actor.runtime_id,
+            'id': event.actor.id,
             'type': event.actor.type,
             # The velocity change of the knockback; `state.vel` is the
             # actor's velocity with it applied.

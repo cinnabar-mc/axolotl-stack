@@ -74,11 +74,19 @@ families = [
 ids = ["minecraft:farmland", "minecraft:fire", "minecraft:grass_block", "minecraft:soul_fire"]
 
 [[claim]]
-area = "Gravity, fire, redstone, block updates and random ticks"
+area = "Gravity, fire, redstone, explosions, block updates and random ticks"
 owner = "lane BLOCKS"
 since = 2026-10-29
 domain = "systems"
-ids = ["world.block_updates", "world.falling_blocks", "world.fire", "world.pistons", "world.random_ticks", "world.redstone"]
+ids = ["world.block_updates", "world.explosions", "world.falling_blocks", "world.fire", "world.pistons", "world.random_ticks", "world.redstone"]
+
+[[claim]]
+area = "Respawn anchors and candles"
+owner = "lane BLOCKS"
+since = 2026-11-17
+domain = "blocks"
+families = ["candles"]
+ids = ["minecraft:respawn_anchor"]
 
 [[claim]]
 area = "Liquids: water and lava flow, mixing, the liquid layer"
