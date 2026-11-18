@@ -107,6 +107,7 @@ pub(crate) fn used(world: &mut World, player: Entity, pos: IVec3) -> Option<bool
 pub(crate) fn anchor_blast(pos: IVec3) -> Blast {
     Blast {
         centre: pos.as_dvec3() + DVec3::splat(0.5),
+        damage_centre: pos.as_dvec3() + DVec3::splat(0.5),
         power: EXPLOSION_POWER,
         source: None,
         breaks_blocks: true,

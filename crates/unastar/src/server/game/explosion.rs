@@ -46,7 +46,6 @@ use crate::entity::PLAYER_EYE_HEIGHT;
 use crate::entity::components::{GameMode, PhysicsBody, Player, Position, Velocity};
 use crate::entity::mob::MobKind;
 use crate::entity::mob::ai::sensing::can_see;
-use crate::entity::mob::attributes::KnockbackResistance;
 use crate::entity::mob::combat::{Hit, hurt_mob};
 use crate::entity::mob::components::KnockbackPower;
 use crate::entity::mob::constants::{PLAYER_BOX_HEIGHT, PLAYER_BOX_WIDTH};
@@ -242,7 +241,10 @@ pub(crate) fn exposure(blocks: &impl BlockSource, centre: DVec3, aabb: &Aabb) ->
     if step.x < 0.0 || step.y < 0.0 || step.z < 0.0 {
         return 0.0;
     }
-    // Centre the sample grid on the box's horizontal faces.
+    // The sample grid is shifted by half the step's remainder: towards -x
+    // and towards +z (BDS 1.26.51 `tnt_edge.json`: a pig on a stone ledge
+    // sees the TNT with its bottom row of points while its feet are up to
+    // 3.55, not 3.60, past the ledge at 3; the z ledge shows the +z shift).
     let offset_x = (1.0 - (1.0 / step.x).floor() * step.x) / 2.0;
     let offset_z = (1.0 - (1.0 / step.z).floor() * step.z) / 2.0;
     let (mut seen, mut total) = (0u32, 0u32);
@@ -253,7 +255,7 @@ pub(crate) fn exposure(blocks: &impl BlockSource, centre: DVec3, aabb: &Aabb) ->
             let mut z = 0.0;
             while z <= 1.0 {
                 let point = DVec3::new(
-                    aabb.min.x + size.x * x + offset_x,
+                    aabb.min.x + size.x * x - offset_x,
                     aabb.min.y + size.y * y,
                     aabb.min.z + size.z * z + offset_z,
                 );
@@ -335,7 +337,14 @@ pub(crate) struct Igniter(pub Entity);
 /// One explosion in the live world.
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct Blast {
+    /// Where it explodes: the rays, the exposure and the push start here.
     pub centre: DVec3,
+    /// What a target's distance for its impact is measured from: an
+    /// exploding actor's middle (half its height above its feet), else the
+    /// centre (BDS 1.26.51 `tnt_raised.json`, `tnt_knock.json`,
+    /// `tnt_player.json`: from the TNT's middle every target in the open has
+    /// an exposure of exactly 1, and a pig on a block 21 of its 27 points).
+    pub damage_centre: DVec3,
     pub power: f32,
     /// The actor that exploded: its explosion is an entity explosion;
     /// without one it is a block explosion.
@@ -529,7 +538,7 @@ fn hurt_actors(world: &mut World, blast: &Blast) {
             .get_resource::<Difficulty>()
             .is_some_and(|difficulty| *difficulty == Difficulty::Peaceful);
     for target in targets(world, blast.centre, reach) {
-        let distance = target.distance(blast.centre);
+        let distance = target.distance(blast.damage_centre);
         if distance > reach {
             continue;
         }
@@ -552,10 +561,7 @@ fn hurt_actors(world: &mut World, blast: &Blast) {
             crate::entity::player_life::hurt::worn_knockback_resistance(world, target.entity)
         } else {
             hurt_mob(world, target.entity, hit);
-            world
-                .get::<KnockbackResistance>(target.entity)
-                .copied()
-                .unwrap_or(KnockbackResistance::NONE)
+            crate::entity::mob::attributes::worn_knockback_resistance(world, target.entity)
         };
         let push = push(blast.centre, target.eyes, impact, resistance.value());
         if target.player {

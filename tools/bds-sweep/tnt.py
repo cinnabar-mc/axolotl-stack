@@ -354,6 +354,61 @@ def tnt_anchor() -> list[dict]:
     return items
 
 
+def tnt_raised() -> list[dict]:
+    """Round 3 (blocks round 7): the exposure of a target standing on a
+    block. Pigs held still (exact damage events) at 2-5 blocks east and on
+    the diagonal-ish z = 1, standing on the floor, on a stone block, on a
+    bottom slab and on a top slab (raised by 1, 0.5 and 1); twice each."""
+    fam = 'tnt_raised'
+    supports = {'floor': None, 'stone': ('minecraft:stone', {}),
+                'bottom_slab': ('minecraft:smooth_stone_slab', {'minecraft:vertical_half': 'bottom'}),
+                'top_slab': ('minecraft:smooth_stone_slab', {'minecraft:vertical_half': 'top'})}
+    items = []
+    for name, support in supports.items():
+        for dx in (2, 3, 4, 5):
+            for dz in (0, 1):
+                for n in range(2):
+                    build = [(at(0), TNT, {'explode_bit': False})]
+                    y = 0
+                    if support:
+                        build.append((at(dx, 0, dz), support[0], support[1]))
+                        y = 1
+                    events = held('pig', at(dx, y, dz)) + [[4, put(at(0, 0, -1), RB)]]
+                    items.append(item(fam, [name, dx, dz, n], build, 110, events, [at(0)]))
+    return items
+
+
+def tnt_edge() -> list[dict]:
+    """Where a target's exposure points lie: a pig held still on a stone
+    platform (x 3 to 6 at the cell's z) whose west edge it overhangs by a
+    varying amount (feet x 3.30 to 3.70 by 0.05), and along z over the
+    platform's north edge (feet z 0.30 to 0.70 with the platform at z >= 0
+    only); a bottom row of points sees the TNT once it lies off the stone."""
+    fam = 'tnt_edge'
+    items = []
+    for axis in ('x', 'z'):
+        for step in range(9):
+            frac = round(0.30 + 0.05 * step, 2)
+            for n in range(2):
+                build = [(at(0), TNT, {'explode_bit': False})]
+                if axis == 'x':
+                    build += [(at(x, 0, 0), 'minecraft:stone', {}) for x in range(3, 7)]
+                    home, shift = at(3, 1, 0), f'~{round(frac - 0.5, 2)} ~ ~'
+                else:
+                    build += [(at(x, 0, z), 'minecraft:stone', {}) for x in range(3, 7) for z in range(0, 3)]
+                    home, shift = at(4, 1, 0), f'~ ~ ~{round(frac - 0.5, 2)}'
+                pig = '@e[type=pig,x={cx},y={y},z={cz},r=2]'
+                events = [[1, ['cmd', 'summon minecraft:pig {cx} {y} {cz}', home]],
+                          [1, ['cmd', f'execute as {pig} at @s run tp @s {shift}', home]],
+                          [2, ['cmd', f'effect {pig} slowness 60 255 true', home]],
+                          [2, ['cmd', f'effect {pig} health_boost 60 24 true', home]],
+                          [3, ['cmd', f'effect {pig} instant_health 1 24 true', home]],
+                          [4, put(at(0, 0, -1), RB)]]
+                items.append(item(fam, [axis, frac, n], build, 110, events, [at(0)]))
+    return items
+
+
 ROUND2 = {'tnt_knock': tnt_knock, 'tnt_player': tnt_player, 'tnt_water': tnt_water, 'tnt_logged': tnt_logged,
-          'tnt_drops': tnt_drops, 'tnt_chain': tnt_chain, 'tnt_decay': tnt_decay, 'tnt_lit': tnt_lit, 'tnt_anchor': tnt_anchor}
+          'tnt_drops': tnt_drops, 'tnt_chain': tnt_chain, 'tnt_decay': tnt_decay, 'tnt_lit': tnt_lit, 'tnt_anchor': tnt_anchor,
+          'tnt_raised': tnt_raised, 'tnt_edge': tnt_edge}
 FAMILIES.update(ROUND2)

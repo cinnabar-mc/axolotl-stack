@@ -6373,6 +6373,11 @@
      "sha256": "bfbf3bf28fa2782b9f78a24fde47290089a1460fd5f31ffca8e297d478216d4d"
     },
     {
+     "path": "explosions/tnt_edge.json",
+     "rows": 36,
+     "sha256": "c56b92d0f872ecceb552a817218e26ce96aae5e5cdaf76e9b98f9d4ecedcf45c"
+    },
+    {
      "path": "explosions/tnt_hits.json",
      "rows": 62,
      "sha256": "5f6148ef71aa4784d818a273c90935f3a66001179a1e1df0257d8c48465bc103"
@@ -6403,12 +6408,17 @@
      "sha256": "0c85773c5272c340f4a6f4c526282de013350c315530ae020bbe7ee81a5df4ad"
     },
     {
+     "path": "explosions/tnt_raised.json",
+     "rows": 64,
+     "sha256": "916a0e493f4dcedfcf9b86dbf4a67ab71d4b5efa1a7d76b2f97a149c07fe2fbf"
+    },
+    {
      "path": "explosions/tnt_water.json",
      "rows": 4,
      "sha256": "c0db8c171338c20d6c5408384b1240037453f553208c87a7ef69db7bd61e810d"
     }
    ],
-   "harness": "tools/bds-sweep (sweep.py scenarios, endstone-sweep plugin) at a55afb127305c9b3805cb7c138564239a9cedd91; tools/bds-sweep (sweep.py scenarios, endstone-sweep plugin) at a55afb127305c9b3805cb7c138564239a9cedd91; tools/bds-sweep (sweep.py scenarios, endstone-sweep plugin) at a55afb127305c9b3805cb7c138564239a9cedd91; tools/bds-sweep (sweep.py scenarios, endstone-sweep plugin) at a55afb127305c9b3805cb7c138564239a9cedd91; tools/bds-sweep (sweep.py scenarios, endstone-sweep plugin) at a55afb127305c9b3805cb7c138564239a9cedd91; tools/bds-sweep (sweep.py scenarios, endstone-sweep plugin) at d87c689e42c98d9f396f021c835aab33dff2d73a; tools/bds-sweep (sweep.py scenarios, endstone-sweep plugin) at e8e158763d3cd54f3922b2c4b45d5b844e66cb49",
+   "harness": "tools/bds-sweep (sweep.py scenarios, endstone-sweep plugin) at a55afb127305c9b3805cb7c138564239a9cedd91; tools/bds-sweep (sweep.py scenarios, endstone-sweep plugin) at a55afb127305c9b3805cb7c138564239a9cedd91; tools/bds-sweep (sweep.py scenarios, endstone-sweep plugin) at a55afb127305c9b3805cb7c138564239a9cedd91; tools/bds-sweep (sweep.py scenarios, endstone-sweep plugin) at a55afb127305c9b3805cb7c138564239a9cedd91; tools/bds-sweep (sweep.py scenarios, endstone-sweep plugin) at a55afb127305c9b3805cb7c138564239a9cedd91; tools/bds-sweep (sweep.py scenarios, endstone-sweep plugin) at d87c689e42c98d9f396f021c835aab33dff2d73a; tools/bds-sweep (sweep.py scenarios, endstone-sweep plugin) at e8e158763d3cd54f3922b2c4b45d5b844e66cb49; tools/bds-sweep (sweep.py scenarios, endstone-sweep plugin) at dbda95a42154ef09b6e3287d3a20894660f222d6; tools/bds-sweep (sweep.py scenarios, endstone-sweep plugin) at dbda95a42154ef09b6e3287d3a20894660f222d6",
    "method": "round-2 TNT families: sweep.py scenarios --family <family> (tools/bds-sweep/tnt.py, round 2): cells 16 blocks apart on the superflat grass, a TNT at the cell origin primed by a redstone block (or lit by the scripted player), targets held still with Slowness 255 and Health Boost; per cell the explosions BDS reported (`tick` from the timeline start, `pos` the exploding actor's feet or the exploding block, `blocks` the cells it removes in BDS's order, air included), every damage event in the cell (`damage` before armour, `cause`, the `attacker` and the `damaging` actor), every knockback (`knockback`: the velocity change), and for each target its feet the tick before the explosion and its position change over the tick after (`moved`). Offsets are relative to the cell origin.",
    "source": "bds_sweep",
    "sweeps": [
@@ -6516,6 +6526,30 @@
        "items": 98,
        "seconds": 125.2,
        "started": "20261117T162948Z",
+       "status": "done"
+      }
+     ]
+    },
+    {
+     "dir": "r7-raised",
+     "items": 64,
+     "runs": [
+      {
+       "items": 64,
+       "seconds": 46.8,
+       "started": "20261118T171044Z",
+       "status": "done"
+      }
+     ]
+    },
+    {
+     "dir": "r7-edge",
+     "items": 36,
+     "runs": [
+      {
+       "items": 36,
+       "seconds": 44.9,
+       "started": "20261118T171610Z",
        "status": "done"
       }
      ]
