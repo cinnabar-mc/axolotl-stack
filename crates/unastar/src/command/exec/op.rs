@@ -267,9 +267,9 @@ impl From<PermissionLevel> for unastar_data::commands::CommandPermission {
 
 impl From<PermissionLevel> for jolyne::valentine::types::EnumsCommandPermissionLevel {
     fn from(level: PermissionLevel) -> Self {
-        match unastar_data::commands::CommandPermission::from(level) {
-            unastar_data::commands::CommandPermission::GameDirectors => Self::Gamedirectors,
-            _ => Self::Any,
+        match level {
+            PermissionLevel::Operator => Self::Gamedirectors,
+            PermissionLevel::Visitor | PermissionLevel::Member => Self::Any,
         }
     }
 }
@@ -411,6 +411,25 @@ mod tests {
                 _ => None,
             })
             .collect()
+    }
+
+    /// A `permissions.json` level is one of the three; anything else fails
+    /// the file's load (which keeps the permissions as they were).
+    #[test]
+    fn permission_levels_read_and_write_their_spelling() {
+        let entry: PermissionEntry =
+            serde_json::from_str(r#"{"permission":"member","xuid":"1"}"#).unwrap();
+        assert_eq!(entry.permission, PermissionLevel::Member);
+        assert_eq!(
+            serde_json::to_string(&entry).unwrap(),
+            r#"{"permission":"member","xuid":"1"}"#
+        );
+        assert!(
+            serde_json::from_str::<PermissionEntry>(r#"{"permission":"admin","xuid":"1"}"#)
+                .is_err()
+        );
+        assert_eq!("operator".parse(), Ok(PermissionLevel::Operator));
+        assert_eq!(PermissionLevel::Visitor.to_string(), "visitor");
     }
 
     #[test]

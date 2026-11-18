@@ -181,7 +181,7 @@ fn start_engine(world: &mut World) -> bool {
     if world.contains_resource::<Liquids>() {
         return true;
     }
-    let Some(states) = world.get_resource::<LiquidStates>().cloned() else {
+    let Some(states) = world.get_resource::<LiquidStates>().copied() else {
         return false;
     };
     world.insert_resource(Liquids::new(states));

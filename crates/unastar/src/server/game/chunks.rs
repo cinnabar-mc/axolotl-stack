@@ -54,7 +54,8 @@ pub fn apply_chunk_requests(
     // outside its view are answered at once with `LevelChunkDoesntExist`, as
     // BDS 1.26.51 answers them (sub-chunk flood capture), and a sub-chunk
     // already waiting for the player is not queued twice. So the waiting
-    // requests of a player never name more than its view's sub-chunks.
+    // requests of a player never name more than its view's sub-chunks. The
+    // out-of-view answers may overtake that player's earlier waiting ones.
     let mut deferred = Vec::new();
     let mut waiting: Vec<Entity> = Vec::new();
     let mut queued: std::collections::HashMap<Entity, std::collections::HashSet<[i32; 3]>> =
@@ -141,23 +142,26 @@ fn answer_out_of_view(
     if !unseen.is_empty()
         && let Ok(session) = sessions.get(entity)
     {
-        let answer = SubChunkPacket {
-            cache_enabled: false,
-            dimension_type: req.dimension_type.clone(),
-            center_pos: req.center_pos.clone(),
-            sub_chunk_data: unseen
-                .into_iter()
-                .map(|offset| {
-                    empty_entry(
-                        offset,
-                        EnumsSubChunkPacketPayloadSubChunkRequestResult::Levelchunkdoesntexist,
-                    )
-                })
-                .collect(),
-        };
-        let _ = session.send(McpePacket::from(answer));
+        let entries = unseen
+            .into_iter()
+            .map(|offset| {
+                empty_entry(
+                    offset,
+                    EnumsSubChunkPacketPayloadSubChunkRequestResult::Levelchunkdoesntexist,
+                )
+            })
+            .collect();
+        for sub_chunk_data in split_answer(entries) {
+            let answer = SubChunkPacket {
+                cache_enabled: false,
+                dimension_type: req.dimension_type.clone(),
+                center_pos: req.center_pos.clone(),
+                sub_chunk_data,
+            };
+            let _ = session.send(McpePacket::from(answer));
+        }
     }
-    (!seen.is_empty()).then(|| jolyne::valentine::SubChunkRequestPacket {
+    (!seen.is_empty()).then_some(jolyne::valentine::SubChunkRequestPacket {
         sub_chunk_position_offset_list: seen,
         ..req
     })
@@ -175,7 +179,7 @@ fn not_yet_queued(
         .filter(|offset| queued.insert(absolute(&req, offset)))
         .cloned()
         .collect();
-    (!fresh.is_empty()).then(|| jolyne::valentine::SubChunkRequestPacket {
+    (!fresh.is_empty()).then_some(jolyne::valentine::SubChunkRequestPacket {
         sub_chunk_position_offset_list: fresh,
         ..req
     })

@@ -102,7 +102,7 @@ pub(crate) trait LiquidTarget: UpdateTarget {
 
 /// The liquid states this engine writes, resolved once when the server
 /// loads ([`LiquidStates::resolve`] fails there on a registry without them).
-#[derive(Resource, Debug, Clone)]
+#[derive(Resource, Debug, Clone, Copy)]
 pub(crate) struct LiquidStates {
     air: u32,
     water: [u32; 16],
@@ -334,7 +334,7 @@ impl Liquids {
         depth: Option<u8>,
         layer: Layer,
     ) {
-        let states = self.states.clone();
+        let states = self.states;
         let state = depth.map_or(states.air, |depth| states.fluid(kind, depth));
         match layer {
             Layer::Block => target.write(pos, state),
@@ -391,7 +391,7 @@ impl Liquids {
         pos: IVec3,
         fluid: Fluid,
     ) -> bool {
-        let states = self.states.clone();
+        let states = self.states;
         let water = |target: &T, at: IVec3| {
             Self::fluid(target, at).is_some_and(|f| f.kind == LiquidKind::Water)
         };
@@ -566,7 +566,7 @@ impl Liquids {
         if kind == LiquidKind::Lava
             && Self::fluid(target, below).is_some_and(|f| f.kind == LiquidKind::Water)
         {
-            let states = self.states.clone();
+            let states = self.states;
             target.write(below, states.stone);
             self.rewrote(target, below);
             return;

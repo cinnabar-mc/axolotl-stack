@@ -16,7 +16,7 @@ use crate::command::parser::StateLiteral;
 use crate::command::prelude::*;
 use crate::registry::BlockRegistry;
 use crate::registry::block::{BlockEntry, StateValue};
-use crate::server::game::blocks::{block_at, destroy_block, set_block, set_block_by_command};
+use crate::server::game::blocks::{block_at, destroy_block, set_block_by_command};
 use crate::world::chunk::blocks::AIR;
 
 arg_enum! {
@@ -239,6 +239,7 @@ pub(super) mod tests {
     use super::*;
     use crate::command::args::assert_covers;
     use crate::command::exec::test_support::Harness;
+    use crate::server::game::blocks::set_block;
 
     pub(in crate::command::exec) fn state(name: &str) -> u32 {
         BlockRegistry::vanilla()
@@ -510,6 +511,15 @@ pub(super) mod tests {
         let air_layers = flush(&mut h);
         assert!(!air_layers.is_empty());
         assert!(air_layers.iter().all(|(_, layer)| *layer == 0));
+        // Stone over a waterlogged slab clears the water: still no
+        // liquid-layer update (BDS case C).
+        place(&mut h, 2, 63, 1, "minecraft:water");
+        assert!(h.run(player, "/setblock 2 63 1 oak_slab").is_success());
+        flush(&mut h);
+        assert!(h.run(player, "/setblock 2 63 1 stone").is_success());
+        let stone_layers = flush(&mut h);
+        assert!(!stone_layers.is_empty());
+        assert!(stone_layers.iter().all(|(_, layer)| *layer == 0));
     }
 }
 

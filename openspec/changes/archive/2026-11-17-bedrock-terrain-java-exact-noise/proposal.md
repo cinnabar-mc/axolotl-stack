@@ -25,7 +25,7 @@ mattered for BDS terrain). The measurements are in `crates/unastar_bedrock_codeg
 Out of scope: removing the now-unused calibrated backend (`NoiseRegistry::new`,
 `CachingNoiseChunk`), which only examples and unit tests still use.
 
-**Decision:** [record 0053](../../../../docs/decisions/0053-bedrock-terrain-uses-java-exact-noise.md),
+**Decision:** [record 0053](../../../../docs/decisions/0053-bedrock-terrain-uses-java-exact-noise.md)
 (accepted 2026-11-17), which supersedes 0032.
 
 ## Capabilities
