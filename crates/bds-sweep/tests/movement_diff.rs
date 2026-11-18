@@ -184,6 +184,61 @@ const KNOWN_GAPS: &[(&str, u32, &str)] = &[
         "a slime bounce an ULP off after a landing late in its tick (as random_291); no f32 form of the bounce fits it and the other 17 slime probes",
     ),
     (
+        "surface_swim_d2_p20_l20",
+        43,
+        "a swimmer surfacing: when the swim, its steering and the water's drag end is not fitted (held-out probes refute the round-7 candidates)",
+    ),
+    (
+        "surface_swim_d2_p25_l22",
+        42,
+        "a swimmer surfacing: when the swim, its steering and the water's drag end is not fitted (held-out probes refute the round-7 candidates)",
+    ),
+    (
+        "surface_swim_d2_p30_l16",
+        35,
+        "a swimmer surfacing: when the swim, its steering and the water's drag end is not fitted (held-out probes refute the round-7 candidates)",
+    ),
+    (
+        "surface_swim_d2_p35_l18",
+        35,
+        "a swimmer surfacing: when the swim, its steering and the water's drag end is not fitted (held-out probes refute the round-7 candidates)",
+    ),
+    (
+        "surface_swim_d2_p40_l24",
+        40,
+        "a swimmer surfacing: when the swim, its steering and the water's drag end is not fitted (held-out probes refute the round-7 candidates)",
+    ),
+    (
+        "surface_swim_d2_p55_l20",
+        35,
+        "a swimmer surfacing: when the swim, its steering and the water's drag end is not fitted (held-out probes refute the round-7 candidates)",
+    ),
+    (
+        "surface_swim_d2_p70_l20",
+        34,
+        "a swimmer surfacing: when the swim, its steering and the water's drag end is not fitted (held-out probes refute the round-7 candidates)",
+    ),
+    (
+        "surface_swim_d3_p35_l26",
+        51,
+        "a swimmer surfacing: when the swim, its steering and the water's drag end is not fitted (held-out probes refute the round-7 candidates)",
+    ),
+    (
+        "surface_swim_d3_p40_l22",
+        45,
+        "a swimmer surfacing: when the swim, its steering and the water's drag end is not fitted (held-out probes refute the round-7 candidates)",
+    ),
+    (
+        "surface_swim_d3_p50_l18",
+        39,
+        "a swimmer surfacing: when the swim, its steering and the water's drag end is not fitted (held-out probes refute the round-7 candidates)",
+    ),
+    (
+        "surface_swim_d3_p75_l20",
+        38,
+        "a swimmer surfacing: when the swim, its steering and the water's drag end is not fitted (held-out probes refute the round-7 candidates)",
+    ),
+    (
         "surface_swim_d2_p15",
         47,
         "a swimmer surfacing: BDS steers it up until about 0.2 under the surface, then holds its height",

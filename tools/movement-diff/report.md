@@ -1,6 +1,6 @@
 # Movement differential: BDS 1.26.51, unastar, bedsim, acacia-physics
 
-- **bds**: BDS 1.26.51, run md-r7-b; random_344, random_354, random_386 and random_388 from run md-r7-random
+- **bds**: BDS 1.26.51, run md-r7-b; random_344, random_354, random_386 and random_388 from run md-r7-random; glide_h* and surface_swim_* from md-r7-probe6; slimefit_* and slimehold_* from md-r7-probe7; surface_swim_*_l* from md-r7-probe8b
 - **unastar**: unastar_rules::movement
 - **bedsim**: oomph-ac/bedsim v0.1.7-0.20261007160526-9c12b344afde
 - **acacia**: acacia-rs/acacia acacia-physics @ 97ec4c7ce23e5abb7cde1e66026363d3c2e6fbf0
@@ -128,6 +128,17 @@
 | flat_walk_back | 40 | equal | equal | equal | equal | equal | equal |
 | glass_pane_post_diagonal | 55 | equal | equal | differs t6 position.x | equal | differs t6 position.x | differs t6 position.x |
 | glass_pane_walk_into | 55 | equal | equal | differs t26 position.x | equal | differs t26 position.x | differs t26 position.x |
+| glide_h10_m20 | 37 | equal | differs t6 velocity.x | equal | differs t6 velocity.x | differs t6 velocity.x | equal |
+| glide_h18 | 37 | equal | differs t6 velocity.x | equal | differs t6 velocity.x | differs t6 velocity.x | equal |
+| glide_h2 | 37 | equal | differs t6 velocity.x | equal | differs t6 velocity.x | differs t6 velocity.x | equal |
+| glide_h33 | 37 | equal | differs t6 velocity.x | equal | differs t6 velocity.x | differs t6 velocity.x | equal |
+| glide_h50 | 37 | equal | differs t6 velocity.x | differs t36 position.x | differs t6 velocity.x | differs t6 velocity.x | differs t33 velocity.y |
+| glide_h7 | 37 | equal | differs t6 velocity.x | equal | differs t6 velocity.x | differs t6 velocity.x | equal |
+| glide_hm12_25 | 37 | equal | differs t6 position.x | equal | differs t6 position.x | differs t6 position.x | equal |
+| glide_hm18 | 37 | equal | differs t6 velocity.z | equal | differs t6 velocity.z | differs t6 velocity.z | equal |
+| glide_hm33 | 37 | equal | differs t6 velocity.x | equal | differs t6 velocity.x | differs t6 velocity.x | equal |
+| glide_hm5 | 37 | equal | differs t6 velocity.x | equal | differs t6 velocity.x | differs t6 velocity.x | equal |
+| glide_hm50 | 37 | equal | differs t6 velocity.x | equal | differs t6 velocity.x | differs t6 velocity.x | equal |
 | glide_p0 | 36 | equal | differs t6 velocity.x | equal | differs t6 velocity.x | differs t6 velocity.x | equal |
 | glide_p12 | 36 | equal | differs t6 velocity.x | equal | differs t6 velocity.x | differs t6 velocity.x | equal |
 | glide_p25 | 36 | equal | differs t12 velocity.z | equal | differs t7 velocity.z | differs t7 velocity.z | equal |
@@ -260,6 +271,24 @@
 | slime_sneak_land | 45 | equal | equal | equal | equal | equal | equal |
 | slime_walk | 45 | equal | equal | equal | equal | equal | equal |
 | slime_web_jump | 36 | equal | equal | equal | equal | equal | equal |
+| slimefit_12_2 | 32 | equal | differs t12 velocity.y | equal | differs t12 velocity.y | differs t12 velocity.y | equal |
+| slimefit_12_4 | 32 | equal | differs t12 velocity.y | equal | differs t12 velocity.y | differs t12 velocity.y | equal |
+| slimefit_12_6 | 32 | equal | differs t12 velocity.y | equal | differs t12 velocity.y | differs t12 velocity.y | equal |
+| slimefit_12_8 | 32 | equal | differs t12 velocity.y | equal | differs t12 velocity.y | differs t12 velocity.y | equal |
+| slimefit_18_2 | 38 | equal | differs t18 velocity.y | equal | differs t18 velocity.y | differs t18 velocity.y | equal |
+| slimefit_18_4 | 38 | equal | differs t18 velocity.y | equal | differs t18 velocity.y | differs t18 velocity.y | equal |
+| slimefit_18_6 | 38 | equal | differs t18 velocity.y | equal | differs t18 velocity.y | differs t18 velocity.y | equal |
+| slimefit_18_8 | 38 | equal | differs t18 velocity.y | equal | differs t18 velocity.y | differs t18 velocity.y | equal |
+| slimefit_6_2 | 30 | differs t18 velocity.y | differs t6 velocity.y | differs t18 velocity.y | differs t6 velocity.y | differs t6 velocity.y | equal |
+| slimefit_6_4 | 30 | differs t6 velocity.y | differs t6 velocity.y | differs t6 velocity.y | differs t6 velocity.y | differs t6 velocity.y | equal |
+| slimefit_6_6 | 30 | differs t18 velocity.y | differs t6 velocity.y | differs t18 velocity.y | differs t6 velocity.y | differs t6 velocity.y | equal |
+| slimefit_6_8 | 30 | differs t30 velocity.y | differs t6 velocity.y | differs t30 velocity.y | differs t6 velocity.y | differs t6 velocity.y | equal |
+| slimehold_13_1 | 33 | equal | differs t14 position.y | equal | differs t13 velocity.y | differs t13 velocity.y | equal |
+| slimehold_15_3 | 35 | equal | differs t16 position.y | equal | differs t15 velocity.y | differs t15 velocity.y | equal |
+| slimehold_21_7 | 41 | equal | differs t22 position.y | equal | differs t21 velocity.y | differs t21 velocity.y | equal |
+| slimehold_24_5 | 44 | equal | differs t24 velocity.y | equal | differs t24 velocity.y | differs t24 velocity.y | equal |
+| slimehold_8_9 | 30 | equal | differs t9 position.y | equal | differs t8 velocity.y | differs t8 velocity.y | equal |
+| slimehold_9_5 | 30 | equal | differs t10 position.y | equal | differs t9 velocity.y | differs t9 velocity.y | equal |
 | slow_fall_tower | 83 | equal | equal | equal | equal | equal | equal |
 | slow_falling_fall | 105 | equal | equal | differs t90 velocity.z | equal | differs t89 velocity.z | differs t89 velocity.z |
 | slow_falling_jump | 55 | equal | equal | equal | equal | equal | equal |
@@ -315,6 +344,22 @@
 | step_slab | 45 | equal | equal | equal | equal | equal | equal |
 | step_sprint_into_slab | 45 | equal | equal | equal | equal | equal | equal |
 | step_top_slab | 40 | equal | equal | equal | equal | equal | equal |
+| surface_swim_d2_p15 | 60 | differs t47 position.y | differs t6 velocity.y | differs t30 velocity.y | differs t6 velocity.y | differs t6 velocity.y | differs t26 velocity.y |
+| surface_swim_d2_p20_l20 | 58 | differs t43 position.y | differs t6 velocity.y | differs t30 velocity.y | differs t6 velocity.y | differs t6 velocity.y | differs t26 velocity.y |
+| surface_swim_d2_p25_l22 | 60 | differs t42 position.y | differs t6 velocity.y | differs t30 velocity.y | differs t6 velocity.y | differs t6 velocity.y | differs t28 velocity.y |
+| surface_swim_d2_p30_l16 | 54 | differs t35 position.y | differs t6 velocity.y | differs t24 velocity.y | differs t6 velocity.y | differs t6 velocity.y | differs t22 velocity.y |
+| surface_swim_d2_p35_l18 | 56 | differs t35 position.y | differs t6 velocity.y | differs t24 velocity.y | differs t6 velocity.y | differs t6 velocity.y | differs t24 velocity.y |
+| surface_swim_d2_p40_l24 | 62 | differs t40 position.y | differs t6 velocity.y | differs t30 velocity.y | differs t6 velocity.y | differs t6 velocity.y | differs t30 velocity.y |
+| surface_swim_d2_p45 | 60 | differs t36 position.y | differs t6 velocity.y | differs t30 velocity.y | differs t6 velocity.y | differs t6 velocity.y | differs t26 velocity.y |
+| surface_swim_d2_p55_l20 | 58 | differs t35 position.y | differs t6 velocity.y | differs t30 velocity.y | differs t6 velocity.y | differs t6 velocity.y | differs t26 velocity.y |
+| surface_swim_d2_p70_l20 | 58 | differs t34 position.y | differs t6 velocity.y | differs t30 velocity.y | differs t6 velocity.y | differs t6 velocity.y | differs t26 velocity.y |
+| surface_swim_d3_p20_l20 | 58 | equal | differs t6 velocity.y | differs t30 velocity.y | differs t6 velocity.y | differs t6 velocity.y | differs t26 velocity.y |
+| surface_swim_d3_p30 | 60 | differs t47 position.y | differs t6 velocity.y | differs t30 velocity.y | differs t6 velocity.y | differs t6 velocity.y | differs t26 velocity.y |
+| surface_swim_d3_p35_l26 | 64 | differs t51 position.y | differs t6 velocity.y | differs t36 position.y | differs t6 velocity.y | differs t6 velocity.y | differs t32 velocity.y |
+| surface_swim_d3_p40_l22 | 60 | differs t45 position.y | differs t6 velocity.y | differs t30 velocity.y | differs t6 velocity.y | differs t6 velocity.y | differs t28 velocity.y |
+| surface_swim_d3_p50_l18 | 56 | differs t39 position.y | differs t6 velocity.y | differs t30 velocity.y | differs t6 velocity.y | differs t6 velocity.y | differs t29 velocity.y |
+| surface_swim_d3_p60 | 60 | differs t39 position.y | differs t6 velocity.y | differs t30 velocity.y | differs t6 velocity.y | differs t6 velocity.y | differs t26 velocity.y |
+| surface_swim_d3_p75_l20 | 58 | differs t38 position.y | differs t6 velocity.y | differs t30 velocity.y | differs t6 velocity.y | differs t6 velocity.y | differs t26 velocity.y |
 | sw_corner | 35 | equal | differs t6 velocity.x | equal | differs t6 velocity.x | differs t6 velocity.x | equal |
 | sw_ground_20 | 40 | equal | differs t11 position.z | equal | differs t7 velocity.z | differs t7 velocity.z | equal |
 | sw_ground_22 | 40 | equal | differs t6 velocity.x | differs t6 velocity.x | differs t6 velocity.x | differs t17 position.x | differs t6 velocity.x |
@@ -360,7 +405,7 @@
 | web_walk_0 | 35 | equal | differs t6 velocity.x | equal | differs t6 velocity.x | differs t6 velocity.x | equal |
 | weeping_vines_climb | 65 | equal | differs t1 position.z (runner world) | equal | differs t1 position.z | differs t1 position.z | equal |
 | weeping_vines_walk_into | 50 | equal | differs t12 position.z (runner world) | equal | differs t12 position.z | differs t12 position.z | equal |
-| **equal** | 353 | 321 | 129 | 214 | 126 | 128 | 211 |
+| **equal** | 398 | 347 | 129 | 238 | 126 | 128 | 239 |
 
 ## Runner world fidelity
 
@@ -881,6 +926,41 @@ Scenarios whose world a runner builds differently from unastar's (BDS 1.26.51's 
 - `glass_pane_walk_into` acacia vs bds: first tick 26 position.x: 0.57071066 vs 0.5692965 (diff 0.00141, 23726 ULP); 30 of 55 ticks differ; largest tick 55 position.x: 3.6145673 vs 3.5522764 (diff 0.0623, 261267 ULP)
 - `glass_pane_walk_into` acacia vs bedsim: first tick 26 position.x: 0.57071066 vs 0.5692965 (diff 0.00141, 23726 ULP); 30 of 55 ticks differ; largest tick 55 position.x: 3.6145673 vs 3.5522764 (diff 0.0623, 261267 ULP)
 - `glass_pane_walk_into` acacia vs unastar: first tick 26 position.x: 0.57071066 vs 0.5692965 (diff 0.00141, 23726 ULP); 30 of 55 ticks differ; largest tick 55 position.x: 3.6145673 vs 3.5522764 (diff 0.0623, 261267 ULP)
+- `glide_h10_m20` bedsim vs bds: first tick 6 velocity.x: 0.017701786 vs 0.017701782 (diff 3.73e-09, 2 ULP); 29 of 37 ticks differ; largest tick 32 position.z: 13.830841 vs 13.830839 (diff 1.91e-06, 2 ULP)
+- `glide_h10_m20` unastar vs bedsim: first tick 6 velocity.x: 0.017701782 vs 0.017701786 (diff 3.73e-09, 2 ULP); 32 of 37 ticks differ; largest tick 32 position.z: 13.830839 vs 13.830841 (diff 1.91e-06, 2 ULP)
+- `glide_h10_m20` acacia vs bedsim: first tick 6 velocity.x: 0.017701782 vs 0.017701786 (diff 3.73e-09, 2 ULP); 32 of 37 ticks differ; largest tick 32 position.z: 13.830839 vs 13.830841 (diff 1.91e-06, 2 ULP)
+- `glide_h18` bedsim vs bds: first tick 6 velocity.x: 0.016519908 vs 0.016519904 (diff 3.73e-09, 2 ULP); 29 of 37 ticks differ; largest tick 37 position.z: 10.412683 vs 10.412676 (diff 6.68e-06, 7 ULP)
+- `glide_h18` unastar vs bedsim: first tick 6 velocity.x: 0.016519904 vs 0.016519908 (diff 3.73e-09, 2 ULP); 32 of 37 ticks differ; largest tick 37 position.z: 10.412676 vs 10.412683 (diff 6.68e-06, 7 ULP)
+- `glide_h18` acacia vs bedsim: first tick 6 velocity.x: 0.016519904 vs 0.016519908 (diff 3.73e-09, 2 ULP); 32 of 37 ticks differ; largest tick 37 position.z: 10.412676 vs 10.412683 (diff 6.68e-06, 7 ULP)
+- `glide_h2` bedsim vs bds: first tick 6 velocity.x: -0.006365383 vs -0.0063653775 (diff 5.59e-09, 12 ULP); 29 of 37 ticks differ; largest tick 37 position.x: -1.4736094 vs -1.4736083 (diff 1.19e-06, 10 ULP)
+- `glide_h2` unastar vs bedsim: first tick 6 velocity.x: -0.0063653775 vs -0.006365383 (diff 5.59e-09, 12 ULP); 32 of 37 ticks differ; largest tick 37 position.x: -1.4736083 vs -1.4736094 (diff 1.19e-06, 10 ULP)
+- `glide_h2` acacia vs bedsim: first tick 6 velocity.x: -0.0063653775 vs -0.006365383 (diff 5.59e-09, 12 ULP); 32 of 37 ticks differ; largest tick 37 position.x: -1.4736083 vs -1.4736094 (diff 1.19e-06, 10 ULP)
+- `glide_h33` bedsim vs bds: first tick 6 velocity.x: -0.02254264 vs -0.022542635 (diff 5.59e-09, 3 ULP); 30 of 37 ticks differ; largest tick 33 position.x: -8.008208 vs -8.008206 (diff 1.91e-06, 2 ULP)
+- `glide_h33` unastar vs bedsim: first tick 6 velocity.x: -0.022542635 vs -0.02254264 (diff 5.59e-09, 3 ULP); 32 of 37 ticks differ; largest tick 33 position.x: -8.008206 vs -8.008208 (diff 1.91e-06, 2 ULP)
+- `glide_h33` acacia vs bedsim: first tick 6 velocity.x: -0.022542635 vs -0.02254264 (diff 5.59e-09, 3 ULP); 32 of 37 ticks differ; largest tick 33 position.x: -8.008206 vs -8.008208 (diff 1.91e-06, 2 ULP)
+- `glide_h50` bedsim vs bds: first tick 6 velocity.x: 0.01584323 vs 0.015843228 (diff 1.86e-09, 1 ULP); 27 of 37 ticks differ; largest tick 28 position.x: 6.093805 vs 6.093803 (diff 1.91e-06, 4 ULP)
+- `glide_h50` acacia vs bds: first tick 36 position.x: 10.341398 vs 10.327898 (diff 0.0135, 14156 ULP); 2 of 37 ticks differ; largest tick 37 position.y: 101.2331 vs 101.155846 (diff 0.0773, 10126 ULP)
+- `glide_h50` unastar vs bedsim: first tick 6 velocity.x: 0.015843228 vs 0.01584323 (diff 1.86e-09, 1 ULP); 32 of 37 ticks differ; largest tick 33 velocity.y: 0 vs -0.2412262 (diff 0.241, 1047987200 ULP)
+- `glide_h50` acacia vs bedsim: first tick 6 velocity.x: 0.015843228 vs 0.01584323 (diff 1.86e-09, 1 ULP); 32 of 37 ticks differ; largest tick 37 velocity.y: -0.15395717 vs -0.30431682 (diff 0.15, 8267895 ULP)
+- `glide_h50` acacia vs unastar: first tick 33 velocity.y: -0.2412262 vs 0 (diff 0.241, 1047987200 ULP); 3 of 37 ticks differ; largest tick 33 velocity.y: -0.2412262 vs 0 (diff 0.241, 1047987200 ULP)
+- `glide_h7` bedsim vs bds: first tick 6 velocity.x: -0.030411227 vs -0.030411225 (diff 1.86e-09, 1 ULP); 8 of 37 ticks differ; largest tick 36 position.x: -8.659798 vs -8.659797 (diff 9.54e-07, 1 ULP)
+- `glide_h7` unastar vs bedsim: first tick 6 velocity.x: -0.030411225 vs -0.030411227 (diff 1.86e-09, 1 ULP); 32 of 37 ticks differ; largest tick 36 position.x: -8.659797 vs -8.659798 (diff 9.54e-07, 1 ULP)
+- `glide_h7` acacia vs bedsim: first tick 6 velocity.x: -0.030411225 vs -0.030411227 (diff 1.86e-09, 1 ULP); 32 of 37 ticks differ; largest tick 36 position.x: -8.659797 vs -8.659798 (diff 9.54e-07, 1 ULP)
+- `glide_hm12_25` bedsim vs bds: first tick 6 position.x: 0.47065604 vs 0.47065598 (diff 5.96e-08, 2 ULP); 32 of 37 ticks differ; largest tick 24 position.y: 114.34253 vs 114.34252 (diff 7.63e-06, 1 ULP)
+- `glide_hm12_25` unastar vs bedsim: first tick 6 position.x: 0.47065598 vs 0.47065604 (diff 5.96e-08, 2 ULP); 32 of 37 ticks differ; largest tick 24 position.y: 114.34252 vs 114.34253 (diff 7.63e-06, 1 ULP)
+- `glide_hm12_25` acacia vs bedsim: first tick 6 position.x: 0.47065598 vs 0.47065604 (diff 5.96e-08, 2 ULP); 32 of 37 ticks differ; largest tick 24 position.y: 114.34252 vs 114.34253 (diff 7.63e-06, 1 ULP)
+- `glide_hm18` bedsim vs bds: first tick 6 velocity.z: 0.015885502 vs 0.015885508 (diff 5.59e-09, 3 ULP); 17 of 37 ticks differ; largest tick 28 position.x: -4.3927517 vs -4.392752 (diff 4.77e-07, 1 ULP)
+- `glide_hm18` unastar vs bedsim: first tick 6 velocity.z: 0.015885508 vs 0.015885502 (diff 5.59e-09, 3 ULP); 32 of 37 ticks differ; largest tick 28 position.x: -4.392752 vs -4.3927517 (diff 4.77e-07, 1 ULP)
+- `glide_hm18` acacia vs bedsim: first tick 6 velocity.z: 0.015885508 vs 0.015885502 (diff 5.59e-09, 3 ULP); 32 of 37 ticks differ; largest tick 28 position.x: -4.392752 vs -4.3927517 (diff 4.77e-07, 1 ULP)
+- `glide_hm33` bedsim vs bds: first tick 6 velocity.x: 0.018107018 vs 0.018107023 (diff 5.59e-09, 3 ULP); 31 of 37 ticks differ; largest tick 24 position.y: 112.78765 vs 112.78764 (diff 7.63e-06, 1 ULP)
+- `glide_hm33` unastar vs bedsim: first tick 6 velocity.x: 0.018107023 vs 0.018107018 (diff 5.59e-09, 3 ULP); 32 of 37 ticks differ; largest tick 24 position.y: 112.78764 vs 112.78765 (diff 7.63e-06, 1 ULP)
+- `glide_hm33` acacia vs bedsim: first tick 6 velocity.x: 0.018107023 vs 0.018107018 (diff 5.59e-09, 3 ULP); 32 of 37 ticks differ; largest tick 24 position.y: 112.78764 vs 112.78765 (diff 7.63e-06, 1 ULP)
+- `glide_hm5` bedsim vs bds: first tick 6 velocity.x: 0.0032304183 vs 0.0032304039 (diff 1.44e-08, 62 ULP); 30 of 37 ticks differ; largest tick 37 position.x: 1.4388196 vs 1.4388239 (diff 4.29e-06, 36 ULP)
+- `glide_hm5` unastar vs bedsim: first tick 6 velocity.x: 0.0032304039 vs 0.0032304183 (diff 1.44e-08, 62 ULP); 32 of 37 ticks differ; largest tick 37 position.x: 1.4388239 vs 1.4388196 (diff 4.29e-06, 36 ULP)
+- `glide_hm5` acacia vs bedsim: first tick 6 velocity.x: 0.0032304039 vs 0.0032304183 (diff 1.44e-08, 62 ULP); 32 of 37 ticks differ; largest tick 37 position.x: 1.4388239 vs 1.4388196 (diff 4.29e-06, 36 ULP)
+- `glide_hm50` bedsim vs bds: first tick 6 velocity.x: 0.0110920165 vs 0.01109202 (diff 3.73e-09, 4 ULP); 31 of 37 ticks differ; largest tick 30 position.x: 3.9669495 vs 3.9669504 (diff 9.54e-07, 4 ULP)
+- `glide_hm50` unastar vs bedsim: first tick 6 velocity.x: 0.01109202 vs 0.0110920165 (diff 3.73e-09, 4 ULP); 32 of 37 ticks differ; largest tick 30 position.x: 3.9669504 vs 3.9669495 (diff 9.54e-07, 4 ULP)
+- `glide_hm50` acacia vs bedsim: first tick 6 velocity.x: 0.01109202 vs 0.0110920165 (diff 3.73e-09, 4 ULP); 32 of 37 ticks differ; largest tick 30 position.x: 3.9669504 vs 3.9669495 (diff 9.54e-07, 4 ULP)
 - `glide_p0` bedsim vs bds: first tick 6 velocity.x: -0.02529377 vs -0.025293764 (diff 5.59e-09, 3 ULP); 28 of 36 ticks differ; largest tick 32 position.z: 26.295597 vs 26.295603 (diff 5.72e-06, 3 ULP)
 - `glide_p0` unastar vs bedsim: first tick 6 velocity.x: -0.025293764 vs -0.02529377 (diff 5.59e-09, 3 ULP); 31 of 36 ticks differ; largest tick 32 position.z: 26.295603 vs 26.295597 (diff 5.72e-06, 3 ULP)
 - `glide_p0` acacia vs bedsim: first tick 6 velocity.x: -0.025293764 vs -0.02529377 (diff 5.59e-09, 3 ULP); 31 of 36 ticks differ; largest tick 32 position.z: 26.295603 vs 26.295597 (diff 5.72e-06, 3 ULP)
@@ -1305,6 +1385,68 @@ Scenarios whose world a runner builds differently from unastar's (BDS 1.26.51's 
 - `slime_bounce` bedsim vs bds: first tick 14 position.y: 102.368645 vs 102.382965 (diff 0.0143, 1877 ULP); 67 of 80 ticks differ; largest tick 74 position.y: 101.62001 vs 103.16077 (diff 1.54, 201950 ULP)
 - `slime_bounce` unastar vs bedsim: first tick 13 velocity.y: 0.7629567 vs 0.74863225 (diff 0.0143, 240324 ULP); 68 of 80 ticks differ; largest tick 74 position.y: 103.16077 vs 101.62001 (diff 1.54, 201950 ULP)
 - `slime_bounce` acacia vs bedsim: first tick 13 velocity.y: 0.7629567 vs 0.74863225 (diff 0.0143, 240324 ULP); 68 of 80 ticks differ; largest tick 74 position.y: 103.16077 vs 101.62001 (diff 1.54, 201950 ULP)
+- `slimefit_12_2` bedsim vs bds: first tick 12 velocity.y: 0.6871105 vs 0.70255286 (diff 0.0154, 259080 ULP); 21 of 32 ticks differ; largest tick 29 position.y: 102.93934 vs 103.163795 (diff 0.224, 29420 ULP)
+- `slimefit_12_2` unastar vs bedsim: first tick 12 velocity.y: 0.70255286 vs 0.6871105 (diff 0.0154, 259080 ULP); 21 of 32 ticks differ; largest tick 29 position.y: 103.163795 vs 102.93934 (diff 0.224, 29420 ULP)
+- `slimefit_12_2` acacia vs bedsim: first tick 12 velocity.y: 0.70255286 vs 0.6871105 (diff 0.0154, 259080 ULP); 21 of 32 ticks differ; largest tick 29 position.y: 103.163795 vs 102.93934 (diff 0.224, 29420 ULP)
+- `slimefit_12_4` bedsim vs bds: first tick 12 velocity.y: 0.6871105 vs 0.7177767 (diff 0.0307, 514494 ULP); 21 of 32 ticks differ; largest tick 30 velocity.y: 0.5606346 vs -0.69611746 (diff 1.26, 2118236801 ULP)
+- `slimefit_12_4` unastar vs bedsim: first tick 12 velocity.y: 0.7177767 vs 0.6871105 (diff 0.0307, 514494 ULP); 21 of 32 ticks differ; largest tick 30 velocity.y: -0.69611746 vs 0.5606346 (diff 1.26, 2118236801 ULP)
+- `slimefit_12_4` acacia vs bedsim: first tick 12 velocity.y: 0.7177767 vs 0.6871105 (diff 0.0307, 514494 ULP); 21 of 32 ticks differ; largest tick 30 velocity.y: -0.69611746 vs 0.5606346 (diff 1.26, 2118236801 ULP)
+- `slimefit_12_6` bedsim vs bds: first tick 12 velocity.y: 0.6871105 vs 0.73271483 (diff 0.0456, 765114 ULP); 21 of 32 ticks differ; largest tick 30 velocity.y: 0.5606346 vs -0.6857335 (diff 1.25, 2118062587 ULP)
+- `slimefit_12_6` unastar vs bedsim: first tick 12 velocity.y: 0.73271483 vs 0.6871105 (diff 0.0456, 765114 ULP); 21 of 32 ticks differ; largest tick 30 velocity.y: -0.6857335 vs 0.5606346 (diff 1.25, 2118062587 ULP)
+- `slimefit_12_6` acacia vs bedsim: first tick 12 velocity.y: 0.73271483 vs 0.6871105 (diff 0.0456, 765114 ULP); 21 of 32 ticks differ; largest tick 30 velocity.y: -0.6857335 vs 0.5606346 (diff 1.25, 2118062587 ULP)
+- `slimefit_12_8` bedsim vs bds: first tick 12 velocity.y: 0.6871105 vs 0.7473829 (diff 0.0603, 1011203 ULP); 21 of 32 ticks differ; largest tick 30 velocity.y: 0.5606346 vs -0.6755373 (diff 1.24, 2117891523 ULP)
+- `slimefit_12_8` unastar vs bedsim: first tick 12 velocity.y: 0.7473829 vs 0.6871105 (diff 0.0603, 1011203 ULP); 21 of 32 ticks differ; largest tick 30 velocity.y: -0.6755373 vs 0.5606346 (diff 1.24, 2117891523 ULP)
+- `slimefit_12_8` acacia vs bedsim: first tick 12 velocity.y: 0.7473829 vs 0.6871105 (diff 0.0603, 1011203 ULP); 21 of 32 ticks differ; largest tick 30 velocity.y: -0.6755373 vs 0.5606346 (diff 1.24, 2117891523 ULP)
+- `slimefit_18_2` bedsim vs bds: first tick 18 velocity.y: 1.0382695 vs 1.0535474 (diff 0.0153, 128160 ULP); 21 of 38 ticks differ; largest tick 38 position.y: 106.62445 vs 106.8784 (diff 0.254, 33286 ULP)
+- `slimefit_18_2` unastar vs bedsim: first tick 18 velocity.y: 1.0535474 vs 1.0382695 (diff 0.0153, 128160 ULP); 21 of 38 ticks differ; largest tick 38 position.y: 106.8784 vs 106.62445 (diff 0.254, 33286 ULP)
+- `slimefit_18_2` acacia vs bedsim: first tick 18 velocity.y: 1.0535474 vs 1.0382695 (diff 0.0153, 128160 ULP); 21 of 38 ticks differ; largest tick 38 position.y: 106.8784 vs 106.62445 (diff 0.254, 33286 ULP)
+- `slimefit_18_4` bedsim vs bds: first tick 18 velocity.y: 1.0382695 vs 1.0693455 (diff 0.0311, 260684 ULP); 21 of 38 ticks differ; largest tick 38 position.y: 106.62445 vs 107.14094 (diff 0.516, 67697 ULP)
+- `slimefit_18_4` unastar vs bedsim: first tick 18 velocity.y: 1.0693455 vs 1.0382695 (diff 0.0311, 260684 ULP); 21 of 38 ticks differ; largest tick 38 position.y: 107.14094 vs 106.62445 (diff 0.516, 67697 ULP)
+- `slimefit_18_4` acacia vs bedsim: first tick 18 velocity.y: 1.0693455 vs 1.0382695 (diff 0.0311, 260684 ULP); 21 of 38 ticks differ; largest tick 38 position.y: 107.14094 vs 106.62445 (diff 0.516, 67697 ULP)
+- `slimefit_18_6` bedsim vs bds: first tick 18 velocity.y: 1.0382695 vs 1.0838968 (diff 0.0456, 382749 ULP); 21 of 38 ticks differ; largest tick 38 position.y: 106.62445 vs 107.38279 (diff 0.758, 99397 ULP)
+- `slimefit_18_6` unastar vs bedsim: first tick 18 velocity.y: 1.0838968 vs 1.0382695 (diff 0.0456, 382749 ULP); 21 of 38 ticks differ; largest tick 38 position.y: 107.38279 vs 106.62445 (diff 0.758, 99397 ULP)
+- `slimefit_18_6` acacia vs bedsim: first tick 18 velocity.y: 1.0838968 vs 1.0382695 (diff 0.0456, 382749 ULP); 21 of 38 ticks differ; largest tick 38 position.y: 107.38279 vs 106.62445 (diff 0.758, 99397 ULP)
+- `slimefit_18_8` bedsim vs bds: first tick 18 velocity.y: 1.0382695 vs 1.0992879 (diff 0.061, 511859 ULP); 21 of 38 ticks differ; largest tick 38 position.y: 106.62445 vs 107.63859 (diff 1.01, 132925 ULP)
+- `slimefit_18_8` unastar vs bedsim: first tick 18 velocity.y: 1.0992879 vs 1.0382695 (diff 0.061, 511859 ULP); 21 of 38 ticks differ; largest tick 38 position.y: 107.63859 vs 106.62445 (diff 1.01, 132925 ULP)
+- `slimefit_18_8` acacia vs bedsim: first tick 18 velocity.y: 1.0992879 vs 1.0382695 (diff 0.061, 511859 ULP); 21 of 38 ticks differ; largest tick 38 position.y: 107.63859 vs 106.62445 (diff 1.01, 132925 ULP)
+- `slimefit_6_2` unastar vs bds: first tick 18 velocity.y: 0.032376815 vs 0.032376785 (diff 2.98e-08, 8 ULP); 1 of 30 ticks differ; largest tick 18 velocity.y: 0.032376815 vs 0.032376785 (diff 2.98e-08, 8 ULP)
+- `slimefit_6_2` bedsim vs bds: first tick 6 velocity.y: 0.2906979 vs 0.30604738 (diff 0.0153, 515043 ULP); 23 of 30 ticks differ; largest tick 30 velocity.y: 0.17492704 vs -0.29625013 (diff 0.471, 2093665836 ULP)
+- `slimefit_6_2` acacia vs bds: first tick 18 velocity.y: 0.032376815 vs 0.032376785 (diff 2.98e-08, 8 ULP); 1 of 30 ticks differ; largest tick 18 velocity.y: 0.032376815 vs 0.032376785 (diff 2.98e-08, 8 ULP)
+- `slimefit_6_2` unastar vs bedsim: first tick 6 velocity.y: 0.30604738 vs 0.2906979 (diff 0.0153, 515043 ULP); 25 of 30 ticks differ; largest tick 30 velocity.y: -0.29625013 vs 0.17492704 (diff 0.471, 2093665836 ULP)
+- `slimefit_6_2` acacia vs bedsim: first tick 6 velocity.y: 0.30604738 vs 0.2906979 (diff 0.0153, 515043 ULP); 25 of 30 ticks differ; largest tick 30 velocity.y: -0.29625013 vs 0.17492704 (diff 0.471, 2093665836 ULP)
+- `slimefit_6_4` unastar vs bds: first tick 6 velocity.y: 0.3213559 vs 0.32135588 (diff 2.98e-08, 1 ULP); 5 of 30 ticks differ; largest tick 24 velocity.y: 0.26765165 vs 0.2676516 (diff 5.96e-08, 2 ULP)
+- `slimefit_6_4` bedsim vs bds: first tick 6 velocity.y: 0.2906979 vs 0.32135588 (diff 0.0307, 1028711 ULP); 24 of 30 ticks differ; largest tick 29 position.y: 102.692726 vs 103.13733 (diff 0.445, 58275 ULP)
+- `slimefit_6_4` acacia vs bds: first tick 6 velocity.y: 0.3213559 vs 0.32135588 (diff 2.98e-08, 1 ULP); 5 of 30 ticks differ; largest tick 24 velocity.y: 0.26765165 vs 0.2676516 (diff 5.96e-08, 2 ULP)
+- `slimefit_6_4` unastar vs bedsim: first tick 6 velocity.y: 0.3213559 vs 0.2906979 (diff 0.0307, 1028712 ULP); 25 of 30 ticks differ; largest tick 23 velocity.y: -0.33616197 vs 0.21335724 (diff 0.55, 2097584062 ULP)
+- `slimefit_6_4` acacia vs bedsim: first tick 6 velocity.y: 0.3213559 vs 0.2906979 (diff 0.0307, 1028712 ULP); 25 of 30 ticks differ; largest tick 23 velocity.y: -0.33616197 vs 0.21335724 (diff 0.55, 2097584062 ULP)
+- `slimefit_6_6` unastar vs bds: first tick 18 velocity.y: 0.13869236 vs 0.13869235 (diff 1.49e-08, 1 ULP); 2 of 30 ticks differ; largest tick 30 velocity.y: -0.124140754 vs -0.124140784 (diff 2.98e-08, 4 ULP)
+- `slimefit_6_6` bedsim vs bds: first tick 6 velocity.y: 0.2906979 vs 0.33609942 (diff 0.0454, 1523422 ULP); 25 of 30 ticks differ; largest tick 30 position.y: 102.62001 vs 103.19341 (diff 0.573, 75157 ULP)
+- `slimefit_6_6` acacia vs bds: first tick 18 velocity.y: 0.13869236 vs 0.13869235 (diff 1.49e-08, 1 ULP); 2 of 30 ticks differ; largest tick 30 velocity.y: -0.124140754 vs -0.124140784 (diff 2.98e-08, 4 ULP)
+- `slimefit_6_6` unastar vs bedsim: first tick 6 velocity.y: 0.33609942 vs 0.2906979 (diff 0.0454, 1523422 ULP); 25 of 30 ticks differ; largest tick 15 velocity.y: -0.37148666 vs 0.25254002 (diff 0.624, 2101313645 ULP)
+- `slimefit_6_6` acacia vs bedsim: first tick 6 velocity.y: 0.33609942 vs 0.2906979 (diff 0.0454, 1523422 ULP); 25 of 30 ticks differ; largest tick 15 velocity.y: -0.37148666 vs 0.25254002 (diff 0.624, 2101313645 ULP)
+- `slimefit_6_8` unastar vs bds: first tick 30 velocity.y: -0.1162658 vs -0.116265826 (diff 2.24e-08, 3 ULP); 1 of 30 ticks differ; largest tick 30 velocity.y: -0.1162658 vs -0.116265826 (diff 2.24e-08, 3 ULP)
+- `slimefit_6_8` bedsim vs bds: first tick 6 velocity.y: 0.2906979 vs 0.34752694 (diff 0.0568, 1906866 ULP); 25 of 30 ticks differ; largest tick 30 position.y: 102.62001 vs 103.23527 (diff 0.615, 80643 ULP)
+- `slimefit_6_8` acacia vs bds: first tick 30 velocity.y: -0.1162658 vs -0.116265826 (diff 2.24e-08, 3 ULP); 1 of 30 ticks differ; largest tick 30 velocity.y: -0.1162658 vs -0.116265826 (diff 2.24e-08, 3 ULP)
+- `slimefit_6_8` unastar vs bedsim: first tick 6 velocity.y: 0.34752694 vs 0.2906979 (diff 0.0568, 1906866 ULP); 25 of 30 ticks differ; largest tick 30 position.y: 103.23527 vs 102.62001 (diff 0.615, 80643 ULP)
+- `slimefit_6_8` acacia vs bedsim: first tick 6 velocity.y: 0.34752694 vs 0.2906979 (diff 0.0568, 1906866 ULP); 25 of 30 ticks differ; largest tick 30 position.y: 103.23527 vs 102.62001 (diff 0.615, 80643 ULP)
+- `slimehold_13_1` bedsim vs bds: first tick 14 position.y: 103.368645 vs 103.3758 (diff 0.00716, 938 ULP); 20 of 33 ticks differ; largest tick 33 position.y: 103.20279 vs 102.62001 (diff 0.583, 76386 ULP)
+- `slimehold_13_1` unastar vs bedsim: first tick 13 velocity.y: 0.75579184 vs 0.74863225 (diff 0.00716, 120118 ULP); 21 of 33 ticks differ; largest tick 32 velocity.y: -0.73469794 vs 0.58277535 (diff 1.32, 2119255534 ULP)
+- `slimehold_13_1` acacia vs bedsim: first tick 13 velocity.y: 0.75579184 vs 0.74863225 (diff 0.00716, 120118 ULP); 21 of 33 ticks differ; largest tick 32 velocity.y: -0.73469794 vs 0.58277535 (diff 1.32, 2119255534 ULP)
+- `slimehold_15_3` bedsim vs bds: first tick 16 position.y: 103.48802 vs 103.51182 (diff 0.0238, 3119 ULP); 20 of 35 ticks differ; largest tick 35 position.y: 103.794815 vs 104.19029 (diff 0.395, 51836 ULP)
+- `slimehold_15_3` unastar vs bedsim: first tick 15 velocity.y: 0.89180547 vs 0.86800915 (diff 0.0238, 399236 ULP); 21 of 35 ticks differ; largest tick 35 position.y: 104.19029 vs 103.794815 (diff 0.395, 51836 ULP)
+- `slimehold_15_3` acacia vs bedsim: first tick 15 velocity.y: 0.89180547 vs 0.86800915 (diff 0.0238, 399236 ULP); 21 of 35 ticks differ; largest tick 35 position.y: 104.19029 vs 103.794815 (diff 0.395, 51836 ULP)
+- `slimehold_21_7` bedsim vs bds: first tick 22 position.y: 103.81853 vs 103.87187 (diff 0.0533, 6992 ULP); 20 of 41 ticks differ; largest tick 41 position.y: 109.287735 vs 110.1743 (diff 0.887, 116204 ULP)
+- `slimehold_21_7` unastar vs bedsim: first tick 21 velocity.y: 1.2518629 vs 1.1985176 (diff 0.0533, 447493 ULP); 21 of 41 ticks differ; largest tick 41 position.y: 110.1743 vs 109.287735 (diff 0.887, 116204 ULP)
+- `slimehold_21_7` acacia vs bedsim: first tick 21 velocity.y: 1.2518629 vs 1.1985176 (diff 0.0533, 447493 ULP); 21 of 41 ticks differ; largest tick 41 position.y: 110.1743 vs 109.287735 (diff 0.887, 116204 ULP)
+- `slimehold_24_5` bedsim vs bds: first tick 24 velocity.y: 1.3493415 vs 1.3881425 (diff 0.0388, 325486 ULP); 21 of 44 ticks differ; largest tick 44 position.y: 111.79436 vs 112.43923 (diff 0.645, 84525 ULP)
+- `slimehold_24_5` unastar vs bedsim: first tick 24 velocity.y: 1.3881425 vs 1.3493415 (diff 0.0388, 325486 ULP); 21 of 44 ticks differ; largest tick 44 position.y: 112.43923 vs 111.79436 (diff 0.645, 84525 ULP)
+- `slimehold_24_5` acacia vs bedsim: first tick 24 velocity.y: 1.3881425 vs 1.3493415 (diff 0.0388, 325486 ULP); 21 of 44 ticks differ; largest tick 44 position.y: 112.43923 vs 111.79436 (diff 0.645, 84525 ULP)
+- `slimehold_8_9` bedsim vs bds: first tick 9 position.y: 103.04822 vs 103.115074 (diff 0.0669, 8763 ULP); 22 of 30 ticks differ; largest tick 30 position.y: 102.62001 vs 103.79474 (diff 1.17, 153974 ULP)
+- `slimehold_8_9` unastar vs bedsim: first tick 8 velocity.y: 0.49506187 vs 0.42820898 (diff 0.0669, 2243211 ULP); 23 of 30 ticks differ; largest tick 30 position.y: 103.79474 vs 102.62001 (diff 1.17, 153974 ULP)
+- `slimehold_8_9` acacia vs bedsim: first tick 8 velocity.y: 0.49506187 vs 0.42820898 (diff 0.0669, 2243211 ULP); 23 of 30 ticks differ; largest tick 30 position.y: 103.79474 vs 102.62001 (diff 1.17, 153974 ULP)
+- `slimehold_9_5` bedsim vs bds: first tick 10 position.y: 103.11492 vs 103.15339 (diff 0.0385, 5042 ULP); 20 of 30 ticks differ; largest tick 22 position.y: 102.64726 vs 103.09155 (diff 0.444, 58234 ULP)
+- `slimehold_9_5` unastar vs bedsim: first tick 9 velocity.y: 0.5333802 vs 0.49490884 (diff 0.0385, 730858 ULP); 22 of 30 ticks differ; largest tick 22 position.y: 103.09155 vs 102.64726 (diff 0.444, 58234 ULP)
+- `slimehold_9_5` acacia vs bedsim: first tick 9 velocity.y: 0.5333802 vs 0.49490884 (diff 0.0385, 730858 ULP); 22 of 30 ticks differ; largest tick 22 position.y: 103.09155 vs 102.64726 (diff 0.444, 58234 ULP)
 - `slow_falling_fall` acacia vs bds: first tick 90 velocity.z: 3.170922e-08 vs 0 (diff 3.17e-08, 856174760 ULP); 1 of 105 ticks differ; largest tick 90 velocity.z: 3.170922e-08 vs 0 (diff 3.17e-08, 856174760 ULP)
 - `slow_falling_fall` acacia vs bedsim: first tick 89 velocity.z: 5.807549e-08 vs 0 (diff 5.81e-08, 863596205 ULP); 4 of 105 ticks differ; largest tick 89 velocity.z: 5.807549e-08 vs 0 (diff 5.81e-08, 863596205 ULP)
 - `slow_falling_fall` acacia vs unastar: first tick 89 velocity.z: 5.807549e-08 vs 0 (diff 5.81e-08, 863596205 ULP); 4 of 105 ticks differ; largest tick 89 velocity.z: 5.807549e-08 vs 0 (diff 5.81e-08, 863596205 ULP)
@@ -1413,6 +1555,101 @@ Scenarios whose world a runner builds differently from unastar's (BDS 1.26.51's 
 - `stairs_corner_diagonal` acacia vs bds: first tick 6 position.x: 0.42928934 vs 0.43070352 (diff 0.00141, 47452 ULP); 50 of 55 ticks differ; largest tick 35 position.y: 101.85153 vs 102.155846 (diff 0.304, 39887 ULP)
 - `stairs_corner_diagonal` acacia vs bedsim: first tick 6 position.x: 0.42928934 vs 0.43070352 (diff 0.00141, 47452 ULP); 50 of 55 ticks differ; largest tick 35 position.y: 101.85153 vs 102.155846 (diff 0.304, 39887 ULP)
 - `stairs_corner_diagonal` acacia vs unastar: first tick 6 position.x: 0.42928934 vs 0.43070352 (diff 0.00141, 47452 ULP); 50 of 55 ticks differ; largest tick 35 position.y: 101.85153 vs 102.155846 (diff 0.304, 39887 ULP)
+- `surface_swim_d2_p15` unastar vs bds: first tick 47 position.y: 102.79528 vs 102.80781 (diff 0.0125, 1642 ULP); 14 of 60 ticks differ; largest tick 60 position.y: 102.845695 vs 103.08033 (diff 0.235, 30754 ULP)
+- `surface_swim_d2_p15` bedsim vs bds: first tick 6 velocity.y: -0.005 vs 0 (diff 0.005, 1000593162 ULP); 39 of 60 ticks differ; largest tick 55 position.y: 101.62001 vs 103.12267 (diff 1.5, 196957 ULP)
+- `surface_swim_d2_p15` acacia vs bds: first tick 30 velocity.y: 0.038038015 vs 0.03803804 (diff 2.61e-08, 7 ULP); 6 of 60 ticks differ; largest tick 42 velocity.y: 0.049688123 vs 0.04968816 (diff 3.73e-08, 10 ULP)
+- `surface_swim_d2_p15` unastar vs bedsim: first tick 6 velocity.y: 0 vs -0.005 (diff 0.005, 1000593162 ULP); 55 of 60 ticks differ; largest tick 53 position.y: 102.92872 vs 101.62001 (diff 1.31, 171535 ULP)
+- `surface_swim_d2_p15` acacia vs bedsim: first tick 6 velocity.y: 0 vs -0.005 (diff 0.005, 1000593162 ULP); 55 of 60 ticks differ; largest tick 55 position.y: 103.12267 vs 101.62001 (diff 1.5, 196957 ULP)
+- `surface_swim_d2_p15` acacia vs unastar: first tick 26 velocity.y: 0.012420341 vs 0.01242035 (diff 8.38e-09, 9 ULP); 35 of 60 ticks differ; largest tick 60 position.y: 103.08033 vs 102.845695 (diff 0.235, 30754 ULP)
+- `surface_swim_d2_p20_l20` unastar vs bds: first tick 43 position.y: 102.84316 vs 102.85974 (diff 0.0166, 2173 ULP); 16 of 58 ticks differ; largest tick 58 position.y: 103.00059 vs 102.605034 (diff 0.396, 51846 ULP)
+- `surface_swim_d2_p20_l20` bedsim vs bds: first tick 6 velocity.y: -0.005 vs 0 (diff 0.005, 1000593162 ULP); 37 of 58 ticks differ; largest tick 48 position.y: 101.62001 vs 103.272255 (diff 1.65, 216563 ULP)
+- `surface_swim_d2_p20_l20` acacia vs bds: first tick 30 velocity.y: 0.050266087 vs 0.050266143 (diff 5.59e-08, 15 ULP); 4 of 58 ticks differ; largest tick 36 velocity.y: 0.06330359 vs 0.06330365 (diff 5.96e-08, 8 ULP)
+- `surface_swim_d2_p20_l20` unastar vs bedsim: first tick 6 velocity.y: 0 vs -0.005 (diff 0.005, 1000593162 ULP); 53 of 58 ticks differ; largest tick 52 position.y: 103.06555 vs 101.62001 (diff 1.45, 189470 ULP)
+- `surface_swim_d2_p20_l20` acacia vs bedsim: first tick 6 velocity.y: 0 vs -0.005 (diff 0.005, 1000593162 ULP); 53 of 58 ticks differ; largest tick 48 position.y: 103.272255 vs 101.62001 (diff 1.65, 216563 ULP)
+- `surface_swim_d2_p20_l20` acacia vs unastar: first tick 26 velocity.y: 0.016413106 vs 0.016413124 (diff 1.86e-08, 10 ULP); 33 of 58 ticks differ; largest tick 58 position.y: 102.605034 vs 103.00059 (diff 0.396, 51846 ULP)
+- `surface_swim_d2_p25_l22` unastar vs bds: first tick 42 position.y: 102.82742 vs 102.84796 (diff 0.0205, 2692 ULP); 19 of 60 ticks differ; largest tick 60 position.y: 103.36511 vs 102.586784 (diff 0.778, 102017 ULP)
+- `surface_swim_d2_p25_l22` bedsim vs bds: first tick 6 velocity.y: -0.005 vs 0 (diff 0.005, 1000593162 ULP); 37 of 60 ticks differ; largest tick 46 position.y: 101.62001 vs 103.254005 (diff 1.63, 214171 ULP)
+- `surface_swim_d2_p25_l22` acacia vs bds: first tick 30 velocity.y: 0.047011055 vs 0.047011066 (diff 1.12e-08, 3 ULP); 30 of 60 ticks differ; largest tick 32 position.y: 101.89576 vs 101.89577 (diff 7.63e-06, 1 ULP)
+- `surface_swim_d2_p25_l22` unastar vs bedsim: first tick 6 velocity.y: 0 vs -0.005 (diff 0.005, 1000593162 ULP); 55 of 60 ticks differ; largest tick 60 position.y: 103.36511 vs 101.62001 (diff 1.75, 228734 ULP)
+- `surface_swim_d2_p25_l22` acacia vs bedsim: first tick 6 velocity.y: 0 vs -0.005 (diff 0.005, 1000593162 ULP); 55 of 60 ticks differ; largest tick 46 position.y: 103.254 vs 101.62001 (diff 1.63, 214170 ULP)
+- `surface_swim_d2_p25_l22` acacia vs unastar: first tick 28 velocity.y: 0.02028521 vs 0.020285213 (diff 3.73e-09, 2 ULP); 33 of 60 ticks differ; largest tick 60 position.y: 102.58678 vs 103.36511 (diff 0.778, 102018 ULP)
+- `surface_swim_d2_p30_l16` unastar vs bds: first tick 35 position.y: 102.92912 vs 102.95345 (diff 0.0243, 3189 ULP); 20 of 54 ticks differ; largest tick 54 position.y: 102.640526 vs 102.343506 (diff 0.297, 38931 ULP)
+- `surface_swim_d2_p30_l16` bedsim vs bds: first tick 6 velocity.y: -0.005 vs 0 (diff 0.005, 1000593162 ULP); 36 of 54 ticks differ; largest tick 38 position.y: 101.62001 vs 103.31244 (diff 1.69, 221830 ULP)
+- `surface_swim_d2_p30_l16` acacia vs bds: first tick 24 velocity.y: 0.055616986 vs 0.055617023 (diff 3.73e-08, 10 ULP); 3 of 54 ticks differ; largest tick 36 velocity.y: 0.095422916 vs 0.095422976 (diff 5.96e-08, 8 ULP)
+- `surface_swim_d2_p30_l16` unastar vs bedsim: first tick 6 velocity.y: 0 vs -0.005 (diff 0.005, 1000593162 ULP); 49 of 54 ticks differ; largest tick 48 position.y: 103.28092 vs 101.62001 (diff 1.66, 217699 ULP)
+- `surface_swim_d2_p30_l16` acacia vs bedsim: first tick 6 velocity.y: 0 vs -0.005 (diff 0.005, 1000593162 ULP); 49 of 54 ticks differ; largest tick 38 position.y: 103.31244 vs 101.62001 (diff 1.69, 221830 ULP)
+- `surface_swim_d2_p30_l16` acacia vs unastar: first tick 22 velocity.y: 0.02399866 vs 0.023998672 (diff 1.3e-08, 7 ULP); 33 of 54 ticks differ; largest tick 54 position.y: 102.343506 vs 102.640526 (diff 0.297, 38931 ULP)
+- `surface_swim_d2_p35_l18` unastar vs bds: first tick 35 position.y: 102.85007 vs 102.878105 (diff 0.028, 3675 ULP); 22 of 56 ticks differ; largest tick 51 position.y: 103.17519 vs 101.75458 (diff 1.42, 186203 ULP)
+- `surface_swim_d2_p35_l18` bedsim vs bds: first tick 6 velocity.y: -0.005 vs 0 (diff 0.005, 1000593162 ULP); 36 of 56 ticks differ; largest tick 41 position.y: 101.62001 vs 103.48102 (diff 1.86, 243926 ULP)
+- `surface_swim_d2_p35_l18` acacia vs bds: first tick 24 velocity.y: 0.027529558 vs 0.027529573 (diff 1.49e-08, 8 ULP); 30 of 56 ticks differ; largest tick 51 position.y: 103.198166 vs 101.75458 (diff 1.44, 189214 ULP)
+- `surface_swim_d2_p35_l18` unastar vs bedsim: first tick 6 velocity.y: 0 vs -0.005 (diff 0.005, 1000593162 ULP); 51 of 56 ticks differ; largest tick 49 position.y: 103.256096 vs 101.62001 (diff 1.64, 214445 ULP)
+- `surface_swim_d2_p35_l18` acacia vs bedsim: first tick 6 velocity.y: 0 vs -0.005 (diff 0.005, 1000593162 ULP); 51 of 56 ticks differ; largest tick 38 position.y: 103.28646 vs 101.62001 (diff 1.67, 218425 ULP)
+- `surface_swim_d2_p35_l18` acacia vs unastar: first tick 24 velocity.y: 0.027529558 vs 0.027529573 (diff 1.49e-08, 8 ULP); 33 of 56 ticks differ; largest tick 38 position.y: 103.28646 vs 103.057335 (diff 0.229, 30032 ULP)
+- `surface_swim_d2_p40_l24` unastar vs bds: first tick 40 position.y: 102.84797 vs 102.8795 (diff 0.0315, 4133 ULP); 23 of 62 ticks differ; largest tick 56 position.y: 103.29861 vs 101.94836 (diff 1.35, 176980 ULP)
+- `surface_swim_d2_p40_l24` bedsim vs bds: first tick 6 velocity.y: -0.005 vs 0 (diff 0.005, 1000593162 ULP); 37 of 62 ticks differ; largest tick 45 position.y: 101.62001 vs 103.497574 (diff 1.88, 246096 ULP)
+- `surface_swim_d2_p40_l24` acacia vs bds: first tick 30 velocity.y: 0.03085106 vs 0.030851066 (diff 5.59e-09, 3 ULP); 18 of 62 ticks differ; largest tick 62 position.y: 103.00002 vs 101.64903 (diff 1.35, 177077 ULP)
+- `surface_swim_d2_p40_l24` unastar vs bedsim: first tick 6 velocity.y: 0 vs -0.005 (diff 0.005, 1000593162 ULP); 57 of 62 ticks differ; largest tick 55 position.y: 103.30031 vs 101.62001 (diff 1.68, 220240 ULP)
+- `surface_swim_d2_p40_l24` acacia vs bedsim: first tick 6 velocity.y: 0 vs -0.005 (diff 0.005, 1000593162 ULP); 57 of 62 ticks differ; largest tick 45 position.y: 103.497574 vs 101.62001 (diff 1.88, 246096 ULP)
+- `surface_swim_d2_p40_l24` acacia vs unastar: first tick 30 velocity.y: 0.03085106 vs 0.030851066 (diff 5.59e-09, 3 ULP); 33 of 62 ticks differ; largest tick 52 position.y: 102.76709 vs 103.28458 (diff 0.517, 67828 ULP)
+- `surface_swim_d2_p45` unastar vs bds: first tick 36 position.y: 102.97096 vs 103.00565 (diff 0.0347, 4547 ULP); 25 of 60 ticks differ; largest tick 45 position.y: 103.1974 vs 102.74509 (diff 0.452, 59286 ULP)
+- `surface_swim_d2_p45` bedsim vs bds: first tick 6 velocity.y: -0.005 vs 0 (diff 0.005, 1000593162 ULP); 39 of 60 ticks differ; largest tick 40 position.y: 101.62001 vs 103.52392 (diff 1.9, 249549 ULP)
+- `surface_swim_d2_p45` acacia vs bds: first tick 30 velocity.y: 0.103946626 vs 0.10394666 (diff 3.73e-08, 5 ULP); 20 of 60 ticks differ; largest tick 54 position.y: 103.276596 vs 101.8802 (diff 1.4, 183028 ULP)
+- `surface_swim_d2_p45` unastar vs bedsim: first tick 6 velocity.y: 0 vs -0.005 (diff 0.005, 1000593162 ULP); 55 of 60 ticks differ; largest tick 43 position.y: 103.37857 vs 101.62001 (diff 1.76, 230498 ULP)
+- `surface_swim_d2_p45` acacia vs bedsim: first tick 6 velocity.y: 0 vs -0.005 (diff 0.005, 1000593162 ULP); 55 of 60 ticks differ; largest tick 40 position.y: 103.52392 vs 101.62001 (diff 1.9, 249549 ULP)
+- `surface_swim_d2_p45` acacia vs unastar: first tick 26 velocity.y: 0.033941116 vs 0.033941124 (diff 7.45e-09, 2 ULP); 35 of 60 ticks differ; largest tick 54 position.y: 103.276596 vs 102.19286 (diff 1.08, 142047 ULP)
+- `surface_swim_d2_p55_l20` unastar vs bds: first tick 35 position.y: 102.99525 vs 103.035614 (diff 0.0404, 5291 ULP); 24 of 58 ticks differ; largest tick 38 position.y: 103.28092 vs 103.49314 (diff 0.212, 27816 ULP)
+- `surface_swim_d2_p55_l20` bedsim vs bds: first tick 6 velocity.y: -0.005 vs 0 (diff 0.005, 1000593162 ULP); 37 of 58 ticks differ; largest tick 39 position.y: 101.62001 vs 103.52873 (diff 1.91, 250180 ULP)
+- `surface_swim_d2_p55_l20` acacia vs bds: first tick 30 velocity.y: 0.12041402 vs 0.12041403 (diff 1.49e-08, 2 ULP); 24 of 58 ticks differ; largest tick 52 position.y: 103.22018 vs 101.81703 (diff 1.4, 183913 ULP)
+- `surface_swim_d2_p55_l20` unastar vs bedsim: first tick 6 velocity.y: 0 vs -0.005 (diff 0.005, 1000593162 ULP); 53 of 58 ticks differ; largest tick 40 position.y: 103.388824 vs 101.62001 (diff 1.77, 231842 ULP)
+- `surface_swim_d2_p55_l20` acacia vs bedsim: first tick 6 velocity.y: 0 vs -0.005 (diff 0.005, 1000593162 ULP); 53 of 58 ticks differ; largest tick 36 position.y: 103.225174 vs 101.62001 (diff 1.61, 210392 ULP)
+- `surface_swim_d2_p55_l20` acacia vs unastar: first tick 26 velocity.y: 0.039318122 vs 0.039318126 (diff 3.73e-09, 1 ULP); 31 of 58 ticks differ; largest tick 52 position.y: 103.22018 vs 101.82019 (diff 1.4, 183499 ULP)
+- `surface_swim_d2_p70_l20` unastar vs bds: first tick 34 position.y: 102.98317 vs 103.029755 (diff 0.0466, 6106 ULP); 25 of 58 ticks differ; largest tick 49 position.y: 102.02858 vs 101.642006 (diff 0.387, 50669 ULP)
+- `surface_swim_d2_p70_l20` bedsim vs bds: first tick 6 velocity.y: -0.005 vs 0 (diff 0.005, 1000593162 ULP); 37 of 58 ticks differ; largest tick 38 position.y: 101.62001 vs 103.598434 (diff 1.98, 259316 ULP)
+- `surface_swim_d2_p70_l20` acacia vs bds: first tick 30 velocity.y: 0.13813686 vs 0.1381369 (diff 2.98e-08, 2 ULP); 24 of 58 ticks differ; largest tick 50 position.y: 103.24395 vs 101.62001 (diff 1.62, 212853 ULP)
+- `surface_swim_d2_p70_l20` unastar vs bedsim: first tick 6 velocity.y: 0 vs -0.005 (diff 0.005, 1000593162 ULP); 53 of 58 ticks differ; largest tick 39 position.y: 103.42227 vs 101.62001 (diff 1.8, 236226 ULP)
+- `surface_swim_d2_p70_l20` acacia vs bedsim: first tick 6 velocity.y: 0 vs -0.005 (diff 0.005, 1000593162 ULP); 53 of 58 ticks differ; largest tick 35 position.y: 103.24395 vs 101.62001 (diff 1.62, 212853 ULP)
+- `surface_swim_d2_p70_l20` acacia vs unastar: first tick 26 velocity.y: 0.045105066 vs 0.04510507 (diff 3.73e-09, 1 ULP); 33 of 58 ticks differ; largest tick 52 position.y: 103.23895 vs 101.83591 (diff 1.4, 183900 ULP)
+- `surface_swim_d3_p20_l20` bedsim vs bds: first tick 6 velocity.y: -0.005 vs 0 (diff 0.005, 1000593162 ULP); 37 of 58 ticks differ; largest tick 56 position.y: 101.62001 vs 103.62377 (diff 2, 262637 ULP)
+- `surface_swim_d3_p20_l20` acacia vs bds: first tick 30 velocity.y: 0.050266087 vs 0.050266143 (diff 5.59e-08, 15 ULP); 5 of 58 ticks differ; largest tick 36 velocity.y: 0.06330359 vs 0.06330365 (diff 5.96e-08, 8 ULP)
+- `surface_swim_d3_p20_l20` unastar vs bedsim: first tick 6 velocity.y: 0 vs -0.005 (diff 0.005, 1000593162 ULP); 53 of 58 ticks differ; largest tick 56 position.y: 103.62377 vs 101.62001 (diff 2, 262637 ULP)
+- `surface_swim_d3_p20_l20` acacia vs bedsim: first tick 6 velocity.y: 0 vs -0.005 (diff 0.005, 1000593162 ULP); 53 of 58 ticks differ; largest tick 56 position.y: 103.62377 vs 101.62001 (diff 2, 262637 ULP)
+- `surface_swim_d3_p20_l20` acacia vs unastar: first tick 26 velocity.y: 0.016413106 vs 0.016413124 (diff 1.86e-08, 10 ULP); 33 of 58 ticks differ; largest tick 39 velocity.y: 0.064957865 vs 0.06495793 (diff 6.71e-08, 9 ULP)
+- `surface_swim_d3_p30` unastar vs bds: first tick 47 position.y: 103.890854 vs 103.91506 (diff 0.0242, 3173 ULP); 14 of 60 ticks differ; largest tick 60 position.y: 104.1173 vs 103.3513 (diff 0.766, 100401 ULP)
+- `surface_swim_d3_p30` bedsim vs bds: first tick 6 velocity.y: -0.005 vs 0 (diff 0.005, 1000593162 ULP); 39 of 60 ticks differ; largest tick 52 position.y: 101.62001 vs 104.44659 (diff 2.83, 370485 ULP)
+- `surface_swim_d3_p30` acacia vs bds: first tick 30 velocity.y: 0.07349728 vs 0.073497325 (diff 4.47e-08, 6 ULP); 6 of 60 ticks differ; largest tick 42 velocity.y: 0.0960077 vs 0.09600776 (diff 5.96e-08, 8 ULP)
+- `surface_swim_d3_p30` unastar vs bedsim: first tick 6 velocity.y: 0 vs -0.005 (diff 0.005, 1000593162 ULP); 55 of 60 ticks differ; largest tick 55 position.y: 104.17121 vs 101.62001 (diff 2.55, 334391 ULP)
+- `surface_swim_d3_p30` acacia vs bedsim: first tick 6 velocity.y: 0 vs -0.005 (diff 0.005, 1000593162 ULP); 55 of 60 ticks differ; largest tick 52 position.y: 104.44659 vs 101.62001 (diff 2.83, 370485 ULP)
+- `surface_swim_d3_p30` acacia vs unastar: first tick 26 velocity.y: 0.02399866 vs 0.023998672 (diff 1.3e-08, 7 ULP); 35 of 60 ticks differ; largest tick 60 position.y: 103.3513 vs 104.1173 (diff 0.766, 100401 ULP)
+- `surface_swim_d3_p35_l26` unastar vs bds: first tick 51 position.y: 103.94803 vs 103.97581 (diff 0.0278, 3641 ULP); 14 of 64 ticks differ; largest tick 63 position.y: 104.74147 vs 103.08198 (diff 1.66, 217513 ULP)
+- `surface_swim_d3_p35_l26` bedsim vs bds: first tick 6 velocity.y: -0.005 vs 0 (diff 0.005, 1000593162 ULP); 38 of 64 ticks differ; largest tick 56 position.y: 101.62001 vs 104.45071 (diff 2.83, 371025 ULP)
+- `surface_swim_d3_p35_l26` acacia vs bds: first tick 36 position.y: 101.994225 vs 101.99423 (diff 7.63e-06, 1 ULP); 29 of 64 ticks differ; largest tick 63 position.y: 104.74896 vs 103.08198 (diff 1.67, 218495 ULP)
+- `surface_swim_d3_p35_l26` unastar vs bedsim: first tick 6 velocity.y: 0 vs -0.005 (diff 0.005, 1000593162 ULP); 59 of 64 ticks differ; largest tick 60 position.y: 105.00259 vs 101.62001 (diff 3.38, 443361 ULP)
+- `surface_swim_d3_p35_l26` acacia vs bedsim: first tick 6 velocity.y: 0 vs -0.005 (diff 0.005, 1000593162 ULP); 59 of 64 ticks differ; largest tick 60 position.y: 105.01008 vs 101.62001 (diff 3.39, 444343 ULP)
+- `surface_swim_d3_p35_l26` acacia vs unastar: first tick 32 velocity.y: 0.027529558 vs 0.027529573 (diff 1.49e-08, 8 ULP); 33 of 64 ticks differ; largest tick 53 position.y: 104.25271 vs 104.10716 (diff 0.146, 19077 ULP)
+- `surface_swim_d3_p40_l22` unastar vs bds: first tick 45 position.y: 103.91911 vs 103.95027 (diff 0.0312, 4084 ULP); 16 of 60 ticks differ; largest tick 56 position.y: 104.130356 vs 103.34278 (diff 0.788, 103229 ULP)
+- `surface_swim_d3_p40_l22` bedsim vs bds: first tick 6 velocity.y: -0.005 vs 0 (diff 0.005, 1000593162 ULP); 37 of 60 ticks differ; largest tick 50 position.y: 101.62001 vs 104.49213 (diff 2.87, 376454 ULP)
+- `surface_swim_d3_p40_l22` acacia vs bds: first tick 30 velocity.y: 0.071497455 vs 0.07149747 (diff 1.49e-08, 2 ULP); 16 of 60 ticks differ; largest tick 60 position.y: 103.592834 vs 102.84 (diff 0.753, 98676 ULP)
+- `surface_swim_d3_p40_l22` unastar vs bedsim: first tick 6 velocity.y: 0 vs -0.005 (diff 0.005, 1000593162 ULP); 55 of 60 ticks differ; largest tick 54 position.y: 104.341545 vs 101.62001 (diff 2.72, 356717 ULP)
+- `surface_swim_d3_p40_l22` acacia vs bedsim: first tick 6 velocity.y: 0 vs -0.005 (diff 0.005, 1000593162 ULP); 55 of 60 ticks differ; largest tick 47 position.y: 104.260056 vs 101.62001 (diff 2.64, 346036 ULP)
+- `surface_swim_d3_p40_l22` acacia vs unastar: first tick 28 velocity.y: 0.03085106 vs 0.030851066 (diff 5.59e-09, 3 ULP); 33 of 60 ticks differ; largest tick 47 position.y: 104.260056 vs 104.09684 (diff 0.163, 21393 ULP)
+- `surface_swim_d3_p50_l18` unastar vs bds: first tick 39 position.y: 103.992004 vs 104.0292 (diff 0.0372, 4875 ULP); 18 of 56 ticks differ; largest tick 43 position.y: 104.337265 vs 104.61073 (diff 0.273, 35844 ULP)
+- `surface_swim_d3_p50_l18` bedsim vs bds: first tick 6 velocity.y: -0.005 vs 0 (diff 0.005, 1000593162 ULP); 36 of 56 ticks differ; largest tick 43 position.y: 101.62001 vs 104.61073 (diff 2.99, 392000 ULP)
+- `surface_swim_d3_p50_l18` acacia vs bds: first tick 30 velocity.y: 0.12810075 vs 0.12810078 (diff 2.98e-08, 2 ULP); 12 of 56 ticks differ; largest tick 56 position.y: 102.9068 vs 102.60471 (diff 0.302, 39595 ULP)
+- `surface_swim_d3_p50_l18` unastar vs bedsim: first tick 6 velocity.y: 0 vs -0.005 (diff 0.005, 1000593162 ULP); 51 of 56 ticks differ; largest tick 44 position.y: 104.38517 vs 101.62001 (diff 2.77, 362435 ULP)
+- `surface_swim_d3_p50_l18` acacia vs bedsim: first tick 6 velocity.y: 0 vs -0.005 (diff 0.005, 1000593162 ULP); 51 of 56 ticks differ; largest tick 43 position.y: 104.61073 vs 101.62001 (diff 2.99, 392000 ULP)
+- `surface_swim_d3_p50_l18` acacia vs unastar: first tick 29 velocity.y: 0.12145118 vs 0.12145119 (diff 1.49e-08, 2 ULP); 28 of 56 ticks differ; largest tick 43 position.y: 104.61073 vs 104.337265 (diff 0.273, 35844 ULP)
+- `surface_swim_d3_p60` unastar vs bds: first tick 39 position.y: 103.8875 vs 103.92965 (diff 0.0422, 5525 ULP); 22 of 60 ticks differ; largest tick 43 position.y: 104.27359 vs 104.593575 (diff 0.32, 41941 ULP)
+- `surface_swim_d3_p60` bedsim vs bds: first tick 6 velocity.y: -0.005 vs 0 (diff 0.005, 1000593162 ULP); 39 of 60 ticks differ; largest tick 44 position.y: 101.62001 vs 104.59763 (diff 2.98, 390283 ULP)
+- `surface_swim_d3_p60` acacia vs bds: first tick 30 velocity.y: 0.1273034 vs 0.12730344 (diff 2.98e-08, 2 ULP); 16 of 60 ticks differ; largest tick 60 position.y: 103.474846 vs 102.518036 (diff 0.957, 125411 ULP)
+- `surface_swim_d3_p60` unastar vs bedsim: first tick 6 velocity.y: 0 vs -0.005 (diff 0.005, 1000593162 ULP); 55 of 60 ticks differ; largest tick 45 position.y: 104.37002 vs 101.62001 (diff 2.75, 360449 ULP)
+- `surface_swim_d3_p60` acacia vs bedsim: first tick 6 velocity.y: 0 vs -0.005 (diff 0.005, 1000593162 ULP); 55 of 60 ticks differ; largest tick 44 position.y: 104.59763 vs 101.62001 (diff 2.98, 390283 ULP)
+- `surface_swim_d3_p60` acacia vs unastar: first tick 26 velocity.y: 0.041567676 vs 0.041567683 (diff 7.45e-09, 2 ULP); 35 of 60 ticks differ; largest tick 60 position.y: 103.474846 vs 102.6128 (diff 0.862, 112990 ULP)
+- `surface_swim_d3_p75_l20` unastar vs bds: first tick 38 position.y: 103.9197 vs 103.966805 (diff 0.0471, 6174 ULP); 21 of 58 ticks differ; largest tick 58 position.y: 102.766525 vs 102.257576 (diff 0.509, 66709 ULP)
+- `surface_swim_d3_p75_l20` bedsim vs bds: first tick 6 velocity.y: -0.005 vs 0 (diff 0.005, 1000593162 ULP); 37 of 58 ticks differ; largest tick 43 position.y: 101.62001 vs 104.73505 (diff 3.12, 408294 ULP)
+- `surface_swim_d3_p75_l20` acacia vs bds: first tick 30 velocity.y: 0.14199255 vs 0.14199257 (diff 1.49e-08, 1 ULP); 14 of 58 ticks differ; largest tick 58 position.y: 103.28543 vs 102.257576 (diff 1.03, 134723 ULP)
+- `surface_swim_d3_p75_l20` unastar vs bedsim: first tick 6 velocity.y: 0 vs -0.005 (diff 0.005, 1000593162 ULP); 53 of 58 ticks differ; largest tick 43 position.y: 104.40603 vs 101.62001 (diff 2.79, 365169 ULP)
+- `surface_swim_d3_p75_l20` acacia vs bedsim: first tick 6 velocity.y: 0 vs -0.005 (diff 0.005, 1000593162 ULP); 53 of 58 ticks differ; largest tick 43 position.y: 104.73505 vs 101.62001 (diff 3.12, 408294 ULP)
+- `surface_swim_d3_p75_l20` acacia vs unastar: first tick 26 velocity.y: 0.046364035 vs 0.046364043 (diff 7.45e-09, 2 ULP); 33 of 58 ticks differ; largest tick 58 position.y: 103.28543 vs 102.766525 (diff 0.519, 68014 ULP)
 - `sw_corner` bedsim vs bds: first tick 6 velocity.x: 0.04918664 vs 0.049186636 (diff 3.73e-09, 1 ULP); 29 of 35 ticks differ; largest tick 13 position.x: 1.8506575 vs 1.8506572 (diff 2.38e-07, 2 ULP)
 - `sw_corner` unastar vs bedsim: first tick 6 velocity.x: 0.049186636 vs 0.04918664 (diff 3.73e-09, 1 ULP); 30 of 35 ticks differ; largest tick 13 position.x: 1.8506572 vs 1.8506575 (diff 2.38e-07, 2 ULP)
 - `sw_corner` acacia vs bedsim: first tick 6 velocity.x: 0.049186636 vs 0.04918664 (diff 3.73e-09, 1 ULP); 30 of 35 ticks differ; largest tick 13 position.x: 1.8506572 vs 1.8506575 (diff 2.38e-07, 2 ULP)
@@ -1527,8 +1764,9 @@ Scenarios whose world a runner builds differently from unastar's (BDS 1.26.51's 
 
 ## How close are bedsim and acacia-physics to BDS?
 
-On the 353-scenario corpus (committed BDS run md-r7-b; four random seeds from md-r7-random),
-unastar matches BDS bit for bit in 321 scenarios, bedsim in 129 and acacia-physics in 214. On
+On the 398-scenario corpus (committed BDS run md-r7-b; four random seeds from md-r7-random; the
+held-out glides, slime drops and surfacing swims from md-r7-probe6, -probe7 and -probe8b),
+unastar matches BDS bit for bit in 347 scenarios, bedsim in 129 and acacia-physics in 238. On
 round 6's 226 scenarios they match in 216, 117 and 143 (round 6: 207, 117, 143).
 
 **bedsim's runner world.** In about 40 scenarios bedsim's runner builds a different world from
@@ -1558,6 +1796,9 @@ On round 7's probes:
 |---|---|---|---|
 | sine probes (`sinx_*`, `sinh_*`), 58 | 58 | 9 | 36 |
 | glides at eleven pitches (`glide_p*`), 11 | 11 | 0 | 8 |
+| held-out glides (`glide_h*`), 11 | 11 | 0 | 10 |
+| slime drops (`slimefit_*`, `slimehold_*`), 18 | 14 | 3 | 14 |
+| surfacing swims (`surface_swim_*`), 16 | 1 | 0 | 0 |
 | ceiling crouch and push (`ceil_*`), 28 | 28 | 3 | 27 |
 | currents (`current_*`), 7 | 4 | 0 | 0 |
 | bubble columns (`bubble_*`), 6 | 6 | 0 | 0 |
@@ -1607,8 +1848,15 @@ Round 6's failing seeds that this round matches: `random_14`, `random_66` and `r
   The best fit, `(0.7496 × sqrt(v² + 0.2179 d) - 0.08) × 0.98`, is still up to 5e-4 off, so
   the form is wrong. The data: `python` over the corrected velocities of the `bedfit_*`
   scenarios (landings at inputs 6, 12 and 18, at five fractions of the tick each).
-- **Swimming at the surface** (`water_sprint_swim`): BDS keeps steering a swimmer up until its
-  feet are about 0.2 under the surface (unastar stops once the block at feet + 0.9 is air), then
-  holds its height for four inputs with a 0.096 velocity.
+- **Swimming at the surface** (`water_sprint_swim`, `surface_swim_*`): BDS keeps steering a
+  swimmer up longer than unastar, and a move that leaves the water ends its tick with the air's
+  gravity and drag. Candidates fitted on four probes (steering while a point 0.3 over the feet is
+  under the surface; the water slice 0.2 over the feet; the air's drag after a move out of the
+  water) were refuted by twelve held-out swims (md-r7-probe8b), so none is in the simulation.
+  The probes bound the steering's check (whole water block at the feet + 0.3948 to 0.4069) and
+  the in-water check (feet + 0.2432 to 0.282, or 0.132 to 0.171 above the feet by the water's
+  surface); `water_sprint_swim` also holds its height for four inputs with a 0.096 velocity.
+- **Slime:** one drop (`slimefit_6_4`) gives a velocity that no bounce reaches through
+  `(b - 0.08) × 0.98`, and three drops landing at input 6 drift on a later bounce.
 - **Currents across several blocks** drift an ULP after 30 inputs (`current_diamond_one`,
   `current_diamond_walk`), and a jump out of spreading water differs (`current_diamond_jump`).
