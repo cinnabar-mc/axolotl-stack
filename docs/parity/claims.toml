@@ -158,11 +158,11 @@ ids = [
 ]
 
 [[claim]]
-area = "Sleeping in beds and the night skip"
+area = "Sleeping in beds, the night skip and respawning"
 owner = "lane SYSTEMS"
 since = 2026-11-17
 domain = "systems"
-ids = ["player.sleeping", "world.day_cycle"]
+ids = ["player.death_respawn", "player.sleeping", "world.day_cycle"]
 
 [[claim]]
 area = "Survival block breaking"

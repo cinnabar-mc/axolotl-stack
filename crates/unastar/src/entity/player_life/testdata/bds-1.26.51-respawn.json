@@ -1,0 +1,239 @@
+{
+ "source": "BDS 1.26.51, plain, superflat, operator player: script.py capture of tools/bds-sweep/scripts/respawn.txt (2026-11-18), distilled by tools/bds-sweep/respawn_fixture.py",
+ "deaths": [
+  {
+   "line": 40,
+   "feet": [
+    3.5,
+    -60.0,
+    2.5
+   ],
+   "point": null,
+   "blocked": false,
+   "immediate": false,
+   "respawns": [
+    {
+     "state": "Searchingforspawn",
+     "position": [
+      3.5,
+      -58.37999,
+      2.5
+     ]
+    },
+    {
+     "state": "Searchingforspawn",
+     "position": [
+      0.0,
+      32767.0,
+      0.0
+     ]
+    },
+    {
+     "state": "Readytospawn",
+     "position": [
+      5.5,
+      -58.37999,
+      7.5
+     ]
+    }
+   ]
+  },
+  {
+   "line": 100,
+   "feet": [
+    3.5,
+    -60.0,
+    2.5
+   ],
+   "point": [
+    5,
+    -60,
+    -4
+   ],
+   "blocked": false,
+   "immediate": false,
+   "respawns": [
+    {
+     "state": "Searchingforspawn",
+     "position": [
+      3.5,
+      -58.37999,
+      2.5
+     ]
+    },
+    {
+     "state": "Searchingforspawn",
+     "position": [
+      5.0,
+      -60.0,
+      -4.0
+     ]
+    },
+    {
+     "state": "Readytospawn",
+     "position": [
+      5.5,
+      -58.37999,
+      -3.5
+     ]
+    }
+   ]
+  },
+  {
+   "line": 151,
+   "feet": [
+    -6.5,
+    -55.0,
+    6.5
+   ],
+   "point": [
+    5,
+    -60,
+    -4
+   ],
+   "blocked": false,
+   "immediate": false,
+   "respawns": [
+    {
+     "state": "Searchingforspawn",
+     "position": [
+      -6.5,
+      -53.37999,
+      6.5
+     ]
+    },
+    {
+     "state": "Searchingforspawn",
+     "position": [
+      5.0,
+      -60.0,
+      -4.0
+     ]
+    },
+    {
+     "state": "Readytospawn",
+     "position": [
+      5.5,
+      -58.37999,
+      -3.5
+     ]
+    }
+   ]
+  },
+  {
+   "line": 202,
+   "feet": [
+    3.5,
+    -60.0,
+    2.5
+   ],
+   "point": [
+    5,
+    -60,
+    -4
+   ],
+   "blocked": true,
+   "immediate": false,
+   "respawns": [
+    {
+     "state": "Searchingforspawn",
+     "position": [
+      3.5,
+      -58.37999,
+      2.5
+     ]
+    },
+    {
+     "state": "Searchingforspawn",
+     "position": [
+      5.0,
+      -60.0,
+      -4.0
+     ]
+    },
+    {
+     "state": "Readytospawn",
+     "position": [
+      5.5,
+      -56.37999,
+      -3.5
+     ]
+    }
+   ]
+  },
+  {
+   "line": 252,
+   "feet": [
+    3.5,
+    -60.0,
+    2.5
+   ],
+   "point": null,
+   "blocked": false,
+   "immediate": false,
+   "respawns": [
+    {
+     "state": "Searchingforspawn",
+     "position": [
+      3.5,
+      -58.37999,
+      2.5
+     ]
+    },
+    {
+     "state": "Searchingforspawn",
+     "position": [
+      0.0,
+      32767.0,
+      0.0
+     ]
+    },
+    {
+     "state": "Readytospawn",
+     "position": [
+      1.5,
+      -58.37999,
+      -5.5
+     ]
+    }
+   ]
+  },
+  {
+   "line": 302,
+   "feet": [
+    3.5,
+    -60.0,
+    2.5
+   ],
+   "point": null,
+   "blocked": false,
+   "immediate": true,
+   "respawns": [
+    {
+     "state": "Searchingforspawn",
+     "position": [
+      3.5,
+      -58.37999,
+      2.5
+     ]
+    },
+    {
+     "state": "Searchingforspawn",
+     "position": [
+      0.0,
+      32767.0,
+      0.0
+     ]
+    },
+    {
+     "state": "Readytospawn",
+     "position": [
+      4.5,
+      -58.37999,
+      3.5
+     ]
+    }
+   ]
+  }
+ ]
+}

@@ -296,13 +296,15 @@ fn death_rules_apply_from_the_next_death() {
     console(&mut h, "gamerule showdeathmessages false");
     console(&mut h, "gamerule doimmediaterespawn true");
     h.drain();
-    // Respawned at once, so `kill_player` finds it alive again.
-    assert!(!super::super::kill_player(h.world(), player));
+    // The player dies; with `doimmediaterespawn` its client answers the
+    // screen at once, as BDS waits for it to (`respawn_screen.rs`).
+    assert!(super::super::kill_player(h.world(), player));
     let packets = h.drain();
     assert!(h.drops().is_empty(), "keepinventory keeps the diamonds");
     assert!(translations(&packets).is_empty(), "no death message");
     assert_eq!(death_infos(&packets).len(), 1);
-    assert!(!h.dead(), "respawned at once");
+    crate::entity::player_life::respawn::respawn(h.world(), player);
+    assert!(!h.dead(), "respawned on the client's answer");
     assert_eq!(
         h.world()
             .get::<Hunger>(player)

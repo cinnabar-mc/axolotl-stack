@@ -61,7 +61,7 @@
 "RequestPermissionsPacket" = { status = "missing" }  # id 185
 "ResourcePackChunkRequestPacket" = { status = "done", owner = "protocol", tests = ["crates/jolyne/src/proto/packs/tests.rs::chunk_pacing_holds_replies_on_a_timer", "crates/jolyne/src/proto/packs/tests.rs::server_rejects_out_of_order_unknown_and_refused"] }  # id 84
 "ResourcePackClientResponsePacket" = { status = "done", owner = "protocol", tests = ["crates/jolyne/src/proto/packs/tests.rs::transfers_verifies_and_orders_stack_after_downloads", "crates/jolyne/src/proto/packs/tests.rs::declined_packs_are_not_downloaded"] }  # id 8
-"RespawnPacket" = { status = "done", owner = "entities", tests = ["crates/unastar/src/entity/player_life/tests/respawn.rs::the_client_ready_respawn_restores_the_player_at_the_world_spawn", "crates/unastar/src/entity/player_life/tests/respawn.rs::immediate_respawn_skips_the_death_screen"] }  # id 45
+"RespawnPacket" = { status = "done", owner = "entities", tests = ["crates/unastar/src/entity/player_life/tests/respawn.rs::the_client_ready_respawn_restores_the_player_at_the_world_spawn", "crates/unastar/src/entity/player_life/tests/respawn.rs::immediate_respawn_still_waits_for_the_client"] }  # id 45
 "ScriptMessagePacket" = { status = "missing" }  # id 177
 "ServerSettingsRequestPacket" = { status = "missing" }  # id 102
 "ServerboundDiagnosticsPacket" = { status = "missing" }  # id 315
