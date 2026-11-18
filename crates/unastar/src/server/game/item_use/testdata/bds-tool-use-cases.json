@@ -1,0 +1,1552 @@
+[
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_hoe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:grass_block",
+   "states": {}
+  },
+  "name": "hoe_grass_block",
+  "inputs": [
+   58,
+   73
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_hoe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:dirt",
+   "states": {}
+  },
+  "name": "hoe_dirt",
+  "inputs": [
+   90,
+   105
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_hoe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:coarse_dirt",
+   "states": {}
+  },
+  "name": "hoe_coarse_dirt",
+  "inputs": [
+   122,
+   137
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_hoe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:dirt_with_roots",
+   "states": {}
+  },
+  "name": "hoe_dirt_with_roots",
+  "inputs": [
+   154,
+   169
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_hoe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:grass_path",
+   "states": {}
+  },
+  "name": "hoe_grass_path",
+  "inputs": [
+   186,
+   201
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_hoe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:podzol",
+   "states": {}
+  },
+  "name": "hoe_podzol",
+  "inputs": [
+   218,
+   233
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_hoe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:mycelium",
+   "states": {}
+  },
+  "name": "hoe_mycelium",
+  "inputs": [
+   250,
+   265
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_hoe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:farmland",
+   "states": {}
+  },
+  "name": "hoe_farmland",
+  "inputs": [
+   282,
+   297
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_hoe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:mud",
+   "states": {}
+  },
+  "name": "hoe_mud",
+  "inputs": [
+   346,
+   361
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_hoe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:snow",
+   "states": {}
+  },
+  "name": "hoe_snow",
+  "inputs": [
+   378,
+   393
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_hoe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:dirt",
+   "states": {}
+  },
+  "name": "hoe_dirt_side",
+  "inputs": [
+   410,
+   425
+  ],
+  "face": 4
+ },
+ {
+  "mode": "survival",
+  "above": {
+   "pos": [
+    2,
+    -59,
+    0
+   ],
+   "name": "minecraft:stone",
+   "states": {}
+  },
+  "item": "minecraft:iron_hoe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:dirt",
+   "states": {}
+  },
+  "name": "hoe_dirt_covered",
+  "inputs": [
+   444,
+   459
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": {
+   "pos": [
+    2,
+    -59,
+    0
+   ],
+   "name": "minecraft:short_grass",
+   "states": {}
+  },
+  "item": "minecraft:iron_hoe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:dirt",
+   "states": {}
+  },
+  "name": "hoe_dirt_under_grass",
+  "inputs": [
+   478,
+   493
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_hoe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -58,
+    0
+   ],
+   "name": "minecraft:dirt",
+   "states": {}
+  },
+  "name": "hoe_dirt_below",
+  "inputs": [
+   510,
+   525
+  ],
+  "face": 0
+ },
+ {
+  "mode": "creative",
+  "above": null,
+  "item": "minecraft:iron_hoe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:dirt",
+   "states": {}
+  },
+  "name": "hoe_dirt_creative",
+  "inputs": [
+   542,
+   557
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_shovel",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:grass_block",
+   "states": {}
+  },
+  "name": "shovel_grass_block",
+  "inputs": [
+   574,
+   589
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_shovel",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:dirt",
+   "states": {}
+  },
+  "name": "shovel_dirt",
+  "inputs": [
+   606,
+   621
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_shovel",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:coarse_dirt",
+   "states": {}
+  },
+  "name": "shovel_coarse_dirt",
+  "inputs": [
+   638,
+   653
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_shovel",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:dirt_with_roots",
+   "states": {}
+  },
+  "name": "shovel_dirt_with_roots",
+  "inputs": [
+   670,
+   685
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_shovel",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:podzol",
+   "states": {}
+  },
+  "name": "shovel_podzol",
+  "inputs": [
+   702,
+   717
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_shovel",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:mycelium",
+   "states": {}
+  },
+  "name": "shovel_mycelium",
+  "inputs": [
+   734,
+   749
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_shovel",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:farmland",
+   "states": {}
+  },
+  "name": "shovel_farmland",
+  "inputs": [
+   766,
+   781
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_shovel",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:grass_path",
+   "states": {}
+  },
+  "name": "shovel_grass_path",
+  "inputs": [
+   798,
+   813
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_shovel",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:mud",
+   "states": {}
+  },
+  "name": "shovel_mud",
+  "inputs": [
+   830,
+   845
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_shovel",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:snow_layer",
+   "states": {}
+  },
+  "name": "shovel_snow_layer",
+  "inputs": [
+   862,
+   877
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_shovel",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:campfire",
+   "states": {}
+  },
+  "name": "shovel_campfire",
+  "inputs": [
+   894,
+   909
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_shovel",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:soul_campfire",
+   "states": {}
+  },
+  "name": "shovel_soul_campfire",
+  "inputs": [
+   926,
+   941
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_shovel",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:campfire",
+   "states": {
+    "extinguished": true
+   }
+  },
+  "name": "shovel_campfire_out",
+  "inputs": [
+   958,
+   973
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_shovel",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:dirt",
+   "states": {}
+  },
+  "name": "shovel_dirt_side",
+  "inputs": [
+   990,
+   1005
+  ],
+  "face": 4
+ },
+ {
+  "mode": "survival",
+  "above": {
+   "pos": [
+    2,
+    -59,
+    0
+   ],
+   "name": "minecraft:stone",
+   "states": {}
+  },
+  "item": "minecraft:iron_shovel",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:dirt",
+   "states": {}
+  },
+  "name": "shovel_dirt_covered",
+  "inputs": [
+   1024,
+   1039
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": {
+   "pos": [
+    2,
+    -59,
+    0
+   ],
+   "name": "minecraft:short_grass",
+   "states": {}
+  },
+  "item": "minecraft:iron_shovel",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:dirt",
+   "states": {}
+  },
+  "name": "shovel_dirt_under_grass",
+  "inputs": [
+   1058,
+   1073
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_shovel",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -58,
+    0
+   ],
+   "name": "minecraft:dirt",
+   "states": {}
+  },
+  "name": "shovel_dirt_below",
+  "inputs": [
+   1090,
+   1105
+  ],
+  "face": 0
+ },
+ {
+  "mode": "creative",
+  "above": null,
+  "item": "minecraft:iron_shovel",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:grass_block",
+   "states": {}
+  },
+  "name": "shovel_grass_creative",
+  "inputs": [
+   1122,
+   1137
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_axe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:oak_log",
+   "states": {
+    "pillar_axis": "x"
+   }
+  },
+  "name": "axe_oak_log",
+  "inputs": [
+   1154,
+   1169
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_axe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:oak_wood",
+   "states": {}
+  },
+  "name": "axe_oak_wood",
+  "inputs": [
+   1186,
+   1201
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_axe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:stripped_oak_log",
+   "states": {}
+  },
+  "name": "axe_stripped_oak_log",
+  "inputs": [
+   1218,
+   1233
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_axe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:spruce_log",
+   "states": {}
+  },
+  "name": "axe_spruce_log",
+  "inputs": [
+   1250,
+   1265
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_axe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:crimson_stem",
+   "states": {}
+  },
+  "name": "axe_crimson_stem",
+  "inputs": [
+   1282,
+   1297
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_axe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:warped_hyphae",
+   "states": {}
+  },
+  "name": "axe_warped_hyphae",
+  "inputs": [
+   1314,
+   1329
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_axe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:bamboo_block",
+   "states": {}
+  },
+  "name": "axe_bamboo_block",
+  "inputs": [
+   1346,
+   1361
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_axe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:cherry_log",
+   "states": {}
+  },
+  "name": "axe_cherry_log",
+  "inputs": [
+   1378,
+   1393
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_axe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:mangrove_wood",
+   "states": {}
+  },
+  "name": "axe_mangrove_wood",
+  "inputs": [
+   1410,
+   1425
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_axe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:pale_oak_log",
+   "states": {}
+  },
+  "name": "axe_pale_oak_log",
+  "inputs": [
+   1442,
+   1457
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_axe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:copper_block",
+   "states": {}
+  },
+  "name": "axe_copper_block",
+  "inputs": [
+   1474,
+   1489
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_axe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:exposed_copper",
+   "states": {}
+  },
+  "name": "axe_exposed_copper",
+  "inputs": [
+   1506,
+   1521
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_axe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:weathered_cut_copper_stairs",
+   "states": {
+    "weirdo_direction": 2
+   }
+  },
+  "name": "axe_weathered_cut_copper_stairs",
+  "inputs": [
+   1538,
+   1553
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_axe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:oxidized_copper",
+   "states": {}
+  },
+  "name": "axe_oxidized_copper",
+  "inputs": [
+   1570,
+   1585
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_axe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:waxed_copper",
+   "states": {}
+  },
+  "name": "axe_waxed_copper",
+  "inputs": [
+   1602,
+   1617
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_axe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:waxed_oxidized_cut_copper_slab",
+   "states": {}
+  },
+  "name": "axe_waxed_oxidized_cut_copper_slab",
+  "inputs": [
+   1634,
+   1649
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_axe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:exposed_copper_bulb",
+   "states": {}
+  },
+  "name": "axe_exposed_copper_bulb",
+  "inputs": [
+   1666,
+   1681
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_axe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:weathered_copper_door",
+   "states": {}
+  },
+  "name": "axe_weathered_copper_door",
+  "inputs": [
+   1698,
+   1713
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_axe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:oxidized_copper_trapdoor",
+   "states": {}
+  },
+  "name": "axe_oxidized_copper_trapdoor",
+  "inputs": [
+   1730,
+   1745
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_axe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:exposed_copper_grate",
+   "states": {}
+  },
+  "name": "axe_exposed_copper_grate",
+  "inputs": [
+   1762,
+   1777
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_axe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:weathered_chiseled_copper",
+   "states": {}
+  },
+  "name": "axe_weathered_chiseled_copper",
+  "inputs": [
+   1794,
+   1809
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_axe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:exposed_lightning_rod",
+   "states": {}
+  },
+  "name": "axe_exposed_lightning_rod",
+  "inputs": [
+   1826,
+   1841
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_axe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:waxed_exposed_copper_chest",
+   "states": {}
+  },
+  "name": "axe_waxed_exposed_copper_chest",
+  "inputs": [
+   1858,
+   1873
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_axe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:oxidized_copper_lantern",
+   "states": {}
+  },
+  "name": "axe_oxidized_copper_lantern",
+  "inputs": [
+   1890,
+   1905
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_axe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:stone",
+   "states": {}
+  },
+  "name": "axe_stone",
+  "inputs": [
+   1922,
+   1937
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_axe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:pumpkin",
+   "states": {}
+  },
+  "name": "axe_pumpkin",
+  "inputs": [
+   1954,
+   1969
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_axe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:oak_log",
+   "states": {}
+  },
+  "name": "axe_oak_log_side",
+  "inputs": [
+   1986,
+   2001
+  ],
+  "face": 4
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:iron_axe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -58,
+    0
+   ],
+   "name": "minecraft:oak_log",
+   "states": {}
+  },
+  "name": "axe_oak_log_below",
+  "inputs": [
+   2018,
+   2033
+  ],
+  "face": 0
+ },
+ {
+  "mode": "creative",
+  "above": null,
+  "item": "minecraft:iron_axe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:oak_log",
+   "states": {}
+  },
+  "name": "axe_oak_log_creative",
+  "inputs": [
+   2050,
+   2065
+  ],
+  "face": 1
+ },
+ {
+  "mode": "creative",
+  "above": null,
+  "item": "minecraft:iron_axe",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:exposed_copper",
+   "states": {}
+  },
+  "name": "axe_exposed_copper_creative",
+  "inputs": [
+   2082,
+   2097
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:honeycomb",
+  "count": 4,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:copper_block",
+   "states": {}
+  },
+  "name": "honeycomb_copper_block",
+  "inputs": [
+   2114,
+   2129
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:honeycomb",
+  "count": 4,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:exposed_cut_copper_stairs",
+   "states": {}
+  },
+  "name": "honeycomb_exposed_cut_copper_stairs",
+  "inputs": [
+   2146,
+   2161
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:honeycomb",
+  "count": 4,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:waxed_copper",
+   "states": {}
+  },
+  "name": "honeycomb_waxed_copper",
+  "inputs": [
+   2178,
+   2193
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:honeycomb",
+  "count": 4,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:oxidized_copper_bulb",
+   "states": {}
+  },
+  "name": "honeycomb_oxidized_copper_bulb",
+  "inputs": [
+   2210,
+   2225
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:honeycomb",
+  "count": 4,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:stone",
+   "states": {}
+  },
+  "name": "honeycomb_stone",
+  "inputs": [
+   2242,
+   2257
+  ],
+  "face": 1
+ },
+ {
+  "mode": "creative",
+  "above": null,
+  "item": "minecraft:honeycomb",
+  "count": 4,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:copper_block",
+   "states": {}
+  },
+  "name": "honeycomb_copper_creative",
+  "inputs": [
+   2274,
+   2289
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:shears",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:pumpkin",
+   "states": {}
+  },
+  "name": "shears_pumpkin_west",
+  "inputs": [
+   2306,
+   2321
+  ],
+  "face": 4
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:shears",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:pumpkin",
+   "states": {}
+  },
+  "name": "shears_pumpkin_top",
+  "inputs": [
+   2338,
+   2353
+  ],
+  "face": 1
+ },
+ {
+  "mode": "survival",
+  "above": null,
+  "item": "minecraft:shears",
+  "count": 1,
+  "block": {
+   "pos": [
+    2,
+    -60,
+    0
+   ],
+   "name": "minecraft:carved_pumpkin",
+   "states": {}
+  },
+  "name": "shears_carved_pumpkin",
+  "inputs": [
+   2370,
+   2385
+  ],
+  "face": 4
+ }
+]

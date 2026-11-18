@@ -62,7 +62,8 @@
 //! the selected hotbar slot as last sent by the server):
 //!
 //! * `attack-named NAME`: `attack` the actor whose `AddActor` carried the
-//!   name tag `NAME` (`/summon ... <nameTag>`);
+//!   name tag `NAME` (`/summon ... <nameTag>`); `interact-named NAME`
+//!   `interact`s with it the same way;
 //! * `jab`: `InventoryTransaction` item use with the action `UseAsAttack`
 //!   (an attack made by the item itself, no target); `jab-input` packs the
 //!   same transaction into the next `PlayerAuthInput`
@@ -269,6 +270,8 @@ enum Order {
     Interact(u64),
     /// Attack the actor added with this name tag.
     AttackNamed(String),
+    /// Interact with the actor added with this name tag.
+    InteractNamed(String),
     /// Item use `UseAsAttack`: the held item attacks by itself.
     Jab,
     /// [`Order::Jab`] packed into the next `PlayerAuthInput`
@@ -614,11 +617,18 @@ fn parse_order(text: &str) -> Option<Order> {
                 Order::HeldFlags(flags)
             });
         }
-        "attack-named" => {
+        keyword @ ("attack-named" | "interact-named") => {
             let name = words
                 .next()?
-                .trim_end_matches(|c: char| !(c.is_ascii_alphanumeric() || c == '_'));
-            return (!name.is_empty()).then(|| Order::AttackNamed(name.to_owned()));
+                .trim_end_matches(|c: char| !(c.is_ascii_alphanumeric() || c == '_'))
+                .to_owned();
+            return (!name.is_empty()).then(|| {
+                if keyword == "attack-named" {
+                    Order::AttackNamed(name)
+                } else {
+                    Order::InteractNamed(name)
+                }
+            });
         }
         "use-on" => {
             let values = numbers(words, 4)?;
@@ -1387,6 +1397,16 @@ impl Player {
                     .get(&name)
                     .with_context(|| format!("no actor named {name} has been added"))?;
                 return Ok(vec![self.attack(target)]);
+            }
+            Order::InteractNamed(name) => {
+                let target = *self
+                    .named
+                    .get(&name)
+                    .with_context(|| format!("no actor named {name} has been added"))?;
+                return Ok(vec![self.use_on_actor(
+                    target,
+                    EnumsItemUseOnActorInventoryTransactionActionType::Interact,
+                )]);
             }
             Order::Jab => {
                 return Ok(vec![self.use_item(
@@ -3701,6 +3721,10 @@ there"
             (
                 r#"{ message: "bds-sweep:attack-named front" }"#,
                 Order::AttackNamed("front".into()),
+            ),
+            (
+                r#"{ message: "bds-sweep:interact-named sheep1" }"#,
+                Order::InteractNamed("sheep1".into()),
             ),
         ] {
             assert_eq!(parse_order(text), Some(order), "{text}");

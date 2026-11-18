@@ -553,6 +553,15 @@ pub const INTERACT_PARTICLE_AIM_LIFT: f64 = 0.1;
 /// Level event the eaten block's destroy particles use (at the block centre,
 /// data = the eaten block's runtime id).
 pub const LEVEL_EVENT_PARTICLES_DESTROY_BLOCK: i32 = 2001;
+
+// --- Copper (axes and honeycomb on copper blocks) -----------------------------
+
+/// Level events of a copper block waxed with honeycomb, unwaxed and scraped
+/// one oxidation stage by an axe, at the block centre with data 0 and no
+/// sound event (BDS 1.26.51 tool-use capture, `tools/bds-sweep/scripts/tool-use.txt`).
+pub const LEVEL_EVENT_COPPER_WAX_ON: i32 = 2030;
+pub const LEVEL_EVENT_COPPER_WAX_OFF: i32 = 2031;
+pub const LEVEL_EVENT_COPPER_SCRAPE: i32 = 2032;
 /// Legacy block names in `eat_and_replace_block_pairs`, resolved to the
 /// block they name today. Provisional: pmmp's BedrockBlockUpgradeSchema
 /// (`grass` was renamed `grass_block`; `tallgrass` split into `short_grass`
