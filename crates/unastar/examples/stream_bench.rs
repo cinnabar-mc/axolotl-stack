@@ -206,7 +206,7 @@ fn run() -> Report {
     {
         let world = server.ecs.world_mut();
         world.entity_mut(player.entity).insert(
-            unastar::entity::player_life::respawn::PlayerSpawnPoint(AREA_B),
+            unastar::entity::player_life::respawn::PlayerSpawnPoint::at(AREA_B),
         );
         assert!(unastar::entity::player_life::kill_player(
             world,

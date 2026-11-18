@@ -42,6 +42,7 @@ pub mod motion;
 pub mod pvp;
 pub mod respawn;
 pub mod rules;
+pub mod sleep;
 #[cfg(test)]
 mod tests;
 
@@ -61,6 +62,7 @@ use crate::entity::components::{ActorViewers, PlayerSession};
 pub fn install(world: &mut World, spawn: glam::DVec3) -> Result<(), PlayerRulesError> {
     world.insert_resource(PlayerRules::vanilla()?);
     world.init_resource::<respawn::RespawnQueue>();
+    world.init_resource::<sleep::WakeQueue>();
     world.insert_resource(respawn::WorldSpawn(spawn));
     Ok(())
 }

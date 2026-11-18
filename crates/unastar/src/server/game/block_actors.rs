@@ -95,6 +95,25 @@ pub(crate) fn broadcast(world: &World, pos: IVec3, packet: &McpePacket, skip: Op
     }
 }
 
+/// Send the actor stored at `pos` again to every player that sees it (a bed
+/// whose block changed under it).
+pub(crate) fn resend(world: &World, pos: IVec3) {
+    let Some(actor) = chunk_entity(world, pos)
+        .and_then(|chunk| world.get::<ChunkData>(chunk))
+        .and_then(|chunk| {
+            chunk
+                .inner
+                .block_entities()
+                .iter()
+                .find(|actor| actor.position() == pos.to_array())
+                .cloned()
+        })
+    else {
+        return;
+    };
+    broadcast(world, pos, &data_packet(pos, &actor), None);
+}
+
 pub(crate) fn send(world: &World, player: Entity, packet: impl Into<McpePacket>) {
     if let Some(session) = world.get::<PlayerSession>(player) {
         let _ = session.send(packet.into());

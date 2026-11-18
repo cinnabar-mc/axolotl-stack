@@ -158,6 +158,13 @@ ids = [
 ]
 
 [[claim]]
+area = "Sleeping in beds and the night skip"
+owner = "lane SYSTEMS"
+since = 2026-11-17
+domain = "systems"
+ids = ["player.sleeping", "world.day_cycle"]
+
+[[claim]]
 area = "Survival block breaking"
 owner = "lane ITEMS"
 since = 2026-11-10

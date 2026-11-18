@@ -7,8 +7,10 @@
 //! and the clock state every [`CLOCK_SYNC_INTERVAL_TICKS`] ticks to every
 //! player, plus immediately after a command changes the time.
 //!
-//! Sky darkening follows the time of day only. The server has no weather,
-//! so rain and thunder never darken the sky further.
+//! Sky darkening follows the time of day ([`sky_darken`]); only beds ask
+//! for the darkening with rain and lightning added ([`weather_sky_darken`]),
+//! the other daylight checks (spawning, burning, fleeing the sun) still
+//! ignore the weather.
 //!
 //! Light is not tracked by the server, so the sky light at a block is
 //! derived from its chunk column: at or above the column's heightmap (the
@@ -33,6 +35,7 @@ use super::chunk::{MIN_Y, SUBCHUNK_COUNT};
 use super::ecs::systems::{world_to_chunk_coords, world_to_local_coords};
 use super::ecs::{ChunkData, ChunkManager};
 use super::rules::{Difficulty, GameRules, StartGameWorldState, WorldTime};
+use super::weather::WeatherLevels;
 use crate::ecs::resources::TickCounter;
 use crate::entity::components::PlayerSession;
 use crate::server::game::types::BlockRegistryResource;
@@ -88,6 +91,22 @@ pub fn set_time(world: &mut World, ticks: i64) {
     );
     world.resource_mut::<WorldTime>().ticks = ticks;
     world.resource_mut::<ClockSync>().changed = true;
+}
+
+/// Set the clock after this tick's advance and broadcast it at once (the
+/// night skip: BDS 1.26.51 sends the new morning itself, 24000, in the tick
+/// the sleepers wake).
+pub fn jump_to(world: &mut World, ticks: i64) {
+    assert!(
+        (WorldTime::MIN..=WorldTime::MAX).contains(&ticks),
+        "the world clock is an i32"
+    );
+    world.resource_mut::<WorldTime>().ticks = ticks;
+    let packet = McpePacket::from(clock_state_packet(*world.resource::<WorldTime>()));
+    let mut sessions = world.query::<&PlayerSession>();
+    for session in sessions.iter(world) {
+        let _ = session.send(packet.clone());
+    }
 }
 
 /// System: advance the clock, broadcast its state when it is due or was
@@ -173,6 +192,32 @@ pub fn is_daytime(world: &World) -> bool {
     sky_darken(world) < DAYTIME_DARKEN_LIMIT
 }
 
+/// How much of the daylight rain and lightning take away at full level:
+/// the daylight is scaled by `1 - level * 5/16` for each.
+///
+/// [INFERENCE] The factor is Java Edition's. BDS 1.26.51 agrees where it
+/// was measured (`player_life::sleep`): a bed refuses at noon 10 ticks into
+/// a thunderstorm (both levels 0.1) and takes a sleeper at noon with rain
+/// at 1.0 and lightning at 0.86.
+const WEATHER_DAYLIGHT_LOSS: f32 = 5.0 / 16.0;
+
+/// [`sky_darken`] with rain and lightning darkening the sky too, at their
+/// levels now ([`WeatherLevels`]). Beds ask this one (see
+/// `player_life::sleep`).
+pub fn weather_sky_darken(world: &World) -> u8 {
+    let (rain, lightning) = world
+        .get_resource::<WeatherLevels>()
+        .map_or((0.0, 0.0), |levels| {
+            levels.at(world.resource::<TickCounter>().current)
+        });
+    let daylight = daylight_at(
+        *world.resource::<WorldTime>(),
+        world.resource::<GameRules>().do_daylight_cycle,
+    ) * (1.0 - rain * WEATHER_DAYLIGHT_LOSS)
+        * (1.0 - lightning * WEATHER_DAYLIGHT_LOSS);
+    ((1.0 - daylight) * SKY_DARKEN_MAX) as u8
+}
+
 /// Sky light at `pos` after the time of day darkened it (block light is
 /// not modelled). Below the world it is 0; above it and in unloaded chunks
 /// it is full sky light, as BDS reads it.
@@ -218,12 +263,17 @@ pub fn sky_brightness_with_darken(world: &World, pos: IVec3, darken: u8) -> u8 {
 /// runs, the time of day is taken one tick ahead (the partial tick BDS
 /// passes is 1 then, 0 otherwise).
 fn sky_darken_at(time: WorldTime, cycle: bool) -> u8 {
+    // Truncation, as the float-to-int conversion does.
+    ((1.0 - daylight_at(time, cycle)) * SKY_DARKEN_MAX) as u8
+}
+
+/// The daylight of a clear sky for a clock value, `0..=1` (see
+/// [`sky_darken_at`] for `cycle`).
+fn daylight_at(time: WorldTime, cycle: bool) -> f32 {
     let partial = if cycle { 1.0 } else { 0.0 };
     let day = time_of_day(time, partial);
     let cos = table_cos((day * PI + day * PI) * TABLE_SCALE);
-    let daylight = 1.0 - (1.0 - (cos * 2.0 + 0.5)).clamp(0.0, 1.0);
-    // Truncation, as the float-to-int conversion does.
-    ((1.0 - daylight) * SKY_DARKEN_MAX) as u8
+    1.0 - (1.0 - (cos * 2.0 + 0.5)).clamp(0.0, 1.0)
 }
 
 /// The sun's progress through the day in `0..1`, 0 being noon, eased the

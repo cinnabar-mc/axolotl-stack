@@ -1363,6 +1363,7 @@ fn interact_with_block(
     super::signs::used(world, entity, clicked, held_id.as_deref())
         .or_else(|| super::flower_pots::used(world, entity, clicked, face))
         .or_else(|| super::block_use::used(world, entity, clicked))
+        .or_else(|| crate::entity::player_life::sleep::used(world, entity, clicked))
 }
 
 /// Whether the click's item is the stack in the player's selected hotbar

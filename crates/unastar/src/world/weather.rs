@@ -126,6 +126,19 @@ impl WeatherLevels {
         };
     }
 
+    /// Levels held at `rain` and `lightning` from `tick` on (tests that
+    /// recreate a capture's weather mid-fade).
+    #[cfg(test)]
+    pub(crate) fn holding(tick: u64, rain: f32, lightning: f32) -> Self {
+        Self {
+            rain,
+            lightning,
+            since_tick: tick,
+            rain_target: rain,
+            lightning_target: lightning,
+        }
+    }
+
     /// Levels a saved world had (`rainLevel`, `lightningLevel`), moving from
     /// `tick` on towards `state`.
     pub fn restored(rain: f32, lightning: f32, tick: u64, state: WeatherState) -> Self {

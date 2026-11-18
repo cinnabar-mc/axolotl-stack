@@ -116,6 +116,7 @@ pub fn apply_movement(
     sessions: Query<&PlayerSession>,
     mut starts: Query<&mut InputStart>,
     tick: Option<Res<crate::ecs::resources::TickCounter>>,
+    sleepers: Query<(), With<crate::entity::player_life::sleep::Sleeping>>,
 ) {
     let now = tick.map_or(0, |tick| tick.current);
     let _span = tracing::info_span!("apply_movement", count = queue.0.len()).entered();
@@ -127,6 +128,29 @@ pub fn apply_movement(
     };
     for (entity, input) in queue.0.drain(..) {
         match input {
+            MovementInput::AuthInput(pk) if sleepers.contains(entity) => {
+                // A sleeper stays in its bed (`player_life::sleep`): its
+                // inputs only turn it, and its viewers see it there.
+                if !auth_input_is_finite(&pk) {
+                    continue;
+                }
+                if let Ok((position, mut rotation, ..)) = players.get_mut(entity) {
+                    let (pitch, yaw) = (rotation.pitch, rotation.yaw);
+                    rotation.pitch = pk.player_rotation.x;
+                    rotation.yaw = pk.player_rotation.y;
+                    rotation.head_yaw = pk.player_head_rotation;
+                    if let Some(relayed) = relayed.as_mut() {
+                        relayed.0.push(crate::server::player_view::RelayedMove {
+                            player: entity,
+                            position: position.0,
+                            pitch,
+                            yaw,
+                            head_yaw: rotation.head_yaw,
+                            tick: pk.client_tick.inputtick,
+                        });
+                    }
+                }
+            }
             MovementInput::AuthInput(pk) => {
                 // The rotation before this input: what the relayed move
                 // carries as the player's pitch and yaw.

@@ -280,7 +280,7 @@ impl GameServer {
             return;
         };
         let online = roster::online(world);
-        let count = roster::sleeping_players(remaining as i32, 0);
+        let count = crate::entity::player_life::sleep::leave_event(world, Some(entity), remaining);
         let remove = roster::remove_packet(entry.uuid());
         for (other, _) in &online {
             if *other == entity {

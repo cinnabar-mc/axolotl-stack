@@ -133,6 +133,10 @@ impl GameRule {
     }
 }
 
+/// The name of the integer rule [`GameRules::players_sleeping_percentage`]
+/// holds, as BDS sends it.
+pub const PLAYERS_SLEEPING_PERCENTAGE: &str = "playersSleepingPercentage";
+
 /// BDS's game rules with BDS's defaults (`unastar_data::game_rules`, the
 /// captured join `GameRulesChanged`). The rules gameplay reads are typed
 /// fields; every other captured rule keeps its value in `other`, so
@@ -153,6 +157,9 @@ pub struct GameRules {
     pub freeze_damage: bool,
     /// Players can hurt each other with melee hits (`player_life::pvp`).
     pub pvp: bool,
+    /// `playersSleepingPercentage`: the share of players that must sleep
+    /// for the night to pass (`player_life::sleep`).
+    pub players_sleeping_percentage: i32,
     /// Captured rules without a typed field that were changed from BDS's default.
     other: Vec<(&'static str, GameRuleValue)>,
 }
@@ -173,14 +180,17 @@ impl Default for GameRules {
             drowning_damage: true,
             freeze_damage: true,
             pvp: true,
+            players_sleeping_percentage: 100,
             other: Vec::new(),
         };
         // The captured defaults are the source of truth for typed rules too.
         for rule in unastar_data::game_rules::vanilla() {
-            if let (Some(typed), GameRuleValue::Bool(value)) =
-                (GameRule::from_name(&rule.name), rule.value)
-            {
-                rules.set(typed, value);
+            match (GameRule::from_name(&rule.name), rule.value) {
+                (Some(typed), GameRuleValue::Bool(value)) => rules.set(typed, value),
+                (None, GameRuleValue::Int(value)) if rule.name == PLAYERS_SLEEPING_PERCENTAGE => {
+                    rules.players_sleeping_percentage = value;
+                }
+                _ => {}
             }
         }
         rules
@@ -248,6 +258,9 @@ impl GameRules {
         unastar_data::game_rules::vanilla().iter().map(move |rule| {
             let value = match GameRule::from_name(&rule.name) {
                 Some(typed) => GameRuleValue::Bool(self.get(typed)),
+                None if rule.name == PLAYERS_SLEEPING_PERCENTAGE => {
+                    GameRuleValue::Int(self.players_sleeping_percentage)
+                }
                 None => self
                     .other
                     .iter()
@@ -277,6 +290,9 @@ impl GameRules {
         }
         match (GameRule::from_name(&rule.name), value) {
             (Some(typed), GameRuleValue::Bool(value)) => self.set(typed, value),
+            (None, GameRuleValue::Int(value)) if rule.name == PLAYERS_SLEEPING_PERCENTAGE => {
+                self.players_sleeping_percentage = value;
+            }
             _ => match self.other.iter_mut().find(|(n, _)| *n == rule.name) {
                 Some((_, slot)) => *slot = value,
                 None => self.other.push((rule.name.as_str(), value)),

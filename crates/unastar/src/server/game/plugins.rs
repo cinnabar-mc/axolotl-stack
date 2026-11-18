@@ -42,6 +42,7 @@ pub fn process_plugin_actions(
     )>,
     inputs: Query<&crate::entity::components::PlayerInput>,
     mut motions: Query<&mut crate::entity::player_life::authority::PlayerMotion>,
+    mut wakes: Option<ResMut<crate::entity::player_life::sleep::WakeQueue>>,
 ) {
     let actions = action_queue.drain();
     let _span = tracing::info_span!("process_plugin_actions", count = actions.len()).entered();
@@ -63,6 +64,12 @@ pub fn process_plugin_actions(
                     player_pos.0 = new_pos;
                     if let Ok(mut motion) = motions.get_mut(entity) {
                         motion.teleported(new_pos);
+                    }
+                    // A teleport wakes a sleeper; the teleport places it.
+                    if let Some(wakes) = wakes.as_mut() {
+                        wakes
+                            .0
+                            .push((entity, crate::entity::player_life::sleep::WakeCause::Moved));
                     }
 
                     let packet = MovePlayerPacket {

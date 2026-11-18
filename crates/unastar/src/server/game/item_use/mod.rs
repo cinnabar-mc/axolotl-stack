@@ -425,6 +425,12 @@ pub enum TeleportCause {
 
 /// Move a player to `feet` and tell its client (teleport mode).
 pub fn teleport(world: &mut World, player: Entity, feet: glam::DVec3, cause: TeleportCause) {
+    // A teleport wakes a sleeper (BDS 1.26.51 sleeping captures).
+    crate::entity::player_life::sleep::wake(
+        world,
+        player,
+        crate::entity::player_life::sleep::WakeCause::Moved,
+    );
     use jolyne::valentine::types::{
         EnumsPlayerPositionModeComponentPositionMode, MovePlayerTeleportData, Vec2, Vec3,
     };

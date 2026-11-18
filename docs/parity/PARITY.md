@@ -20,7 +20,7 @@ Each domain's first line is its headline: the rows its family table, gap list an
 | [Commands](#commands) | 82 | 1 | 38 | 2 | 40 | 1 | 51.9% |
 | [Protocol](#protocol) | 231 | 112 | 33 | 40 | 31 | 15 | 32.9% |
 | [World generation](#world-generation) | 1275 | 87 | 430 | 642 | 9 | 107 | 55.7% |
-| [Gameplay systems](#gameplay-systems) | 72 | 29 | 39 | 4 | 0 | 0 | 5.6% |
+| [Gameplay systems](#gameplay-systems) | 72 | 28 | 39 | 4 | 1 | 0 | 6.9% |
 
 ## Where to help
 
@@ -93,12 +93,12 @@ Nothing in this domain is claimed.
 | Bedrock world generation | lane BED | 2026-10-29 | 491 |
 | Java world generation | lane JAVA | 2026-10-29 | 26 |
 
-**Gameplay systems**: 50 open rows free, 18 claimed.
+**Gameplay systems**: 48 open rows free, 19 claimed.
 
 | Free family | Open | Missing | Partial |
 |---|---:|---:|---:|
-| player (part claimed) | 15 | 5 | 10 |
-| world (part claimed) | 12 | 4 | 8 |
+| player (part claimed) | 14 | 4 | 10 |
+| world (part claimed) | 11 | 4 | 7 |
 | mobs | 10 | 8 | 2 |
 | interface | 6 | 3 | 3 |
 | crafting (part claimed) | 4 | 2 | 2 |
@@ -109,6 +109,7 @@ Nothing in this domain is claimed.
 | Gravity, fire, redstone, block updates and random ticks | lane BLOCKS | 2026-10-29 | 6 |
 | Liquids: water and lava flow, mixing, the liquid layer | lane LIQUIDS | 2026-11-11 | 1 |
 | Workstations: crafting, smelting, anvil, grindstone, smithing, brewing, enchanting | lane ITEMS | 2026-10-29 | 8 |
+| Sleeping in beds and the night skip | lane SYSTEMS | 2026-11-17 | 1 |
 | Survival block breaking | lane ITEMS | 2026-11-10 | 1 |
 | Generation speed | lane PERF | 2026-10-29 | 1 |
 | Chunk streaming | lane LOAD | 2026-10-29 | 1 |
@@ -724,7 +725,7 @@ Cross-cutting gameplay systems with no data source to enumerate them from; this 
 | mobs | 10 | 8 | 2 | 0 | 0 | 0 | 0.0% |
 | performance | 2 | 0 | 2 | 0 | 0 | 0 | 0.0% |
 | platform | 6 | 0 | 3 | 3 | 0 | 0 | 50.0% |
-| player | 17 | 5 | 11 | 1 | 0 | 0 | 5.9% |
+| player | 17 | 4 | 11 | 1 | 1 | 0 | 11.8% |
 | world | 19 | 5 | 14 | 0 | 0 | 0 | 0.0% |
 
 ### Gameplay systems gaps
@@ -769,13 +770,13 @@ Cross-cutting gameplay systems with no data source to enumerate them from; this 
 - `player.combat`: melee against mobs and mob attacks on players with hurt timer, armour and knockback; bows, crossbows and snowballs; hits wear the weapon. Player-versus-player melee matches the BDS PvP sweep (710 trials, three lockstep clients) when the hits are applied in BDS's order: reach 6.7 / 12 between positions, the claimed position within 6, the held item, the pvp rule, immune modes and dead attackers, weapon damage with Sharpness, Strength and Weakness, critical hits (no Blindness or Slow Falling), armour, Protection and Resistance before the hurt window, the excess hit's push and hurt event, the window counted from packet arrival, the sprint and Knockback second push, knockback resistance, the hit particles, last-hurt-by and sound. unastar applies every input of a tick before every attack, with the attacker's state from before its first input, and attacks in arrival order: an attack sent after its own input, different players' attacks in one tick, and the victim moving between two hits of a tick follow BDS only once packets are applied in BDS's order (decision 0045; ignored tests). The victim's velocity is the one its client reported. No shields, thrown tridents, mace smash, strict entity-interaction facing check, totems or crits on climbables, in water or riding (unmeasured)
 - `player.damage_sources`: falls are measured on the server's own copy of the player, so a client claiming the ground through a fall or descending slowly takes BDS's damage (BDS authority capture); falls (3 to 12.5 blocks, into water, onto hay, slime, a bed, into powder snow, a glide that slowed down and Feather Falling boots), a fire block and the burning after it (a 1-point burn 20, 40, ... ticks before the fire runs out) match the BDS movement capture; lava, void, mob attacks and drowning (air supply, BREATHING flag, a 2-damage hit every 20 ticks without air, the refill, Respiration, bubble columns and the air saved across a rejoin) match the BDS breath and player-data captures; a killing hit sends only the death event and other hits knock back before the hurt event; a hit inside the hurt window that exceeds it knocks back, shows the hurt and restarts the window (BDS PvP sweep); the damage game rules gate their causes from every source; no suffocation, freezing, cactus, starvation, magic, lightning or explosion damage, and no protection enchantment but Feather Falling; in a fire block BDS's hurts alternate between fire (6) and fire_tick (7) with its input timing where unastar's are fire; how long lava sets a player alight (15 s) and the descent under which a glide restarts the fall (0.5 a tick) are unmeasured; block identities resolved by name string for fall damage
 - 6 more partial rows with other gaps (see [systems.toml](systems.toml))
-- missing: `player.achievements`, `player.books`, `player.fishing`, `player.maps`, `player.sleeping`
+- missing: `player.achievements`, `player.books`, `player.fishing`, `player.maps`
 
 **world**
 
 - `world.block_updates`: neighbour updates, survival checks and shapes follow BDS; scheduled block ticks exist only for buttons, coral blocks, redstone and gravity (no general scheduled-tick queue)
 - `world.chunk_ticking`: chunks load around players in a view disk (nearest first with look-ahead; storage reads, generation and network encoding off the tick; spawning loaded columns, restoring their actors and unloading take at most 4 ms of a tick each; sending paced by acknowledgements and the transport's queue; timings in tools/perf/README.md) and entities tick in loaded chunks; the disk is centred on the player's chunk, BDS appears to centre it on the block position (153 columns at radius 6 against our 149); no ticking areas and no random block ticks
-- `world.day_cycle`: clock, daylight cycle and moon phase work; no sleeping skip and time is not persisted
+- `world.day_cycle`: clock, daylight cycle and moon phase work; the night skip jumps to the next sunrise as BDS does (player.sleeping); time is not persisted
 - `world.difficulty`: mob damage scaling, peaceful monsters, regional difficulty and hard-only door breaking; no hunger effects (starvation floors, peaceful regeneration) and effects of unimplemented mobs
 - `world.explosions`: the blast pattern, block resistance, drops (every block by hand), damage with exposure and the TNT fuse follow BDS; knockback is not measured (applied along the line from the centre with the impact); fire from explosions, underwater explosions, the max_resistance of other sources, creepers and other exploding mobs (their components are not implemented) and beds and respawn anchors are missing; block changes are sent at once, not with the next tick
 - 9 more partial rows with other gaps (see [systems.toml](systems.toml))

@@ -285,6 +285,9 @@ enum Order {
     ReleaseItem,
     /// Item release `Use` (finish eating or drinking).
     Consume,
+    /// `PlayerAction` StopSleeping: leave the bed, as the client's wake-up
+    /// button does.
+    StopSleeping,
     /// Select a hotbar index.
     Select(u8),
     /// Input flags for every input from now on, replacing the held set
@@ -584,6 +587,7 @@ fn parse_order(text: &str) -> Option<Order> {
         "missed-swing" => return Some(Order::MissedSwing),
         "release-item" => return Some(Order::ReleaseItem),
         "resync" => return Some(Order::Resync),
+        "stop-sleeping" => return Some(Order::StopSleeping),
         "claim" => {
             let values = decimals(words, 3)?;
             return Some(Order::Claim([values[0], values[1], values[2]]));
@@ -1410,6 +1414,9 @@ impl Player {
                 return Ok(vec![self.release_item(
                     EnumsItemReleaseInventoryTransactionActionType::Release,
                 )]);
+            }
+            Order::StopSleeping => {
+                return Ok(vec![self.action(EnumsPlayerActionType::Stopsleeping)]);
             }
             Order::Consume => {
                 return Ok(vec![self.release_item(
@@ -3679,6 +3686,7 @@ there"
                 Order::ReleaseItem,
             ),
             ("bds-sweep:consume", Order::Consume),
+            ("bds-sweep:stop-sleeping", Order::StopSleeping),
             ("bds-sweep:select 3", Order::Select(3)),
             (
                 "bds-sweep:use-on 1 -59 0 1",

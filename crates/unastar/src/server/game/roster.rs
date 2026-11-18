@@ -260,29 +260,96 @@ pub fn remove_packet(uuid: Uuid) -> PlayerListPacket {
     }
 }
 
-/// The sleeping-player event: how many players are in the Overworld and how
-/// many of them sleep. `ableToSleep` is 1 in every BDS capture, day or night.
-pub fn sleeping_players(overworld_players: i32, sleeping_players: i32) -> LevelEventGenericPacket {
-    let mut body = BytesMut::new();
-    // Network NBT compound body: int tags in name order, then TAG_End.
-    for (name, value) in [
-        ("ableToSleep", 1),
-        ("overworldPlayerCount", overworld_players),
-        ("sleepingPlayerCount", sleeping_players),
-    ] {
-        body.put_u8(3);
-        valentine::bedrock::codec::VarUInt(name.len() as u32)
-            .encode(&mut body)
-            .expect("writing to a buffer cannot fail");
-        body.put_slice(name.as_bytes());
-        valentine::bedrock::codec::ZigZag32(value)
-            .encode(&mut body)
-            .expect("writing to a buffer cannot fail");
+/// The counts a sleeping-players event carries ([`sleeping_players`]).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SleepingPlayers {
+    /// `overworldPlayerCount`: the sleepers needed.
+    pub needed: i32,
+    /// `sleepingPlayerCount`.
+    pub sleeping: i32,
+}
+
+/// A `LevelEventGeneric` that is not a well-formed sleeping-players event.
+#[cfg(test)]
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[error("not a sleeping-players event: {0}")]
+pub struct NotSleepingPlayers(&'static str);
+
+/// Tests read the counts back from the events the server sent.
+#[cfg(test)]
+impl TryFrom<&LevelEventGenericPacket> for SleepingPlayers {
+    type Error = NotSleepingPlayers;
+
+    /// Reads the int tags [`sleeping_players`] writes.
+    fn try_from(event: &LevelEventGenericPacket) -> Result<Self, Self::Error> {
+        use bytes::Buf;
+        if event.event_id != LEVEL_EVENT_SLEEPING_PLAYERS {
+            return Err(NotSleepingPlayers("another event id"));
+        }
+        let mut body = event.__ctd__.0.clone();
+        let (mut needed, mut sleeping) = (None, None);
+        loop {
+            if !body.has_remaining() {
+                return Err(NotSleepingPlayers("no end tag"));
+            }
+            match body.get_u8() {
+                0 => break,
+                3 => {}
+                _ => return Err(NotSleepingPlayers("a tag that is not an int")),
+            }
+            let len = valentine::bedrock::codec::VarUInt::decode(&mut body, ())
+                .map_err(|_| NotSleepingPlayers("a bad name length"))?
+                .0 as usize;
+            if body.remaining() < len {
+                return Err(NotSleepingPlayers("a cut name"));
+            }
+            let name = body.split_to(len);
+            let value = valentine::bedrock::codec::ZigZag32::decode(&mut body, ())
+                .map_err(|_| NotSleepingPlayers("a bad value"))?
+                .0;
+            match &name[..] {
+                b"overworldPlayerCount" => needed = Some(value),
+                b"sleepingPlayerCount" => sleeping = Some(value),
+                _ => {}
+            }
+        }
+        match (needed, sleeping) {
+            (Some(needed), Some(sleeping)) => Ok(Self { needed, sleeping }),
+            _ => Err(NotSleepingPlayers("a count is missing")),
+        }
     }
-    body.put_u8(0);
-    LevelEventGenericPacket {
-        event_id: LEVEL_EVENT_SLEEPING_PLAYERS,
-        __ctd__: NbtCompoundBody(Bytes::from(body)),
+}
+
+/// The sleeping-player event: how many players must sleep for the night to
+/// pass (every Overworld player while `playersSleepingPercentage` is 100;
+/// `player_life::sleep::sleepers_needed`) and how many sleep. `ableToSleep` is 1 in every BDS capture, day or night.
+pub fn sleeping_players(needed: i32, sleeping: i32) -> LevelEventGenericPacket {
+    SleepingPlayers { needed, sleeping }.into()
+}
+
+impl From<SleepingPlayers> for LevelEventGenericPacket {
+    fn from(SleepingPlayers { needed, sleeping }: SleepingPlayers) -> Self {
+        let mut body = BytesMut::new();
+        // Network NBT compound body: int tags in name order, then TAG_End.
+        for (name, value) in [
+            ("ableToSleep", 1),
+            ("overworldPlayerCount", needed),
+            ("sleepingPlayerCount", sleeping),
+        ] {
+            body.put_u8(3);
+            valentine::bedrock::codec::VarUInt(name.len() as u32)
+                .encode(&mut body)
+                .expect("writing to a buffer cannot fail");
+            body.put_slice(name.as_bytes());
+            valentine::bedrock::codec::ZigZag32(value)
+                .encode(&mut body)
+                .expect("writing to a buffer cannot fail");
+        }
+        body.put_u8(0);
+        LevelEventGenericPacket {
+            event_id: LEVEL_EVENT_SLEEPING_PLAYERS,
+            __ctd__: NbtCompoundBody(Bytes::from(body)),
+        }
     }
 }
 

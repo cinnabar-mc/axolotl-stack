@@ -26,6 +26,7 @@ import commit_fixtures  # noqa: E402
 import commit_protocol_fixtures  # noqa: E402
 import effects_fixture  # noqa: E402
 import knockback_fixture  # noqa: E402
+import sleeping_fixture  # noqa: E402
 import leveldb_read  # noqa: E402
 import native  # noqa: E402
 import pick_table  # noqa: E402
@@ -1447,3 +1448,24 @@ class RoundThree(unittest.TestCase):
         self.assertEqual(derived['cuts'], ['minecraft:stone'])
         # Ever lit: the dust on top popped later.
         self.assertEqual(derived['rows'], [['minecraft:acacia_trapdoor', {'open_bit': False}, True, False]])
+
+
+class SleepingFixtureTests(unittest.TestCase):
+    def test_sleeping_event_counts_decode_from_the_dumped_compound(self):
+        body = ('LevelEventGenericPacket { event_id: 9801, __ctd__: NbtCompoundBody(b"\x03\x0bableToSleep'
+                '\x02\x03\x14overworldPlayerCount\x04\x03\x13sleepingPlayerCount\x02\0") })')
+        self.assertEqual(sleeping_fixture.sleeping_event(body), [2, 1])
+
+    def test_actor_rows_keep_keys_types_and_values(self):
+        body = ('data: [DataItemEntry { id: 26, payload: DataItemBytePayload(DataItemBytePayload { type_: Byte, '
+                'value: 2 }) }, DataItemEntry { id: 28, payload: DataItemPosPayload(DataItemPosPayload { type_: Pos, '
+                'value: BlockPos { x: 2, y: -60, z: 0 } }) }, DataItemEntry { id: 133, payload: '
+                'DataItemVec3Payload(DataItemVec3Payload { type_: Vec3, value: Vec3 { x: 0.5, y: -58.37999, '
+                'z: 0.5 } }) }]')
+        self.assertEqual(sleeping_fixture.actor_rows(body), [
+            [26, 'byte', 2], [28, 'pos', [2, -60, 0]], [133, 'vec3', [0.5, -58.37999, 0.5]]])
+
+    def test_every_kept_click_names_a_use_on_line_of_its_script(self):
+        for name, scenarios in sleeping_fixture.SCENARIOS.items():
+            lines = sleeping_fixture.script_clicks(Path(__file__).resolve().parent / 'scripts' / f'{name}.txt')
+            self.assertTrue(set(scenarios) <= set(lines), name)

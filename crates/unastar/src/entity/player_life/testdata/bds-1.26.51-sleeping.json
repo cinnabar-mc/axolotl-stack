@@ -1,0 +1,4351 @@
+{
+ "source": "BDS 1.26.51, plain, superflat, operator player: script.py captures of tools/bds-sweep/scripts/sleeping.txt to sleeping-5.txt (2026-11-17), distilled by tools/bds-sweep/sleeping_fixture.py",
+ "bed": {
+  "foot": [
+   1,
+   -60,
+   0
+  ],
+  "head": [
+   2,
+   -60,
+   0
+  ],
+  "direction": 3
+ },
+ "clicks": [
+  {
+   "script": "sleeping",
+   "line": 40,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 6015,
+   "daylight_cycle": true,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 1,
+   "percentage": 100,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [
+     "respawnSet",
+     "noSleep"
+    ],
+    "event": null,
+    "slept": false
+   }
+  },
+  {
+   "script": "sleeping",
+   "line": 46,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 6021,
+   "daylight_cycle": true,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 1,
+   "percentage": 100,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    1,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [
+     "noSleep"
+    ],
+    "event": null,
+    "slept": false
+   }
+  },
+  {
+   "script": "sleeping",
+   "line": 52,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 6027,
+   "daylight_cycle": true,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 1,
+   "percentage": 100,
+   "feet": [
+    2.5,
+    -60.0,
+    2.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      2,
+      -60,
+      2
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [
+     "noSleep"
+    ],
+    "event": null,
+    "slept": false
+   }
+  },
+  {
+   "script": "sleeping",
+   "line": 56,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 6031,
+   "daylight_cycle": true,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 1,
+   "percentage": 100,
+   "feet": [
+    -0.5,
+    -60.0,
+    -1.5
+   ],
+   "clicked": [
+    1,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      -1,
+      -60,
+      -2
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [
+     "noSleep"
+    ],
+    "event": null,
+    "slept": false
+   }
+  },
+  {
+   "script": "sleeping",
+   "line": 62,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 12002,
+   "daylight_cycle": true,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 1,
+   "percentage": 100,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [
+     "noSleep"
+    ],
+    "event": null,
+    "slept": false
+   }
+  },
+  {
+   "script": "sleeping",
+   "line": 212,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 13002,
+   "daylight_cycle": true,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 1,
+   "percentage": 100,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    1,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [],
+    "event": [
+     1,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping",
+   "line": 420,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 6008,
+   "daylight_cycle": true,
+   "rain": 0.1,
+   "lightning": 0.1,
+   "players": 1,
+   "percentage": 100,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [
+     "noSleep"
+    ],
+    "event": null,
+    "slept": false
+   }
+  },
+  {
+   "script": "sleeping",
+   "line": 620,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 6008,
+   "daylight_cycle": true,
+   "rain": 1.0,
+   "lightning": 0.85,
+   "players": 1,
+   "percentage": 100,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [],
+    "event": [
+     1,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping",
+   "line": 692,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 14002,
+   "daylight_cycle": true,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 1,
+   "percentage": 100,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [],
+    "event": [
+     1,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping",
+   "line": 752,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 14002,
+   "daylight_cycle": true,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 1,
+   "percentage": 100,
+   "feet": [
+    -1.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    1,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": null,
+    "messages": [
+     "tooFar"
+    ],
+    "event": null,
+    "slept": false
+   }
+  },
+  {
+   "script": "sleeping",
+   "line": 772,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 14022,
+   "daylight_cycle": true,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 1,
+   "percentage": 100,
+   "feet": [
+    -2.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    1,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": null,
+    "messages": [
+     "tooFar"
+    ],
+    "event": null,
+    "slept": false
+   }
+  },
+  {
+   "script": "sleeping",
+   "line": 842,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 14092,
+   "daylight_cycle": true,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 1,
+   "percentage": 100,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": "minecraft:stone",
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [],
+    "event": [
+     1,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping",
+   "line": 880,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 14009,
+   "daylight_cycle": true,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 1,
+   "percentage": 100,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": [
+    9.5,
+    -60.0,
+    0.5
+   ],
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [
+     "notSafe"
+    ],
+    "event": null,
+    "slept": false
+   }
+  },
+  {
+   "script": "sleeping",
+   "line": 942,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 14000,
+   "daylight_cycle": false,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 1,
+   "percentage": 100,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [],
+    "event": [
+     1,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping",
+   "line": 1112,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 14001,
+   "daylight_cycle": true,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 1,
+   "percentage": 100,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "creative",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [],
+    "event": [
+     1,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping-2",
+   "line": 82,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     4
+    ],
+    "direction": 3
+   },
+   "clock": 14040,
+   "daylight_cycle": true,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 2,
+   "percentage": 100,
+   "feet": [
+    0.5,
+    -60.0,
+    3.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    4
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": true,
+   "answer": {
+    "spawn": null,
+    "messages": [
+     "occupied"
+    ],
+    "event": null,
+    "slept": false
+   }
+  },
+  {
+   "script": "sleeping-2",
+   "line": 192,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 14002,
+   "daylight_cycle": true,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 2,
+   "percentage": 100,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [
+     "respawnSet"
+    ],
+    "event": [
+     2,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping-2",
+   "line": 352,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 14002,
+   "daylight_cycle": true,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 2,
+   "percentage": 50,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [],
+    "event": [
+     1,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping-2",
+   "line": 642,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 12540,
+   "daylight_cycle": false,
+   "rain": 0.81,
+   "lightning": 0.0,
+   "players": 2,
+   "percentage": 100,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [],
+    "event": [
+     2,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping-2",
+   "line": 732,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 23459,
+   "daylight_cycle": false,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 2,
+   "percentage": 100,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [],
+    "event": [
+     2,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping-2",
+   "line": 742,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 23460,
+   "daylight_cycle": false,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 2,
+   "percentage": 100,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [
+     "noSleep"
+    ],
+    "event": null,
+    "slept": false
+   }
+  },
+  {
+   "script": "sleeping-2",
+   "line": 762,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 18000,
+   "daylight_cycle": false,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 2,
+   "percentage": 100,
+   "feet": [
+    -1.0,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    1,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      -1,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [],
+    "event": [
+     2,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping-2",
+   "line": 792,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 18000,
+   "daylight_cycle": false,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 2,
+   "percentage": 100,
+   "feet": [
+    -0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      -1,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [],
+    "event": [
+     2,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping-2",
+   "line": 812,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 18000,
+   "daylight_cycle": false,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 2,
+   "percentage": 100,
+   "feet": [
+    2.5,
+    -60.0,
+    3.0
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      2,
+      -60,
+      3
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [],
+    "event": [
+     2,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping-2",
+   "line": 822,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 18000,
+   "daylight_cycle": false,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 2,
+   "percentage": 100,
+   "feet": [
+    2.5,
+    -60.0,
+    3.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": null,
+    "messages": [
+     "tooFar"
+    ],
+    "event": null,
+    "slept": false
+   }
+  },
+  {
+   "script": "sleeping-2",
+   "line": 834,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 18000,
+   "daylight_cycle": false,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 2,
+   "percentage": 100,
+   "feet": [
+    0.5,
+    -58.0,
+    0.5
+   ],
+   "clicked": [
+    1,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -58,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [],
+    "event": [
+     2,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping-2",
+   "line": 856,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 14005,
+   "daylight_cycle": true,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 2,
+   "percentage": 100,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": [
+    14.5,
+    -60.0,
+    0.5
+   ],
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [],
+    "event": [
+     2,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping-2",
+   "line": 916,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 14065,
+   "daylight_cycle": true,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 2,
+   "percentage": 100,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": [
+    2.5,
+    -54.0,
+    0.5
+   ],
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [],
+    "event": [
+     2,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping-3",
+   "line": 42,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 12540,
+   "daylight_cycle": false,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 2,
+   "percentage": 50,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [
+     "respawnSet",
+     "noSleep"
+    ],
+    "event": null,
+    "slept": false
+   }
+  },
+  {
+   "script": "sleeping-3",
+   "line": 52,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 12541,
+   "daylight_cycle": false,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 2,
+   "percentage": 50,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [
+     "noSleep"
+    ],
+    "event": null,
+    "slept": false
+   }
+  },
+  {
+   "script": "sleeping-3",
+   "line": 62,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 12542,
+   "daylight_cycle": false,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 2,
+   "percentage": 50,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [],
+    "event": [
+     1,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping-3",
+   "line": 72,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 12543,
+   "daylight_cycle": false,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 2,
+   "percentage": 50,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [],
+    "event": [
+     1,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping-3",
+   "line": 82,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 18000,
+   "daylight_cycle": false,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 2,
+   "percentage": 50,
+   "feet": [
+    1.5,
+    -60.0,
+    -1.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      1,
+      -60,
+      -2
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [],
+    "event": [
+     1,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping-3",
+   "line": 92,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 18000,
+   "daylight_cycle": false,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 2,
+   "percentage": 50,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [
+    [
+     2,
+     -60,
+     1
+    ],
+    [
+     2,
+     -59,
+     1
+    ]
+   ],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [],
+    "event": [
+     1,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping-3",
+   "line": 122,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 18000,
+   "daylight_cycle": false,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 2,
+   "percentage": 50,
+   "feet": [
+    -0.5,
+    -60.0,
+    2.5
+   ],
+   "clicked": [
+    1,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      -1,
+      -60,
+      2
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [],
+    "event": [
+     1,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping-3",
+   "line": 132,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 18000,
+   "daylight_cycle": false,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 2,
+   "percentage": 50,
+   "feet": [
+    -1.0,
+    -60.0,
+    2.0
+   ],
+   "clicked": [
+    1,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      -1,
+      -60,
+      2
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [],
+    "event": [
+     1,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping-3",
+   "line": 142,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 18000,
+   "daylight_cycle": false,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 2,
+   "percentage": 50,
+   "feet": [
+    -1.0,
+    -60.0,
+    2.5
+   ],
+   "clicked": [
+    1,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      -1,
+      -60,
+      2
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [],
+    "event": [
+     1,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping-3",
+   "line": 153,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 18000,
+   "daylight_cycle": false,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 2,
+   "percentage": 50,
+   "feet": [
+    0.5,
+    -57.0,
+    0.5
+   ],
+   "clicked": [
+    1,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": null,
+    "messages": [
+     "tooFar"
+    ],
+    "event": null,
+    "slept": false
+   }
+  },
+  {
+   "script": "sleeping-3",
+   "line": 182,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 18000,
+   "daylight_cycle": false,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 2,
+   "percentage": 50,
+   "feet": [
+    -1.0,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    1,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      -1,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [],
+    "event": [
+     1,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping-3",
+   "line": 245,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 18000,
+   "daylight_cycle": false,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 2,
+   "percentage": 50,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": [
+    13.5,
+    -60.0,
+    0.5
+   ],
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [],
+    "event": [
+     1,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping-3",
+   "line": 257,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 18000,
+   "daylight_cycle": false,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 2,
+   "percentage": 50,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": [
+    -8.5,
+    -60.0,
+    0.5
+   ],
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [],
+    "event": [
+     1,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping-3",
+   "line": 281,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 18000,
+   "daylight_cycle": false,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 2,
+   "percentage": 50,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": [
+    2.5,
+    -60.0,
+    11.5
+   ],
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [],
+    "event": [
+     1,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping-3",
+   "line": 305,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 18000,
+   "daylight_cycle": false,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 2,
+   "percentage": 50,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": [
+    2.5,
+    -55.0,
+    0.5
+   ],
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [
+     "notSafe"
+    ],
+    "event": null,
+    "slept": false
+   }
+  },
+  {
+   "script": "sleeping-3",
+   "line": 330,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 14008,
+   "daylight_cycle": true,
+   "rain": 0.08,
+   "lightning": 0.0,
+   "players": 2,
+   "percentage": 50,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [],
+    "event": [
+     1,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping-4",
+   "line": 42,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 18000,
+   "daylight_cycle": false,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 1,
+   "percentage": 100,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [
+    [
+     2,
+     -60,
+     1
+    ],
+    [
+     2,
+     -59,
+     1
+    ]
+   ],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [
+     "respawnSet"
+    ],
+    "event": [
+     1,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping-4",
+   "line": 82,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 18000,
+   "daylight_cycle": false,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 1,
+   "percentage": 100,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [
+    [
+     2,
+     -60,
+     1
+    ],
+    [
+     2,
+     -59,
+     1
+    ],
+    [
+     1,
+     -60,
+     1
+    ],
+    [
+     1,
+     -59,
+     1
+    ]
+   ],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [],
+    "event": [
+     1,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping-4",
+   "line": 122,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 18000,
+   "daylight_cycle": false,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 1,
+   "percentage": 100,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [
+    [
+     2,
+     -60,
+     1
+    ],
+    [
+     2,
+     -59,
+     1
+    ],
+    [
+     1,
+     -60,
+     1
+    ],
+    [
+     1,
+     -59,
+     1
+    ],
+    [
+     1,
+     -60,
+     -1
+    ],
+    [
+     1,
+     -59,
+     -1
+    ],
+    [
+     2,
+     -60,
+     -1
+    ],
+    [
+     2,
+     -59,
+     -1
+    ]
+   ],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [],
+    "event": [
+     1,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping-4",
+   "line": 162,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 18000,
+   "daylight_cycle": false,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 1,
+   "percentage": 100,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [
+    [
+     2,
+     -60,
+     1
+    ]
+   ],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [],
+    "event": [
+     1,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping-4",
+   "line": 202,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 18000,
+   "daylight_cycle": false,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 1,
+   "percentage": 100,
+   "feet": [
+    3.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      3,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [],
+    "event": [
+     1,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping-4",
+   "line": 242,
+   "bed": {
+    "head": [
+     8,
+     -60,
+     1
+    ],
+    "direction": 0
+   },
+   "clock": 18000,
+   "daylight_cycle": false,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 1,
+   "percentage": 100,
+   "feet": [
+    6.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    8,
+    -60,
+    1
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      6,
+      -60,
+      0
+     ],
+     "bed": [
+      8,
+      -60,
+      1
+     ]
+    },
+    "messages": [
+     "respawnSet"
+    ],
+    "event": [
+     1,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping-4",
+   "line": 272,
+   "bed": {
+    "head": [
+     8,
+     -60,
+     1
+    ],
+    "direction": 0
+   },
+   "clock": 18000,
+   "daylight_cycle": false,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 1,
+   "percentage": 100,
+   "feet": [
+    9.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    8,
+    -60,
+    1
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      9,
+      -60,
+      0
+     ],
+     "bed": [
+      8,
+      -60,
+      1
+     ]
+    },
+    "messages": [],
+    "event": [
+     1,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping-4",
+   "line": 310,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 18000,
+   "daylight_cycle": false,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 1,
+   "percentage": 100,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [
+     "respawnSet"
+    ],
+    "event": [
+     1,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping-5",
+   "line": 42,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 14002,
+   "daylight_cycle": true,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 2,
+   "percentage": 50,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [
+     "respawnSet"
+    ],
+    "event": [
+     1,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping-5",
+   "line": 112,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 14002,
+   "daylight_cycle": true,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 2,
+   "percentage": 50,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [],
+    "event": [
+     1,
+     1
+    ],
+    "slept": true
+   }
+  },
+  {
+   "script": "sleeping-5",
+   "line": 172,
+   "bed": {
+    "head": [
+     2,
+     -60,
+     0
+    ],
+    "direction": 3
+   },
+   "clock": 14002,
+   "daylight_cycle": true,
+   "rain": 0.0,
+   "lightning": 0.0,
+   "players": 2,
+   "percentage": 50,
+   "feet": [
+    0.5,
+    -60.0,
+    0.5
+   ],
+   "clicked": [
+    2,
+    -60,
+    0
+   ],
+   "zombie": null,
+   "walls": [],
+   "block_on_head": null,
+   "mode": "survival",
+   "occupied_by_other": false,
+   "answer": {
+    "spawn": {
+     "block": [
+      0,
+      -60,
+      0
+     ],
+     "bed": [
+      2,
+      -60,
+      0
+     ]
+    },
+    "messages": [],
+    "event": [
+     1,
+     1
+    ],
+    "slept": true
+   }
+  }
+ ],
+ "wakes": [
+  {
+   "script": "sleeping",
+   "line": 212,
+   "cause": "morning",
+   "command": null,
+   "slept_ticks": 101,
+   "stood_eye": [
+    2.5,
+    -58.37999,
+    1.5
+   ],
+   "event": null
+  },
+  {
+   "script": "sleeping",
+   "line": 620,
+   "cause": "left",
+   "command": null,
+   "slept_ticks": 11,
+   "stood_eye": [
+    2.5,
+    -58.284992,
+    1.5
+   ],
+   "event": [
+    1,
+    0
+   ]
+  },
+  {
+   "script": "sleeping",
+   "line": 692,
+   "cause": "left",
+   "command": null,
+   "slept_ticks": 41,
+   "stood_eye": [
+    2.5,
+    -58.284992,
+    1.5
+   ],
+   "event": [
+    1,
+    0
+   ]
+  },
+  {
+   "script": "sleeping",
+   "line": 842,
+   "cause": "left",
+   "command": null,
+   "slept_ticks": 11,
+   "stood_eye": [
+    2.5,
+    -58.284992,
+    1.5
+   ],
+   "event": [
+    1,
+    0
+   ]
+  },
+  {
+   "script": "sleeping",
+   "line": 942,
+   "cause": "morning",
+   "command": null,
+   "slept_ticks": 101,
+   "stood_eye": [
+    2.5,
+    -58.37999,
+    1.5
+   ],
+   "event": null
+  },
+  {
+   "script": "sleeping",
+   "line": 1112,
+   "cause": "morning",
+   "command": null,
+   "slept_ticks": 101,
+   "stood_eye": [
+    2.5,
+    -58.37999,
+    1.5
+   ],
+   "event": null
+  },
+  {
+   "script": "sleeping-2",
+   "line": 192,
+   "cause": "morning",
+   "command": null,
+   "slept_ticks": 112,
+   "stood_eye": [
+    2.5,
+    -58.284992,
+    1.5
+   ],
+   "event": null
+  },
+  {
+   "script": "sleeping-2",
+   "line": 352,
+   "cause": "morning",
+   "command": null,
+   "slept_ticks": 100,
+   "stood_eye": [
+    2.5,
+    -58.37999,
+    1.5
+   ],
+   "event": null
+  },
+  {
+   "script": "sleeping-2",
+   "line": 642,
+   "cause": "left",
+   "command": null,
+   "slept_ticks": 5,
+   "stood_eye": null,
+   "event": [
+    2,
+    0
+   ]
+  },
+  {
+   "script": "sleeping-2",
+   "line": 732,
+   "cause": "left",
+   "command": null,
+   "slept_ticks": 5,
+   "stood_eye": null,
+   "event": [
+    2,
+    0
+   ]
+  },
+  {
+   "script": "sleeping-2",
+   "line": 762,
+   "cause": "left",
+   "command": null,
+   "slept_ticks": 5,
+   "stood_eye": [
+    2.5,
+    -58.35839,
+    1.5
+   ],
+   "event": [
+    2,
+    0
+   ]
+  },
+  {
+   "script": "sleeping-2",
+   "line": 792,
+   "cause": "left",
+   "command": null,
+   "slept_ticks": 5,
+   "stood_eye": [
+    2.5,
+    -58.35839,
+    1.5
+   ],
+   "event": [
+    2,
+    0
+   ]
+  },
+  {
+   "script": "sleeping-2",
+   "line": 812,
+   "cause": "left",
+   "command": null,
+   "slept_ticks": 5,
+   "stood_eye": null,
+   "event": [
+    2,
+    0
+   ]
+  },
+  {
+   "script": "sleeping-2",
+   "line": 834,
+   "cause": "left",
+   "command": null,
+   "slept_ticks": 4,
+   "stood_eye": [
+    2.5,
+    -58.35839,
+    1.5
+   ],
+   "event": [
+    2,
+    0
+   ]
+  },
+  {
+   "script": "sleeping-2",
+   "line": 856,
+   "cause": "left",
+   "command": null,
+   "slept_ticks": 4,
+   "stood_eye": null,
+   "event": [
+    2,
+    0
+   ]
+  },
+  {
+   "script": "sleeping-2",
+   "line": 916,
+   "cause": "left",
+   "command": null,
+   "slept_ticks": 5,
+   "stood_eye": null,
+   "event": [
+    2,
+    0
+   ]
+  },
+  {
+   "script": "sleeping-3",
+   "line": 62,
+   "cause": "left",
+   "command": null,
+   "slept_ticks": 5,
+   "stood_eye": null,
+   "event": [
+    1,
+    0
+   ]
+  },
+  {
+   "script": "sleeping-3",
+   "line": 72,
+   "cause": "left",
+   "command": null,
+   "slept_ticks": 4,
+   "stood_eye": null,
+   "event": [
+    1,
+    0
+   ]
+  },
+  {
+   "script": "sleeping-3",
+   "line": 82,
+   "cause": "left",
+   "command": null,
+   "slept_ticks": 4,
+   "stood_eye": [
+    2.5,
+    -58.37999,
+    -0.5
+   ],
+   "event": [
+    1,
+    0
+   ]
+  },
+  {
+   "script": "sleeping-3",
+   "line": 92,
+   "cause": "left",
+   "command": null,
+   "slept_ticks": 4,
+   "stood_eye": null,
+   "event": [
+    1,
+    0
+   ]
+  },
+  {
+   "script": "sleeping-3",
+   "line": 122,
+   "cause": "left",
+   "command": null,
+   "slept_ticks": 4,
+   "stood_eye": [
+    2.5,
+    -58.35839,
+    1.5
+   ],
+   "event": [
+    1,
+    0
+   ]
+  },
+  {
+   "script": "sleeping-3",
+   "line": 132,
+   "cause": "left",
+   "command": null,
+   "slept_ticks": 4,
+   "stood_eye": [
+    2.5,
+    -58.37999,
+    1.5
+   ],
+   "event": [
+    1,
+    0
+   ]
+  },
+  {
+   "script": "sleeping-3",
+   "line": 142,
+   "cause": "left",
+   "command": null,
+   "slept_ticks": 4,
+   "stood_eye": null,
+   "event": [
+    1,
+    0
+   ]
+  },
+  {
+   "script": "sleeping-3",
+   "line": 182,
+   "cause": "left",
+   "command": null,
+   "slept_ticks": 4,
+   "stood_eye": [
+    2.5,
+    -58.35839,
+    1.5
+   ],
+   "event": [
+    1,
+    0
+   ]
+  },
+  {
+   "script": "sleeping-3",
+   "line": 245,
+   "cause": "left",
+   "command": null,
+   "slept_ticks": 4,
+   "stood_eye": null,
+   "event": [
+    1,
+    0
+   ]
+  },
+  {
+   "script": "sleeping-3",
+   "line": 257,
+   "cause": "left",
+   "command": null,
+   "slept_ticks": 4,
+   "stood_eye": null,
+   "event": [
+    1,
+    0
+   ]
+  },
+  {
+   "script": "sleeping-3",
+   "line": 281,
+   "cause": "left",
+   "command": null,
+   "slept_ticks": 4,
+   "stood_eye": null,
+   "event": [
+    1,
+    0
+   ]
+  },
+  {
+   "script": "sleeping-3",
+   "line": 330,
+   "cause": "morning",
+   "command": null,
+   "slept_ticks": 101,
+   "stood_eye": [
+    2.5,
+    -58.37999,
+    1.5
+   ],
+   "event": null
+  },
+  {
+   "script": "sleeping-4",
+   "line": 42,
+   "cause": "left",
+   "command": null,
+   "slept_ticks": 4,
+   "stood_eye": [
+    1.5,
+    -58.37999,
+    1.5
+   ],
+   "event": [
+    1,
+    0
+   ]
+  },
+  {
+   "script": "sleeping-4",
+   "line": 82,
+   "cause": "left",
+   "command": null,
+   "slept_ticks": 4,
+   "stood_eye": [
+    0.5,
+    -58.37999,
+    1.5
+   ],
+   "event": [
+    1,
+    0
+   ]
+  },
+  {
+   "script": "sleeping-4",
+   "line": 122,
+   "cause": "left",
+   "command": null,
+   "slept_ticks": 5,
+   "stood_eye": [
+    0.5,
+    -58.37999,
+    1.5
+   ],
+   "event": [
+    1,
+    0
+   ]
+  },
+  {
+   "script": "sleeping-4",
+   "line": 162,
+   "cause": "left",
+   "command": null,
+   "slept_ticks": 4,
+   "stood_eye": [
+    1.5,
+    -58.37999,
+    1.5
+   ],
+   "event": [
+    1,
+    0
+   ]
+  },
+  {
+   "script": "sleeping-4",
+   "line": 202,
+   "cause": "left",
+   "command": null,
+   "slept_ticks": 4,
+   "stood_eye": [
+    2.5,
+    -58.35839,
+    1.5
+   ],
+   "event": [
+    1,
+    0
+   ]
+  },
+  {
+   "script": "sleeping-4",
+   "line": 242,
+   "cause": "left",
+   "command": null,
+   "slept_ticks": 4,
+   "stood_eye": [
+    7.5,
+    -58.35839,
+    1.5
+   ],
+   "event": [
+    1,
+    0
+   ]
+  },
+  {
+   "script": "sleeping-4",
+   "line": 272,
+   "cause": "left",
+   "command": null,
+   "slept_ticks": 5,
+   "stood_eye": [
+    9.5,
+    -58.35839,
+    1.5
+   ],
+   "event": [
+    1,
+    0
+   ]
+  },
+  {
+   "script": "sleeping-5",
+   "line": 42,
+   "cause": "command",
+   "command": "/time set 1000",
+   "slept_ticks": 23,
+   "stood_eye": [
+    2.5,
+    -58.35839,
+    1.5
+   ],
+   "event": [
+    1,
+    0
+   ]
+  },
+  {
+   "script": "sleeping-5",
+   "line": 112,
+   "cause": "command",
+   "command": "/damage @s 1",
+   "slept_ticks": 21,
+   "stood_eye": [
+    2.5,
+    -58.37999,
+    1.5
+   ],
+   "event": [
+    1,
+    0
+   ]
+  },
+  {
+   "script": "sleeping-5",
+   "line": 172,
+   "cause": "morning",
+   "command": null,
+   "slept_ticks": 101,
+   "stood_eye": [
+    2.5,
+    -58.37999,
+    1.5
+   ],
+   "event": null
+  }
+ ],
+ "nights": [
+  {
+   "script": "sleeping",
+   "line": 212,
+   "slept_ticks": 101,
+   "clock_after": 24000
+  },
+  {
+   "script": "sleeping",
+   "line": 942,
+   "slept_ticks": 101,
+   "clock_after": null
+  },
+  {
+   "script": "sleeping",
+   "line": 1112,
+   "slept_ticks": 101,
+   "clock_after": 24000
+  },
+  {
+   "script": "sleeping-2",
+   "line": 192,
+   "slept_ticks": 112,
+   "clock_after": 24000
+  },
+  {
+   "script": "sleeping-2",
+   "line": 352,
+   "slept_ticks": 100,
+   "clock_after": 24000
+  },
+  {
+   "script": "sleeping-3",
+   "line": 330,
+   "slept_ticks": 101,
+   "clock_after": 24000
+  },
+  {
+   "script": "sleeping-5",
+   "line": 172,
+   "slept_ticks": 101,
+   "clock_after": 24000
+  }
+ ],
+ "actor_data": [
+  {
+   "script": "sleeping",
+   "line": 92,
+   "event": "lie_down",
+   "rows": [
+    [
+     26,
+     "byte",
+     2
+    ],
+    [
+     28,
+     "pos",
+     [
+      2,
+      -60,
+      0
+     ]
+    ],
+    [
+     92,
+     "int64",
+     35184405647360
+    ],
+    [
+     133,
+     "vec3",
+     [
+      0.5,
+      -58.37999,
+      0.5
+     ]
+    ]
+   ]
+  },
+  {
+   "script": "sleeping",
+   "line": 212,
+   "event": "wake",
+   "rows": [
+    [
+     26,
+     "byte",
+     0
+    ],
+    [
+     92,
+     "int64",
+     35184405643264
+    ]
+   ]
+  },
+  {
+   "script": "sleeping-2",
+   "line": 192,
+   "event": "lie_down",
+   "rows": [
+    [
+     26,
+     "byte",
+     2
+    ],
+    [
+     28,
+     "pos",
+     [
+      2,
+      -60,
+      0
+     ]
+    ],
+    [
+     92,
+     "int64",
+     35184405647360
+    ],
+    [
+     133,
+     "vec3",
+     [
+      0.5,
+      -58.37999,
+      0.5
+     ]
+    ]
+   ]
+  },
+  {
+   "script": "sleeping-2",
+   "line": 192,
+   "event": "wake",
+   "rows": [
+    [
+     26,
+     "byte",
+     0
+    ],
+    [
+     92,
+     "int64",
+     35184405643264
+    ]
+   ]
+  },
+  {
+   "script": "sleeping-2",
+   "line": 762,
+   "event": "lie_down",
+   "rows": [
+    [
+     26,
+     "byte",
+     2
+    ],
+    [
+     92,
+     "int64",
+     35184405647360
+    ],
+    [
+     133,
+     "vec3",
+     [
+      -1.0,
+      -58.37999,
+      0.5
+     ]
+    ]
+   ]
+  },
+  {
+   "script": "sleeping-2",
+   "line": 772,
+   "event": "lie_down",
+   "rows": [
+    [
+     26,
+     "byte",
+     2
+    ],
+    [
+     92,
+     "int64",
+     35184405647360
+    ],
+    [
+     133,
+     "vec3",
+     [
+      -0.5,
+      -58.37999,
+      0.5
+     ]
+    ]
+   ]
+  },
+  {
+   "script": "sleeping-2",
+   "line": 782,
+   "event": "lie_down",
+   "rows": [
+    [
+     26,
+     "byte",
+     2
+    ],
+    [
+     92,
+     "int64",
+     35184405647360
+    ],
+    [
+     133,
+     "vec3",
+     [
+      0.0,
+      -58.37999,
+      0.5
+     ]
+    ]
+   ]
+  },
+  {
+   "script": "sleeping-2",
+   "line": 792,
+   "event": "lie_down",
+   "rows": [
+    [
+     26,
+     "byte",
+     2
+    ],
+    [
+     92,
+     "int64",
+     35184405647360
+    ],
+    [
+     133,
+     "vec3",
+     [
+      -0.5,
+      -58.37999,
+      0.5
+     ]
+    ]
+   ]
+  },
+  {
+   "script": "sleeping-2",
+   "line": 802,
+   "event": "lie_down",
+   "rows": [
+    [
+     26,
+     "byte",
+     2
+    ],
+    [
+     92,
+     "int64",
+     35184405647360
+    ],
+    [
+     133,
+     "vec3",
+     [
+      0.0,
+      -58.37999,
+      0.5
+     ]
+    ]
+   ]
+  },
+  {
+   "script": "sleeping-2",
+   "line": 812,
+   "event": "lie_down",
+   "rows": [
+    [
+     26,
+     "byte",
+     2
+    ],
+    [
+     92,
+     "int64",
+     35184405647360
+    ],
+    [
+     133,
+     "vec3",
+     [
+      2.5,
+      -58.37999,
+      3.0
+     ]
+    ]
+   ]
+  },
+  {
+   "script": "sleeping-2",
+   "line": 834,
+   "event": "lie_down",
+   "rows": [
+    [
+     26,
+     "byte",
+     2
+    ],
+    [
+     92,
+     "int64",
+     35184405647360
+    ],
+    [
+     133,
+     "vec3",
+     [
+      0.5,
+      -56.37999,
+      0.5
+     ]
+    ]
+   ]
+  },
+  {
+   "script": "sleeping-2",
+   "line": 856,
+   "event": "lie_down",
+   "rows": [
+    [
+     26,
+     "byte",
+     2
+    ],
+    [
+     92,
+     "int64",
+     35184405647360
+    ],
+    [
+     133,
+     "vec3",
+     [
+      0.5,
+      -58.37999,
+      0.5
+     ]
+    ]
+   ]
+  },
+  {
+   "script": "sleeping-3",
+   "line": 62,
+   "event": "lie_down",
+   "rows": [
+    [
+     26,
+     "byte",
+     2
+    ],
+    [
+     28,
+     "pos",
+     [
+      2,
+      -60,
+      0
+     ]
+    ],
+    [
+     92,
+     "int64",
+     35184405647360
+    ],
+    [
+     133,
+     "vec3",
+     [
+      0.5,
+      -58.37999,
+      0.5
+     ]
+    ]
+   ]
+  },
+  {
+   "script": "sleeping-3",
+   "line": 62,
+   "event": "wake",
+   "rows": [
+    [
+     26,
+     "byte",
+     0
+    ],
+    [
+     92,
+     "int64",
+     35184405643264
+    ]
+   ]
+  },
+  {
+   "script": "sleeping-3",
+   "line": 82,
+   "event": "lie_down",
+   "rows": [
+    [
+     26,
+     "byte",
+     2
+    ],
+    [
+     92,
+     "int64",
+     35184405647360
+    ],
+    [
+     133,
+     "vec3",
+     [
+      1.5,
+      -58.37999,
+      -1.5
+     ]
+    ]
+   ]
+  },
+  {
+   "script": "sleeping-3",
+   "line": 92,
+   "event": "lie_down",
+   "rows": [
+    [
+     26,
+     "byte",
+     2
+    ],
+    [
+     92,
+     "int64",
+     35184405647360
+    ],
+    [
+     133,
+     "vec3",
+     [
+      0.5,
+      -58.37999,
+      0.5
+     ]
+    ]
+   ]
+  },
+  {
+   "script": "sleeping-3",
+   "line": 122,
+   "event": "lie_down",
+   "rows": [
+    [
+     26,
+     "byte",
+     2
+    ],
+    [
+     92,
+     "int64",
+     35184405647360
+    ],
+    [
+     133,
+     "vec3",
+     [
+      -0.5,
+      -58.37999,
+      2.5
+     ]
+    ]
+   ]
+  },
+  {
+   "script": "sleeping-3",
+   "line": 132,
+   "event": "lie_down",
+   "rows": [
+    [
+     26,
+     "byte",
+     2
+    ],
+    [
+     92,
+     "int64",
+     35184405647360
+    ],
+    [
+     133,
+     "vec3",
+     [
+      -1.0,
+      -58.37999,
+      2.0
+     ]
+    ]
+   ]
+  },
+  {
+   "script": "sleeping-3",
+   "line": 142,
+   "event": "lie_down",
+   "rows": [
+    [
+     26,
+     "byte",
+     2
+    ],
+    [
+     92,
+     "int64",
+     35184405647360
+    ],
+    [
+     133,
+     "vec3",
+     [
+      -1.0,
+      -58.37999,
+      2.5
+     ]
+    ]
+   ]
+  },
+  {
+   "script": "sleeping-3",
+   "line": 182,
+   "event": "lie_down",
+   "rows": [
+    [
+     26,
+     "byte",
+     2
+    ],
+    [
+     92,
+     "int64",
+     35184405647360
+    ],
+    [
+     133,
+     "vec3",
+     [
+      -1.0,
+      -58.37999,
+      0.5
+     ]
+    ]
+   ]
+  },
+  {
+   "script": "sleeping-3",
+   "line": 245,
+   "event": "lie_down",
+   "rows": [
+    [
+     26,
+     "byte",
+     2
+    ],
+    [
+     92,
+     "int64",
+     35184405647360
+    ],
+    [
+     133,
+     "vec3",
+     [
+      0.5,
+      -58.37999,
+      0.5
+     ]
+    ]
+   ]
+  },
+  {
+   "script": "sleeping-4",
+   "line": 42,
+   "event": "lie_down",
+   "rows": [
+    [
+     26,
+     "byte",
+     2
+    ],
+    [
+     28,
+     "pos",
+     [
+      2,
+      -60,
+      0
+     ]
+    ],
+    [
+     92,
+     "int64",
+     35184405647360
+    ],
+    [
+     133,
+     "vec3",
+     [
+      0.5,
+      -58.37999,
+      0.5
+     ]
+    ]
+   ]
+  },
+  {
+   "script": "sleeping-4",
+   "line": 42,
+   "event": "wake",
+   "rows": [
+    [
+     26,
+     "byte",
+     0
+    ],
+    [
+     92,
+     "int64",
+     35184405643264
+    ]
+   ]
+  },
+  {
+   "script": "sleeping-4",
+   "line": 202,
+   "event": "lie_down",
+   "rows": [
+    [
+     26,
+     "byte",
+     2
+    ],
+    [
+     92,
+     "int64",
+     35184405647360
+    ],
+    [
+     133,
+     "vec3",
+     [
+      3.5,
+      -58.37999,
+      0.5
+     ]
+    ]
+   ]
+  },
+  {
+   "script": "sleeping-4",
+   "line": 242,
+   "event": "lie_down",
+   "rows": [
+    [
+     26,
+     "byte",
+     2
+    ],
+    [
+     28,
+     "pos",
+     [
+      8,
+      -60,
+      1
+     ]
+    ],
+    [
+     92,
+     "int64",
+     35184405647360
+    ],
+    [
+     133,
+     "vec3",
+     [
+      6.5,
+      -58.37999,
+      0.5
+     ]
+    ]
+   ]
+  },
+  {
+   "script": "sleeping-4",
+   "line": 272,
+   "event": "lie_down",
+   "rows": [
+    [
+     26,
+     "byte",
+     2
+    ],
+    [
+     92,
+     "int64",
+     35184405647360
+    ],
+    [
+     133,
+     "vec3",
+     [
+      9.5,
+      -58.37999,
+      0.5
+     ]
+    ]
+   ]
+  },
+  {
+   "script": "sleeping-4",
+   "line": 310,
+   "event": "lie_down",
+   "rows": [
+    [
+     26,
+     "byte",
+     2
+    ],
+    [
+     28,
+     "pos",
+     [
+      2,
+      -60,
+      0
+     ]
+    ],
+    [
+     92,
+     "int64",
+     35184405647360
+    ],
+    [
+     133,
+     "vec3",
+     [
+      0.5,
+      -58.37999,
+      0.5
+     ]
+    ]
+   ]
+  },
+  {
+   "script": "sleeping-5",
+   "line": 42,
+   "event": "lie_down",
+   "rows": [
+    [
+     26,
+     "byte",
+     2
+    ],
+    [
+     28,
+     "pos",
+     [
+      2,
+      -60,
+      0
+     ]
+    ],
+    [
+     92,
+     "int64",
+     35184405647360
+    ],
+    [
+     133,
+     "vec3",
+     [
+      0.5,
+      -58.37999,
+      0.5
+     ]
+    ]
+   ]
+  },
+  {
+   "script": "sleeping-5",
+   "line": 42,
+   "event": "wake",
+   "rows": [
+    [
+     26,
+     "byte",
+     0
+    ],
+    [
+     92,
+     "int64",
+     35184405643264
+    ]
+   ]
+  }
+ ]
+}

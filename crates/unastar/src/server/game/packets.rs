@@ -76,6 +76,12 @@ impl GameServer {
                             crate::entity::player_life::respawn::RespawnRequest::Action,
                         ));
                     }
+                } else if pk.action == jolyne::valentine::types::EnumsPlayerActionType::Stopsleeping
+                {
+                    world
+                        .get_resource_or_init::<crate::entity::player_life::sleep::WakeQueue>()
+                        .0
+                        .push((entity, crate::entity::player_life::sleep::WakeCause::Woken));
                 } else if let Some(mut q) = world.get_resource_mut::<MovementPacketQueue>() {
                     q.0.push((entity, MovementInput::PlayerAction(pk.into())));
                 }
