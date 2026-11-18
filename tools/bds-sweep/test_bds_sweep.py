@@ -18,6 +18,7 @@ import bds_runtime  # noqa: E402
 import breaking_fixture  # noqa: E402
 import combat_fixture  # noqa: E402
 import experience_table  # noqa: E402
+import items6_table  # noqa: E402
 import food_table  # noqa: E402
 import capture  # noqa: E402
 import commit_fixtures  # noqa: E402
@@ -448,6 +449,32 @@ class UnbreakingTable(unittest.TestCase):
     def test_broken_reads_an_empty_slot(self):
         self.assertTrue(unbreaking_table.broken('item: CerealizerNetworkItemStackDescriptorSerializedData { id: 0, '))
         self.assertFalse(unbreaking_table.broken('item: CerealizerNetworkItemStackDescriptorSerializedData { id: 7, '))
+
+
+class Items6Table(unittest.TestCase):
+    def test_food_counts_eats_and_effects_but_not_instant_heals(self):
+        dump = [
+            'TextPacket message: "[BDSSweep] items6 food chicken"',
+            'CompletedUsingItemPacket { used_item_id: 1 }',
+            'MobEffectPacket { event_id: Add, effect_id: 17, effect_amplifier: 0, effect_duration_ticks: 600 }',
+            'CompletedUsingItemPacket { used_item_id: 1 }',
+            'MobEffectPacket { event_id: Add, effect_id: 6, effect_amplifier: 10, effect_duration_ticks: 1 }',
+            'TextPacket message: "[BDSSweep] items6 shield front_1"',
+            'CompletedUsingItemPacket { used_item_id: 1 }',
+        ]
+        self.assertEqual(items6_table.food(dump), {'chicken': {'eats': 2, 'effects': {'17': 1}}})
+
+    def test_cases_run_from_opener_to_opener_and_stop_before_the_deaths(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            script = Path(tmp) / 'items-6-totem.txt'
+            script.write_text('\n'.join([
+                '10 /clear @s', '14 /say items6 totem offhand', '15 /damage @s 40 entity_attack',
+                '50 /clear @s', '54 /say items6 totem mainhand', '55 /damage @s 40 entity_attack',
+                '90 /clear @s', '94 /say items6 totem void', '95 /damage @s 40 void',
+            ]), encoding='utf-8')
+            cases = items6_table.cases(script, 'totem')
+        self.assertEqual(cases, [{'name': 'offhand', 'inputs': [10, 50]},
+                                 {'name': 'mainhand', 'inputs': [50, 90]}])
 
 
 class ToolUseFixture(unittest.TestCase):

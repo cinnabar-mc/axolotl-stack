@@ -14,6 +14,8 @@ pub mod copper;
 pub mod food;
 pub mod on_block;
 pub mod ranged;
+pub mod shield;
+pub mod totem;
 
 use bevy_ecs::prelude::*;
 use jolyne::valentine::types::ActorRuntimeId;
@@ -533,6 +535,8 @@ mod drink_tests;
 mod flint_tests;
 #[cfg(test)]
 mod food_tests;
+#[cfg(test)]
+mod shield_totem_tests;
 #[cfg(test)]
 mod tests;
 #[cfg(test)]

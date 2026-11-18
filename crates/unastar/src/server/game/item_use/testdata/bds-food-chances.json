@@ -1,0 +1,20 @@
+{
+ "chicken": {
+  "eats": 148,
+  "effects": {
+   "17": 48
+  }
+ },
+ "poisonous_potato": {
+  "eats": 149,
+  "effects": {
+   "19": 97
+  }
+ },
+ "rotten_flesh": {
+  "eats": 150,
+  "effects": {
+   "17": 119
+  }
+ }
+}

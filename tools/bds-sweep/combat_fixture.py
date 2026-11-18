@@ -86,7 +86,7 @@ def windows(spec):
     return out
 
 
-def cut(rows, windows=(), commands=None, player=1, inputs=True, also=()):
+def cut(rows, windows=(), commands=None, player=1, inputs=True, also=(), also_c2s=()):
     """The kept records of a capture's rows (see the module docs)."""
     latest = None
     out = []
@@ -108,7 +108,7 @@ def cut(rows, windows=(), commands=None, player=1, inputs=True, also=()):
             else:
                 keep = row['name'] == 'CommandOutputPacket' and pending.pop(0)
         elif row['dir'] == 'c2s':
-            keep = inside and row['id'] in KEEP_C2S
+            keep = inside and (row['id'] in KEEP_C2S or row['name'] in also_c2s)
         elif row['id'] == ADD_ACTOR:
             keep = True
         else:

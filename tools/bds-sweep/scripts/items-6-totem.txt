@@ -1,0 +1,73 @@
+# Food chances, shields and totems on BDS 1.26.51; printed by tools/bds-sweep/items6_script.py (see there).
+# The player (feet (0.5,-60,0.5), facing east).
+20 /gamerule sendcommandfeedback false
+21 /gamerule domobspawning false
+22 /gamerule dodaylightcycle false
+23 /gamerule randomtickspeed 0
+24 /gamerule naturalregeneration false
+25 /time set 6000
+26 /fill -4 -61 -4 4 -61 4 stone
+27 /fill -4 -60 -4 4 -55 4 air
+28 /gamemode survival @s
+29 /clear @s
+30 /tp @s 0.5 -60 0.5 -90 0
+41 /clear @s
+42 /replaceitem entity @s slot.weapon.offhand 0 totem_of_undying
+44 /effect @s clear
+45 /effect @s instant_health 1 10 true
+49 /effect @s clear
+51 /say items6 totem offhand
+54 /damage @s 40 entity_attack
+84 /clear @s
+85 /replaceitem entity @s slot.weapon.offhand 0 air
+87 /replaceitem entity @s slot.hotbar 0 totem_of_undying
+89 /effect @s clear
+90 /effect @s instant_health 1 10 true
+94 /effect @s clear
+96 /say items6 totem mainhand
+99 /damage @s 40 entity_attack
+129 /clear @s
+130 /replaceitem entity @s slot.weapon.offhand 0 totem_of_undying
+132 /replaceitem entity @s slot.hotbar 0 totem_of_undying
+134 /effect @s clear
+135 /effect @s instant_health 1 10 true
+139 /effect @s clear
+141 /say items6 totem both
+144 /damage @s 40 entity_attack
+174 /clear @s
+175 /replaceitem entity @s slot.weapon.offhand 0 totem_of_undying
+177 /effect @s clear
+178 /effect @s instant_health 1 10 true
+182 /effect @s clear
+184 /say items6 totem none_absorbed
+187 /damage @s 19 entity_attack
+217 /effect @s speed 60 0 true
+219 /effect @s poison 60 0 true
+221 /clear @s
+222 /replaceitem entity @s slot.weapon.offhand 0 totem_of_undying
+224 /effect @s instant_health 1 10 true
+228 /say items6 totem with_effects
+231 /damage @s 40 entity_attack
+261 /clear @s
+262 /replaceitem entity @s slot.weapon.offhand 0 totem_of_undying
+264 /effect @s clear
+265 /effect @s instant_health 1 10 true
+269 /effect @s clear
+271 /say items6 totem void
+274 /damage @s 40 void
+364 /clear @s
+365 /replaceitem entity @s slot.weapon.offhand 0 totem_of_undying
+367 /effect @s clear
+368 /effect @s instant_health 1 10 true
+372 /effect @s clear
+374 /say items6 totem kill
+377 /kill @s
+467 /clear @s
+468 /replaceitem entity @s slot.hotbar 3 totem_of_undying
+470 /replaceitem entity @s slot.weapon.offhand 0 air
+472 /effect @s clear
+473 /effect @s instant_health 1 10 true
+477 /effect @s clear
+479 /say items6 totem hotbar_unselected
+482 /damage @s 40 entity_attack
+572 exit

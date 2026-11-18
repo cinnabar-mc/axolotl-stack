@@ -388,6 +388,29 @@ fn send_equipment_updates(
     }
 }
 
+/// Send `player`'s off hand to its client (the offhand window's
+/// `InventoryContent`, as after an equipment change).
+pub(crate) fn send_offhand(world: &World, player: Entity) {
+    let (Some(armour), Some(offhand), Some(session)) = (
+        world.get::<ArmourInventory>(player),
+        world.get::<OffhandSlot>(player),
+        world.get::<PlayerSession>(player),
+    ) else {
+        return;
+    };
+    let changes = engine::EquipmentChanges {
+        armor: Vec::new(),
+        offhand: true,
+    };
+    send_equipment_updates(
+        &changes,
+        armour,
+        &offhand.0,
+        session,
+        super::types::block_network_ids(world),
+    );
+}
+
 /// Fixed window IDs of the player's own containers.
 pub(crate) const INVENTORY_WINDOW: u8 = 0;
 pub(crate) const OFFHAND_WINDOW: u8 = 119;

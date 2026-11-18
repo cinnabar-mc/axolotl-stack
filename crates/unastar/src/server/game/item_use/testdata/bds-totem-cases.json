@@ -1,0 +1,37 @@
+[
+ {
+  "name": "offhand",
+  "inputs": [
+   41,
+   84
+  ]
+ },
+ {
+  "name": "mainhand",
+  "inputs": [
+   84,
+   129
+  ]
+ },
+ {
+  "name": "both",
+  "inputs": [
+   129,
+   174
+  ]
+ },
+ {
+  "name": "none_absorbed",
+  "inputs": [
+   174,
+   221
+  ]
+ },
+ {
+  "name": "with_effects",
+  "inputs": [
+   221,
+   261
+  ]
+ }
+]
