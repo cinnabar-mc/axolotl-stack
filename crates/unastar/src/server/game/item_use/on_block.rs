@@ -347,22 +347,60 @@ fn carve(world: &mut World, ctx: &Use) -> bool {
     true
 }
 
+/// What flint and steel or a fire charge lights where it stands.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Lightable {
+    Campfire,
+    Candle,
+}
+
 /// Flint and steel or a fire charge: light a campfire or candle, else set
 /// fire to the air next to the clicked face (soul fire on soul sand and
 /// soul soil). Flint and steel wears, a fire charge is used up.
 fn ignite(world: &mut World, ctx: &Use) -> bool {
     let flint = ctx.stack.item_id() == "minecraft:flint_and_steel";
-    let lit = match ctx.block_name() {
-        "minecraft:campfire" | "minecraft:soul_campfire" => {
+    // TNT is lit where it stands, the primed TNT carrying the player
+    // (BDS 1.26.51 `data/measured/explosions/tnt_lit.json`: the fuse sound,
+    // a fire charge's event, the inventory, the click's block updates).
+    if crate::server::game::explosion::light_tnt(world, ctx.clicked, ctx.player) {
+        if !flint {
+            crate::server::game::explosion::fire_charge_lit(world, ctx.clicked);
+        }
+        click_corrections(world, ctx);
+        if flint {
+            crate::server::game::durability::wear_held_predicted(world, ctx.player, 1);
+        } else {
+            use_one(world, ctx);
+        }
+        return true;
+    }
+    let lightable = match ctx.block_name() {
+        "minecraft:campfire" | "minecraft:soul_campfire" => Some(Lightable::Campfire),
+        name if name.ends_with("candle") || name.ends_with("candle_cake") => {
+            Some(Lightable::Candle)
+        }
+        _ => None,
+    };
+    let lit = match lightable {
+        Some(Lightable::Campfire) => {
             ctx.block
                 .with_state_value(ctx.state, "extinguished", StateValue::Byte(0))
         }
-        name if name.ends_with("candle") || name.ends_with("candle_cake") => ctx
-            .block
-            .with_state_value(ctx.state, "lit", StateValue::Byte(1)),
-        _ => None,
+        Some(Lightable::Candle) => {
+            ctx.block
+                .with_state_value(ctx.state, "lit", StateValue::Byte(1))
+        }
+        None => None,
     }
     .filter(|lit| *lit != ctx.state);
+    // A lit candle and a waterlogged one take nothing: no fire above it, no
+    // sound (BDS 1.26.51 `data/measured/candles/candles_lit.json`).
+    let waterlogged = crate::server::game::blocks::layer_at(world, ctx.clicked)
+        .and_then(|layer| ctx.registry.liquid_state(layer))
+        .is_some_and(|liquid| liquid.kind == LiquidKind::Water);
+    if lightable == Some(Lightable::Candle) && (lit.is_none() || waterlogged) {
+        return false;
+    }
     let (pos, state) = match lit {
         Some(lit) => (ctx.clicked, lit),
         None => {
@@ -386,14 +424,19 @@ fn ignite(world: &mut World, ctx: &Use) -> bool {
     };
     crate::server::game::blocks::set_block_batched(world, pos, state);
     click_corrections(world, ctx);
-    if matches!(
-        ctx.block_name(),
-        "minecraft:campfire" | "minecraft:soul_campfire"
-    ) && pos == ctx.clicked
-    {
+    if lightable == Some(Lightable::Campfire) && pos == ctx.clicked {
         announce_campfire(world, pos);
     }
-    let sound_name = if flint {
+    // A fire charge lighting a candle sends the same event as on TNT, at
+    // the corner of the block on the clicked face, then the same `ignite`
+    // as flint and steel (BDS 1.26.51
+    // `data/measured/candles/candles_lit.json`); setting fire it plays the
+    // ghast's fireball sound.
+    let lit_candle = pos == ctx.clicked && lightable == Some(Lightable::Candle);
+    if !flint && lit_candle {
+        crate::server::game::explosion::fire_charge_lit(world, ctx.target());
+    }
+    let sound_name = if flint || lit_candle {
         "ignite"
     } else {
         "mob.ghast.fireball"

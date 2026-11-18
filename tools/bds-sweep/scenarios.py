@@ -734,6 +734,11 @@ def _tnt_families() -> dict:
     return tnt.FAMILIES
 
 
+def _candle_families() -> dict:
+    import candles
+    return candles.FAMILIES
+
+
 ROUND_THREE = _circuit_families()
 ROUND_FOUR = _piston_families()
 TNT = _tnt_families()
@@ -746,6 +751,7 @@ FAMILIES.update(CORAL)
 FAMILIES.update(ROUND_FOUR)
 FAMILIES.update(TNT)
 FAMILIES.update(INFESTED)
+FAMILIES.update(_candle_families())
 # Families that need their own cell layout (name in sweep.ARENAS) and server
 # properties; every family in one run must share a layout.
 LAYOUTS = ({name: 'circuits' for name in ROUND_THREE | ROUND_FOUR | INFESTED} | {name: 'fields' for name in RANDOM_TICKS}

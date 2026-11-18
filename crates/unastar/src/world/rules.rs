@@ -85,11 +85,15 @@ pub enum GameRule {
     ShowDeathMessages,
     FreezeDamage,
     Pvp,
+    TntExplodes,
+    TntExplosionDropDecay,
+    RespawnBlocksExplode,
 }
 
 impl GameRule {
-    /// Every rule, in the order BDS lists them in `GameRulesChanged`.
-    pub const ALL: [Self; 13] = [
+    /// Every typed rule (`GameRulesChanged` order comes from the captured
+    /// defaults, `unastar_data::game_rules`).
+    pub const ALL: [Self; 16] = [
         Self::DoDaylightCycle,
         Self::DoMobLoot,
         Self::DoMobSpawning,
@@ -103,6 +107,9 @@ impl GameRule {
         Self::ShowDeathMessages,
         Self::FreezeDamage,
         Self::Pvp,
+        Self::TntExplodes,
+        Self::TntExplosionDropDecay,
+        Self::RespawnBlocksExplode,
     ];
 
     /// The rule's name as BDS sends it (`GameRulesChanged` at join).
@@ -121,6 +128,9 @@ impl GameRule {
             Self::ShowDeathMessages => "showDeathMessages",
             Self::FreezeDamage => "freezeDamage",
             Self::Pvp => "pvp",
+            Self::TntExplodes => "tntExplodes",
+            Self::TntExplosionDropDecay => "tntExplosionDropDecay",
+            Self::RespawnBlocksExplode => "respawnBlocksExplode",
         }
     }
 
@@ -152,6 +162,12 @@ pub struct GameRules {
     pub freeze_damage: bool,
     /// Players can hurt each other with melee hits (`player_life::pvp`).
     pub pvp: bool,
+    /// TNT can be lit (`server::game::explosion`).
+    pub tnt_explodes: bool,
+    /// TNT explosions drop each block with a chance of one in the power.
+    pub tnt_explosion_drop_decay: bool,
+    /// Respawn anchors outside the nether explode when used.
+    pub respawn_blocks_explode: bool,
     /// Captured rules without a typed field that were changed from BDS's default.
     other: Vec<(&'static str, GameRuleValue)>,
 }
@@ -172,6 +188,9 @@ impl Default for GameRules {
             drowning_damage: true,
             freeze_damage: true,
             pvp: true,
+            tnt_explodes: true,
+            tnt_explosion_drop_decay: false,
+            respawn_blocks_explode: true,
             other: Vec::new(),
         };
         // The captured defaults are the source of truth for typed rules too.
@@ -202,6 +221,9 @@ impl GameRules {
             GameRule::ShowDeathMessages => &mut self.show_death_messages,
             GameRule::FreezeDamage => &mut self.freeze_damage,
             GameRule::Pvp => &mut self.pvp,
+            GameRule::TntExplodes => &mut self.tnt_explodes,
+            GameRule::TntExplosionDropDecay => &mut self.tnt_explosion_drop_decay,
+            GameRule::RespawnBlocksExplode => &mut self.respawn_blocks_explode,
         }
     }
 
@@ -220,6 +242,9 @@ impl GameRules {
             GameRule::ShowDeathMessages => self.show_death_messages,
             GameRule::FreezeDamage => self.freeze_damage,
             GameRule::Pvp => self.pvp,
+            GameRule::TntExplodes => self.tnt_explodes,
+            GameRule::TntExplosionDropDecay => self.tnt_explosion_drop_decay,
+            GameRule::RespawnBlocksExplode => self.respawn_blocks_explode,
         }
     }
 

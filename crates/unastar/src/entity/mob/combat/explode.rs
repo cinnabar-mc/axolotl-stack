@@ -20,7 +20,9 @@ use crate::entity::mob::MobKind;
 use crate::entity::mob::ai::set_flag;
 use crate::entity::mob::components::explode::{Explode, Fuse, FuseClock};
 use crate::entity::mob::state::Dead;
-use crate::server::game::explosion::{Blast, blast_centre, explode};
+use crate::server::game::explosion::{
+    Blast, BlastSource, Igniter, PRIMED_TNT, blast_centre, explode, in_water,
+};
 
 /// System (exclusive, `EntityLogicSet`): burn the lit fuses down and
 /// explode the actors whose fuse ran out.
@@ -65,9 +67,27 @@ fn explode_actor(world: &mut World, actor: Entity) {
     ) else {
         return;
     };
-    let griefing = world
+    let rules = world
         .get_resource::<crate::world::rules::GameRules>()
-        .is_none_or(|rules| rules.mob_griefing);
+        .cloned()
+        .unwrap_or_default();
+    let tnt = world
+        .get::<MobKind>(actor)
+        .is_some_and(|kind| kind.0.actor_type == PRIMED_TNT);
+    // A TNT keeps every drop unless `tntExplosionDropDecay` is on; every
+    // other explosion keeps one in its power.
+    let drop_chance = if tnt && !rules.tnt_explosion_drop_decay {
+        1.0
+    } else {
+        Blast::decayed_drops(config.power)
+    };
+    let source = BlastSource {
+        entity: actor,
+        feet,
+        in_water: in_water(world, feet),
+        igniter: world.get::<Igniter>(actor).map(|igniter| igniter.0),
+    };
+    let griefing = rules.mob_griefing;
     let blast = Blast {
         centre: if at_feet {
             feet
@@ -75,11 +95,13 @@ fn explode_actor(world: &mut World, actor: Entity) {
             blast_centre(feet, body.height)
         },
         power: config.power,
-        source: Some(actor),
+        source: Some(source),
         breaks_blocks: config.breaks_blocks && (!config.destroy_affected_by_griefing || griefing),
+        causes_fire: false,
         max_resistance: config.max_resistance,
         damage_scaling: config.damage_scaling,
         knockback_scaling: config.knockback_scaling,
+        drop_chance,
         sound: config.sound.clone(),
     };
     world.despawn(actor);
