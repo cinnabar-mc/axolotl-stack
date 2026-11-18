@@ -527,6 +527,8 @@ fn feed(world: &World, player: Entity, stack: &ItemStack) {
 #[cfg(test)]
 mod bucket_tests;
 #[cfg(test)]
+mod candle_tests;
+#[cfg(test)]
 mod drink_tests;
 #[cfg(test)]
 mod flint_tests;

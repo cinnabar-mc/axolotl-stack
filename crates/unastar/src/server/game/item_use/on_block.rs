@@ -347,6 +347,10 @@ fn carve(world: &mut World, ctx: &Use) -> bool {
     true
 }
 
+fn is_campfire(name: &str) -> bool {
+    matches!(name, "minecraft:campfire" | "minecraft:soul_campfire")
+}
+
 /// Flint and steel or a fire charge: light a campfire or candle, else set
 /// fire to the air next to the clicked face (soul fire on soul sand and
 /// soul soil). Flint and steel wears, a fire charge is used up.
@@ -378,6 +382,12 @@ fn ignite(world: &mut World, ctx: &Use) -> bool {
         _ => None,
     }
     .filter(|lit| *lit != ctx.state);
+    // A lit candle takes nothing: no fire above it, no sound (BDS 1.26.51
+    // `data/measured/candles/candles_lit.json`).
+    let candle = ctx.block_name().ends_with("candle") || ctx.block_name().ends_with("candle_cake");
+    if candle && lit.is_none() {
+        return false;
+    }
     let (pos, state) = match lit {
         Some(lit) => (ctx.clicked, lit),
         None => {
@@ -408,7 +418,16 @@ fn ignite(world: &mut World, ctx: &Use) -> bool {
     {
         announce_campfire(world, pos);
     }
-    let sound_name = if flint {
+    // A fire charge lighting a candle sends the same event as on TNT, at
+    // the corner of the block on the clicked face, then the same `ignite`
+    // as flint and steel (BDS 1.26.51
+    // `data/measured/candles/candles_lit.json`); setting fire it plays the
+    // ghast's fireball sound.
+    let lit_candle = pos == ctx.clicked && !is_campfire(ctx.block_name());
+    if !flint && lit_candle {
+        crate::server::game::explosion::fire_charge_lit(world, ctx.target());
+    }
+    let sound_name = if flint || lit_candle {
         "ignite"
     } else {
         "mob.ghast.fireball"
