@@ -352,6 +352,21 @@ fn carve(world: &mut World, ctx: &Use) -> bool {
 /// soul soil). Flint and steel wears, a fire charge is used up.
 fn ignite(world: &mut World, ctx: &Use) -> bool {
     let flint = ctx.stack.item_id() == "minecraft:flint_and_steel";
+    // TNT is lit where it stands, the primed TNT carrying the player
+    // (BDS 1.26.51 `data/measured/explosions/tnt_lit.json`: the fuse sound,
+    // a fire charge's event, the inventory, the click's block updates).
+    if crate::server::game::explosion::light_tnt(world, ctx.clicked, ctx.player) {
+        if !flint {
+            crate::server::game::explosion::fire_charge_lit(world, ctx.clicked);
+        }
+        click_corrections(world, ctx);
+        if flint {
+            crate::server::game::durability::wear_held_predicted(world, ctx.player, 1);
+        } else {
+            use_one(world, ctx);
+        }
+        return true;
+    }
     let lit = match ctx.block_name() {
         "minecraft:campfire" | "minecraft:soul_campfire" => {
             ctx.block

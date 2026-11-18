@@ -506,6 +506,16 @@ def actor_state(actor) -> dict:
             'ground': actor.is_on_ground}
 
 
+def actor_ref(actor) -> dict | None:
+    """Who an actor is (its unique id and type), `None` for no actor."""
+    if actor is None:
+        return None
+    try:
+        return {'id': actor.id, 'type': actor.type}
+    except Exception:  # noqa: BLE001 - an actor already gone
+        return {'id': None, 'type': None}
+
+
 def find_actor(ctx: Context, runtime_id: int):
     for actor in ctx.dimension.actors:
         if actor.runtime_id == runtime_id and actor.is_valid:
@@ -1134,6 +1144,9 @@ def step_signature(item: dict) -> tuple:
     waits (and timeline lengths) must line up. The scripted player clicks
     for one cell at a time: an item with a `use` event runs alone."""
     out = []
+    if item.get('solo'):
+        # An item that moves the scripted player into its cell runs alone.
+        out.append(f'solo:{item["key"]}')
     for step in item['steps']:
         if step[0] == 'timeline' and any(event[0] in PLAYER_EVENTS for _, event in step[3]):
             out.append(f'timeline{step[1]}:{item["key"]}')
@@ -1214,12 +1227,13 @@ def run_event(ctx: Context, at, event: list, touched: set, failures: list) -> No
 
 
 def read_actors(ctx: Context, wave: list, index: int, bases: list, out: list, last: list, tick: int) -> None:
-    """The actors (players excluded) inside each cell's `actors` box (the
+    """The actors (the scripted player too) inside each cell's `actors` box (the
     timeline's optional sixth element, `{'box': [[lx, ly, lz], [hx, hy, hz]]}`
     in cell offsets, inclusive): `[tick, [[id, type, dx, dy, dz, vx, vy, vz,
-    health], ...]]` recorded when the list changes. Positions are relative to
-    the cell origin, rounded to 1/1000 (velocities to 1/10000)."""
-    actors = [a for a in ctx.dimension.actors if a.type != 'minecraft:player']
+    health(, count)], ...]]` recorded when the list changes (`count`: an
+    item actor's stack size). Positions are relative to the cell origin,
+    rounded to 1/1000 (velocities to 1/10000)."""
+    actors = list(ctx.dimension.actors)
     for i, item in enumerate(wave):
         own = item['steps'][index]
         if len(own) <= 5:
@@ -1237,12 +1251,56 @@ def read_actors(ctx: Context, wave: list, index: int, bases: list, out: list, la
                 health = actor.health
             except Exception:  # noqa: BLE001 - actors without health
                 health = None
-            seen.append([actor.id, actor.type, round(dx, 3), round(dy, 3), round(dz, 3),
-                         round(vel.x, 4), round(vel.y, 4), round(vel.z, 4), health])
+            row = [actor.id, actor.type, round(dx, 3), round(dy, 3), round(dz, 3),
+                   round(vel.x, 4), round(vel.y, 4), round(vel.z, 4), health]
+            if actor.type == 'minecraft:item':
+                # The stack an item actor carries (merged item actors grow).
+                row.append(actor.item_stack.amount)
+            seen.append(row)
         seen.sort(key=lambda a: a[0])
         if seen != last[i]:
             out[i].append([tick, seen])
             last[i] = seen
+
+
+def cell_events(ctx: Context, wave: list, index: int, bases: list, marks: tuple, start: int,
+                out: list) -> None:
+    """The damage events, knockbacks and explosions of a timeline that
+    happened inside each cell's actor box (`read_actors`): `damage_events`,
+    `knockbacks` and `explosions`, with ticks from the timeline's start and
+    positions relative to the cell origin."""
+    damage = ctx.plugin.damage_events[marks[0]:]
+    knocks = ctx.plugin.knockbacks[marks[1]:]
+    blasts = ctx.plugin.explosions[marks[2]:]
+
+    def inside(i, pos) -> bool:
+        own = wave[i]['steps'][index]
+        if len(own) <= 5:
+            return False
+        (lx, ly, lz), (hx, hy, hz) = own[5]['box']
+        b = bases[i]
+        dx, dy, dz = pos[0] - b[0], pos[1] - b[1], pos[2] - b[2]
+        return lx <= dx <= hx + 1 and ly <= dy <= hy + 1 and lz <= dz <= hz + 1
+
+    def rel(i, pos) -> list:
+        b = bases[i]
+        return [round(pos[0] - b[0], 4), round(pos[1] - b[1], 4), round(pos[2] - b[2], 4)]
+
+    for i in range(len(wave)):
+        mine = {}
+        d = [{**e, 'tick': e['tick'] - start, 'pos': rel(i, e['pos'])} for e in damage if inside(i, e['pos'])]
+        if d:
+            mine['damage_events'] = d
+        k = [{'tick': e['tick'] - start, 'id': e.get('id'), 'type': e['type'], 'knockback': e['knockback'],
+              'pos': rel(i, e['state']['pos']), 'vel': e['state']['vel'],
+              'source': e['source_name']} for e in knocks if inside(i, e['state']['pos'])]
+        if k:
+            mine['knockbacks'] = k
+        x = [{**e, 'tick': e['tick'] - start, 'pos': rel(i, e['pos']),
+              'blocks': [rel(i, b) for b in e['blocks']]} for e in blasts if inside(i, e['pos'])]
+        if x:
+            mine['explosions'] = x
+        out[i] = mine
 
 
 def scenarios(ctx: Context, job: dict):
@@ -1335,6 +1393,7 @@ def scenarios(ctx: Context, job: dict):
         traces: list[dict] = [{} for _ in wave]
         timings: list[dict] = [{} for _ in wave]
         actor_traces: list[list] = [[] for _ in wave]
+        events_out: list[dict] = [{} for _ in wave]
         failures: list[list] = [[] for _ in wave]
         for index, step in enumerate(wave[0]['steps']):
             if step[0] == 'wait':
@@ -1357,6 +1416,7 @@ def scenarios(ctx: Context, job: dict):
                     ctx.block(dust_at).set_data(ctx.server.create_block_data('minecraft:redstone_wire',
                                                                              {'redstone_signal': 0}), True)
                 start_tick = ctx.plugin.ticks
+                marks = (len(ctx.plugin.damage_events), len(ctx.plugin.knockbacks), len(ctx.plugin.explosions))
                 for tick in range(int(step[1])):
                     # The packets the player is sent after this marker and
                     # before the next are this tick's.
@@ -1392,11 +1452,13 @@ def scenarios(ctx: Context, job: dict):
                     ctx.player.send_message(f'bds-sweep:tick {wave_number} end')
                 for i in range(len(wave)):
                     timings[i] = {'start_tick': start_tick, 'witness_tick': witness_tick}
+                cell_events(ctx, wave, index, bases, marks, start_tick, events_out)
                 if witness:
                     for pos in (tuple(witness), dust_at):
                         ctx.set_state(pos, 'minecraft:air', {})
                 # Clicks moved the scripted player next to the cell.
-                if any(event[0] in PLAYER_EVENTS for item in wave for _, event in item['steps'][index][3]):
+                if any(item.get('solo') or any(event[0] in PLAYER_EVENTS for _, event in item['steps'][index][3])
+                       for item in wave):
                     player = job['arena']['player']
                     ctx.must(f'tp "{ctx.player.name}" {player[0]} {player[1]} {player[2]}')
                 continue
@@ -1427,6 +1489,7 @@ def scenarios(ctx: Context, job: dict):
                    'command_failures': failures[i]}
             if actor_traces[i]:
                 row['actor_traces'] = actor_traces[i]
+            row.update(events_out[i])
             if traces[i]:
                 row['traces'] = traces[i]
                 row['timing'] = timings[i]

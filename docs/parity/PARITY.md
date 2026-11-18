@@ -14,7 +14,7 @@ Each domain's first line is its headline: the rows its family table, gap list an
 |---|---:|---:|---:|---:|---:|---:|---:|
 | [Entities](#entities): actor rows (summon and replication) | 137 | 110 | 2 | 2 | 19 | 4 | 15.8% |
 | Entities: behaviour sub-rows (components, spawn rules) | 4082 | 998 | 2648 | 329 | 61 | 46 | 9.7% |
-| [Blocks](#blocks) | 1477 | 0 | 408 | 511 | 391 | 167 | 68.9% |
+| [Blocks](#blocks) | 1477 | 0 | 374 | 511 | 425 | 167 | 71.5% |
 | [Items](#items): behaviour sub-rows (food, durability, placement, ...) | 2347 | 99 | 832 | 619 | 620 | 177 | 57.1% |
 | Items: registered (exists in the registry, no behaviour) | 2076 | 0 | 0 | 2076 | 0 | 0 | 100.0% |
 | [Commands](#commands) | 82 | 8 | 35 | 2 | 36 | 1 | 46.9% |
@@ -45,23 +45,24 @@ Add a `[[claim]]` to [claims.toml](claims.toml) in your first pull request for t
 |---|---|---|---:|
 | Mobs: hostile, tameable and aquatic (with dolphins, turtles, axolotls and bats) | lane ENT | 2026-10-29 | 52 |
 
-**Blocks**: 240 open rows free, 168 claimed.
+**Blocks**: 205 open rows free, 169 claimed.
 
 | Free family | Open | Missing | Partial |
 |---|---:|---:|---:|
-| functional (part claimed) | 57 | 0 | 57 |
+| functional (part claimed) | 56 | 0 | 56 |
 | surface_dynamic (part claimed) | 47 | 0 | 47 |
-| candles | 34 | 0 | 34 |
 | building_blocks | 27 | 0 | 27 |
 | coral | 20 | 0 | 20 |
 | plants | 17 | 0 | 17 |
 | ores | 14 | 0 | 14 |
 | saplings | 10 | 0 | 10 |
-| 4 more families | 14 | 0 | 14 |
+| technical | 8 | 0 | 8 |
+| 3 more families | 6 | 0 | 6 |
 
 | Claimed area | Claimed by | Since | Open |
 |---|---|---|---:|
 | Block behaviour families, gravity, fire, redstone and random ticks | lane BLOCKS | 2026-10-29 | 153 |
+| Respawn anchors and candles | lane BLOCKS | 2026-11-17 | 1 |
 | Liquids: water and lava flow, mixing, the liquid layer | lane LIQUIDS | 2026-11-11 | 5 |
 | Workstation blocks | lane ITEMS | 2026-10-29 | 10 |
 
@@ -94,12 +95,12 @@ Nothing in this domain is claimed.
 | Bedrock world generation | lane BED | 2026-10-29 | 491 |
 | Java world generation | lane JAVA | 2026-10-29 | 26 |
 
-**Gameplay systems**: 50 open rows free, 18 claimed.
+**Gameplay systems**: 49 open rows free, 19 claimed.
 
 | Free family | Open | Missing | Partial |
 |---|---:|---:|---:|
 | player (part claimed) | 15 | 5 | 10 |
-| world (part claimed) | 12 | 4 | 8 |
+| world (part claimed) | 11 | 4 | 7 |
 | mobs | 10 | 8 | 2 |
 | interface | 6 | 4 | 2 |
 | crafting (part claimed) | 4 | 2 | 2 |
@@ -107,7 +108,7 @@ Nothing in this domain is claimed.
 
 | Claimed area | Claimed by | Since | Open |
 |---|---|---|---:|
-| Gravity, fire, redstone, block updates and random ticks | lane BLOCKS | 2026-10-29 | 6 |
+| Gravity, fire, redstone, explosions, block updates and random ticks | lane BLOCKS | 2026-10-29 | 7 |
 | Liquids: water and lava flow, mixing, the liquid layer | lane LIQUIDS | 2026-11-11 | 1 |
 | Workstations: crafting, smelting, anvil, grindstone, smithing, brewing, enchanting | lane ITEMS | 2026-10-29 | 8 |
 | Survival block breaking | lane ITEMS | 2026-11-10 | 1 |
@@ -215,7 +216,7 @@ One row per vanilla block: it can exist in the world, be placed and broken with 
 | beds | 2 | 0 | 2 | 0 | 0 | 0 | 0.0% |
 | building_blocks | 230 | 0 | 27 | 200 | 3 | 0 | 88.3% |
 | buttons | 15 | 0 | 0 | 0 | 15 | 0 | 100.0% |
-| candles | 34 | 0 | 34 | 0 | 0 | 0 | 0.0% |
+| candles | 34 | 0 | 0 | 0 | 34 | 0 | 100.0% |
 | carpets | 18 | 0 | 1 | 0 | 17 | 0 | 94.4% |
 | copper_oxidising | 51 | 0 | 33 | 18 | 0 | 0 | 35.3% |
 | coral | 40 | 0 | 20 | 5 | 15 | 0 | 50.0% |
@@ -268,10 +269,6 @@ One row per vanilla block: it can exist in the world, be placed and broken with 
 - `minecraft:carved_pumpkin`, `minecraft:lit_pumpkin`: placing it does not build snow or iron golems
 - `minecraft:deprecated_purpur_block_1`, `minecraft:deprecated_purpur_block_2`: legacy block; drops and load upgrade not checked against BDS
 - 9 more partial rows with other gaps (see [blocks.toml](blocks.toml))
-
-**candles**
-
-- `minecraft:black_candle`, `minecraft:black_candle_cake`, `minecraft:blue_candle`, `minecraft:blue_candle_cake`, `minecraft:brown_candle`, `minecraft:brown_candle_cake`, `minecraft:candle`, `minecraft:candle_cake`, `minecraft:cyan_candle`, `minecraft:cyan_candle_cake`, `minecraft:gray_candle`, `minecraft:gray_candle_cake` and 22 more: lighting with flint and steel answers without the click corrections BDS sends
 
 **carpets**
 
@@ -784,7 +781,7 @@ Cross-cutting gameplay systems with no data source to enumerate them from; this 
 - `world.chunk_ticking`: chunks load around players in a view disk (nearest first with look-ahead; storage reads, generation and network encoding off the tick; spawning loaded columns, restoring their actors and unloading take at most 4 ms of a tick each; sending paced by acknowledgements and the transport's queue; timings in tools/perf/README.md) and entities tick in loaded chunks; the disk is centred on the player's chunk, BDS appears to centre it on the block position (153 columns at radius 6 against our 149); no ticking areas and no random block ticks
 - `world.day_cycle`: clock, daylight cycle and moon phase work; no sleeping skip and time is not persisted
 - `world.difficulty`: mob damage scaling, peaceful monsters, regional difficulty and hard-only door breaking; no hunger effects (starvation floors, peaceful regeneration) and effects of unimplemented mobs
-- `world.explosions`: the blast pattern, block resistance, drops (every block by hand), damage with exposure and the TNT fuse follow BDS; knockback is not measured (applied along the line from the centre with the impact); fire from explosions, underwater explosions, the max_resistance of other sources, creepers and other exploding mobs (their components are not implemented) and beds and respawn anchors are missing; block changes are sent at once, not with the next tick
+- `world.explosions`: the blast pattern, block resistance, waterlogged blocks, drops (by hand, gathered into stacks, one in the power for non-TNT explosions), damage with exposure (mobs less half their width, players the plain distance), the hurt knockback and the push towards the eyes, water, peaceful, the igniter as attacker, fire and the TNT fuse follow BDS; missing: creepers, beds and other exploding actors (their components are not implemented), the max_resistance of other sources and knockback_scaling (no vanilla source measured), a source inside a solid block; the exposure of a target standing on a block is lower than BDS's (a raised pig takes 4 to 9 less); armour's knockback resistance on mobs; block changes are sent at once, not with the next tick
 - 9 more partial rows with other gaps (see [systems.toml](systems.toml))
 - missing: `world.dimensions`, `world.fire`, `world.structure_blocks`, `world.structures_hardcoded`, `world.world_border`
 

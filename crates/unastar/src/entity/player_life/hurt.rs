@@ -368,7 +368,7 @@ const PROTECTION_PER_LEVEL: f32 = 0.04;
 
 /// Summed knockback resistance of the pieces `player` wears (netherite: 0.1
 /// each), as the one knockback resistance mobs have too.
-fn worn_knockback_resistance(world: &World, player: Entity) -> KnockbackResistance {
+pub(crate) fn worn_knockback_resistance(world: &World, player: Entity) -> KnockbackResistance {
     let base = world.get::<ArmourInventory>(player).map_or(0.0, |armour| {
         armour
             .slots()
@@ -490,6 +490,24 @@ fn knock_back(
         velocity = bounded_knockback(knockback_velocity(velocity, away.normalize(), power));
         count += 1;
     }
+    set_pushed_velocity(world, player, velocity, count);
+}
+
+/// Add `push` to `player`'s velocity, as an explosion pushes it after its
+/// hurt (`server::game::explosion`): one `SetActorMotion` with the new
+/// velocity.
+pub(crate) fn push_player(world: &mut World, player: Entity, push: DVec3) {
+    let velocity = bounded_knockback(
+        world
+            .get::<PlayerInput>(player)
+            .map_or(DVec3::ZERO, |input| input.velocity)
+            + push,
+    );
+    set_pushed_velocity(world, player, velocity, 1);
+}
+
+/// Make `velocity` the player's velocity and send it `count` times.
+fn set_pushed_velocity(world: &mut World, player: Entity, velocity: DVec3, count: usize) {
     if let Some(mut input) = world.get_mut::<PlayerInput>(player) {
         input.velocity = velocity;
     }

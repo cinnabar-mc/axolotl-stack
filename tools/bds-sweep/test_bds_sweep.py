@@ -1118,6 +1118,21 @@ class RoundThree(unittest.TestCase):
         with self.assertRaises(SystemExit):
             scenarios.layout('redstone_dust,random_crops')
 
+    def test_tnt_round2_families_use_the_blast_layout_and_players_run_alone(self):
+        import tnt
+        sys.path.insert(0, str(Path(__file__).parent / 'endstone-sweep' / 'src'))
+        from endstone_bds_sweep import jobs
+        self.assertEqual(scenarios.layout(','.join(tnt.ROUND2)), 'blast')
+        for family in tnt.ROUND2:
+            items = scenarios.FAMILIES[family]()
+            keys = [item['key'] for item in items]
+            self.assertEqual(len(keys), len(set(keys)), family)
+            signatures = [jobs.step_signature(item) for item in items]
+            for item, signature in zip(items, signatures):
+                if item.get('solo'):
+                    # The scripted player stands in one cell at a time.
+                    self.assertEqual(signatures.count(signature), 1, item['key'])
+
     def test_coral_families_share_the_spaced_layout(self):
         import coral
         for family in list(coral.FAMILIES) + ['coral_death']:

@@ -6309,9 +6309,29 @@
      "sha256": "79fa94d858163d0ec21c6b4b45d74cc57c738f9fe65e5c4b890776a9b33711de"
     },
     {
+     "path": "explosions/tnt_anchor.json",
+     "rows": 18,
+     "sha256": "4fe77fba869278074d2597e1b2fa15e7fd190c0d58f1015a5af837c756306444"
+    },
+    {
      "path": "explosions/tnt_blast.json",
      "rows": 256,
      "sha256": "b7cb08f1a0a8de94a38fa6c623fe8c757349a124f21b14ccd24b3aa199f47690"
+    },
+    {
+     "path": "explosions/tnt_chain.json",
+     "rows": 64,
+     "sha256": "2530838c0da003738c86e5ef59064d81b72c1fe02c2865fde97271947eae39cc"
+    },
+    {
+     "path": "explosions/tnt_decay.json",
+     "rows": 16,
+     "sha256": "27082981c6d1f069082e9c6fa29086eb9a753a90118a253a040eb6260bf7149b"
+    },
+    {
+     "path": "explosions/tnt_drops.json",
+     "rows": 32,
+     "sha256": "bfbf3bf28fa2782b9f78a24fde47290089a1460fd5f31ffca8e297d478216d4d"
     },
     {
      "path": "explosions/tnt_hits.json",
@@ -6319,13 +6339,38 @@
      "sha256": "5f6148ef71aa4784d818a273c90935f3a66001179a1e1df0257d8c48465bc103"
     },
     {
+     "path": "explosions/tnt_knock.json",
+     "rows": 22,
+     "sha256": "0cc187043fb6b97d94e8b113aaf5c48db329448c4676aa9477285a70cfdd1fb0"
+    },
+    {
+     "path": "explosions/tnt_lit.json",
+     "rows": 4,
+     "sha256": "38c42570761b595ded8f6cf337f822176d65bfee1350d2225973838e4e71dfb0"
+    },
+    {
+     "path": "explosions/tnt_logged.json",
+     "rows": 32,
+     "sha256": "77cd14b3ac81e12622f4d31551ab84eb888969028f57fc16dd74de22a5ee6feb"
+    },
+    {
+     "path": "explosions/tnt_player.json",
+     "rows": 14,
+     "sha256": "fb035c9bf44795ad09a91d5d199d2ec9ae72ce989cfc0c3a24cf4eb5463461ea"
+    },
+    {
      "path": "explosions/tnt_prime.json",
      "rows": 24,
      "sha256": "0c85773c5272c340f4a6f4c526282de013350c315530ae020bbe7ee81a5df4ad"
+    },
+    {
+     "path": "explosions/tnt_water.json",
+     "rows": 4,
+     "sha256": "c0db8c171338c20d6c5408384b1240037453f553208c87a7ef69db7bd61e810d"
     }
    ],
-   "harness": "tools/bds-sweep (sweep.py scenarios, endstone-sweep plugin) at d87c689e42c98d9f396f021c835aab33dff2d73a; tools/bds-sweep (sweep.py scenarios, endstone-sweep plugin) at e8e158763d3cd54f3922b2c4b45d5b844e66cb49",
-   "method": "circuits replayed tick by tick: sweep.py scenarios --family <redstone family> (tools/bds-sweep/circuits.py): each circuit is built in a cell of its own with block updates (`build`), left `wait` ticks, then run for a `timeline` of N server ticks in which `events` ([tick, event]) are applied at their tick and every `watch` offset is read once per tick after them. `trace` lists [tick, watch index, block, states] for the first read and every change. `witness` is the tick (2 or 3) at which a dust beside a redstone block set at tick 0 outside the cells lit in the same wave: BDS works redstone every other tick, and an update shows at the reads whose tick has the parity of `witness`. Offsets are relative to the cell origin on the superflat grass (the floor is y=-1); `minecraft:` is left out of block names. Round 4 rows also keep `items` (the item actors that ended in the cell, [item, data, count]) and `actors` (for timelines with an actor box: [tick, [[id, type, dx, dy, dz, vx, vy, vz, health], ...]] whenever the actors in the cell changed; positions relative to the cell origin).",
+   "harness": "tools/bds-sweep (sweep.py scenarios, endstone-sweep plugin) at a55afb127305c9b3805cb7c138564239a9cedd91; tools/bds-sweep (sweep.py scenarios, endstone-sweep plugin) at a55afb127305c9b3805cb7c138564239a9cedd91; tools/bds-sweep (sweep.py scenarios, endstone-sweep plugin) at a55afb127305c9b3805cb7c138564239a9cedd91; tools/bds-sweep (sweep.py scenarios, endstone-sweep plugin) at a55afb127305c9b3805cb7c138564239a9cedd91; tools/bds-sweep (sweep.py scenarios, endstone-sweep plugin) at a55afb127305c9b3805cb7c138564239a9cedd91; tools/bds-sweep (sweep.py scenarios, endstone-sweep plugin) at d87c689e42c98d9f396f021c835aab33dff2d73a; tools/bds-sweep (sweep.py scenarios, endstone-sweep plugin) at e8e158763d3cd54f3922b2c4b45d5b844e66cb49",
+   "method": "round-2 TNT families: sweep.py scenarios --family <family> (tools/bds-sweep/tnt.py, round 2): cells 16 blocks apart on the superflat grass, a TNT at the cell origin primed by a redstone block (or lit by the scripted player), targets held still with Slowness 255 and Health Boost; per cell the explosions BDS reported (`tick` from the timeline start, `pos` the exploding actor's feet or the exploding block, `blocks` the cells it removes in BDS's order, air included), every damage event in the cell (`damage` before armour, `cause`, the `attacker` and the `damaging` actor), every knockback (`knockback`: the velocity change), and for each target its feet the tick before the explosion and its position change over the tick after (`moved`). Offsets are relative to the cell origin.",
    "source": "bds_sweep",
    "sweeps": [
     {
@@ -6396,6 +6441,42 @@
        "items": 97,
        "seconds": 42.7,
        "started": "20261112T170055Z",
+       "status": "done"
+      }
+     ]
+    },
+    {
+     "dir": "r6-tnt-a",
+     "items": 154,
+     "runs": [
+      {
+       "items": 154,
+       "seconds": 128.1,
+       "started": "20261117T161845Z",
+       "status": "done"
+      }
+     ]
+    },
+    {
+     "dir": "r6-tnt-b",
+     "items": 57,
+     "runs": [
+      {
+       "items": 57,
+       "seconds": 204.0,
+       "started": "20261117T162126Z",
+       "status": "done"
+      }
+     ]
+    },
+    {
+     "dir": "r6-tnt-c",
+     "items": 98,
+     "runs": [
+      {
+       "items": 98,
+       "seconds": 125.2,
+       "started": "20261117T162948Z",
        "status": "done"
       }
      ]

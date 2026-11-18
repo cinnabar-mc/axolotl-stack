@@ -45,6 +45,7 @@ mod placement_capture_tests;
 mod plugins;
 pub(crate) mod random_ticks;
 pub(crate) mod redstone;
+pub(crate) mod respawn_anchor;
 pub(crate) mod roster;
 pub(crate) mod signs;
 pub mod types;
